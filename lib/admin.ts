@@ -3,6 +3,7 @@
 import { Access, CourtType, PhotoKind, Surface } from "./types";
 import { slugify } from "./slug";
 import { fileToJpeg } from "./images";
+import { orderPhotos } from "./photos";
 import { photoUrl } from "./supabase/config";
 import { supabaseBrowser } from "./supabase/client";
 import type { CourtRow } from "./supabase/types";
@@ -179,14 +180,15 @@ export async function listCourtsForAdmin(): Promise<AdminCourt[]> {
     basketNote: row.basket_note ?? '',
     addedByName: row.added_by_name,
     likes: row.likes_count,
-    photos: [...(row.court_photos ?? [])]
-      .sort((a, b) => a.sort - b.sort)
-      .map((p, i) => ({
+    // w edytorze pokazujemy tę samą kolejność, którą zobaczy odwiedzający
+    photos: orderPhotos([...(row.court_photos ?? [])].sort((a, b) => a.sort - b.sort)).map(
+      (p, i) => ({
         key: `${row.id}-${i}`,
         kind: p.kind,
         storagePath: p.storage_path,
         previewUrl: photoUrl(p.storage_path),
-      })),
+      })
+    ),
   }));
 }
 

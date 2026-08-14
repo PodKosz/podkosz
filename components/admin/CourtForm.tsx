@@ -147,8 +147,13 @@ export function CourtForm({
     <div className="space-y-8">
       <section>
         <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">
-          Zdjęcia z dysku — pierwsze jest zdjęciem głównym
+          Zdjęcia z dysku — kolejność na stronie ustala rodzaj kadru
         </h2>
+        <p className="mt-1.5 text-[12px] text-muted">
+          Zdjęciem tytułowym jest zawsze <span className="text-ink">narożnik</span>, dalej kosz A,
+          kosz B, detal kosza, nawierzchnia i ujęcie ogólne. Strzałki przestawiają zdjęcia tego
+          samego rodzaju.
+        </p>
 
         <label className="mt-3 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-[22px] border border-dashed border-hairline bg-white/4 px-6 py-8 text-center transition hover:border-flame/50 hover:bg-white/6">
           <span className="grid h-11 w-11 place-items-center rounded-full flame-gradient text-[20px] text-black">

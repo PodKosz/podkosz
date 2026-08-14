@@ -1,6 +1,7 @@
 import { COURTS } from "./data";
 import { Court } from "./types";
 import { photoUrl, supabaseEnabled } from "./supabase/config";
+import { orderPhotos } from "./photos";
 import { supabaseServer } from "./supabase/server";
 import type { CourtRow } from "./supabase/types";
 
@@ -8,9 +9,9 @@ const COURT_SELECT =
   "*, court_photos(kind, storage_path, sort)";
 
 function rowToCourt(row: CourtRow): Court {
-  const photos = [...(row.court_photos ?? [])]
-    .sort((a, b) => a.sort - b.sort)
-    .map((p) => ({ kind: p.kind, url: photoUrl(p.storage_path), caption: p.kind }));
+  const photos = orderPhotos(
+    [...(row.court_photos ?? [])].sort((a, b) => a.sort - b.sort)
+  ).map((p) => ({ kind: p.kind, url: photoUrl(p.storage_path), caption: p.kind }));
 
   return {
     id: row.id,

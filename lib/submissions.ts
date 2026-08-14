@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { Access, Court, CourtType, PhotoKind, Surface } from "./types";
 import { slugify } from "./slug";
+import { orderPhotos } from "./photos";
 
 export type SubmissionStatus = "pending" | "approved" | "rejected";
 
@@ -148,7 +149,11 @@ export function submissionToCourt(s: Submission): Court {
     addedBy: s.author.name || (s.author.mode === "guest" ? "gość" : "użytkownik"),
     addedAt: s.createdAt.slice(0, 10),
     description: s.notes || "Boisko dodane przez społeczność.",
-    photos: s.photos.map((p) => ({ kind: p.kind, url: p.url, caption: p.kind })),
+    photos: orderPhotos(s.photos).map((p) => ({
+      kind: p.kind,
+      url: p.url,
+      caption: p.kind,
+    })),
     seed: Math.abs([...s.id].reduce((a, c) => a + c.charCodeAt(0), 0)) % 97,
   };
 }

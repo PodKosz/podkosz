@@ -1,9 +1,13 @@
 import { Court, CourtPhotoRef, PHOTO_STEPS } from "./types";
 import { slugify } from "./slug";
+import { orderPhotos } from "./photos";
 
 function photos(hoops: number): CourtPhotoRef[] {
-  return PHOTO_STEPS.filter((s) => !(hoops < 2 && s.kind === "kosz-b")).map(
-    (s) => ({ kind: s.kind, caption: s.title })
+  return orderPhotos(
+    PHOTO_STEPS.filter((s) => !(hoops < 2 && s.kind === "kosz-b")).map((s) => ({
+      kind: s.kind,
+      caption: s.title,
+    }))
   );
 }
 
