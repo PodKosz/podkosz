@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Map as MlMap, Marker, StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { PlaceHit, searchPlace } from "@/lib/admin";
+import { LatLng, formatLatLng, parseCoordinates } from "@/lib/coords";
 import { SearchIcon } from "../icons";
 
 const PICKER_STYLE: StyleSpecification = {
@@ -53,6 +54,7 @@ export function LocationPicker({
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<PlaceHit[]>([]);
   const [searching, setSearching] = useState(false);
+  const [pinned, setPinned] = useState<string | null>(null);
 
   useEffect(() => {
     if (!box.current || mapRef.current) return;
@@ -113,8 +115,29 @@ export function LocationPicker({
     setQuery(hit.label.split(",").slice(0, 2).join(", "));
   }, []);
 
+  /** Ustawia pinezkę wprost na współrzędnych — bez pytania geokodera. */
+  const jumpTo = useCallback((point: LatLng) => {
+    onChangeRef.current(
+      Number(point.lat.toFixed(6)),
+      Number(point.lng.toFixed(6))
+    );
+    markerRef.current?.setLngLat([point.lng, point.lat]);
+    mapRef.current?.flyTo({ center: [point.lng, point.lat], zoom: 17, duration: 700 });
+    setHits([]);
+    setPinned(formatLatLng(point));
+  }, []);
+
   const run = async () => {
     if (!query.trim()) return;
+
+    // wklejone współrzędne rozpoznajemy same, adres idzie do geokodera
+    const point = parseCoordinates(query);
+    if (point) {
+      jumpTo(point);
+      return;
+    }
+
+    setPinned(null);
     setSearching(true);
     try {
       setHits(await searchPlace(query));
@@ -130,13 +153,22 @@ export function LocationPicker({
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onPaste={(e) => {
+              // wklejone współrzędne przypinamy od razu, bez wciskania Enter
+              const text = e.clipboardData.getData("text");
+              const point = parseCoordinates(text);
+              if (!point) return;
+              e.preventDefault();
+              setQuery(text.trim());
+              jumpTo(point);
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
                 run();
               }
             }}
-            placeholder="Szukaj adresu, np. Kraków Park Jordana"
+            placeholder={`Adres albo współrzędne, np. 50°01'01.9"N 19°52'21.4"E`}
             className="w-full bg-transparent py-1.5 text-[13px] outline-none placeholder:text-faint"
           />
           <button
@@ -174,9 +206,16 @@ export function LocationPicker({
         ref={box}
         className="h-[320px] w-full overflow-hidden rounded-[20px] border border-hairline"
       />
-      <p className="text-[11px] text-faint">
-        Kliknij na mapie albo przeciągnij pinezkę, żeby ustawić dokładne miejsce.
-      </p>
+      {pinned ? (
+        <p className="text-[11px] text-basket">
+          Przypięto ze współrzędnych: {pinned} — możesz jeszcze doprecyzować przeciągnięciem.
+        </p>
+      ) : (
+        <p className="text-[11px] text-faint">
+          Kliknij na mapie, przeciągnij pinezkę albo wklej współrzędne z Map Google
+          (DMS, minuty dziesiętne lub zapis dziesiętny).
+        </p>
+      )}
     </div>
   );
 }
