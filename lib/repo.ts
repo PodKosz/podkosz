@@ -1,5 +1,5 @@
 import { COURTS } from "./data";
-import { Court } from "./types";
+import { Court, PHOTO_KIND_LABEL } from "./types";
 import { photoUrl, supabaseEnabled } from "./supabase/config";
 import { orderPhotos } from "./photos";
 import { supabaseServer } from "./supabase/server";
@@ -11,7 +11,11 @@ const COURT_SELECT =
 function rowToCourt(row: CourtRow): Court {
   const photos = orderPhotos(
     [...(row.court_photos ?? [])].sort((a, b) => a.sort - b.sort)
-  ).map((p) => ({ kind: p.kind, url: photoUrl(p.storage_path), caption: p.kind }));
+  ).map((p) => ({
+    kind: p.kind,
+    url: photoUrl(p.storage_path),
+    caption: PHOTO_KIND_LABEL[p.kind] ?? p.kind,
+  }));
 
   return {
     id: row.id,
@@ -34,7 +38,7 @@ function rowToCourt(row: CourtRow): Court {
     addedBy: row.added_by_name,
     addedAt: row.created_at.slice(0, 10),
     description: row.description,
-    photos: photos.length ? photos : [{ kind: "narożnik", caption: "Boisko" }],
+    photos: photos.length ? photos : [{ kind: "narożnik" as const, caption: "Boisko" }],
     seed: Math.abs([...row.id].reduce((a, c) => a + c.charCodeAt(0), 0)) % 97,
   };
 }

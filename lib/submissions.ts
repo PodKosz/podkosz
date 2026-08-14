@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { Access, Court, CourtType, PhotoKind, Surface } from "./types";
+import { Access, Court, CourtType, PHOTO_KIND_LABEL, PhotoKind, Surface } from "./types";
 import { slugify } from "./slug";
 import { orderPhotos } from "./photos";
 
@@ -152,7 +152,7 @@ export function submissionToCourt(s: Submission): Court {
     photos: orderPhotos(s.photos).map((p) => ({
       kind: p.kind,
       url: p.url,
-      caption: p.kind,
+      caption: PHOTO_KIND_LABEL[p.kind] ?? p.kind,
     })),
     seed: Math.abs([...s.id].reduce((a, c) => a + c.charCodeAt(0), 0)) % 97,
   };

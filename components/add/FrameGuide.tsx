@@ -58,9 +58,11 @@ function BackboardGuide() {
 
 const HINT: Record<PhotoKind, string> = {
   "narożnik": "cała płyta w kadrze, aparat poziomo",
+  "narożnik-2": "drugi narożnik, cała płyta w kadrze",
   "kosz-a": "tablica na środku, na wprost",
   "kosz-b": "drugi kosz, na wprost",
   "detal-kosza": "obręcz wypełnia kadr",
-  "ogólne-2": "z przeciwnej strony niż zdjęcie 1",
   "nawierzchnia": "aparat skierowany w dół",
+  "ogólne-1": "całość z innego miejsca",
+  "ogólne-2": "z przeciwnej strony niż zdjęcie 1",
 };

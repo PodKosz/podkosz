@@ -12,11 +12,25 @@ export type Access = "24h" | "godziny" | "ograniczony";
 
 export type PhotoKind =
   | "narożnik"
+  | "narożnik-2"
   | "kosz-a"
   | "kosz-b"
   | "detal-kosza"
-  | "ogólne-2"
-  | "nawierzchnia";
+  | "nawierzchnia"
+  | "ogólne-1"
+  | "ogólne-2";
+
+/** Nazwy kadrów pokazywane w panelu i w podpisach galerii. */
+export const PHOTO_KIND_LABEL: Record<PhotoKind, string> = {
+  "narożnik": "Narożnik TYTUŁOWE",
+  "narożnik-2": "Narożnik 2",
+  "kosz-a": "Kosz A",
+  "kosz-b": "Kosz B",
+  "detal-kosza": "Kosz detal",
+  nawierzchnia: "Nawierzchnia",
+  "ogólne-1": "Ogólne 1",
+  "ogólne-2": "Ogólne 2",
+};
 
 export interface CourtPhotoRef {
   kind: PhotoKind;

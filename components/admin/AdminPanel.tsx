@@ -7,6 +7,7 @@ import {
   ACCESS_LABEL,
   Access,
   CourtType,
+  PHOTO_KIND_LABEL,
   SURFACE_LABEL,
   Surface,
   TYPE_LABEL,
@@ -352,7 +353,7 @@ function Editor({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={p.url} alt={p.kind} className="h-full w-full object-cover" />
             <span className="absolute inset-x-0 bottom-0 bg-black/70 px-1.5 py-1 text-[9px] uppercase tracking-wide text-muted">
-              {p.kind}
+              {PHOTO_KIND_LABEL[p.kind] ?? p.kind}
             </span>
             <button
               onClick={() => onDeletePhoto(i)}

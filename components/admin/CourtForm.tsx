@@ -6,13 +6,14 @@ import {
   ACCESS_LABEL,
   Access,
   CourtType,
-  PHOTO_STEPS,
+  PHOTO_KIND_LABEL,
   PhotoKind,
   SURFACE_LABEL,
   Surface,
   TYPE_LABEL,
   VOIVODESHIPS,
 } from "@/lib/types";
+import { PHOTO_DISPLAY_ORDER } from "@/lib/photos";
 import {
   AdminCourt,
   CourtValues,
@@ -24,7 +25,8 @@ import {
 import { LocationPicker } from "./LocationPicker";
 import { BasketApprovedBadge } from "../icons";
 
-const KINDS = PHOTO_STEPS.map((s) => s.kind);
+/** Pełna lista kadrów do wyboru przy dodawaniu ręcznym, w kolejności wyświetlania. */
+const KINDS = PHOTO_DISPLAY_ORDER;
 
 function emptyValues(): CourtValues {
   return {
@@ -150,9 +152,10 @@ export function CourtForm({
           Zdjęcia z dysku — kolejność na stronie ustala rodzaj kadru
         </h2>
         <p className="mt-1.5 text-[12px] text-muted">
-          Zdjęciem tytułowym jest zawsze <span className="text-ink">narożnik</span>, dalej kosz A,
-          kosz B, detal kosza, nawierzchnia i ujęcie ogólne. Strzałki przestawiają zdjęcia tego
-          samego rodzaju.
+          Każdemu zdjęciu przypisujesz kadr, a kolejność na stronie wynika z jego numeru:
+          1. Narożnik TYTUŁOWE, 2. Narożnik 2, 3. Kosz A, 4. Kosz B, 5. Kosz detal,
+          6. Nawierzchnia, 7. Ogólne 1, 8. Ogólne 2. Strzałki przestawiają zdjęcia tego samego
+          rodzaju.
         </p>
 
         <label className="mt-3 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-[22px] border border-dashed border-hairline bg-white/4 px-6 py-8 text-center transition hover:border-flame/50 hover:bg-white/6">
@@ -200,9 +203,9 @@ export function CourtForm({
                     onChange={(e) => setKind(i, e.target.value as PhotoKind)}
                     className="field flex-1 bg-transparent px-2.5 py-1.5 text-[12px] outline-none"
                   >
-                    {KINDS.map((k) => (
+                    {KINDS.map((k, n) => (
                       <option key={k} value={k}>
-                        {k}
+                        {n + 1}. {PHOTO_KIND_LABEL[k]}
                       </option>
                     ))}
                   </select>

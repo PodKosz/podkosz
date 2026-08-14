@@ -9,10 +9,12 @@ import { PhotoKind } from "./types";
  */
 export const PHOTO_DISPLAY_ORDER: PhotoKind[] = [
   "narożnik",
+  "narożnik-2",
   "kosz-a",
   "kosz-b",
   "detal-kosza",
   "nawierzchnia",
+  "ogólne-1",
   "ogólne-2",
 ];
 
