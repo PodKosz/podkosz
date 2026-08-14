@@ -108,6 +108,35 @@ body {
     0 6px 22px -6px rgba(109, 40, 217, 0.9);
 }
 
+/* ---------- Liquid: powoli dryfujące plamy gradientu ---------- */
+
+.liquid-blob {
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+  filter: blur(46px);
+  will-change: transform;
+  animation: liquid-drift 24s ease-in-out infinite alternate;
+}
+
+.liquid-blob:nth-of-type(2) {
+  animation-duration: 31s;
+  animation-delay: -6s;
+}
+.liquid-blob:nth-of-type(3) {
+  animation-duration: 19s;
+  animation-delay: -12s;
+}
+
+@keyframes liquid-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(7%, -9%, 0) scale(1.18);
+  }
+}
+
 /* Soft ambient light behind the whole app */
 .ambient::before {
   content: "";

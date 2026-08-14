@@ -29,25 +29,63 @@ export default async function AboutPage() {
       </p>
 
       {/* licznik bazy — liczba leci prosto z Supabase przy każdym wejściu */}
-      <section className="relative mt-12 overflow-hidden rounded-[28px] border border-hairline bg-white/4 px-6 py-12 text-center">
+      <section className="relative mt-12 overflow-hidden rounded-[32px] border border-hairline bg-deep">
+        {/* płynne tło: trzy plamy gradientu dryfujące w różnym tempie */}
         <span
-          className="pointer-events-none absolute -top-24 left-1/2 h-72 w-[420px] -translate-x-1/2 rounded-full"
+          className="liquid-blob -left-24 -top-32 h-[420px] w-[520px]"
           style={{
             background:
-              "radial-gradient(circle, rgba(255,122,24,.35) 0%, rgba(255,77,10,.1) 55%, transparent 72%)",
+              "radial-gradient(circle, rgba(255,122,24,.55) 0%, rgba(255,77,10,.18) 52%, transparent 72%)",
           }}
         />
-        <p className="relative text-[12px] uppercase tracking-[0.26em] text-faint">
-          Boisk w bazie
-        </p>
-        <p className="relative mt-2 flame-text text-[clamp(72px,16vw,150px)] font-bold leading-[0.9] tracking-[-0.04em] tabular-nums">
-          {total}
-        </p>
-        <p className="relative mx-auto mt-4 max-w-md text-[14px] leading-relaxed text-muted">
-          {total === 0
-            ? "Baza dopiero rusza — pierwsze boisko możesz dodać właśnie Ty."
-            : "Każde z nich ma komplet zdjęć w tym samym standardzie i pinezkę z GPS-u."}
-        </p>
+        <span
+          className="liquid-blob -right-32 -top-16 h-[380px] w-[440px]"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(255,178,92,.42) 0%, transparent 70%)",
+          }}
+        />
+        <span
+          className="liquid-blob bottom-[38%] left-1/3 h-[300px] w-[360px]"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(255,61,0,.35) 0%, transparent 68%)",
+          }}
+        />
+
+        <div className="relative px-6 pt-14 text-center">
+          <p className="text-[12px] uppercase tracking-[0.26em] text-white/55">Boisk w bazie</p>
+          <p className="mt-3 flame-text text-[clamp(80px,17vw,164px)] font-bold leading-[0.86] tracking-[-0.045em] tabular-nums">
+            {total}
+          </p>
+          <p className="mx-auto mt-5 max-w-md text-[15px] leading-relaxed text-white/70">
+            {total === 0
+              ? "Baza dopiero rusza — pierwsze boisko możesz dodać właśnie Ty."
+              : "Każde z nich ma komplet zdjęć w tym samym standardzie i pinezkę z GPS-u."}
+          </p>
+        </div>
+
+        {/* zdjęcie wtopione maską: brzegi rozpływają się w karcie zamiast ciąć ją krawędzią */}
+        <div className="relative mt-6 h-[280px] sm:h-[380px]">
+          <div
+            className="absolute inset-0 bg-cover bg-center"
+            style={{
+              backgroundImage: "url('/o-nas/kosz.jpg')",
+              maskImage:
+                "linear-gradient(to bottom, transparent 0%, #000 30%, #000 80%, transparent 100%)",
+              WebkitMaskImage:
+                "linear-gradient(to bottom, transparent 0%, #000 30%, #000 80%, transparent 100%)",
+            }}
+          />
+          {/* ciepła poświata podnosząca się od dołu — spina zdjęcie z resztą marki */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(to top, rgba(255,77,10,.42) 0%, rgba(255,122,24,.16) 34%, transparent 62%)",
+            }}
+          />
+        </div>
       </section>
 
       <section className="mt-14 grid gap-4 sm:grid-cols-3">
