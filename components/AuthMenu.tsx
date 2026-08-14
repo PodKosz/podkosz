@@ -72,7 +72,7 @@ export function AuthMenu({ user }: { user: AuthUser | null }) {
               onClick={() => setOpen(false)}
               className="block rounded-xl px-3 py-2.5 text-[13px] text-muted transition hover:bg-white/8 hover:text-ink"
             >
-              Kolejka zgłoszeń
+              Panel administratora
             </Link>
           )}
           <button
