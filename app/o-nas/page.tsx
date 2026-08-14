@@ -1,8 +1,9 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { PHOTO_STEPS } from "@/lib/types";
 import { PhotoPlaceholder } from "@/components/CourtPhoto";
 import { FireBallIcon } from "@/components/icons";
+import { countCourts } from "@/lib/repo";
 
 export const metadata: Metadata = {
   title: "O nas — PodKosz",
@@ -10,7 +11,11 @@ export const metadata: Metadata = {
     "Budujemy najdokładniejszą bazę boisk do koszykówki w Polsce — ze zdjęciami w dobrej jakości, dodawaną przez graczy.",
 };
 
-export default function AboutPage() {
+export const revalidate = 0;
+
+export default async function AboutPage() {
+  const total = await countCourts();
+
   return (
     <main className="mx-auto min-h-dvh max-w-4xl px-6 pb-24 pt-28">
       <p className="text-[12px] uppercase tracking-[0.2em] text-flame">O projekcie</p>
@@ -22,6 +27,28 @@ export default function AboutPage() {
         lat. Robimy to inaczej: sześć konkretnych kadrów z każdego boiska, zawsze te same ujęcia,
         zawsze z GPS-em. Dzięki temu widzisz stan obręczy i nawierzchni, zanim wsiądziesz w tramwaj.
       </p>
+
+      {/* licznik bazy — liczba leci prosto z Supabase przy każdym wejściu */}
+      <section className="relative mt-12 overflow-hidden rounded-[28px] border border-hairline bg-white/4 px-6 py-12 text-center">
+        <span
+          className="pointer-events-none absolute -top-24 left-1/2 h-72 w-[420px] -translate-x-1/2 rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(255,122,24,.35) 0%, rgba(255,77,10,.1) 55%, transparent 72%)",
+          }}
+        />
+        <p className="relative text-[12px] uppercase tracking-[0.26em] text-faint">
+          Boisk w bazie
+        </p>
+        <p className="relative mt-2 flame-text text-[clamp(72px,16vw,150px)] font-bold leading-[0.9] tracking-[-0.04em] tabular-nums">
+          {total}
+        </p>
+        <p className="relative mx-auto mt-4 max-w-md text-[14px] leading-relaxed text-muted">
+          {total === 0
+            ? "Baza dopiero rusza — pierwsze boisko możesz dodać właśnie Ty."
+            : "Każde z nich ma komplet zdjęć w tym samym standardzie i pinezkę z GPS-u."}
+        </p>
+      </section>
 
       <section className="mt-14 grid gap-4 sm:grid-cols-3">
         {[

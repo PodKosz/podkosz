@@ -6,9 +6,13 @@ import { Brand } from "./Brand";
 import { AuthMenu, AuthUser } from "./AuthMenu";
 
 const LINKS = [
+  { href: "/", label: "Mapa" },
   { href: "/ranking", label: "Ranking" },
   { href: "/o-nas", label: "O nas" },
 ];
+
+const isActive = (path: string, href: string) =>
+  href === "/" ? path === "/" : path.startsWith(href);
 
 export function TopNav({ user }: { user: AuthUser | null }) {
   const path = usePathname();
@@ -24,7 +28,7 @@ export function TopNav({ user }: { user: AuthUser | null }) {
             key={l.href}
             href={l.href}
             className={`rounded-full px-4 py-2 text-[12px] font-medium uppercase tracking-[0.12em] transition ${
-              path.startsWith(l.href) ? "text-ink" : "text-muted hover:text-ink"
+              isActive(path, l.href) ? "text-ink" : "text-muted hover:text-ink"
             }`}
           >
             {l.label}

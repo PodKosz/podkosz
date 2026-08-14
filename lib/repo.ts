@@ -56,6 +56,18 @@ export async function listCourts(): Promise<Court[]> {
   return (data as unknown as CourtRow[]).map(rowToCourt);
 }
 
+/** Licznik boisk — tanie zapytanie, bez pobierania wierszy. */
+export async function countCourts(): Promise<number> {
+  const supabase = await supabaseServer();
+  if (!supabase) return COURTS.length;
+
+  const { count } = await supabase
+    .from("courts")
+    .select("id", { count: "exact", head: true });
+
+  return count ?? 0;
+}
+
 export async function getCourtBySlug(slug: string): Promise<Court | null> {
   const supabase = await supabaseServer();
   if (!supabase) return COURTS.find((c) => c.slug === slug) ?? null;

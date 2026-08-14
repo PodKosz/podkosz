@@ -36,17 +36,8 @@ export function Brand({ compact = false }: { compact?: boolean }) {
         </svg>
       </span>
 
-      <span className="leading-[1]">
-        <span className={`block font-bold tracking-tight ${compact ? "text-[17px]" : "text-[26px]"}`}>
-          POD<span className="flame-text">KOSZ</span>
-        </span>
-        <span
-          className={`mt-1 block uppercase text-muted ${
-            compact ? "text-[8px] tracking-[0.24em]" : "text-[10px] tracking-[0.34em]"
-          }`}
-        >
-          mapa boisk
-        </span>
+      <span className={`font-bold leading-none tracking-tight ${compact ? "text-[19px]" : "text-[28px]"}`}>
+        POD<span className="flame-text">KOSZ</span>
       </span>
     </Link>
   );
