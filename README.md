@@ -125,6 +125,24 @@ public/geo/     granice województw
 scripts/        kopiowanie workera MapLibre do public/
 ```
 
+## Wdrożenie (Vercel)
+
+1. **Repozytorium** — GitHub, nowe puste repo `podkosz`, potem z katalogu projektu:
+   ```bash
+   git remote add origin https://github.com/UZYTKOWNIK/podkosz.git
+   git push -u origin main
+   ```
+2. **Vercel** — [vercel.com/new](https://vercel.com/new), zaloguj przez GitHub, zaimportuj repo.
+   Framework wykryje się sam (Next.js), nie trzeba nic zmieniać w ustawieniach budowania.
+3. **Zmienne środowiskowe** w Vercelu (Settings → Environment Variables), te same co w `.env.local`:
+   `NEXT_PUBLIC_SUPABASE_URL` i `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+4. **Supabase** → Authentication → URL Configuration: wpisz adres produkcyjny jako *Site URL*
+   i dodaj go do *Redirect URLs* (ze wzorcem `/**`). Bez tego logowanie Google wróci w pustkę.
+5. **Google Auth Platform** → Odbiorcy → **Opublikuj aplikację**. Dopóki jest w trybie testowym,
+   zalogują się wyłącznie konta z listy użytkowników testowych.
+
+Każdy kolejny `git push` na `main` przebudowuje stronę automatycznie.
+
 ## Do zrobienia
 
 - powiadomienia mailowe o akceptacji/odrzuceniu zgłoszenia (Supabase Edge Function + Resend),
