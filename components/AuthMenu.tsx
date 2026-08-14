@@ -26,10 +26,10 @@ export function AuthMenu({ user }: { user: AuthUser | null }) {
             signInWithGoogle(path).catch((e: Error) => setError(e.message))
           }
           title={supabaseEnabled ? "Zaloguj się przez Google" : "Wymaga podpięcia bazy"}
-          className="flex items-center gap-2 rounded-full border border-hairline bg-white/6 px-3 py-2 text-[12px] font-medium uppercase tracking-[0.1em] text-muted transition hover:text-ink"
+          className="flex items-center gap-2 rounded-full border border-hairline bg-white/6 px-2 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em] text-muted transition hover:text-ink sm:px-3 sm:py-2 sm:text-[12px] sm:tracking-[0.1em]"
         >
           <GoogleMark className="h-5 w-5" />
-          Zaloguj
+          <span className="hidden sm:inline">Zaloguj</span>
         </button>
         {error && (
           <p className="glass absolute right-0 top-12 w-64 rounded-2xl p-3 text-[12px] leading-snug text-muted">
@@ -44,7 +44,7 @@ export function AuthMenu({ user }: { user: AuthUser | null }) {
     <div className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 rounded-full border border-hairline bg-white/6 py-1 pl-1 pr-3 transition hover:bg-white/10"
+        className="flex items-center gap-2 rounded-full border border-hairline bg-white/6 p-1 transition hover:bg-white/10 sm:py-1 sm:pl-1 sm:pr-3"
       >
         <span className="grid h-8 w-8 place-items-center overflow-hidden rounded-full flame-gradient text-[13px] font-bold text-black">
           {user.avatar ? (
@@ -54,7 +54,9 @@ export function AuthMenu({ user }: { user: AuthUser | null }) {
             user.name.slice(0, 1).toUpperCase()
           )}
         </span>
-        <span className="max-w-[120px] truncate text-[12px] font-medium">{user.name}</span>
+        <span className="hidden max-w-[120px] truncate text-[12px] font-medium sm:block">
+          {user.name}
+        </span>
       </button>
 
       {open && (

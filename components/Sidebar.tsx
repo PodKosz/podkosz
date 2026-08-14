@@ -57,6 +57,8 @@ export function Sidebar({
 }) {
   const [openSurface, setOpenSurface] = useState(false);
   const [openMore, setOpenMore] = useState(false);
+  /** Na telefonie panel startuje zwinięty, żeby mapa miała cały ekran. */
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const patch = (p: Partial<Filters>) => setFilters({ ...filters, ...p });
 
@@ -68,13 +70,32 @@ export function Sidebar({
     });
 
   return (
-    <aside className="glass-dim pointer-events-auto absolute left-5 top-5 bottom-5 z-30 flex w-[386px] flex-col overflow-hidden rounded-[28px]">
-      <div className="px-6 pb-4 pt-6">
+    <aside
+      className={`glass-dim pointer-events-auto z-30 flex flex-col overflow-hidden
+        fixed inset-x-0 bottom-0 rounded-t-[26px] transition-[top] duration-300 ease-out
+        ${sheetOpen ? "top-[68px]" : "top-auto"}
+        md:absolute md:inset-auto md:left-5 md:top-5 md:bottom-5 md:w-[386px] md:rounded-[28px]`}
+    >
+      {/* uchwyt i przełącznik — tylko na telefonie */}
+      <button
+        onClick={() => setSheetOpen((v) => !v)}
+        className="flex w-full flex-col items-center gap-1.5 pb-1 pt-2.5 md:hidden"
+        aria-label={sheetOpen ? "Zwiń panel" : "Rozwiń panel"}
+      >
+        <span className="h-1 w-10 rounded-full bg-white/25" />
+        {sheetOpen && (
+          <span className="flex items-center gap-1 text-[11px] uppercase tracking-[0.14em] text-faint">
+            <ChevronIcon className="h-3.5 w-3.5" /> zwiń, pokaż mapę
+          </span>
+        )}
+      </button>
+
+      <div className="hidden px-6 pb-4 pt-6 md:block">
         <Brand />
       </div>
 
       {/* Szukajka */}
-      <div className="px-5">
+      <div className="px-4 pt-1 md:px-5 md:pt-0">
         <div className="field flex items-center gap-2 py-1.5 pl-4 pr-1.5">
           <input
             value={filters.q}
@@ -88,7 +109,27 @@ export function Sidebar({
         </div>
       </div>
 
-      <div className="scroll-thin mt-4 flex-1 overflow-y-auto px-5 pb-5">
+      {/* zwinięty panel na telefonie pokazuje tylko liczbę wyników i sposób rozwinięcia */}
+      {!sheetOpen && (
+        <button
+          onClick={() => setSheetOpen(true)}
+          className="flex items-center justify-between px-5 pb-4 pt-3 text-left md:hidden"
+        >
+          <span className="text-[13px] font-semibold">
+            {results.length} {results.length === 1 ? "boisko" : "boisk"} na mapie
+          </span>
+          <span className="flex items-center gap-1.5 text-[12px] uppercase tracking-[0.12em] text-flame">
+            filtry i lista
+            <ChevronIcon className="h-4 w-4 rotate-180" />
+          </span>
+        </button>
+      )}
+
+      <div
+        className={`scroll-thin mt-4 flex-1 overflow-y-auto px-4 pb-5 md:px-5 ${
+          sheetOpen ? "block" : "hidden"
+        } md:block`}
+      >
         {/* Typ boiska */}
         <SectionLabel>typ boiska</SectionLabel>
         <div className="space-y-2">

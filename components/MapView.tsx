@@ -9,8 +9,14 @@ import { HoverCard } from "./HoverCard";
 
 const POLAND_BOUNDS: [number, number, number, number] = [13.9, 48.9, 24.3, 55.0];
 
-/** Zapas na panel boczny po lewej. */
-const FIT_PADDING = { top: 70, bottom: 70, left: 430, right: 70 };
+/**
+ * Zapas na panel: na komputerze stoi po lewej, na telefonie wysuwa się od dołu,
+ * więc kadr Polski musi omijać raz bok, a raz dolną krawędź.
+ */
+const fitPadding = (width: number) =>
+  width < 768
+    ? { top: 90, bottom: 200, left: 24, right: 24 }
+    : { top: 70, bottom: 70, left: 430, right: 70 };
 
 // Worker MapLibre serwujemy z /public — patrz scripts/copy-maplibre-worker.mjs.
 setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
@@ -167,7 +173,7 @@ export function MapView({
         container: containerRef.current,
         style: STYLE,
         bounds: POLAND_BOUNDS,
-        fitBoundsOptions: { padding: FIT_PADDING },
+        fitBoundsOptions: { padding: fitPadding(containerRef.current.clientWidth || 1024) },
         minZoom: 4.5,
         maxZoom: 18,
         attributionControl: { compact: true },
@@ -211,7 +217,7 @@ export function MapView({
       map.resize();
       if (!framed) {
         framed = true;
-        map.fitBounds(POLAND_BOUNDS, { padding: FIT_PADDING, duration: 0 });
+        map.fitBounds(POLAND_BOUNDS, { padding: fitPadding(width), duration: 0 });
       }
     });
     ro.observe(containerRef.current);
@@ -301,7 +307,7 @@ export function MapView({
     map.flyTo({
       center: [court.lng, court.lat],
       zoom: Math.max(map.getZoom(), 13.5),
-      offset: [180, 0],
+      offset: (containerRef.current?.clientWidth ?? 1024) < 768 ? [0, -70] : [180, 0],
       speed: 1.1,
       curve: 1.5,
     });
@@ -311,7 +317,7 @@ export function MapView({
 
   const resetView = () =>
     mapRef.current?.fitBounds(POLAND_BOUNDS, {
-      padding: FIT_PADDING,
+      padding: fitPadding(containerRef.current?.clientWidth ?? 1024),
       duration: 900,
     });
 
@@ -359,7 +365,7 @@ export function MapView({
         </div>
       )}
 
-      <div className="absolute bottom-8 right-6 z-20 flex flex-col gap-2">
+      <div className="absolute bottom-[168px] right-4 z-20 flex flex-col gap-2 md:bottom-8 md:right-6">
         <button
           onClick={() => zoomBy(1)}
           className="glass grid h-11 w-11 place-items-center rounded-2xl text-xl text-ink/80 transition hover:text-ink active:scale-95"

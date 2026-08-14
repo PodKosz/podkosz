@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -54,7 +54,7 @@ export function Explorer({ courts }: { courts: Court[] }) {
         onHover={onHoverFromList}
         onSelect={onSelect}
       />
-      <p className="pointer-events-none absolute inset-x-0 bottom-2 z-10 text-center text-[11px] tracking-wide text-faint">
+      <p className="pointer-events-none absolute inset-x-0 bottom-2 z-10 hidden text-center text-[11px] tracking-wide text-faint md:block">
         © 2026 PODKOSZ.PL
       </p>
     </main>

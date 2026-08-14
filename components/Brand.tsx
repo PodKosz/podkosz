@@ -36,7 +36,12 @@ export function Brand({ compact = false }: { compact?: boolean }) {
         </svg>
       </span>
 
-      <span className={`font-bold leading-none tracking-tight ${compact ? "text-[19px]" : "text-[28px]"}`}>
+      {/* na wąskich ekranach zostaje sama ikona — inaczej pasek nawigacji nie mieści się w szerokości */}
+      <span
+        className={`font-bold leading-none tracking-tight ${
+          compact ? "hidden text-[19px] sm:inline" : "text-[28px]"
+        }`}
+      >
         POD<span className="flame-text">KOSZ</span>
       </span>
     </Link>

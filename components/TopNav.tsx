@@ -16,31 +16,39 @@ const isActive = (path: string, href: string) =>
 
 export function TopNav({ user }: { user: AuthUser | null }) {
   const path = usePathname();
-  const onMap = path === "/";
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-0 z-40 flex items-start justify-between p-5">
-      <div className="pointer-events-auto">{!onMap && <Brand compact />}</div>
+    <div className="pointer-events-none fixed inset-x-0 top-0 z-40 flex items-center justify-between gap-2 p-3 sm:p-5">
+      {/* na telefonie logo jest zawsze, także na mapie — inaczej nie ma jak wrócić */}
+      <div className="pointer-events-auto shrink-0">
+        <span className="md:hidden">
+          <Brand compact />
+        </span>
+        <span className="hidden md:block">{path !== "/" && <Brand compact />}</span>
+      </div>
 
-      <nav className="glass pointer-events-auto flex items-center gap-1 rounded-full p-1.5 pl-3">
+      <nav className="glass pointer-events-auto flex shrink-0 items-center gap-0.5 rounded-full p-1 pl-1.5 sm:gap-1 sm:p-1.5 sm:pl-3">
         {LINKS.map((l) => (
           <Link
             key={l.href}
             href={l.href}
-            className={`rounded-full px-4 py-2 text-[12px] font-medium uppercase tracking-[0.12em] transition ${
+            className={`rounded-full px-2 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em] transition sm:px-4 sm:py-2 sm:text-[12px] sm:tracking-[0.12em] ${
               isActive(path, l.href) ? "text-ink" : "text-muted hover:text-ink"
             }`}
           >
             {l.label}
           </Link>
         ))}
+
         <Link
           href="/dodaj"
-          className="rounded-full flame-gradient px-5 py-2.5 text-[12px] font-bold uppercase tracking-[0.12em] text-black transition hover:brightness-110 active:scale-[0.98]"
+          className="rounded-full flame-gradient px-3 py-2 text-[10px] font-bold uppercase tracking-[0.08em] text-black transition hover:brightness-110 active:scale-[0.98] sm:px-5 sm:py-2.5 sm:text-[12px] sm:tracking-[0.12em]"
         >
-          Dodaj boisko
+          <span className="sm:hidden">Dodaj</span>
+          <span className="hidden sm:inline">Dodaj boisko</span>
         </Link>
-        <span className="mx-1 h-6 w-px bg-white/12" />
+
+        <span className="mx-0.5 h-5 w-px bg-white/12 sm:mx-1 sm:h-6" />
         <AuthMenu user={user} />
       </nav>
     </div>
