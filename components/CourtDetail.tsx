@@ -113,7 +113,12 @@ export function CourtDetail({
       </section>
 
       <div className={SHELL}>
-        <section className="-mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+        {/*
+          z-10 jest konieczne: kafelki wchodzą 24 px na sekcję hero, a przyciemniające
+          warstwy hero są pozycjonowane absolutnie, więc bez tego malowałyby się NAD
+          kafelkami i ścinały im górną krawędź razem z zaokrągleniem.
+        */}
+        <section className="relative z-10 -mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
           <Spec icon={<HoopIcon className="h-5 w-5" />} label="Kosze" value={String(court.hoops)} />
           <Spec
             icon={<SurfaceIcon className="h-5 w-5" />}
