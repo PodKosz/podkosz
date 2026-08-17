@@ -30,13 +30,14 @@ export function CourtPhoto({
 
 const SCENE: Record<PhotoKind, "wide" | "hoop" | "surface"> = {
   "narożnik": "wide",
-  "narożnik-2": "wide",
   "kosz-a": "hoop",
   "kosz-b": "hoop",
   "detal-kosza": "hoop",
   "nawierzchnia": "surface",
-  "ogólne-1": "wide",
   "ogólne-2": "wide",
+  "narożnik-2": "wide",
+  "ogólne-1": "wide",
+  "ogólne-3": "wide",
 };
 
 export function PhotoPlaceholder({

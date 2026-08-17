@@ -3,14 +3,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PhotoKind } from "@/lib/types";
 import { CameraIcon } from "../icons";
-import { FrameGuide } from "./FrameGuide";
+import { ShotDiagram } from "../ShotDiagram";
 
-/** Podgląd z aparatu + ramka pomocnicza dopasowana do kadru. */
+/** Podgląd z aparatu, schemat kadru na obrazie i podpowiedź pod nim. */
 export function CameraCapture({
   kind,
+  hint,
   onCapture,
 }: {
   kind: PhotoKind;
+  hint?: string;
   onCapture: (dataUrl: string) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -91,7 +93,14 @@ export function CameraCapture({
           muted
           className="h-full w-full object-cover"
         />
-        <FrameGuide kind={kind} />
+        <div className="pointer-events-none absolute inset-0">
+          <ShotDiagram kind={kind} mode="overlay" />
+        </div>
+        {hint && (
+          <p className="pointer-events-none absolute inset-x-3 bottom-3 rounded-xl bg-black/70 px-3 py-2 text-center text-[12px] leading-snug text-glow">
+            {hint}
+          </p>
+        )}
         {flash && <div className="absolute inset-0 bg-white/70" />}
         {error && (
           <div className="absolute inset-0 grid place-items-center bg-black/70 p-6 text-center text-[13px] text-muted">

@@ -153,9 +153,9 @@ export function CourtForm({
         </h2>
         <p className="mt-1.5 text-[12px] text-muted">
           Każdemu zdjęciu przypisujesz kadr, a kolejność na stronie wynika z jego numeru:
-          1. Narożnik TYTUŁOWE, 2. Narożnik 2, 3. Kosz A, 4. Kosz B, 5. Kosz detal,
-          6. Nawierzchnia, 7. Ogólne 1, 8. Ogólne 2. Strzałki przestawiają zdjęcia tego samego
-          rodzaju.
+          1. Całe boisko z narożnika (TYTUŁOWE), 2. Kosz A, 3. Kosz B, 4. Detal kosza,
+          5. Detal nawierzchni, 6. Całe boisko z drugiej strony, a dalej trzy dodatkowe ujęcia
+          ogólne. Strzałki przestawiają zdjęcia tego samego rodzaju.
         </p>
 
         <label className="mt-3 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-[22px] border border-dashed border-hairline bg-white/4 px-6 py-8 text-center transition hover:border-flame/50 hover:bg-white/6">
@@ -206,6 +206,7 @@ export function CourtForm({
                     {KINDS.map((k, n) => (
                       <option key={k} value={k}>
                         {n + 1}. {PHOTO_KIND_LABEL[k]}
+                        {k === "narożnik" ? " — TYTUŁOWE" : ""}
                       </option>
                     ))}
                   </select>

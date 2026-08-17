@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PHOTO_STEPS } from "@/lib/types";
-import { PhotoPlaceholder } from "@/components/CourtPhoto";
+import { REQUIRED_PHOTO_STEPS } from "@/lib/types";
+import { ShotDiagram } from "@/components/ShotDiagram";
 import { FireBallIcon } from "@/components/icons";
 import { countCourts } from "@/lib/repo";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
@@ -108,19 +108,34 @@ export default async function AboutPage() {
       <section className="mt-16">
         <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">Standard zdjęć</h2>
         <p className="mt-3 max-w-2xl text-[15px] text-muted">
-          Każde boisko w bazie ma ten sam zestaw ujęć. To dlatego karty boisk da się ze sobą
-          porównywać.
+          Każde boisko w bazie ma ten sam zestaw ujęć, zawsze w tej samej kolejności. To dlatego
+          karty boisk da się ze sobą porównywać.
         </p>
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {PHOTO_STEPS.map((s, i) => (
+          {REQUIRED_PHOTO_STEPS.map((s, i) => (
             <div key={s.kind} className="glass overflow-hidden rounded-2xl">
-              <div className="aspect-[4/3]">
-                <PhotoPlaceholder kind={s.kind} seed={13 + i * 7} />
+              <div className="relative aspect-[4/3]">
+                <ShotDiagram kind={s.kind} />
+                <span className="absolute left-2.5 top-2.5 grid h-6 w-6 place-items-center rounded-full bg-black/70 text-[11px] font-bold">
+                  {i + 1}
+                </span>
+                {s.skippable && (
+                  <span className="absolute right-2.5 top-2.5 rounded-full bg-black/70 px-2 py-1 text-[10px] uppercase tracking-[0.1em] text-muted">
+                    można pominąć
+                  </span>
+                )}
               </div>
-              <p className="p-3 text-[12px] font-medium">{s.title}</p>
+              <div className="p-3">
+                <p className="text-[12px] font-semibold leading-tight">{s.title}</p>
+                <p className="mt-1 text-[11px] leading-snug text-muted">{s.hint}</p>
+              </div>
             </div>
           ))}
         </div>
+        <p className="mt-4 text-[13px] text-faint">
+          Kosz B pomijamy tylko wtedy, gdy boisko naprawdę ma jeden kosz. Do tego można dorzucić
+          maksymalnie trzy dodatkowe ujęcia ogólne — otoczenie, wejście, oświetlenie.
+        </p>
       </section>
 
       <section className="glass mt-16 flex flex-wrap items-center gap-5 rounded-[26px] p-7">

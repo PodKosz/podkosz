@@ -2,20 +2,20 @@ import { PhotoKind } from "./types";
 
 /**
  * Kolejność zdjęć na stronie — niezależna od tego, w jakiej kolejności trafiły do bazy.
- * Narożnik jest kadrem tytułowym: pokazuje całe boisko, więc najlepiej sprawdza się
- * w dymku nad pinezką i jako zdjęcie główne karty.
- * Uwaga: kolejność robienia zdjęć w kreatorze (PHOTO_STEPS) jest inna — tam nawierzchnia
- * wypada na końcu, bo to najwygodniejsze przy chodzeniu po boisku.
+ * Jest identyczna z kolejnością robienia zdjęć w kreatorze (PHOTO_STEPS): najpierw całość
+ * z narożnika (kadr tytułowy — leci też do dymka nad pinezką), potem oba kosze, detale
+ * i całość z drugiej strony. Dodatkowe ujęcia ogólne lądują na końcu galerii.
  */
 export const PHOTO_DISPLAY_ORDER: PhotoKind[] = [
   "narożnik",
-  "narożnik-2",
   "kosz-a",
   "kosz-b",
   "detal-kosza",
   "nawierzchnia",
-  "ogólne-1",
   "ogólne-2",
+  "narożnik-2",
+  "ogólne-1",
+  "ogólne-3",
 ];
 
 const rank = (kind: PhotoKind) => {

@@ -6,8 +6,11 @@ import {
   ACCESS_LABEL,
   Access,
   CourtType,
+  EXTRA_PHOTO_STEPS,
   PHOTO_STEPS,
   PhotoKind,
+  PhotoStep,
+  REQUIRED_PHOTO_STEPS,
   SURFACE_LABEL,
   Surface,
   TYPE_LABEL,
@@ -16,7 +19,7 @@ import {
 import { submitCourt } from "@/lib/queue";
 import { signInWithGoogle } from "@/lib/auth";
 import { supabaseEnabled } from "@/lib/supabase/config";
-import { PhotoPlaceholder } from "../CourtPhoto";
+import { ShotDiagram } from "../ShotDiagram";
 import { CameraCapture } from "./CameraCapture";
 import { ArrowLeftIcon, PinIcon } from "../icons";
 import { GoogleMark } from "../GoogleMark";
@@ -34,8 +37,10 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
   const [stage, setStage] = useState<Stage>("intro");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
-  const [shot, setShot] = useState(0);
+  /** kadr, który użytkownik właśnie robi; null = ekran przeglądu zdjęć */
+  const [shotKind, setShotKind] = useState<PhotoKind | null>(REQUIRED_PHOTO_STEPS[0].kind);
   const [photos, setPhotos] = useState<Partial<Record<PhotoKind, string>>>({});
+  const [skipped, setSkipped] = useState<PhotoKind[]>([]);
   const [pos, setPos] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null);
   const [gpsError, setGpsError] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -58,15 +63,71 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
     name: "",
   });
 
-  const step = PHOTO_STEPS[shot];
-  const taken = Object.keys(photos).length;
+  const step = shotKind ? PHOTO_STEPS.find((s) => s.kind === shotKind) ?? null : null;
+  const taken = Object.values(photos).filter(Boolean).length;
+  /** kadry obowiązkowe, których jeszcze nie ma (pominięty kosz B się nie liczy) */
+  const missing = REQUIRED_PHOTO_STEPS.filter(
+    (s) => !photos[s.kind] && !skipped.includes(s.kind)
+  );
+  const shotsComplete = missing.length === 0;
+  const extrasTaken = EXTRA_PHOTO_STEPS.filter((s) => photos[s.kind]);
+  const nextExtra = EXTRA_PHOTO_STEPS.find((s) => !photos[s.kind]);
+
   const progress = useMemo(() => {
-    const base = STAGE_ORDER.indexOf(stage) / (STAGE_ORDER.length - 1);
-    if (stage === "shots") return (1 + shot / PHOTO_STEPS.length) / (STAGE_ORDER.length - 1);
-    return base;
-  }, [stage, shot]);
+    const per = 1 / (STAGE_ORDER.length - 1);
+    if (stage === "shots") {
+      const done = REQUIRED_PHOTO_STEPS.length - missing.length;
+      return per * (1 + done / REQUIRED_PHOTO_STEPS.length);
+    }
+    return STAGE_ORDER.indexOf(stage) * per;
+  }, [stage, missing.length]);
 
   const patch = (p: Partial<typeof form>) => setForm({ ...form, ...p });
+
+  const setPhoto = (kind: PhotoKind, dataUrl: string) => {
+    setPhotos((p) => ({ ...p, [kind]: dataUrl }));
+    setSkipped((s) => s.filter((k) => k !== kind));
+  };
+
+  const dropPhoto = (kind: PhotoKind) =>
+    setPhotos((p) => {
+      const next = { ...p };
+      delete next[kind];
+      return next;
+    });
+
+  /** Po zamknięciu kadru: kolejny brakujący obowiązkowy albo ekran przeglądu. */
+  const goAfter = (kind: PhotoKind) => {
+    const index = REQUIRED_PHOTO_STEPS.findIndex((s) => s.kind === kind);
+    if (index === -1) {
+      setShotKind(null);
+      return;
+    }
+    const next = REQUIRED_PHOTO_STEPS.slice(index + 1).find(
+      (s) => !photos[s.kind] && !skipped.includes(s.kind)
+    );
+    setShotKind(next ? next.kind : null);
+  };
+
+  /**
+   * Wstecz z kadru: poprzedni kadr obowiązkowy, a z pierwszego — przegląd zdjęć
+   * (albo instrukcja, jeśli nie ma jeszcze ani jednego zdjęcia).
+   */
+  const goBack = (kind: PhotoKind) => {
+    const index = REQUIRED_PHOTO_STEPS.findIndex((s) => s.kind === kind);
+    if (index > 0) {
+      setShotKind(REQUIRED_PHOTO_STEPS[index - 1].kind);
+      return;
+    }
+    if (taken > 0) setShotKind(null);
+    else setStage("intro");
+  };
+
+  const skipStep = (kind: PhotoKind) => {
+    setSkipped((s) => (s.includes(kind) ? s : [...s, kind]));
+    dropPhoto(kind);
+    goAfter(kind);
+  };
 
   const askGps = () => {
     setGpsError(null);
@@ -140,22 +201,28 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
             Dodaj boisko do mapy
           </h1>
           <p className="mt-3 text-[15px] leading-relaxed text-muted">
-            Zajmie ci to 3 minuty. Robisz 6 zdjęć według instrukcji, telefon przypina pinezkę z GPS,
-            a my sprawdzamy zgłoszenie i publikujemy. Konto nie jest wymagane — ale z kontem
-            dostaniesz powiadomienie o publikacji i punkty w rankingu.
+            Zajmie ci to 3 minuty. Prowadzimy cię kadr po kadrze — przy każdym zdjęciu masz na
+            ekranie schemat i podpowiedź, jak je ustawić. Potem telefon przypina pinezkę z GPS, a my
+            sprawdzamy zgłoszenie i publikujemy. Konto nie jest wymagane — ale z kontem dostaniesz
+            powiadomienie o publikacji i punkty w rankingu.
           </p>
 
           <h2 className="mt-8 text-[12px] uppercase tracking-[0.18em] text-faint">
-            Tak mają wyglądać kadry
+            Sześć kadrów, zawsze w tej samej kolejności
           </h2>
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {PHOTO_STEPS.map((s, i) => (
+            {REQUIRED_PHOTO_STEPS.map((s, i) => (
               <div key={s.kind} className="glass overflow-hidden rounded-2xl">
                 <div className="relative aspect-[4/3]">
-                  <PhotoPlaceholder kind={s.kind} seed={7 + i * 5} />
+                  <ShotDiagram kind={s.kind} />
                   <span className="absolute left-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-black/70 text-[11px] font-bold">
                     {i + 1}
                   </span>
+                  {s.skippable && (
+                    <span className="absolute right-2 top-2 rounded-full bg-black/70 px-2 py-1 text-[10px] uppercase tracking-[0.1em] text-muted">
+                      można pominąć
+                    </span>
+                  )}
                 </div>
                 <div className="p-3">
                   <p className="text-[12px] font-semibold leading-tight">{s.title}</p>
@@ -168,11 +235,18 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
           <ul className="mt-6 space-y-2 text-[13px] text-muted">
             <li>· Rób zdjęcia poziomo (telefon na bok), przy dziennym świetle.</li>
             <li>· Nie fotografuj ludzi w zbliżeniu — zgłoszenia z twarzami odrzucamy.</li>
-            <li>· Jeśli boisko ma jeden kosz, krok 3 pomiń przyciskiem „pomiń”.</li>
+            <li>· Boisko z jednym koszem? Kadr „Kosz B” pomijasz jednym przyciskiem.</li>
+            <li>
+              · Na końcu możesz dorzucić do trzech dodatkowych ujęć ogólnych — otoczenie, wejście,
+              oświetlenie.
+            </li>
           </ul>
 
           <button
-            onClick={() => setStage("shots")}
+            onClick={() => {
+              setShotKind(missing[0]?.kind ?? REQUIRED_PHOTO_STEPS[0].kind);
+              setStage("shots");
+            }}
             className="mt-8 w-full rounded-2xl flame-gradient px-6 py-4 text-[15px] font-bold text-black transition hover:brightness-110 active:scale-[0.99]"
           >
             Zaczynamy
@@ -180,20 +254,27 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
         </section>
       )}
 
-      {stage === "shots" && (
+      {stage === "shots" && step && (
         <section className="rise">
-          <div className="mb-4 flex items-baseline justify-between">
-            <div>
-              <p className="text-[12px] uppercase tracking-[0.16em] text-flame">
-                zdjęcie {shot + 1} z {PHOTO_STEPS.length}
-              </p>
-              <h2 className="mt-1 text-[22px] font-semibold tracking-tight">{step.title}</h2>
-              <p className="mt-1 text-[13px] text-muted">{step.hint}</p>
+          <div className="mb-4 flex items-start gap-3">
+            <div className="h-[70px] w-[94px] shrink-0 overflow-hidden rounded-xl border border-hairline">
+              <ShotDiagram kind={step.kind} />
             </div>
-            <div className="h-16 w-20 shrink-0 overflow-hidden rounded-xl border border-hairline">
-              <PhotoPlaceholder kind={step.kind} seed={7 + shot * 5} />
+            <div className="min-w-0">
+              <p className="text-[12px] uppercase tracking-[0.16em] text-flame">
+                {step.extra
+                  ? `ujęcie dodatkowe ${EXTRA_PHOTO_STEPS.indexOf(step) + 1} z ${EXTRA_PHOTO_STEPS.length}`
+                  : `kadr ${REQUIRED_PHOTO_STEPS.indexOf(step) + 1} z ${REQUIRED_PHOTO_STEPS.length}`}
+              </p>
+              <h2 className="mt-1 text-[21px] font-semibold leading-tight tracking-tight">
+                {step.title}
+              </h2>
             </div>
           </div>
+
+          <p className="mb-4 rounded-2xl border border-hairline bg-white/5 px-4 py-3 text-[13px] leading-relaxed text-muted">
+            {step.tip}
+          </p>
 
           {photos[step.kind] ? (
             <div className="space-y-4">
@@ -205,56 +286,151 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
               />
               <div className="flex gap-3">
                 <button
-                  onClick={() => setPhotos({ ...photos, [step.kind]: undefined })}
+                  onClick={() => dropPhoto(step.kind)}
                   className="glass flex-1 rounded-2xl px-4 py-3.5 text-[14px] font-medium"
                 >
                   Powtórz
                 </button>
                 <button
-                  onClick={() =>
-                    shot + 1 < PHOTO_STEPS.length ? setShot(shot + 1) : setStage("gps")
-                  }
+                  onClick={() => goAfter(step.kind)}
                   className="flex-1 rounded-2xl flame-gradient px-4 py-3.5 text-[14px] font-bold text-black"
                 >
-                  {shot + 1 < PHOTO_STEPS.length ? "Następne zdjęcie" : "Dalej — lokalizacja"}
+                  {missing.length > 1 || (missing.length === 1 && missing[0].kind !== step.kind)
+                    ? "Następny kadr"
+                    : "Przejrzyj zdjęcia"}
                 </button>
               </div>
             </div>
           ) : (
             <CameraCapture
               kind={step.kind}
-              onCapture={(dataUrl) => setPhotos({ ...photos, [step.kind]: dataUrl })}
+              hint={step.hint}
+              onCapture={(dataUrl) => setPhoto(step.kind, dataUrl)}
             />
           )}
 
-          <div className="mt-5 flex items-center justify-between">
+          <div className="mt-5 flex items-center justify-between gap-3">
             <button
-              onClick={() => (shot > 0 ? setShot(shot - 1) : setStage("intro"))}
+              onClick={() => goBack(step.kind)}
               className="flex items-center gap-1 text-[13px] text-muted transition hover:text-ink"
             >
               <ArrowLeftIcon className="h-4 w-4" /> wstecz
             </button>
+
             <div className="flex gap-1.5">
-              {PHOTO_STEPS.map((s, i) => (
-                <span
+              {REQUIRED_PHOTO_STEPS.map((s) => (
+                <button
                   key={s.kind}
+                  onClick={() => setShotKind(s.kind)}
+                  aria-label={s.title}
                   className={`h-1.5 w-6 rounded-full transition ${
-                    photos[s.kind] ? "flame-gradient" : i === shot ? "bg-white/40" : "bg-white/12"
+                    photos[s.kind]
+                      ? "flame-gradient"
+                      : s.kind === step.kind
+                        ? "bg-white/45"
+                        : skipped.includes(s.kind)
+                          ? "bg-white/25"
+                          : "bg-white/12"
                   }`}
                 />
               ))}
             </div>
-            {step.kind === "kosz-b" ? (
+
+            {step.skippable ? (
               <button
-                onClick={() => setShot(shot + 1)}
+                onClick={() => skipStep(step.kind)}
+                className="text-right text-[13px] leading-tight text-muted transition hover:text-ink"
+              >
+                boisko ma
+                <br />
+                jeden kosz →
+              </button>
+            ) : step.extra ? (
+              <button
+                onClick={() => setShotKind(null)}
                 className="text-[13px] text-muted transition hover:text-ink"
               >
                 pomiń →
               </button>
+            ) : taken > 0 ? (
+              <button
+                onClick={() => setShotKind(null)}
+                className="text-[13px] text-muted transition hover:text-ink"
+              >
+                przegląd →
+              </button>
             ) : (
-              <span className="w-12" />
+              <span className="w-16" />
             )}
           </div>
+        </section>
+      )}
+
+      {stage === "shots" && !step && (
+        <section className="rise">
+          <h2 className="text-[24px] font-semibold tracking-tight">
+            {shotsComplete ? "Zdjęcia gotowe" : "Brakuje jeszcze kilku kadrów"}
+          </h2>
+          <p className="mt-2 text-[14px] text-muted">
+            {shotsComplete
+              ? "Możesz jeszcze coś powtórzyć albo dorzucić dodatkowe ujęcie. Kliknij kafelek, żeby zrobić zdjęcie od nowa."
+              : `Do wysłania zgłoszenia potrzebujemy jeszcze: ${missing
+                  .map((s) => s.title.toLowerCase())
+                  .join(", ")}.`}
+          </p>
+
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {REQUIRED_PHOTO_STEPS.map((s, i) => (
+              <ShotSlot
+                key={s.kind}
+                step={s}
+                index={i + 1}
+                photo={photos[s.kind]}
+                skipped={skipped.includes(s.kind)}
+                onClick={() => setShotKind(s.kind)}
+              />
+            ))}
+          </div>
+
+          <h3 className="mt-8 text-[12px] uppercase tracking-[0.18em] text-faint">
+            Dodatkowe ujęcia — opcjonalnie, maksymalnie {EXTRA_PHOTO_STEPS.length}
+          </h3>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {extrasTaken.map((s) => (
+              <ShotSlot
+                key={s.kind}
+                step={s}
+                photo={photos[s.kind]}
+                onClick={() => setShotKind(s.kind)}
+                onRemove={() => dropPhoto(s.kind)}
+              />
+            ))}
+            {nextExtra && (
+              <button
+                onClick={() => setShotKind(nextExtra.kind)}
+                className="flex aspect-[4/3] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-hairline bg-white/4 px-3 text-center transition hover:border-flame/50 hover:bg-white/7"
+              >
+                <span className="grid h-9 w-9 place-items-center rounded-full flame-gradient text-[18px] font-bold text-black">
+                  +
+                </span>
+                <span className="text-[12px] font-medium">Dodaj ujęcie ogólne</span>
+              </button>
+            )}
+          </div>
+
+          {!shotsComplete && (
+            <p className="mt-6 rounded-2xl border border-ember/30 bg-ember/10 px-4 py-3 text-[13px] text-ember">
+              Zgłoszenie ruszy dalej, kiedy będą wszystkie kadry z górnej listy. Jeśli boisko ma
+              jeden kosz, otwórz kadr „Kosz B” i kliknij „boisko ma jeden kosz”.
+            </p>
+          )}
+
+          <Nav
+            onBack={() => setStage("intro")}
+            onNext={() => setStage("gps")}
+            nextDisabled={!shotsComplete}
+            nextLabel="Dalej — lokalizacja"
+          />
         </section>
       )}
 
@@ -588,6 +764,70 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
 }
 
 /* ---------- drobne elementy ---------- */
+
+/** Kafelek kadru na ekranie przeglądu: zdjęcie albo schemat z informacją o stanie. */
+function ShotSlot({
+  step,
+  index,
+  photo,
+  skipped,
+  onClick,
+  onRemove,
+}: {
+  step: PhotoStep;
+  index?: number;
+  photo?: string;
+  skipped?: boolean;
+  onClick: () => void;
+  onRemove?: () => void;
+}) {
+  return (
+    <div className="glass relative overflow-hidden rounded-2xl">
+      <button onClick={onClick} className="block w-full text-left">
+        <span className="relative block aspect-[4/3]">
+          {photo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={photo} alt={step.title} className="h-full w-full object-cover" />
+          ) : (
+            <span className="block h-full w-full opacity-45">
+              <ShotDiagram kind={step.kind} />
+            </span>
+          )}
+          {index && (
+            <span className="absolute left-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-black/75 text-[11px] font-bold">
+              {index}
+            </span>
+          )}
+          {photo && (
+            <span className="absolute bottom-2 left-2 rounded-full bg-black/75 px-2 py-1 text-[10px] uppercase tracking-[0.1em] text-flame">
+              gotowe
+            </span>
+          )}
+          {!photo && skipped && (
+            <span className="absolute bottom-2 left-2 rounded-full bg-black/75 px-2 py-1 text-[10px] uppercase tracking-[0.1em] text-muted">
+              pominięte
+            </span>
+          )}
+          {!photo && !skipped && (
+            <span className="absolute inset-x-2 bottom-2 rounded-full bg-black/75 px-2 py-1 text-center text-[10px] uppercase tracking-[0.1em] text-ember">
+              zrób zdjęcie
+            </span>
+          )}
+        </span>
+        <span className="block p-2.5 text-[11px] font-medium leading-tight">{step.title}</span>
+      </button>
+      {onRemove && (
+        <button
+          onClick={onRemove}
+          aria-label="Usuń zdjęcie"
+          className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-black/75 text-[14px] transition hover:text-ember"
+        >
+          ×
+        </button>
+      )}
+    </div>
+  );
+}
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
