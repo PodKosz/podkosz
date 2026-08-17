@@ -4,6 +4,7 @@ import { PHOTO_STEPS } from "@/lib/types";
 import { PhotoPlaceholder } from "@/components/CourtPhoto";
 import { FireBallIcon } from "@/components/icons";
 import { countCourts } from "@/lib/repo";
+import { FeedbackDialog } from "@/components/FeedbackDialog";
 
 export const metadata: Metadata = {
   title: "O nas — PodKosz",
@@ -136,6 +137,17 @@ export default async function AboutPage() {
         >
           Dodaj boisko
         </Link>
+      </section>
+
+      <section className="mt-6 flex flex-wrap items-center gap-5 rounded-[26px] border border-hairline bg-white/4 p-7">
+        <div className="min-w-[240px] flex-1">
+          <h2 className="text-[20px] font-semibold">Co możemy poprawić?</h2>
+          <p className="mt-1 text-[14px] text-muted">
+            Brakuje filtra, coś nie działa na Twoim telefonie, masz pomysł na nową funkcję?
+            Napisz — czytam wszystko.
+          </p>
+        </div>
+        <FeedbackDialog label="Napisz opinię" />
       </section>
 
       <p className="mt-12 text-[13px] text-faint">

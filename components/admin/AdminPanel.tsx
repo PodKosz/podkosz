@@ -22,6 +22,7 @@ import { GoogleMark } from "../GoogleMark";
 import { CourtsAdmin } from "./CourtsAdmin";
 import { CourtForm } from "./CourtForm";
 import { ReportsAdmin } from "./ReportsAdmin";
+import { FeedbackAdmin } from "./FeedbackAdmin";
 
 const TABS: [SubmissionStatus, string][] = [
   ["pending", "Do akceptacji"],
@@ -29,11 +30,12 @@ const TABS: [SubmissionStatus, string][] = [
   ["rejected", "Odrzucone"],
 ];
 
-type View = "queue" | "reports" | "courts" | "new";
+type View = "queue" | "reports" | "feedback" | "courts" | "new";
 
 const VIEWS: [View, string][] = [
   ["queue", "Kolejka zgłoszeń"],
   ["reports", "Błędy w danych"],
+  ["feedback", "Opinie"],
   ["courts", "Boiska na mapie"],
   ["new", "Dodaj ręcznie"],
 ];
@@ -81,6 +83,8 @@ export function AdminPanel({ isAdmin, signedIn }: { isAdmin: boolean; signedIn: 
           <CourtsAdmin />
         ) : view === "reports" ? (
           <ReportsAdmin />
+        ) : view === "feedback" ? (
+          <FeedbackAdmin />
         ) : (
           <CourtForm onSaved={() => undefined} />
         )}
@@ -283,6 +287,10 @@ function Header({
     reports: [
       "Błędy w danych",
       "Zgłoszenia od użytkowników: złe godziny, nieaktualne informacje, zdjęcia nie z tego boiska. Domyślnie na górze te boiska, na które skarży się najwięcej osób.",
+    ],
+    feedback: [
+      "Opinie",
+      "Co użytkownicy chcieliby poprawić. Każdy może wysłać jedną opinię na dobę — okienko jest na stronie „O nas”.",
     ],
     new: [
       "Dodaj boisko ręcznie",
