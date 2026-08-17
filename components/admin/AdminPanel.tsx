@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   ACCESS_LABEL,
   Access,
@@ -42,8 +42,10 @@ const VIEWS: [View, string][] = [
 
 export function AdminPanel({ isAdmin, signedIn }: { isAdmin: boolean; signedIn: boolean }) {
   const path = usePathname();
+  // ?edytuj=<slug> — skrót z przycisku „Edytuj” na karcie boiska
+  const editSlug = useSearchParams().get("edytuj");
   const queue = useQueue();
-  const [view, setView] = useState<View>("queue");
+  const [view, setView] = useState<View>(editSlug ? "courts" : "queue");
   const [tab, setTab] = useState<SubmissionStatus>("pending");
   const [openId, setOpenId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -80,7 +82,7 @@ export function AdminPanel({ isAdmin, signedIn }: { isAdmin: boolean; signedIn: 
       <div className="relative">
         <Header view={view} setView={setView} live={queue.live} />
         {view === "courts" ? (
-          <CourtsAdmin />
+          <CourtsAdmin editSlug={editSlug} />
         ) : view === "reports" ? (
           <ReportsAdmin />
         ) : view === "feedback" ? (

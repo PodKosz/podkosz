@@ -11,7 +11,7 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-  create type surface_type as enum ('beton','asfalt','tartan','poliuretan','parkiet','syntetyk');
+  create type surface_type as enum ('beton','asfalt','poliuretan','plytki','parkiet','syntetyk');
 exception when duplicate_object then null; end $$;
 
 do $$ begin

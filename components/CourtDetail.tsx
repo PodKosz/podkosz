@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ACCESS_LABEL, Court, SURFACE_LABEL, TYPE_LABEL } from "@/lib/types";
+import { ACCESS_LABEL, Court, TYPE_LABEL, surfaceLabel } from "@/lib/types";
 import { CourtPhoto } from "./CourtPhoto";
 import { Gallery } from "./Gallery";
 import { LikeButton } from "./LikeButton";
@@ -14,9 +14,16 @@ import {
   FireBallIcon,
   HoopIcon,
   BasketApprovedBadge,
+  PencilIcon,
   PinIcon,
   SurfaceIcon,
 } from "./icons";
+
+/**
+ * Wspólna szerokość treści. Na dużych monitorach kolumna 1152 px gubiła się w środku
+ * ekranu, więc powyżej 1536 px rośnie razem z oknem (do 1720 px).
+ */
+const SHELL = "mx-auto w-full max-w-6xl px-6 2xl:max-w-[min(1720px,88vw)] 2xl:px-10";
 
 export function CourtDetail({
   court,
@@ -24,28 +31,43 @@ export function CourtDetail({
   liked = false,
   favorite = false,
   signedIn = false,
+  isAdmin = false,
 }: {
   court: Court;
   nearby?: Court[];
   liked?: boolean;
   favorite?: boolean;
   signedIn?: boolean;
+  /** administrator dostaje skrót do edycji tego wpisu */
+  isAdmin?: boolean;
 }) {
   return (
     <main className="min-h-dvh pb-24">
-      <section className="relative h-[62vh] min-h-[420px] w-full overflow-hidden">
+      <section className="relative h-[62vh] max-h-[780px] min-h-[420px] w-full overflow-hidden">
         <div className="absolute inset-0">
           <CourtPhoto photo={court.photos[0]} seed={court.seed} />
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-void via-void/45 to-void/70" />
+        {/* mocniejsze wygaszenie dołu: kafelki parametrów wchodzą na zdjęcie i muszą być czytelne */}
+        <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-void via-void/85 to-transparent" />
 
-        <div className="relative mx-auto flex h-full max-w-6xl flex-col justify-end px-6 pb-10">
-          <Link
-            href="/"
-            className="glass mb-auto mt-24 inline-flex w-fit items-center gap-2 rounded-full px-4 py-2 text-[12px] uppercase tracking-[0.14em] text-muted transition hover:text-ink"
-          >
-            <ArrowLeftIcon className="h-4 w-4" /> mapa
-          </Link>
+        <div className={`relative flex h-full flex-col justify-end pb-10 ${SHELL}`}>
+          <div className="mb-auto mt-24 flex items-center gap-3">
+            <Link
+              href="/"
+              className="glass inline-flex w-fit items-center gap-2 rounded-full px-4 py-2 text-[12px] uppercase tracking-[0.14em] text-muted transition hover:text-ink"
+            >
+              <ArrowLeftIcon className="h-4 w-4" /> mapa
+            </Link>
+            {isAdmin && (
+              <Link
+                href={`/admin?edytuj=${court.slug}`}
+                className="inline-flex w-fit items-center gap-2 rounded-full flame-gradient px-4 py-2 text-[12px] font-bold uppercase tracking-[0.14em] text-black transition hover:brightness-110"
+              >
+                <PencilIcon className="h-4 w-4" /> edytuj
+              </Link>
+            )}
+          </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full border border-hairline bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-muted">
@@ -90,13 +112,13 @@ export function CourtDetail({
         </div>
       </section>
 
-      <div className="mx-auto max-w-6xl px-6">
+      <div className={SHELL}>
         <section className="-mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
           <Spec icon={<HoopIcon className="h-5 w-5" />} label="Kosze" value={String(court.hoops)} />
           <Spec
             icon={<SurfaceIcon className="h-5 w-5" />}
             label="Nawierzchnia"
-            value={SURFACE_LABEL[court.surface]}
+            value={surfaceLabel(court.surface)}
           />
           <Spec icon={<ClockIcon className="h-5 w-5" />} label="Godziny" value={court.hours} />
           <Spec
@@ -220,10 +242,10 @@ function Spec({
   value: string;
 }) {
   return (
-    <div className="glass rounded-[20px] p-4">
+    <div className="glass rounded-[20px] p-4 2xl:p-5">
       <span className="text-flame">{icon}</span>
-      <p className="mt-2 truncate text-[15px] font-semibold">{value}</p>
-      <p className="text-[11px] uppercase tracking-[0.14em] text-faint">{label}</p>
+      <p className="mt-2 text-[15px] font-semibold leading-tight 2xl:text-[17px]">{value}</p>
+      <p className="mt-0.5 text-[11px] uppercase tracking-[0.14em] text-faint">{label}</p>
     </div>
   );
 }

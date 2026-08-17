@@ -227,10 +227,33 @@ export async function reverseGeocode(
   };
   const a = json.address ?? {};
   const city = a.city ?? a.town ?? a.village ?? a.municipality ?? a.county ?? "";
-  const voivodeship = (a.state ?? "")
+
+  return { city, voivodeship: cleanVoivodeship(a.state) };
+}
+
+const cleanVoivodeship = (state?: string) =>
+  (state ?? "")
     .toLowerCase()
     .replace(/^wojew[oó]dztwo\s+/, "")
     .trim();
 
-  return { city, voivodeship };
+/**
+ * Województwo po samej nazwie miasta — do automatycznego uzupełniania formularza.
+ * Bierzemy pierwsze trafienie z Nominatim ograniczone do Polski i miejscowości.
+ */
+export async function voivodeshipForCity(city: string): Promise<string | null> {
+  const query = city.trim();
+  if (query.length < 3) return null;
+
+  const url =
+    "https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=pl&limit=1" +
+    "&addressdetails=1&featureType=settlement&city=" +
+    encodeURIComponent(query);
+
+  const res = await fetch(url, { headers: { "Accept-Language": "pl" } });
+  if (!res.ok) return null;
+
+  const json = (await res.json()) as { address?: Record<string, string> }[];
+  const found = cleanVoivodeship(json[0]?.address?.state);
+  return found || null;
 }

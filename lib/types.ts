@@ -3,8 +3,8 @@ export type CourtType = "otwarty" | "kryty" | "streetball";
 export type Surface =
   | "beton"
   | "asfalt"
-  | "tartan"
   | "poliuretan"
+  | "plytki"
   | "parkiet"
   | "syntetyk";
 
@@ -98,11 +98,15 @@ export const VOIVODESHIPS = [
 export const SURFACE_LABEL: Record<Surface, string> = {
   beton: "Beton",
   asfalt: "Asfalt",
-  tartan: "Tartan",
   poliuretan: "Poliuretan",
+  plytki: "Płytki modułowe",
   parkiet: "Parkiet",
   syntetyk: "Trawa syntetyczna",
 };
+
+/** Podpis nawierzchni odporny na wartości spoza listy (np. stary „tartan” w bazie). */
+export const surfaceLabel = (surface: string) =>
+  SURFACE_LABEL[surface as Surface] ?? surface.charAt(0).toUpperCase() + surface.slice(1);
 
 export const TYPE_LABEL: Record<CourtType, string> = {
   otwarty: "Otwarty",

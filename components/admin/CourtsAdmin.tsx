@@ -8,7 +8,14 @@ import { CourtForm } from "./CourtForm";
 import { FireBallIcon, BasketApprovedBadge, PinIcon } from "../icons";
 
 /** Lista opublikowanych boisk z edycją i kasowaniem. */
-export function CourtsAdmin({ onChanged }: { onChanged?: () => void }) {
+export function CourtsAdmin({
+  onChanged,
+  editSlug,
+}: {
+  onChanged?: () => void;
+  /** slug z adresu ?edytuj= — otwiera edytor tego boiska od razu po wczytaniu listy */
+  editSlug?: string | null;
+}) {
   const [courts, setCourts] = useState<AdminCourt[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,6 +28,7 @@ export function CourtsAdmin({ onChanged }: { onChanged?: () => void }) {
       .then((list) => {
         if (!alive) return;
         setCourts(list);
+        if (editSlug) setEditing(list.find((c) => c.slug === editSlug) ?? null);
         setLoading(false);
       })
       .catch((e: Error) => {
@@ -31,6 +39,8 @@ export function CourtsAdmin({ onChanged }: { onChanged?: () => void }) {
     return () => {
       alive = false;
     };
+    // celowo tylko na starcie: później edytor otwiera się kliknięciem w liście
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const reload = useCallback(() => {
@@ -50,9 +60,17 @@ export function CourtsAdmin({ onChanged }: { onChanged?: () => void }) {
   if (editing) {
     return (
       <div>
-        <h2 className="mb-6 text-[20px] font-semibold tracking-tight">
-          Edycja: {editing.name}, {editing.city}
-        </h2>
+        <div className="mb-6 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <h2 className="text-[20px] font-semibold tracking-tight">
+            Edycja: {editing.name}, {editing.city}
+          </h2>
+          <Link
+            href={`/boisko/${editing.slug}`}
+            className="text-[13px] text-flame transition hover:text-glow"
+          >
+            otwórz kartę boiska →
+          </Link>
+        </div>
         <CourtForm
           initial={editing}
           onSaved={() => {

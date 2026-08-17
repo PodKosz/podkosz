@@ -39,6 +39,7 @@ export default async function CourtPage({
       liked={likes.has(court.id)}
       favorite={favorites.has(court.id)}
       signedIn={!!user}
+      isAdmin={!!user?.isAdmin}
     />
   );
 }

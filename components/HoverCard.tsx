@@ -1,4 +1,4 @@
-import { Court, SURFACE_LABEL, TYPE_LABEL } from "@/lib/types";
+import { Court, TYPE_LABEL, surfaceLabel } from "@/lib/types";
 import { CourtPhoto } from "./CourtPhoto";
 import { ClockIcon, FireBallIcon, HoopIcon, BasketApprovedBadge, SurfaceIcon } from "./icons";
 
@@ -34,7 +34,7 @@ export function HoverCard({ court }: { court: Court }) {
         <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
           <Fact icon={<HoopIcon className="h-3.5 w-3.5" />} label="kosze" value={String(court.hoops)} />
           <Fact icon={<ClockIcon className="h-3.5 w-3.5" />} label="otwarte" value={court.hours} />
-          <Fact icon={<SurfaceIcon className="h-3.5 w-3.5" />} label="podłoże" value={SURFACE_LABEL[court.surface]} />
+          <Fact icon={<SurfaceIcon className="h-3.5 w-3.5" />} label="podłoże" value={surfaceLabel(court.surface)} />
         </div>
       </div>
     </div>

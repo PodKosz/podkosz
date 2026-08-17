@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import {
   ACCESS_LABEL,
@@ -21,6 +21,7 @@ import {
   isNewPhoto,
   reverseGeocode,
   saveCourt,
+  voivodeshipForCity,
 } from "@/lib/admin";
 import { LocationPicker } from "./LocationPicker";
 import { BasketApprovedBadge } from "../icons";
@@ -28,13 +29,27 @@ import { BasketApprovedBadge } from "../icons";
 /** Pełna lista kadrów do wyboru przy dodawaniu ręcznym, w kolejności wyświetlania. */
 const KINDS = PHOTO_DISPLAY_ORDER;
 
+/** Środek Polski — dopóki pinezka tu stoi, znaczy że nikt jej nie ruszył. */
+const DEFAULT_LAT = 52.0;
+const DEFAULT_LNG = 19.4;
+
+type RegionState = "idle" | "loading" | "pin" | "city" | "fail";
+
+const REGION_HINT: Record<RegionState, string> = {
+  idle: "uzupełnia się samo z pinezki albo z nazwy miasta",
+  loading: "sprawdzam lokalizację…",
+  pin: "uzupełnione z pinezki na mapie",
+  city: "uzupełnione z nazwy miasta — sprawdź, jeśli to mała miejscowość",
+  fail: "nie rozpoznałem lokalizacji — wybierz z listy",
+};
+
 function emptyValues(): CourtValues {
   return {
     name: "",
     city: "",
     voivodeship: "",
-    lat: 52.0,
-    lng: 19.4,
+    lat: DEFAULT_LAT,
+    lng: DEFAULT_LNG,
     type: "otwarty",
     surface: "beton",
     hoops: 2,
@@ -71,8 +86,88 @@ export function CourtForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedSlug, setSavedSlug] = useState<string | null>(null);
+  const [regionState, setRegionState] = useState<RegionState>("idle");
+  const geoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const set = (p: Partial<CourtValues>) => setV((old) => ({ ...old, ...p }));
+
+  const isVoivodeship = (w: string): w is (typeof VOIVODESHIPS)[number] =>
+    VOIVODESHIPS.includes(w as (typeof VOIVODESHIPS)[number]);
+
+  /** Pinezka postawiona na mapie albo wklejona ze współrzędnych — wtedy jej wierzymy. */
+  const pinSet = (lat: number, lng: number) =>
+    Math.abs(lat - DEFAULT_LAT) > 0.0005 || Math.abs(lng - DEFAULT_LNG) > 0.0005;
+
+  /**
+   * Z pinezki wyciągamy województwo (i miasto, jeśli puste) — to najpewniejsze źródło.
+   * `force` nadpisuje też wpisane miasto: tak działa przycisk „uzupełnij z mapy”.
+   */
+  const fillFromPin = async (lat: number, lng: number, force = false) => {
+    setRegionState("loading");
+    try {
+      const spot = await reverseGeocode(lat, lng);
+      if (!spot) {
+        setRegionState("fail");
+        return false;
+      }
+      const patch: Partial<CourtValues> = {};
+      if (isVoivodeship(spot.voivodeship)) patch.voivodeship = spot.voivodeship;
+      if (spot.city && (force || !v.city.trim())) patch.city = spot.city;
+      if (Object.keys(patch).length) set(patch);
+      setRegionState(patch.voivodeship ? "pin" : "fail");
+      return !!patch.voivodeship;
+    } catch {
+      setRegionState("fail");
+      return false;
+    }
+  };
+
+  /** Awaryjnie, gdy pinezki jeszcze nie ma: województwo po samej nazwie miasta. */
+  const fillFromCity = async (city: string) => {
+    if (city.trim().length < 3) return;
+    setRegionState("loading");
+    try {
+      const found = await voivodeshipForCity(city);
+      if (found && isVoivodeship(found)) {
+        set({ voivodeship: found });
+        setRegionState("city");
+      } else {
+        setRegionState("fail");
+      }
+    } catch {
+      setRegionState("fail");
+    }
+  };
+
+  const scheduleRegion = (city: string, lat: number, lng: number) => {
+    if (geoTimer.current) clearTimeout(geoTimer.current);
+    geoTimer.current = setTimeout(() => {
+      if (pinSet(lat, lng)) void fillFromPin(lat, lng);
+      else void fillFromCity(city);
+    }, 800);
+  };
+
+  /** Po wpisaniu miasta czekamy na przerwę w pisaniu i pytamy geokoder. */
+  const changeCity = (city: string) => {
+    set({ city });
+    setRegionState("idle");
+    scheduleRegion(city, v.lat, v.lng);
+  };
+
+  const cityBlur = () => {
+    if (geoTimer.current) clearTimeout(geoTimer.current);
+    if (!v.voivodeship) {
+      if (pinSet(v.lat, v.lng)) void fillFromPin(v.lat, v.lng);
+      else void fillFromCity(v.city);
+    }
+  };
+
+  /** Przestawienie pinezki od razu podpowiada miasto i województwo. */
+  const changePin = (lat: number, lng: number) => {
+    set({ lat, lng });
+    setRegionState("idle");
+    scheduleRegion(v.city, lat, lng);
+  };
 
   const addFiles = (files: FileList | null) => {
     if (!files?.length) return;
@@ -106,16 +201,7 @@ export function CourtForm({
   const setKind = (index: number, kind: PhotoKind) =>
     setPhotos((list) => list.map((p, i) => (i === index ? { ...p, kind } : p)));
 
-  const fillFromMap = async () => {
-    const found = await reverseGeocode(v.lat, v.lng);
-    if (!found) return;
-    set({
-      city: found.city || v.city,
-      voivodeship: VOIVODESHIPS.includes(found.voivodeship as (typeof VOIVODESHIPS)[number])
-        ? found.voivodeship
-        : v.voivodeship,
-    });
-  };
+  const fillFromMap = () => void fillFromPin(v.lat, v.lng, true);
 
   /** Czyści formularz pod kolejny wpis, zostawiając potwierdzenie poprzedniego. */
   const reset = () => {
@@ -237,7 +323,7 @@ export function CourtForm({
         <h2 className="mb-3 text-[13px] uppercase tracking-[0.18em] text-faint">
           Lokalizacja
         </h2>
-        <LocationPicker lat={v.lat} lng={v.lng} onChange={(lat, lng) => set({ lat, lng })} />
+        <LocationPicker lat={v.lat} lng={v.lng} onChange={changePin} />
 
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           <Field label="Szerokość (lat)">
@@ -283,24 +369,32 @@ export function CourtForm({
           <Field label="Miasto">
             <input
               value={v.city}
-              onChange={(e) => set({ city: e.target.value })}
-              className="w-full bg-transparent outline-none"
+              onChange={(e) => changeCity(e.target.value)}
+              onBlur={cityBlur}
+              placeholder="np. Kraków"
+              className="w-full bg-transparent outline-none placeholder:text-faint"
             />
           </Field>
-          <Field label="Województwo">
-            <select
-              value={v.voivodeship}
-              onChange={(e) => set({ voivodeship: e.target.value })}
-              className="w-full bg-transparent outline-none"
-            >
-              <option value="">wybierz…</option>
-              {VOIVODESHIPS.map((w) => (
-                <option key={w} value={w}>
-                  {w}
-                </option>
-              ))}
-            </select>
-          </Field>
+          <div>
+            <Field label="Województwo">
+              <select
+                value={v.voivodeship}
+                onChange={(e) => {
+                  set({ voivodeship: e.target.value });
+                  setRegionState("idle");
+                }}
+                className="w-full bg-transparent outline-none"
+              >
+                <option value="">wybierz…</option>
+                {VOIVODESHIPS.map((w) => (
+                  <option key={w} value={w}>
+                    {w}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <p className="mt-1 text-[11px] text-faint">{REGION_HINT[regionState]}</p>
+          </div>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-4">
