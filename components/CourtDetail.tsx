@@ -205,20 +205,20 @@ export function CourtDetail({
           </div>
         </section>
 
-        {court.shortsUrl && (
-          <section className="mt-14">
-            <h2 className="mb-4 text-[13px] uppercase tracking-[0.18em] text-faint">
-              Film z boiska
-            </h2>
-            <ShortsPlayer url={court.shortsUrl} title={`${court.name}, ${court.city}`} />
-          </section>
-        )}
-
         <section className="mt-14">
           <h2 className="mb-4 text-[13px] uppercase tracking-[0.18em] text-faint">
             Galeria · {court.photos.length} zdjęć
+            {court.shortsUrl && <span className="text-flame"> + film</span>}
           </h2>
-          <Gallery court={court} />
+          {/* film wchodzi w prawą kolumnę galerii (na telefonie ląduje pod zdjęciami) */}
+          <Gallery
+            court={court}
+            video={
+              court.shortsUrl ? (
+                <ShortsPlayer url={court.shortsUrl} title={`${court.name}, ${court.city}`} />
+              ) : null
+            }
+          />
         </section>
 
         {nearby.length > 0 && (
