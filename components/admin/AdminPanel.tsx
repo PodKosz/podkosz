@@ -23,6 +23,8 @@ import { CourtsAdmin } from "./CourtsAdmin";
 import { CourtForm } from "./CourtForm";
 import { ReportsAdmin } from "./ReportsAdmin";
 import { FeedbackAdmin } from "./FeedbackAdmin";
+import { LeadsAdmin } from "./LeadsAdmin";
+import { NewFromLead } from "./NewFromLead";
 
 const TABS: [SubmissionStatus, string][] = [
   ["pending", "Do akceptacji"],
@@ -30,22 +32,28 @@ const TABS: [SubmissionStatus, string][] = [
   ["rejected", "Odrzucone"],
 ];
 
-type View = "queue" | "reports" | "feedback" | "courts" | "new";
+type View = "queue" | "reports" | "feedback" | "courts" | "leads" | "new";
 
 const VIEWS: [View, string][] = [
   ["queue", "Kolejka zgłoszeń"],
   ["reports", "Błędy w danych"],
   ["feedback", "Opinie"],
   ["courts", "Boiska na mapie"],
+  ["leads", "Kandydaci OSM"],
   ["new", "Dodaj ręcznie"],
 ];
 
 export function AdminPanel({ isAdmin, signedIn }: { isAdmin: boolean; signedIn: boolean }) {
   const path = usePathname();
+  const params = useSearchParams();
   // ?edytuj=<slug> — skrót z przycisku „Edytuj” na karcie boiska
-  const editSlug = useSearchParams().get("edytuj");
+  const editSlug = params.get("edytuj");
+  // ?nowe=<id kandydata> — skrót z szarej pinezki na mapie
+  const newLeadId = params.get("nowe");
   const queue = useQueue();
-  const [view, setView] = useState<View>(editSlug ? "courts" : "queue");
+  const [view, setView] = useState<View>(
+    editSlug ? "courts" : newLeadId ? "new" : "queue"
+  );
   const [tab, setTab] = useState<SubmissionStatus>("pending");
   const [openId, setOpenId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -87,6 +95,10 @@ export function AdminPanel({ isAdmin, signedIn }: { isAdmin: boolean; signedIn: 
           <ReportsAdmin />
         ) : view === "feedback" ? (
           <FeedbackAdmin />
+        ) : view === "leads" ? (
+          <LeadsAdmin />
+        ) : newLeadId ? (
+          <NewFromLead leadId={newLeadId} onSaved={() => undefined} />
         ) : (
           <CourtForm onSaved={() => undefined} />
         )}
@@ -293,6 +305,10 @@ function Header({
     feedback: [
       "Opinie",
       "Co użytkownicy chcieliby poprawić. Każdy może wysłać jedną opinię na dobę — okienko jest na stronie „O nas”.",
+    ],
+    leads: [
+      "Kandydaci OSM",
+      "Boiska wypatrzone w OpenStreetMap — lista miejsc do sprawdzenia. Widzisz je tylko Ty, jako szare pinezki na mapie po włączeniu przycisku.",
     ],
     new: [
       "Dodaj boisko ręcznie",

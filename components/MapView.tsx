@@ -5,6 +5,7 @@ import { Map as MlMap, Marker, StyleSpecification, setWorkerUrl } from "maplibre
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Court } from "@/lib/types";
 import { CITIES_GEOJSON } from "@/lib/cities";
+import type { LeadPoint } from "@/lib/leads";
 import { HoverCard } from "./HoverCard";
 
 const POLAND_BOUNDS: [number, number, number, number] = [13.9, 48.9, 24.3, 55.0];
@@ -130,6 +131,8 @@ export function MapView({
   highlightVoivodeship,
   onHoverCourt,
   onSelectCourt,
+  leads,
+  onSelectLead,
 }: {
   courts: Court[];
   activeId: string | null;
@@ -137,6 +140,9 @@ export function MapView({
   highlightVoivodeship: string;
   onHoverCourt: (id: string | null) => void;
   onSelectCourt: (court: Court) => void;
+  /** szare punkty z OSM — tylko dla administratora, po włączeniu przycisku */
+  leads?: LeadPoint[];
+  onSelectLead?: (lead: LeadPoint) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MlMap | null>(null);
@@ -146,6 +152,10 @@ export function MapView({
   const [showDiag, setShowDiag] = useState(false);
   const [hover, setHover] = useState<{ court: Court; x: number; y: number } | null>(null);
   const hoverRef = useRef<Court | null>(null);
+  const onSelectLeadRef = useRef(onSelectLead);
+  useEffect(() => {
+    onSelectLeadRef.current = onSelectLead;
+  }, [onSelectLead]);
 
   const reposition = useCallback(() => {
     const map = mapRef.current;
@@ -222,8 +232,12 @@ export function MapView({
     });
     ro.observe(containerRef.current);
 
-    if (typeof window !== "undefined")
+    if (typeof window !== "undefined") {
       (window as unknown as { __mapDiag: MapDiag }).__mapDiag = diag;
+      // uchwyt do mapy przydatny przy diagnostyce w konsoli — tylko w dev
+      if (process.env.NODE_ENV !== "production")
+        (window as unknown as { __map: MlMap }).__map = map;
+    }
 
     return () => {
       ro.disconnect();
@@ -286,6 +300,67 @@ export function MapView({
       el.dataset.active = String(id === activeId);
     }
   }, [activeId, courts]);
+
+  /* ---- szare punkty kandydatów z OSM ----
+     Tysiące pinezek HTML zabiłyby przeglądarkę, więc lecą jako warstwa GeoJSON.
+     Nie czekamy na zdarzenie `load` (w karcie w tle nigdy nie przychodzi) — wystarczy
+     sparsowany styl, czyli obecność warstwy bazowej. */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const data = {
+      type: "FeatureCollection" as const,
+      features: (leads ?? []).map((l) => ({
+        type: "Feature" as const,
+        geometry: { type: "Point" as const, coordinates: [l.lng, l.lat] },
+        properties: { id: l.id, name: l.name },
+      })),
+    };
+
+    const attach = () => {
+      const source = map.getSource("leads");
+      if (source) {
+        (source as unknown as { setData: (d: typeof data) => void }).setData(data);
+        return;
+      }
+
+      map.addSource("leads", { type: "geojson", data });
+      map.addLayer({
+        id: "leads-dots",
+        type: "circle",
+        source: "leads",
+        paint: {
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 5, 2.4, 9, 4, 13, 7, 16, 10],
+          "circle-color": "#9aa1ab",
+          "circle-opacity": 0.85,
+          "circle-stroke-width": 1.2,
+          "circle-stroke-color": "rgba(8,8,11,0.9)",
+        },
+      });
+
+      map.on("click", "leads-dots", (e) => {
+        const f = e.features?.[0];
+        if (!f) return;
+        const [lng, lat] = (f.geometry as unknown as { coordinates: [number, number] }).coordinates;
+        onSelectLeadRef.current?.({
+          id: String(f.properties?.id ?? ""),
+          name: String(f.properties?.name ?? ""),
+          lat,
+          lng,
+        });
+      });
+      map.on("mouseenter", "leads-dots", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", "leads-dots", () => {
+        map.getCanvas().style.cursor = "";
+      });
+    };
+
+    if (map.getLayer("carto")) attach();
+    else map.once("styledata", attach);
+  }, [leads, ready]);
 
   /* ---- podświetlenie województwa ---- */
   useEffect(() => {

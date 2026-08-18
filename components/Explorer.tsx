@@ -1,19 +1,28 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Court } from "@/lib/types";
 import { toApprovedCourts, useSubmissions } from "@/lib/submissions";
 import { supabaseEnabled } from "@/lib/supabase/config";
 import { DEFAULT_FILTERS, Filters, applyFilters, countByType } from "@/lib/filters";
+import { LeadPoint, listLeadPoints, setLeadStatus } from "@/lib/leads";
 import { MapView } from "./MapView";
 import { Sidebar } from "./Sidebar";
 
-export function Explorer({ courts }: { courts: Court[] }) {
+export function Explorer({ courts, isAdmin = false }: { courts: Court[]; isAdmin?: boolean }) {
   const router = useRouter();
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
+
+  /* Kandydaci z OSM: szare punkty widoczne tylko dla administratora po kliknięciu. */
+  const [showLeads, setShowLeads] = useState(false);
+  const [leads, setLeads] = useState<LeadPoint[] | null>(null);
+  const [leadsBusy, setLeadsBusy] = useState(false);
+  const [leadsError, setLeadsError] = useState<string | null>(null);
+  const [activeLead, setActiveLead] = useState<LeadPoint | null>(null);
 
   // Tryb testowy: boiska zaakceptowane w panelu admina siedzą w localStorage.
   // Po podpięciu bazy wszystko przychodzi już z serwera.
@@ -35,6 +44,35 @@ export function Explorer({ courts }: { courts: Court[] }) {
     if (id) setFocusId(id);
   }, []);
 
+  const toggleLeads = useCallback(async () => {
+    if (showLeads) {
+      setShowLeads(false);
+      setActiveLead(null);
+      return;
+    }
+    setShowLeads(true);
+    if (leads) return;
+    setLeadsBusy(true);
+    setLeadsError(null);
+    try {
+      setLeads(await listLeadPoints());
+    } catch (e) {
+      setLeadsError((e as Error).message);
+    } finally {
+      setLeadsBusy(false);
+    }
+  }, [showLeads, leads]);
+
+  const rejectLead = useCallback(async (id: string) => {
+    setLeads((list) => (list ?? []).filter((l) => l.id !== id));
+    setActiveLead(null);
+    try {
+      await setLeadStatus(id, "rejected");
+    } catch (e) {
+      setLeadsError((e as Error).message);
+    }
+  }, []);
+
   return (
     <main className="relative h-dvh w-full overflow-hidden">
       <MapView
@@ -44,6 +82,8 @@ export function Explorer({ courts }: { courts: Court[] }) {
         highlightVoivodeship={filters.voivodeship}
         onHoverCourt={setActiveId}
         onSelectCourt={onSelect}
+        leads={showLeads ? leads ?? [] : []}
+        onSelectLead={setActiveLead}
       />
       <Sidebar
         filters={filters}
@@ -54,6 +94,79 @@ export function Explorer({ courts }: { courts: Court[] }) {
         onHover={onHoverFromList}
         onSelect={onSelect}
       />
+
+      {isAdmin && (
+        <div className="absolute right-4 top-20 z-20 flex flex-col items-end gap-2 md:right-6 md:top-24">
+          <button
+            onClick={toggleLeads}
+            className={`rounded-2xl px-4 py-2.5 text-[12px] font-semibold uppercase tracking-[0.12em] transition ${
+              showLeads
+                ? "bg-white/85 text-black"
+                : "glass text-muted hover:text-ink"
+            }`}
+          >
+            {leadsBusy
+              ? "wczytuję kandydatów…"
+              : showLeads
+                ? `kandydaci OSM: ${leads?.length ?? 0}`
+                : "kandydaci OSM"}
+          </button>
+          {leadsError && (
+            <p className="max-w-[240px] rounded-xl border border-ember/40 bg-ember/10 px-3 py-2 text-right text-[11px] text-ember">
+              {leadsError}
+            </p>
+          )}
+        </div>
+      )}
+
+      {activeLead && (
+        <div className="glass absolute bottom-[184px] left-1/2 z-30 w-[300px] -translate-x-1/2 rounded-[22px] p-4 rise md:bottom-8 md:left-auto md:right-6 md:translate-x-0">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-[0.16em] text-faint">
+                kandydat z OpenStreetMap
+              </p>
+              <p className="mt-1 truncate text-[15px] font-semibold">
+                {activeLead.name || "Boisko bez nazwy"}
+              </p>
+              <p className="text-[12px] tabular-nums text-muted">
+                {activeLead.lat.toFixed(5)}, {activeLead.lng.toFixed(5)}
+              </p>
+            </div>
+            <button
+              onClick={() => setActiveLead(null)}
+              className="shrink-0 text-[16px] text-faint transition hover:text-ink"
+              aria-label="Zamknij"
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link
+              href={`/admin?nowe=${activeLead.id}`}
+              className="flex-1 rounded-xl flame-gradient px-3 py-2.5 text-center text-[12px] font-bold text-black"
+            >
+              Dodaj to boisko
+            </Link>
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${activeLead.lat},${activeLead.lng}`}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-xl border border-hairline bg-white/5 px-3 py-2.5 text-[12px] text-muted transition hover:text-ink"
+            >
+              podejrzyj
+            </a>
+            <button
+              onClick={() => void rejectLead(activeLead.id)}
+              className="rounded-xl px-2 py-2.5 text-[12px] text-faint transition hover:text-ember"
+            >
+              odrzuć
+            </button>
+          </div>
+        </div>
+      )}
+
       <p className="pointer-events-none absolute inset-x-0 bottom-2 z-10 hidden text-center text-[11px] tracking-wide text-faint md:block">
         © 2026 PODKOSZ.PL
       </p>

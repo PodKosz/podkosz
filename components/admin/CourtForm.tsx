@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ACCESS_LABEL,
@@ -23,6 +23,7 @@ import {
   saveCourt,
   voivodeshipForCity,
 } from "@/lib/admin";
+import { markLeadAdded } from "@/lib/leads";
 import { LocationPicker } from "./LocationPicker";
 import { BasketApprovedBadge } from "../icons";
 
@@ -67,14 +68,20 @@ function emptyValues(): CourtValues {
 /** Ścieżka administratora: zdjęcia z dysku, wszystko wpisane ręcznie, publikacja od razu. */
 export function CourtForm({
   initial,
+  prefill,
+  leadId,
   onSaved,
   onCancel,
 }: {
   initial?: AdminCourt;
+  /** wstępnie wypełnione pola, np. z kandydata OSM */
+  prefill?: Partial<CourtValues>;
+  /** kandydat, z którego powstaje wpis — po zapisie znika z mapy */
+  leadId?: string;
   onSaved: (slug: string) => void;
   onCancel?: () => void;
 }) {
-  const [v, setV] = useState<CourtValues>(initial ?? emptyValues());
+  const [v, setV] = useState<CourtValues>(initial ?? { ...emptyValues(), ...prefill });
   const [photos, setPhotos] = useState<FormPhoto[]>(
     initial?.photos.map((p) => ({
       key: p.key,
@@ -169,6 +176,20 @@ export function CourtForm({
     scheduleRegion(v.city, lat, lng);
   };
 
+  /**
+   * Wejście z kandydata OSM: pinezka jest od razu ustawiona, więc miasto i województwo
+   * dociągamy sami zaraz po otwarciu formularza. setTimeout, bo setState w ciele efektu
+   * jest w tym projekcie błędem lintera.
+   */
+  useEffect(() => {
+    if (initial || !prefill) return;
+    if (v.city.trim() || v.voivodeship || !pinSet(v.lat, v.lng)) return;
+    const timer = setTimeout(() => void fillFromPin(v.lat, v.lng), 0);
+    return () => clearTimeout(timer);
+    // tylko przy montowaniu formularza z podpowiedziami
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const addFiles = (files: FileList | null) => {
     if (!files?.length) return;
     const added: FormPhoto[] = [...files].map((file, i) => ({
@@ -220,6 +241,7 @@ export function CourtForm({
     setError(null);
     try {
       const slug = await saveCourt(v, photos, initial?.id);
+      if (leadId) await markLeadAdded(leadId, slug);
       setSavedSlug(slug);
       onSaved(slug);
     } catch (e) {
