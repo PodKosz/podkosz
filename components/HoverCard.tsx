@@ -2,11 +2,18 @@ import { Court, TYPE_LABEL, surfaceLabel } from "@/lib/types";
 import { CourtPhoto } from "./CourtPhoto";
 import { ClockIcon, FireBallIcon, HoopIcon, BasketApprovedBadge, SurfaceIcon } from "./icons";
 
-/** Podgląd po najechaniu na pinezkę: miniaturki + szybkie info. */
-export function HoverCard({ court }: { court: Court }) {
+/**
+ * Podgląd po najechaniu na pinezkę (na dotyku: po jej dotknięciu) — miniaturki i szybkie info.
+ * `tapHint` dokłada stopkę z zaproszeniem do dotknięcia, bo wtedy cała karta jest linkiem.
+ */
+export function HoverCard({ court, tapHint = false }: { court: Court; tapHint?: boolean }) {
   const thumbs = court.photos.slice(0, 3);
   return (
-    <div className="glass w-[320px] overflow-hidden rounded-[22px] rise">
+    <div
+      className={`glass overflow-hidden rounded-[22px] rise ${
+        tapHint ? "w-full" : "w-[320px]"
+      }`}
+    >
       <div className="grid grid-cols-3 gap-[2px] bg-white/5">
         {thumbs.map((p, i) => (
           <div key={i} className={`aspect-[4/3] overflow-hidden ${i === 0 ? "col-span-2 row-span-2" : ""}`}>
@@ -36,6 +43,13 @@ export function HoverCard({ court }: { court: Court }) {
           <Fact icon={<ClockIcon className="h-3.5 w-3.5" />} label="otwarte" value={court.hours} />
           <Fact icon={<SurfaceIcon className="h-3.5 w-3.5" />} label="podłoże" value={surfaceLabel(court.surface)} />
         </div>
+
+        {tapHint && (
+          <p className="mt-3 flex items-center justify-center gap-2 border-t border-hairline pt-2.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-flame">
+            dotknij, żeby otworzyć boisko
+            <span aria-hidden>→</span>
+          </p>
+        )}
       </div>
     </div>
   );

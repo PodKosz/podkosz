@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import Link from "next/link";
 import { Map as MlMap, Marker, StyleSpecification, setWorkerUrl } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Court } from "@/lib/types";
@@ -152,10 +153,30 @@ export function MapView({
   const [showDiag, setShowDiag] = useState(false);
   const [hover, setHover] = useState<{ court: Court; x: number; y: number } | null>(null);
   const hoverRef = useRef<Court | null>(null);
+  /**
+   * Na ekranie dotykowym nie ma najeżdżania: pierwsze dotknięcie pinezki podświetla ją
+   * i pokazuje wizytówkę, a dopiero dotknięcie wizytówki otwiera kartę boiska.
+   */
+  const [coarse] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(hover: none), (pointer: coarse)").matches
+  );
+  const clearCardRef = useRef(() => undefined as void);
   const onSelectLeadRef = useRef(onSelectLead);
   useEffect(() => {
     onSelectLeadRef.current = onSelectLead;
   }, [onSelectLead]);
+
+  const clearCard = useCallback(() => {
+    hoverRef.current = null;
+    setHover(null);
+    onHoverCourt(null);
+  }, [onHoverCourt]);
+
+  useEffect(() => {
+    clearCardRef.current = clearCard;
+  }, [clearCard]);
 
   const reposition = useCallback(() => {
     const map = mapRef.current;
@@ -206,6 +227,9 @@ export function MapView({
     map.on("styledata", () => {
       diag.style = true;
       push();
+      // pinezki wieszamy już po sparsowaniu stylu — nie czekamy na `load`, które
+      // w nieaktywnej karcie przeglądarki potrafi nie przyjść wcale
+      setReady(true);
     });
     map.on("data", (e) => {
       if (e.dataType === "source" && e.tile) diag.tiles += 1;
@@ -216,6 +240,8 @@ export function MapView({
       setReady(true);
     });
     map.on("move", reposition);
+    // dotknięcie samej mapy zamyka wizytówkę boiska (na markerach zatrzymujemy zdarzenie)
+    map.on("click", () => clearCardRef.current());
     mapRef.current = map;
 
     // Style w dev-mode dochodzą po hydracji, więc kontener bywa chwilowo zerowy —
@@ -285,6 +311,18 @@ export function MapView({
       });
       el.addEventListener("click", (e) => {
         e.stopPropagation();
+        if (coarse) {
+          // dotyk: podświetlamy pinezkę, pokazujemy wizytówkę i przysuwamy kadr
+          hoverRef.current = court;
+          onHoverCourt(court.id);
+          reposition();
+          map.easeTo({
+            center: [court.lng, court.lat],
+            offset: [0, -60],
+            duration: 420,
+          });
+          return;
+        }
         onSelectCourt(court);
       });
       const marker = new Marker({ element: el, anchor: "bottom" })
@@ -292,7 +330,7 @@ export function MapView({
         .addTo(map);
       markersRef.current[court.id] = { marker, el };
     }
-  }, [courts, ready, onHoverCourt, onSelectCourt, reposition]);
+  }, [courts, ready, onHoverCourt, onSelectCourt, reposition, coarse]);
 
   /* ---- podświetlenie aktywnej pinezki ---- */
   useEffect(() => {
@@ -402,14 +440,22 @@ export function MapView({
           position:relative, przez co inset-0 nie działa i kontener ma wysokość 0. */}
       <div ref={containerRef} className="h-full w-full" />
 
-      {hover && (
-        <div
-          className="pointer-events-none absolute z-20"
-          style={{ left: hover.x, top: hover.y - 58, transform: "translate(-50%,-100%)" }}
-        >
-          <HoverCard court={hover.court} />
-        </div>
-      )}
+      {hover &&
+        (coarse ? (
+          // dotyk: wizytówka siedzi nad wysuwanym panelem, cała jest linkiem do boiska
+          <div className="pointer-events-auto fixed inset-x-3 bottom-[158px] z-[35] mx-auto max-w-[380px] rise">
+            <Link href={`/boisko/${hover.court.slug}`} className="block">
+              <HoverCard court={hover.court} tapHint />
+            </Link>
+          </div>
+        ) : (
+          <div
+            className="pointer-events-none absolute z-20"
+            style={{ left: hover.x, top: hover.y - 58, transform: "translate(-50%,-100%)" }}
+          >
+            <HoverCard court={hover.court} />
+          </div>
+        ))}
 
       {showDiag && !ready && diag && (
         <div className="glass absolute left-1/2 top-1/2 z-30 w-[440px] max-w-[86vw] -translate-x-1/2 -translate-y-1/2 rounded-[22px] p-5 text-[13px]">
