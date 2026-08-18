@@ -101,7 +101,15 @@ export async function submitCourt(input: NewSubmission): Promise<void> {
     hours: input.hours,
     notes: input.notes,
   });
-  if (error) throw new Error(`Nie udało się zapisać zgłoszenia: ${error.message}`);
+  if (error) {
+    if (/limit zg/i.test(error.message)) {
+      throw new Error(
+        "Z tego urządzenia wysłano dziś już kilka boisk. Kolejne przyjmiemy jutro — " +
+          "a jeśli masz ich więcej, napisz do nas przez „O nas”."
+      );
+    }
+    throw new Error(`Nie udało się zapisać zgłoszenia: ${error.message}`);
+  }
 
   const rows: { submission_id: string; kind: PhotoKind; storage_path: string; sort: number }[] = [];
   for (const [i, photo] of input.photos.entries()) {

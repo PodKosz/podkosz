@@ -32,14 +32,19 @@ export async function POST(request: Request) {
     return Response.json({ sent: false, reason: "puste zgłoszenie" }, { status: 400 });
   }
 
-  // treść musi istnieć w bazie — inaczej ktoś mógłby spamować skrzynkę wprost przez API
+  // Opinia musi istnieć w bazie i nie być jeszcze wysłana. Funkcja „zaklepuje” wiersz,
+  // więc każde kolejne uderzenie w ten endpoint tą samą treścią dostaje odmowę —
+  // inaczej dałoby się zasypać skrzynkę powtarzanym żądaniem.
   const supabase = await supabaseServer();
   if (!supabase) {
     return Response.json({ sent: false, reason: "brak bazy" }, { status: 500 });
   }
-  const { data: exists } = await supabase.rpc("feedback_recent_exists", { msg: message });
-  if (!exists) {
-    return Response.json({ sent: false, reason: "brak takiej opinii w bazie" }, { status: 403 });
+  const { data: claimed } = await supabase.rpc("feedback_claim_for_mail", { msg: message });
+  if (!claimed) {
+    return Response.json(
+      { sent: false, reason: "opinia nieznana albo już wysłana" },
+      { status: 403 }
+    );
   }
 
   const res = await fetch("https://api.resend.com/emails", {

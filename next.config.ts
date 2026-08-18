@@ -1,7 +1,45 @@
 import type { NextConfig } from "next";
 
+/**
+ * Nagłówki bezpieczeństwa dla całego serwisu.
+ * Nagłówki dobrane tak, żeby nic nie psuły działania aplikacji — pełne CSP ze
+ * `script-src` wymagałoby nonce'ów generowanych w middleware.
+ */
+const securityHeaders = [
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  {
+    key: "Permissions-Policy",
+    // geolokalizacja i aparat są potrzebne w kreatorze zgłoszeń — tylko dla nas
+    value: "camera=(self), geolocation=(self), microphone=(), payment=(), usb=()",
+  },
+  {
+    key: "Strict-Transport-Security",
+    value: "max-age=63072000; includeSubDomains; preload",
+  },
+  {
+    key: "Content-Security-Policy",
+    // Bez `default-src` i `script-src`: Next wstrzykuje skrypty inline do hydratacji,
+    // a polityka bez nonce po prostu je blokuje i strona przestaje reagować
+    // (sprawdzone — przyciski przestały działać). Zostawiamy reguły, które nic nie psują,
+    // a zamykają realne wektory: osadzanie w cudzej ramce, wtyczki, podmianę <base>
+    // i wysyłkę formularza na obcy adres.
+    value: [
+      "frame-ancestors 'none'",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "upgrade-insecure-requests",
+    ].join("; "),
+  },
+];
+
 const nextConfig: NextConfig = {
-  /* config options here */
+  poweredByHeader: false,
+  async headers() {
+    return [{ source: "/:path*", headers: securityHeaders }];
+  },
 };
 
 export default nextConfig;

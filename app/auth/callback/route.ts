@@ -5,7 +5,9 @@ import { supabaseServer } from "@/lib/supabase/server";
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
+  const raw = searchParams.get("next") ?? "/";
+  // tylko ścieżka we własnym serwisie: "//zly.example" też zaczyna się od ukośnika
+  const next = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
 
   if (code) {
     const supabase = await supabaseServer();
@@ -17,5 +19,5 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.redirect(`${origin}${next.startsWith("/") ? next : "/"}`);
+  return NextResponse.redirect(`${origin}${next}`);
 }
