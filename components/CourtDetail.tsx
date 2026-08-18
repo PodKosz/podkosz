@@ -15,6 +15,7 @@ import {
   FireBallIcon,
   HoopIcon,
   BasketApprovedBadge,
+  DiceIcon,
   FunnyBadge,
   PencilIcon,
   PinIcon,
@@ -47,7 +48,7 @@ export function CourtDetail({
   random?: { onlyFunny: boolean };
 }) {
   return (
-    <main className={`min-h-dvh ${random ? "pb-40" : "pb-24"}`}>
+    <main className="min-h-dvh pb-24">
       <section className="relative h-[62vh] max-h-[780px] min-h-[420px] w-full overflow-hidden">
         <div className="absolute inset-0">
           <CourtPhoto photo={court.photos[0]} seed={court.seed} />
@@ -70,6 +71,15 @@ export function CourtDetail({
                 className="inline-flex w-fit items-center gap-2 rounded-full flame-gradient px-4 py-2 text-[12px] font-bold uppercase tracking-[0.14em] text-black transition hover:brightness-110"
               >
                 <PencilIcon className="h-4 w-4" /> edytuj
+              </Link>
+            )}
+            {random && (
+              <Link
+                href={`/losowe?omin=${court.slug}${random.onlyFunny ? "&dziwne=1" : ""}`}
+                prefetch={false}
+                className="inline-flex w-fit items-center gap-2 rounded-full flame-gradient px-4 py-2 text-[12px] font-bold uppercase tracking-[0.14em] text-black transition hover:brightness-110"
+              >
+                <DiceIcon className="h-4 w-4" /> losuj dalej
               </Link>
             )}
           </div>
@@ -249,40 +259,6 @@ export function CourtDetail({
         )}
       </div>
 
-      {random && (
-        <div className="glass-dim fixed inset-x-0 bottom-0 z-40 flex flex-wrap items-center justify-center gap-3 border-t border-hairline px-4 py-3 sm:gap-4">
-          <span className="text-[12px] uppercase tracking-[0.14em] text-faint">
-            {random.onlyFunny ? "losowanie: dziwne boiska" : "losowe boisko"}
-          </span>
-
-          <Link
-            href={`/losowe?omin=${court.slug}${random.onlyFunny ? "&dziwne=1" : ""}`}
-            prefetch={false}
-            className="rounded-2xl flame-gradient px-5 py-2.5 text-[13px] font-bold text-black transition hover:brightness-110"
-          >
-            Losuj dalej
-          </Link>
-
-          <Link
-            href={random.onlyFunny ? `/losowe?omin=${court.slug}` : `/losowe?omin=${court.slug}&dziwne=1`}
-            prefetch={false}
-            className={`rounded-2xl border px-4 py-2.5 text-[12px] font-semibold transition ${
-              random.onlyFunny
-                ? "border-hairline bg-white/5 text-muted hover:text-ink"
-                : "border-transparent lime-gradient text-black hover:brightness-105"
-            }`}
-          >
-            {random.onlyFunny ? "wszystkie boiska" : "tylko dziwne"}
-          </Link>
-
-          <Link
-            href="/"
-            className="text-[12px] uppercase tracking-[0.14em] text-muted transition hover:text-ink"
-          >
-            koniec losowania
-          </Link>
-        </div>
-      )}
     </main>
   );
 }

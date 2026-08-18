@@ -198,3 +198,17 @@ export function PlayIcon(props: P) {
     </svg>
   );
 }
+
+/** Kostka do losowania — „losowe boisko” i „losuj dalej”. */
+export function DiceIcon(props: P) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" {...props}>
+      <rect x="3.5" y="3.5" width="17" height="17" rx="4" />
+      <circle cx="8.6" cy="8.6" r="1.15" fill="currentColor" stroke="none" />
+      <circle cx="15.4" cy="15.4" r="1.15" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1.15" fill="currentColor" stroke="none" />
+      <circle cx="15.4" cy="8.6" r="1.15" fill="currentColor" stroke="none" />
+      <circle cx="8.6" cy="15.4" r="1.15" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}

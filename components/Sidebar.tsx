@@ -18,6 +18,7 @@ import {
   BulbIcon,
   ChevronIcon,
   CourtIcon,
+  DiceIcon,
   FireBallIcon,
   HoopIcon,
   PinIcon,
@@ -75,7 +76,11 @@ export function Sidebar({
     <>
       {/* ---------- komputer: osobne pudełka jedno pod drugim ---------- */}
       <div className="pointer-events-none absolute left-5 top-5 bottom-5 z-30 hidden w-[386px] flex-col gap-3 md:flex">
-        <div className="glass-dim pointer-events-auto shrink-0 rounded-[26px] px-6 py-4">
+        {/* logo bez kafelka — leży wprost na mapie, cień trzyma czytelność */}
+        <div
+          className="pointer-events-auto shrink-0 pl-1"
+          style={{ filter: "drop-shadow(0 6px 20px rgba(0,0,0,.85))" }}
+        >
           <Brand />
         </div>
 
@@ -322,20 +327,6 @@ function Collapsible({
         <div className="overflow-hidden">{children}</div>
       </div>
     </div>
-  );
-}
-
-/** Kostka do losowania — ikonka przy „losowe boisko”. */
-function DiceIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.6">
-      <rect x="3.5" y="3.5" width="17" height="17" rx="4" />
-      <circle cx="8.6" cy="8.6" r="1.15" fill="currentColor" stroke="none" />
-      <circle cx="15.4" cy="15.4" r="1.15" fill="currentColor" stroke="none" />
-      <circle cx="12" cy="12" r="1.15" fill="currentColor" stroke="none" />
-      <circle cx="15.4" cy="8.6" r="1.15" fill="currentColor" stroke="none" />
-      <circle cx="8.6" cy="15.4" r="1.15" fill="currentColor" stroke="none" />
-    </svg>
   );
 }
 

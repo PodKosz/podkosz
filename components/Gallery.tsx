@@ -6,11 +6,11 @@ import { CourtPhoto } from "./CourtPhoto";
 import { Lightbox } from "./Lightbox";
 
 /**
- * Galeria układana pod konkretne kadry, a nie w równą siatkę:
- * tytułowe całe boisko dostaje szeroki kadr, kosze stoją pionowo po bokach,
- * a detale (obręcz i nawierzchnia) siedzą między nimi w środku — układ jest
- * symetryczny względem osi. Na komputerze film z boiska wchodzi w prawą kolumnę
- * i wyśrodkowuje się do wysokości zdjęć, na telefonie ląduje pod nimi.
+ * Galeria układana pod konkretne kadry, a nie w równą siatkę: tytułowe całe boisko dostaje
+ * szeroki panel, kosze stoją pionowo po bokach, a detale (obręcz i nawierzchnia) siedzą
+ * między nimi — wiersz jest symetryczny względem osi. Film z boiska jest jednym z kafelków:
+ * na dużym ekranie stoi pionowo w tym samym wierszu co kosze, na telefonie ląduje na końcu.
+ * Dolne rzędy dzielimy tak, żeby każdy był pełny — nigdy nie zostaje puste miejsce.
  */
 export function Gallery({ court, video }: { court: Court; video?: React.ReactNode }) {
   const [open, setOpen] = useState<number | null>(null);
@@ -26,14 +26,14 @@ export function Gallery({ court, video }: { court: Court; video?: React.ReactNod
   const wide = indexOfKind("ogólne-2");
 
   const used = new Set([heroIndex, hoopA, hoopB, rim, surface, wide].filter((i) => i >= 0));
-  const restIndexes = photos.map((_, i) => i).filter((i) => !used.has(i));
+  const rest = photos.map((_, i) => i).filter((i) => !used.has(i));
 
   const middle = [rim, surface].filter((i) => i >= 0);
   const portraits = [hoopA, hoopB].filter((i) => i >= 0);
 
   /**
    * Zdjęcie leży w warstwie absolutnej — inaczej jego naturalna wysokość rozpycha
-   * kafelek i cały wiersz mozaiki (kafelki w środku nie mają własnych proporcji).
+   * kafelek i cały wiersz mozaiki.
    */
   const tile = (index: number, ratio: string, extraClass = "") =>
     index < 0 || !photos[index] ? null : (
@@ -51,74 +51,105 @@ export function Gallery({ court, video }: { court: Court; video?: React.ReactNod
       </button>
     );
 
-  const mosaic = (
-    <div className="space-y-3">
-      {/* kadr tytułowy — najszerszy, żeby od razu było widać całą płytę */}
-      {tile(heroIndex, "aspect-[16/9] w-full")}
+  /* Dolne kadry dzielimy na rzędy po maksymalnie trzy, ale równo — 3, 3, 2 zamiast
+     3, 3, 1 — żeby żaden rząd nie kończył się pustym miejscem. */
+  const bottom = [wide, ...rest].filter((i) => i >= 0);
+  const rowCount = Math.max(1, Math.ceil(bottom.length / 3));
+  const rows: number[][] = Array.from({ length: rowCount }, () => []);
+  bottom.forEach((index, i) => rows[i % rowCount].push(index));
 
-      {/* kosze pionowo po bokach, detale w środku */}
-      {(portraits.length > 0 || middle.length > 0) && (
-        <div
-          className={`grid gap-3 ${
-            portraits.length === 2
-              ? "sm:grid-cols-[1fr_1.15fr_1fr]"
-              : portraits.length === 1
-                ? "sm:grid-cols-[1fr_1.3fr]"
-                : "sm:grid-cols-1"
-          }`}
-        >
-          {portraits[0] !== undefined && tile(portraits[0], "aspect-[3/4] h-full w-full")}
+  const ROW_COLS: Record<number, string> = {
+    1: "grid-cols-1",
+    2: "grid-cols-2",
+    3: "grid-cols-2 sm:grid-cols-3",
+  };
+  const ROW_RATIO: Record<number, string> = {
+    1: "aspect-[16/9] w-full",
+    2: "aspect-[3/2] w-full",
+    3: "aspect-[4/3] w-full",
+  };
 
-          {middle.length > 0 && (
-            <div className={`grid gap-3 ${middle.length === 2 ? "grid-rows-2" : "grid-rows-1"}`}>
-              {middle.map((i) =>
-                tile(
-                  i,
-                  // na telefonie kolumny nie ma, więc wiersza nie wyznacza pionowy kadr
-                  // i kafelek musi mieć własne proporcje — inaczej zapada się do zera
-                  portraits.length
-                    ? "aspect-[16/9] w-full sm:aspect-auto sm:h-full"
-                    : "aspect-[16/9] w-full"
-                )
-              )}
-            </div>
-          )}
+  /** Kolumny wiersza z koszami — film dokłada czwartą, węższą kolumnę na dużym ekranie. */
+  const middleGrid =
+    portraits.length === 2
+      ? video
+        ? "sm:grid-cols-[1fr_1.15fr_1fr] lg:grid-cols-[1fr_1.1fr_1fr_0.78fr]"
+        : "sm:grid-cols-[1fr_1.15fr_1fr]"
+      : portraits.length === 1
+        ? video
+          ? "sm:grid-cols-[1fr_1.3fr] lg:grid-cols-[1fr_1.25fr_0.78fr]"
+          : "sm:grid-cols-[1fr_1.3fr]"
+        : video
+          ? "sm:grid-cols-1 lg:grid-cols-[1fr_0.42fr]"
+          : "sm:grid-cols-1";
 
-          {portraits[1] !== undefined && tile(portraits[1], "aspect-[3/4] h-full w-full")}
-        </div>
-      )}
-
-      {/* całość z drugiej strony i ujęcia dodatkowe */}
-      {(wide >= 0 || restIndexes.length > 0) && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {wide >= 0 &&
-            tile(
-              wide,
-              "aspect-[16/9] w-full",
-              // bez ujęć dodatkowych szeroki kadr bierze cały wiersz, żeby nie zostawiać dziury
-              restIndexes.length ? "col-span-2" : "col-span-2 sm:col-span-3"
-            )}
-          {restIndexes.map((i) => tile(i, "aspect-[4/3] w-full"))}
-        </div>
-      )}
-    </div>
-  );
+  /** Film jako kafelek: w wierszu z koszami od `lg`, niżej osobno na węższych ekranach. */
+  const videoTile = (variant: "row" | "bottom") =>
+    !video ? null : (
+      <div
+        className={`relative overflow-hidden rounded-[20px] border border-hairline ${
+          variant === "row"
+            ? "hidden lg:block lg:h-full lg:w-full"
+            : "mx-auto aspect-[9/16] w-full max-w-[320px] lg:hidden"
+        }`}
+      >
+        {video}
+      </div>
+    );
 
   return (
     <>
-      {video ? (
-        <div className="grid items-center gap-6 lg:grid-cols-[minmax(0,1fr)_330px]">
-          {mosaic}
-          <div className="lg:self-center">
-            <p className="mb-3 text-[11px] uppercase tracking-[0.18em] text-faint lg:text-center">
-              Film z boiska
-            </p>
-            <div>{video}</div>
+      <div className="space-y-3">
+        {/* kadr tytułowy — najszerszy, żeby od razu było widać całą płytę */}
+        {tile(heroIndex, "aspect-[16/9] w-full")}
+
+        {/* kosze pionowo po bokach, detale w środku, film z prawej */}
+        {(portraits.length > 0 || middle.length > 0 || video) && (
+          <div className={`grid gap-3 ${middleGrid}`}>
+            {portraits[0] !== undefined && tile(portraits[0], "aspect-[3/4] h-full w-full")}
+
+            {middle.length > 0 && (
+              <div className={`grid gap-3 ${middle.length === 2 ? "grid-rows-2" : "grid-rows-1"}`}>
+                {middle.map((i) =>
+                  tile(
+                    i,
+                    // na telefonie kolumny nie ma, więc kafelek musi mieć własne proporcje
+                    portraits.length
+                      ? "aspect-[16/9] w-full sm:aspect-auto sm:h-full"
+                      : "aspect-[16/9] w-full"
+                  )
+                )}
+              </div>
+            )}
+
+            {portraits[1] !== undefined && tile(portraits[1], "aspect-[3/4] h-full w-full")}
+
+            {videoTile("row")}
           </div>
-        </div>
-      ) : (
-        mosaic
-      )}
+        )}
+
+        {/* pozostałe kadry — rzędy zawsze pełne */}
+        {rows.map(
+          (row, ri) =>
+            row.length > 0 && (
+              <div
+                key={ri}
+                className={`grid gap-3 ${ROW_COLS[row.length] ?? "grid-cols-2 sm:grid-cols-3"}`}
+              >
+                {row.map((i, k) =>
+                  tile(
+                    i,
+                    ROW_RATIO[row.length] ?? "aspect-[4/3] w-full",
+                    // trzeci kadr w rzędzie stoi na telefonie sam, więc bierze całą szerokość
+                    row.length === 3 && k === 2 ? "col-span-2 sm:col-span-1" : ""
+                  )
+                )}
+              </div>
+            )
+        )}
+
+        {videoTile("bottom")}
+      </div>
 
       {open !== null && (
         <Lightbox

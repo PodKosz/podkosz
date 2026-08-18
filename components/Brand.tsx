@@ -1,7 +1,16 @@
+"use client";
+
+import { useId } from "react";
 import Link from "next/link";
 
-/** Logo: boisko widziane z góry, z piłką w kole środkowym. */
+/**
+ * Logo: boisko widziane z góry, z piłką w kole środkowym.
+ * Gradient ma identyfikator z useId — dwa loga na stronie (nawigacja + panel) miały
+ * wcześniej ten sam `id`, a `url(#…)` trafiał do tego ukrytego i ikona znikała.
+ */
 export function Brand({ compact = false }: { compact?: boolean }) {
+  const gradientId = `brand-court-${useId()}`;
+
   return (
     <Link href="/" className="flex items-center gap-3 transition hover:opacity-90">
       <span
@@ -11,14 +20,14 @@ export function Brand({ compact = false }: { compact?: boolean }) {
         <svg viewBox="0 0 64 64" className={compact ? "h-9 w-9" : "h-13 w-13"}
              style={compact ? undefined : { width: 52, height: 52 }} fill="none">
           <defs>
-            <linearGradient id="brand-court" x1="0" y1="0" x2="0.8" y2="1">
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0.8" y2="1">
               <stop offset="0" stopColor="#ffc47d" />
               <stop offset="0.5" stopColor="#ff7a18" />
               <stop offset="1" stopColor="#ff3d00" />
             </linearGradient>
           </defs>
 
-          <g stroke="url(#brand-court)" fill="none" strokeLinecap="round" strokeLinejoin="round">
+          <g stroke={`url(#${gradientId})`} fill="none" strokeLinecap="round" strokeLinejoin="round">
             {/* płyta boiska */}
             <rect x="4.5" y="12.5" width="55" height="39" rx="4.5" strokeWidth="2.4" />
             {/* linia środkowa */}
