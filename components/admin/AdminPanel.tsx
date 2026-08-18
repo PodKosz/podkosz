@@ -19,11 +19,13 @@ import { supabaseEnabled } from "@/lib/supabase/config";
 import { signInWithGoogle } from "@/lib/auth";
 import { BasketApprovedBadge, PinIcon } from "../icons";
 import { GoogleMark } from "../GoogleMark";
+import { Lightbox } from "../Lightbox";
 import { CourtsAdmin } from "./CourtsAdmin";
 import { CourtForm } from "./CourtForm";
 import { ReportsAdmin } from "./ReportsAdmin";
 import { FeedbackAdmin } from "./FeedbackAdmin";
 import { LeadsAdmin } from "./LeadsAdmin";
+import { StatsAdmin } from "./StatsAdmin";
 import { NewFromLead } from "./NewFromLead";
 
 const TABS: [SubmissionStatus, string][] = [
@@ -32,10 +34,11 @@ const TABS: [SubmissionStatus, string][] = [
   ["rejected", "Odrzucone"],
 ];
 
-type View = "queue" | "reports" | "feedback" | "courts" | "leads" | "new";
+type View = "queue" | "stats" | "reports" | "feedback" | "courts" | "leads" | "new";
 
 const VIEWS: [View, string][] = [
   ["queue", "Kolejka zgłoszeń"],
+  ["stats", "Statystyki"],
   ["reports", "Błędy w danych"],
   ["feedback", "Opinie"],
   ["courts", "Boiska na mapie"],
@@ -89,7 +92,9 @@ export function AdminPanel({ isAdmin, signedIn }: { isAdmin: boolean; signedIn: 
     return (
       <div className="relative">
         <Header view={view} setView={setView} live={queue.live} />
-        {view === "courts" ? (
+        {view === "stats" ? (
+          <StatsAdmin />
+        ) : view === "courts" ? (
           <CourtsAdmin editSlug={editSlug} />
         ) : view === "reports" ? (
           <ReportsAdmin />
@@ -306,6 +311,10 @@ function Header({
       "Opinie",
       "Co użytkownicy chcieliby poprawić. Każdy może wysłać jedną opinię na dobę — okienko jest na stronie „O nas”.",
     ],
+    stats: [
+      "Statystyki",
+      "Stan projektu w liczbach: baza, ludzie, kolejka i zużycie darmowych limitów hostingu.",
+    ],
     leads: [
       "Kandydaci OSM",
       "Boiska wypatrzone w OpenStreetMap — lista miejsc do sprawdzenia. Widzisz je tylko Ty, jako szare pinezki na mapie po włączeniu przycisku.",
@@ -364,11 +373,23 @@ function Editor({
 }) {
   const [rejecting, setRejecting] = useState(false);
   const [customReason, setCustomReason] = useState("");
+  const [zoom, setZoom] = useState<number | null>(null);
 
   return (
     <div className="border-t border-hairline p-5">
+      {zoom !== null && (
+        <Lightbox
+          items={s.photos.map((p) => ({
+            url: p.url,
+            caption: PHOTO_KIND_LABEL[p.kind] ?? p.kind,
+          }))}
+          index={zoom}
+          onIndex={setZoom}
+          onClose={() => setZoom(null)}
+        />
+      )}
       <h3 className="text-[11px] uppercase tracking-[0.16em] text-faint">
-        Zdjęcia — kliknij ×, żeby usunąć nieudane
+        Zdjęcia — klik powiększa, × usuwa nieudane
       </h3>
       <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
         {s.photos.map((p, i) => (
@@ -376,6 +397,12 @@ function Editor({
             key={p.id ?? i}
             className="group relative aspect-[4/3] overflow-hidden rounded-xl border border-hairline"
           >
+            <button
+              type="button"
+              onClick={() => setZoom(i)}
+              className="absolute inset-0 z-10"
+              aria-label="Powiększ zdjęcie"
+            />
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={p.url} alt={p.kind} className="h-full w-full object-cover" />
             <span className="absolute inset-x-0 bottom-0 bg-black/70 px-1.5 py-1 text-[9px] uppercase tracking-wide text-muted">
@@ -383,7 +410,7 @@ function Editor({
             </span>
             <button
               onClick={() => onDeletePhoto(i)}
-              className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-black/75 text-[13px] text-ink opacity-0 transition group-hover:opacity-100"
+              className="absolute right-1 top-1 z-20 grid h-6 w-6 place-items-center rounded-full bg-black/75 text-[13px] text-ink opacity-0 transition group-hover:opacity-100"
               aria-label="Usuń zdjęcie"
             >
               ×

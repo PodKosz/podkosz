@@ -14,6 +14,8 @@
   --color-basket: #a855f7;
   --color-basket-deep: #6d28d9;
   --color-basket-glow: #e9d5ff;
+  --color-lime: #b6ff3d;
+  --color-lime-deep: #6fbf00;
   --color-hairline: rgba(255, 255, 255, 0.09);
 
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
@@ -304,4 +306,18 @@ select option {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Limonkowa plakietka „dziwne boisko” — ma krzyczeć inaczej niż pomarańcz i fiolet. */
+.lime-gradient {
+  background: linear-gradient(135deg, #d8ff8a 0%, #b6ff3d 45%, #6fbf00 100%);
+}
+.lime-text {
+  background: linear-gradient(135deg, #d8ff8a, #b6ff3d 55%, #7fd400);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.lime-ring {
+  box-shadow: 0 0 0 1px rgba(182, 255, 61, 0.45), 0 8px 26px -10px rgba(182, 255, 61, 0.6);
 }

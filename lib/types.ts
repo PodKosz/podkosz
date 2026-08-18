@@ -66,6 +66,10 @@ export interface Court {
   likes: number;
   /** wyróżnienie od administratora */
   basketApproved: boolean;
+  /** limonkowa plakietka: dziwne albo śmieszne boisko */
+  funny?: boolean;
+  /** link do filmiku YouTube Shorts z boiska */
+  shortsUrl?: string;
   /** 2-3 zdania od twórcy, pokazywane w wyróżnionej sekcji */
   basketNote?: string;
   addedBy: string;

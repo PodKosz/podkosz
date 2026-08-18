@@ -20,10 +20,12 @@ export async function generateMetadata({
 
 export default async function CourtPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { slug } = await params;
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
   const court = await getCourtBySlug(slug);
 
   // Bez podpiętej bazy boiska zatwierdzone lokalnie żyją w localStorage.
@@ -40,6 +42,7 @@ export default async function CourtPage({
       favorite={favorites.has(court.id)}
       signedIn={!!user}
       isAdmin={!!user?.isAdmin}
+      random={query.losowe === "1" ? { onlyFunny: query.dziwne === "1" } : undefined}
     />
   );
 }

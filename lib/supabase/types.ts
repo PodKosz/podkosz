@@ -20,6 +20,8 @@ export interface CourtRow {
   description: string;
   basket_approved: boolean;
   basket_note: string;
+  funny: boolean;
+  shorts_url: string;
   likes_count: number;
   added_by: string | null;
   added_by_name: string;

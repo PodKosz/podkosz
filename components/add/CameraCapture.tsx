@@ -54,7 +54,7 @@ export function CameraCapture({
   const shoot = useCallback(() => {
     const video = videoRef.current;
     if (!video || !video.videoWidth) return;
-    const max = 1280;
+    const max = 2048;
     const scale = Math.min(1, max / Math.max(video.videoWidth, video.videoHeight));
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(video.videoWidth * scale);
@@ -62,7 +62,7 @@ export function CameraCapture({
     canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
     setFlash(true);
     setTimeout(() => setFlash(false), 180);
-    onCapture(canvas.toDataURL("image/jpeg", 0.72));
+    onCapture(canvas.toDataURL("image/jpeg", 0.75));
   }, [onCapture]);
 
   const fromFile = (file?: File) => {
@@ -71,13 +71,13 @@ export function CameraCapture({
     reader.onload = () => {
       const img = new Image();
       img.onload = () => {
-        const max = 1280;
+        const max = 2048;
         const scale = Math.min(1, max / Math.max(img.width, img.height));
         const canvas = document.createElement("canvas");
         canvas.width = Math.round(img.width * scale);
         canvas.height = Math.round(img.height * scale);
         canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height);
-        onCapture(canvas.toDataURL("image/jpeg", 0.72));
+        onCapture(canvas.toDataURL("image/jpeg", 0.75));
       };
       img.src = reader.result as string;
     };

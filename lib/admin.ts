@@ -24,6 +24,10 @@ export interface CourtValues {
   description: string;
   basketApproved: boolean;
   basketNote: string;
+  /** limonkowa plakietka „dziwne boisko” */
+  funny: boolean;
+  /** link do filmiku YouTube Shorts */
+  shortsUrl: string;
   addedByName: string;
 }
 
@@ -84,6 +88,8 @@ export async function saveCourt(
     description: values.description,
     basket_approved: values.basketApproved,
     basket_note: values.basketNote ?? '',
+    funny: values.funny,
+    shorts_url: values.shortsUrl?.trim() ?? '',
     added_by_name: values.addedByName || "Basket",
   };
 
@@ -178,6 +184,8 @@ export async function listCourtsForAdmin(): Promise<AdminCourt[]> {
     description: row.description,
     basketApproved: row.basket_approved,
     basketNote: row.basket_note ?? '',
+    funny: row.funny ?? false,
+    shortsUrl: row.shorts_url ?? '',
     addedByName: row.added_by_name,
     likes: row.likes_count,
     // w edytorze pokazujemy tę samą kolejność, którą zobaczy odwiedzający
@@ -192,68 +200,7 @@ export async function listCourtsForAdmin(): Promise<AdminCourt[]> {
   }));
 }
 
-/* ---------- pomocnicze: adres <-> współrzędne (OpenStreetMap Nominatim) ---------- */
+/* ---------- pomocnicze: adres <-> współrzędne ---------- */
 
-export interface PlaceHit {
-  label: string;
-  lat: number;
-  lng: number;
-}
-
-export async function searchPlace(query: string): Promise<PlaceHit[]> {
-  const url =
-    "https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=pl&limit=5&q=" +
-    encodeURIComponent(query);
-  const res = await fetch(url, { headers: { "Accept-Language": "pl" } });
-  if (!res.ok) return [];
-  const json = (await res.json()) as { display_name: string; lat: string; lon: string }[];
-  return json.map((h) => ({
-    label: h.display_name,
-    lat: Number(h.lat),
-    lng: Number(h.lon),
-  }));
-}
-
-export async function reverseGeocode(
-  lat: number,
-  lng: number
-): Promise<{ city: string; voivodeship: string } | null> {
-  const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`;
-  const res = await fetch(url, { headers: { "Accept-Language": "pl" } });
-  if (!res.ok) return null;
-
-  const json = (await res.json()) as {
-    address?: Record<string, string>;
-  };
-  const a = json.address ?? {};
-  const city = a.city ?? a.town ?? a.village ?? a.municipality ?? a.county ?? "";
-
-  return { city, voivodeship: cleanVoivodeship(a.state) };
-}
-
-const cleanVoivodeship = (state?: string) =>
-  (state ?? "")
-    .toLowerCase()
-    .replace(/^wojew[oó]dztwo\s+/, "")
-    .trim();
-
-/**
- * Województwo po samej nazwie miasta — do automatycznego uzupełniania formularza.
- * Bierzemy pierwsze trafienie z Nominatim ograniczone do Polski i miejscowości.
- */
-export async function voivodeshipForCity(city: string): Promise<string | null> {
-  const query = city.trim();
-  if (query.length < 3) return null;
-
-  const url =
-    "https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=pl&limit=1" +
-    "&addressdetails=1&featureType=settlement&city=" +
-    encodeURIComponent(query);
-
-  const res = await fetch(url, { headers: { "Accept-Language": "pl" } });
-  if (!res.ok) return null;
-
-  const json = (await res.json()) as { address?: Record<string, string> }[];
-  const found = cleanVoivodeship(json[0]?.address?.state);
-  return found || null;
-}
+export { searchPlace, reverseGeocode, voivodeshipForCity } from "./geo";
+export type { PlaceHit } from "./geo";

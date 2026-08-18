@@ -167,3 +167,34 @@ export function BasketApprovedBadge({ className = "" }: { className?: string }) 
     </span>
   );
 }
+
+/** Limonkowa plakietka dla boisk dziwnych i śmiesznych. */
+export function FunnyBadge({
+  className = "",
+  label = "Dziwne boisko",
+}: {
+  className?: string;
+  label?: string;
+}) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-[4px] text-[10px] font-bold uppercase tracking-[0.16em] text-black lime-gradient lime-ring ${className}`}
+    >
+      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M8.5 9.5h.01M15.5 9.5h.01" />
+        <path d="M8 15c1.4 1.4 6.2 1.4 8-1" />
+      </svg>
+      {label}
+    </span>
+  );
+}
+
+/** Pomarańczowy trójkącik play w szkle — używany na miniaturze filmiku. */
+export function PlayIcon(props: P) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+      <path d="M9 6.2c0-.9 1-1.5 1.8-1l7.3 4.6c.7.5.7 1.5 0 2l-7.3 4.6c-.8.5-1.8-.1-1.8-1V6.2Z" />
+    </svg>
+  );
+}

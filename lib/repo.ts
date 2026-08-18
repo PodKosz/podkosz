@@ -35,6 +35,8 @@ function rowToCourt(row: CourtRow): Court {
     likes: row.likes_count,
     basketApproved: row.basket_approved,
     basketNote: row.basket_note ?? '',
+    funny: row.funny ?? false,
+    shortsUrl: row.shorts_url ?? '',
     addedBy: row.added_by_name,
     addedAt: row.created_at.slice(0, 10),
     description: row.description,
@@ -148,4 +150,31 @@ export async function listFavoriteCourts(userId: string): Promise<Court[]> {
     .map((r) => r.courts)
     .filter(Boolean)
     .map(rowToCourt);
+}
+
+/**
+ * Losowy slug boiska. `onlyFunny` zawęża do boisk z limonkową plakietką.
+ * PostgREST nie umie sortować losowo, więc ciągniemy same slugi (kilka kB) i losujemy tutaj.
+ */
+export async function randomCourtSlug(
+  onlyFunny = false,
+  skipSlug?: string
+): Promise<string | null> {
+  const supabase = await supabaseServer();
+  const pick = (slugs: string[]) => {
+    const pool = skipSlug ? slugs.filter((s) => s !== skipSlug) : slugs;
+    if (!pool.length) return null;
+    return pool[Math.floor(Math.random() * pool.length)];
+  };
+
+  if (!supabase) {
+    const local = (onlyFunny ? COURTS.filter((c) => c.funny) : COURTS).map((c) => c.slug);
+    return pick(local);
+  }
+
+  let query = supabase.from("courts").select("slug");
+  if (onlyFunny) query = query.eq("funny", true);
+  const { data } = await query;
+
+  return pick(((data ?? []) as { slug: string }[]).map((r) => r.slug));
 }

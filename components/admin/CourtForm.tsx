@@ -25,7 +25,8 @@ import {
 } from "@/lib/admin";
 import { markLeadAdded } from "@/lib/leads";
 import { LocationPicker } from "./LocationPicker";
-import { BasketApprovedBadge } from "../icons";
+import { BasketApprovedBadge, FunnyBadge } from "../icons";
+import { youtubeId } from "@/lib/youtube";
 
 /** Pełna lista kadrów do wyboru przy dodawaniu ręcznym, w kolejności wyświetlania. */
 const KINDS = PHOTO_DISPLAY_ORDER;
@@ -61,6 +62,8 @@ function emptyValues(): CourtValues {
     description: "",
     basketApproved: false,
     basketNote: "",
+    funny: false,
+    shortsUrl: "",
     addedByName: "Basket",
   };
 }
@@ -540,6 +543,40 @@ export function CourtForm({
             </div>
           )}
         </div>
+
+        <div
+          className={`rounded-2xl border transition ${
+            v.funny ? "border-[#b6ff3d]/60 bg-[#b6ff3d]/10" : "border-hairline bg-white/4"
+          }`}
+        >
+          <button
+            type="button"
+            onClick={() => set({ funny: !v.funny })}
+            className="flex w-full items-center gap-3 px-4 py-3 text-left"
+          >
+            <FunnyBadge />
+            <span className="text-[13px] text-muted">
+              Dziwne albo śmieszne boisko — limonkowa plakietka i osobne losowanie
+            </span>
+            <span className="switch ml-auto" data-on={v.funny} />
+          </button>
+        </div>
+
+        <Field label="Film z boiska — link do YouTube Shorts (opcjonalnie)">
+          <input
+            value={v.shortsUrl}
+            onChange={(e) => set({ shortsUrl: e.target.value })}
+            placeholder="https://www.youtube.com/shorts/…"
+            className="w-full bg-transparent outline-none placeholder:text-faint"
+          />
+        </Field>
+        {v.shortsUrl.trim() && (
+          <p className="text-[11px] text-faint">
+            {youtubeId(v.shortsUrl)
+              ? `Rozpoznany film: ${youtubeId(v.shortsUrl)} — na karcie boiska pojawi się pionowy odtwarzacz z przyciskiem play.`
+              : "Nie rozpoznaję tego linku. Wklej adres w formie youtube.com/shorts/… albo youtu.be/…"}
+          </p>
+        )}
       </section>
 
       {error && (

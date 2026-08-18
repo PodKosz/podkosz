@@ -19,6 +19,7 @@ import {
 import { submitCourt } from "@/lib/queue";
 import { signInWithGoogle } from "@/lib/auth";
 import { supabaseEnabled } from "@/lib/supabase/config";
+import { reverseGeocode } from "@/lib/geo";
 import { ShotDiagram } from "../ShotDiagram";
 import { CameraCapture } from "./CameraCapture";
 import { ArrowLeftIcon, PinIcon } from "../icons";
@@ -43,6 +44,8 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
   const [skipped, setSkipped] = useState<PhotoKind[]>([]);
   const [pos, setPos] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null);
   const [gpsError, setGpsError] = useState<string | null>(null);
+  /** co udało się odczytać z lokalizacji — pokazujemy to przy pinezce */
+  const [placeNote, setPlaceNote] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "",
     city: "",
@@ -136,15 +139,45 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      (p) =>
+      (p) => {
         setPos({
           lat: p.coords.latitude,
           lng: p.coords.longitude,
           accuracy: Math.round(p.coords.accuracy),
-        }),
+        });
+        void fillPlace(p.coords.latitude, p.coords.longitude);
+      },
       () => setGpsError("Nie udało się pobrać lokalizacji. Wpisz współrzędne ręcznie."),
       { enableHighAccuracy: true, timeout: 12000 }
     );
+  };
+
+  /**
+   * Miasto i województwo bierzemy z lokalizacji — użytkownik nie musi ich wpisywać.
+   * Pola zostają widoczne w kolejnym kroku, więc zawsze można poprawić.
+   */
+  const fillPlace = async (lat: number, lng: number) => {
+    setPlaceNote("sprawdzam adres…");
+    try {
+      const found = await reverseGeocode(lat, lng);
+      const region = VOIVODESHIPS.includes(found?.voivodeship as (typeof VOIVODESHIPS)[number])
+        ? (found?.voivodeship as string)
+        : "";
+      if (!found || (!found.city && !region)) {
+        setPlaceNote("nie rozpoznałem adresu — wpisz miasto w kolejnym kroku");
+        return;
+      }
+      setForm((f) => ({
+        ...f,
+        city: f.city || found.city,
+        voivodeship: f.voivodeship || region,
+      }));
+      setPlaceNote(
+        [found.city, region].filter(Boolean).join(", ") + " — uzupełnione z lokalizacji"
+      );
+    } catch {
+      setPlaceNote("nie udało się odczytać adresu — wpisz miasto w kolejnym kroku");
+    }
   };
 
   const submit = async () => {
@@ -454,6 +487,7 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
                   dokładność ±{pos.accuracy ?? "?"} m
                   {(pos.accuracy ?? 0) > 30 && " — spróbuj ponownie na otwartej przestrzeni"}
                 </p>
+                {placeNote && <p className="mt-1 text-[13px] text-flame">{placeNote}</p>}
                 <button
                   onClick={askGps}
                   className="mt-4 text-[13px] text-flame transition hover:text-glow"
@@ -514,7 +548,8 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
         <section className="rise">
           <h2 className="text-[24px] font-semibold tracking-tight">Szczegóły boiska</h2>
           <p className="mt-2 text-[14px] text-muted">
-            Kilka pól, które trafią na kartę boiska. Możemy je jeszcze poprawić przy weryfikacji.
+            Miasto i województwo wpisaliśmy z Twojej lokalizacji — sprawdź tylko, czy się zgadza.
+            Resztę pól uzupełnij albo zostaw, poprawimy je przy weryfikacji.
           </p>
 
           <div className="mt-6 space-y-4">

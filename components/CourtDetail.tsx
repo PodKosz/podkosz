@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ACCESS_LABEL, Court, TYPE_LABEL, surfaceLabel } from "@/lib/types";
 import { CourtPhoto } from "./CourtPhoto";
 import { Gallery } from "./Gallery";
+import { ShortsPlayer } from "./ShortsPlayer";
 import { LikeButton } from "./LikeButton";
 import { FavoriteButton } from "./FavoriteButton";
 import { ReportButton } from "./ReportButton";
@@ -14,6 +15,7 @@ import {
   FireBallIcon,
   HoopIcon,
   BasketApprovedBadge,
+  FunnyBadge,
   PencilIcon,
   PinIcon,
   SurfaceIcon,
@@ -32,6 +34,7 @@ export function CourtDetail({
   favorite = false,
   signedIn = false,
   isAdmin = false,
+  random,
 }: {
   court: Court;
   nearby?: Court[];
@@ -40,9 +43,11 @@ export function CourtDetail({
   signedIn?: boolean;
   /** administrator dostaje skrót do edycji tego wpisu */
   isAdmin?: boolean;
+  /** wejście z losowania — wtedy na dole siedzi pasek „losuj dalej” */
+  random?: { onlyFunny: boolean };
 }) {
   return (
-    <main className="min-h-dvh pb-24">
+    <main className={`min-h-dvh ${random ? "pb-40" : "pb-24"}`}>
       <section className="relative h-[62vh] max-h-[780px] min-h-[420px] w-full overflow-hidden">
         <div className="absolute inset-0">
           <CourtPhoto photo={court.photos[0]} seed={court.seed} />
@@ -77,6 +82,7 @@ export function CourtDetail({
               {court.voivodeship}
             </span>
             {court.basketApproved && <BasketApprovedBadge />}
+            {court.funny && <FunnyBadge />}
           </div>
 
           <h1 className="mt-3 text-[clamp(34px,6vw,64px)] font-semibold leading-[1.02] tracking-[-0.02em]">
@@ -199,6 +205,15 @@ export function CourtDetail({
           </div>
         </section>
 
+        {court.shortsUrl && (
+          <section className="mt-14">
+            <h2 className="mb-4 text-[13px] uppercase tracking-[0.18em] text-faint">
+              Film z boiska
+            </h2>
+            <ShortsPlayer url={court.shortsUrl} title={`${court.name}, ${court.city}`} />
+          </section>
+        )}
+
         <section className="mt-14">
           <h2 className="mb-4 text-[13px] uppercase tracking-[0.18em] text-faint">
             Galeria · {court.photos.length} zdjęć
@@ -233,6 +248,41 @@ export function CourtDetail({
           </section>
         )}
       </div>
+
+      {random && (
+        <div className="glass-dim fixed inset-x-0 bottom-0 z-40 flex flex-wrap items-center justify-center gap-3 border-t border-hairline px-4 py-3 sm:gap-4">
+          <span className="text-[12px] uppercase tracking-[0.14em] text-faint">
+            {random.onlyFunny ? "losowanie: dziwne boiska" : "losowe boisko"}
+          </span>
+
+          <Link
+            href={`/losowe?omin=${court.slug}${random.onlyFunny ? "&dziwne=1" : ""}`}
+            prefetch={false}
+            className="rounded-2xl flame-gradient px-5 py-2.5 text-[13px] font-bold text-black transition hover:brightness-110"
+          >
+            Losuj dalej
+          </Link>
+
+          <Link
+            href={random.onlyFunny ? `/losowe?omin=${court.slug}` : `/losowe?omin=${court.slug}&dziwne=1`}
+            prefetch={false}
+            className={`rounded-2xl border px-4 py-2.5 text-[12px] font-semibold transition ${
+              random.onlyFunny
+                ? "border-hairline bg-white/5 text-muted hover:text-ink"
+                : "border-transparent lime-gradient text-black hover:brightness-105"
+            }`}
+          >
+            {random.onlyFunny ? "wszystkie boiska" : "tylko dziwne"}
+          </Link>
+
+          <Link
+            href="/"
+            className="text-[12px] uppercase tracking-[0.14em] text-muted transition hover:text-ink"
+          >
+            koniec losowania
+          </Link>
+        </div>
+      )}
     </main>
   );
 }

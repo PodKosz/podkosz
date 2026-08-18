@@ -1,7 +1,10 @@
 "use client";
 
-/** Skaluje zdjęcie z dysku do rozsądnego rozmiaru i konwertuje na JPEG. */
-export async function fileToJpeg(file: File, max = 1920, quality = 0.82): Promise<Blob> {
+/**
+ * Konwertuje zdjęcie z dysku na JPEG. Zostawiamy pełny kadr i dużą krawędź (2560 px),
+ * a wagę zbijamy kompresją — nic nie jest obcinane.
+ */
+export async function fileToJpeg(file: File, max = 2560, quality = 0.75): Promise<Blob> {
   const bitmap = await createImageBitmap(file);
   const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
   const canvas = document.createElement("canvas");

@@ -1,6 +1,7 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import "./globals.css";
 import { TopNav } from "@/components/TopNav";
+import { VisitPing } from "@/components/VisitPing";
 import { getSessionUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -21,6 +22,7 @@ export default async function RootLayout({
           user={user ? { name: user.name, avatar: user.avatar, isAdmin: user.isAdmin } : null}
         />
         <div className="relative z-10">{children}</div>
+        <VisitPing />
       </body>
     </html>
   );

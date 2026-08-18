@@ -5,7 +5,7 @@ import Link from "next/link";
 import { AdminCourt, deleteCourt, listCourtsForAdmin } from "@/lib/admin";
 import { TYPE_LABEL } from "@/lib/types";
 import { CourtForm } from "./CourtForm";
-import { FireBallIcon, BasketApprovedBadge, PinIcon } from "../icons";
+import { FireBallIcon, BasketApprovedBadge, FunnyBadge, PinIcon } from "../icons";
 
 /** Lista opublikowanych boisk z edycją i kasowaniem. */
 export function CourtsAdmin({
@@ -127,6 +127,7 @@ export function CourtsAdmin({
                 {c.name}
               </Link>
               {c.basketApproved && <BasketApprovedBadge />}
+              {c.funny && <FunnyBadge />}
             </span>
             <span className="mt-0.5 flex flex-wrap items-center gap-x-3 text-[13px] text-muted">
               <span className="flex items-center gap-1">
