@@ -163,6 +163,8 @@ export function MapView({
       window.matchMedia("(hover: none), (pointer: coarse)").matches
   );
   const clearCardRef = useRef(() => undefined as void);
+  /** znacznik czasu dotknięcia pinezki — chroni wizytówkę przed klikiem mapy z tego samego dotknięcia */
+  const lastPinTapRef = useRef(0);
   const onSelectLeadRef = useRef(onSelectLead);
   useEffect(() => {
     onSelectLeadRef.current = onSelectLead;
@@ -241,7 +243,10 @@ export function MapView({
     });
     map.on("move", reposition);
     // dotknięcie samej mapy zamyka wizytówkę boiska (na markerach zatrzymujemy zdarzenie)
-    map.on("click", () => clearCardRef.current());
+    map.on("click", () => {
+      if (performance.now() - lastPinTapRef.current < 500) return;
+      clearCardRef.current();
+    });
     mapRef.current = map;
 
     // Style w dev-mode dochodzą po hydracji, więc kontener bywa chwilowo zerowy —
@@ -299,20 +304,26 @@ export function MapView({
       const el = document.createElement("div");
       el.className = "court-marker";
       el.innerHTML = markerHtml(court);
-      el.addEventListener("mouseenter", () => {
-        hoverRef.current = court;
-        onHoverCourt(court.id);
-        reposition();
-      });
-      el.addEventListener("mouseleave", () => {
-        hoverRef.current = null;
-        onHoverCourt(null);
-        setHover(null);
-      });
+      // Zdarzenia myszy tylko tam, gdzie jest prawdziwe najeżdżanie. Na dotyku przeglądarka
+      // wysyła po kliknięciu sztuczne mouseenter i zaraz mouseleave — to gasiło wizytówkę
+      // po chwili od dotknięcia pinezki.
+      if (!coarse) {
+        el.addEventListener("mouseenter", () => {
+          hoverRef.current = court;
+          onHoverCourt(court.id);
+          reposition();
+        });
+        el.addEventListener("mouseleave", () => {
+          hoverRef.current = null;
+          onHoverCourt(null);
+          setHover(null);
+        });
+      }
       el.addEventListener("click", (e) => {
         e.stopPropagation();
         if (coarse) {
           // dotyk: podświetlamy pinezkę, pokazujemy wizytówkę i przysuwamy kadr
+          lastPinTapRef.current = performance.now();
           hoverRef.current = court;
           onHoverCourt(court.id);
           reposition();
