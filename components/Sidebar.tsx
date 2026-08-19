@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ACCESS_LABEL,
@@ -67,30 +67,80 @@ export function Sidebar({
     Gest na telefonie: przeciągnięcie w górę wyciąga arkusz, w dół go schowa.
     Zamykamy tylko wtedy, gdy lista jest przewinięta na samą górę - inaczej
     zwykłe przewijanie wyników zamykałoby panel.
+
+    Nasłuchy zakładamy ręcznie, a nie przez onTouch* Reacta: React rejestruje
+    `touchmove` jako pasywny, więc z jego zdarzenia nie da się wywołać
+    preventDefault. Bez tego przeglądarka obsługiwała gest po swojemu - na
+    telefonie razem z arkuszem ruszała się mapa pod nim.
   */
+  const sheetRef = useRef<HTMLElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const swipe = useRef<{ y: number; x: number; atTop: boolean } | null>(null);
 
-  const onSheetTouchStart = (e: React.TouchEvent) => {
-    const t = e.touches[0];
-    swipe.current = {
-      y: t.clientY,
-      x: t.clientX,
-      atTop: (scrollRef.current?.scrollTop ?? 0) <= 2,
+  useEffect(() => {
+    const sheet = sheetRef.current;
+    if (!sheet) return;
+
+    let start: { x: number; y: number; atTop: boolean; onList: boolean } | null = null;
+
+    const scrollable = (node: EventTarget | null) => {
+      const list = scrollRef.current;
+      return !!list && node instanceof Node && list.contains(node);
     };
-  };
 
-  const onSheetTouchEnd = (e: React.TouchEvent) => {
-    const start = swipe.current;
-    swipe.current = null;
-    if (!start) return;
-    const t = e.changedTouches[0];
-    const dy = start.y - t.clientY;
-    // ruch bardziej poziomy niż pionowy to nie jest ten gest
-    if (Math.abs(dy) < 44 || Math.abs(t.clientX - start.x) > Math.abs(dy)) return;
-    if (dy > 0) setSheetOpen(true);
-    else if (start.atTop) setSheetOpen(false);
-  };
+    const onStart = (e: TouchEvent) => {
+      const t = e.touches[0];
+      const list = scrollRef.current;
+      start = {
+        x: t.clientX,
+        y: t.clientY,
+        atTop: (list?.scrollTop ?? 0) <= 2,
+        onList: scrollable(e.target),
+      };
+    };
+
+    const onMove = (e: TouchEvent) => {
+      if (!start || !e.cancelable) return;
+      const t = e.touches[0];
+      const dy = start.y - t.clientY;
+      if (Math.abs(dy) < Math.abs(t.clientX - start.x)) return;
+
+      const list = scrollRef.current;
+      if (start.onList && list) {
+        // wewnątrz listy przewijanie zostawiamy przeglądarce, blokujemy tylko odbijanie
+        // na końcach - to ono przenosiło gest na mapę pod arkuszem
+        const naDole = list.scrollHeight - list.scrollTop - list.clientHeight <= 1;
+        if ((dy > 0 && naDole) || (dy < 0 && list.scrollTop <= 0)) e.preventDefault();
+        return;
+      }
+
+      // uchwyt, wyszukiwarka, stopka: cały pionowy ruch jest nasz
+      e.preventDefault();
+    };
+
+    const onEnd = (e: TouchEvent) => {
+      const from = start;
+      start = null;
+      if (!from) return;
+      const t = e.changedTouches[0];
+      const dy = from.y - t.clientY;
+      // ruch bardziej poziomy niż pionowy to nie jest ten gest
+      if (Math.abs(dy) < 44 || Math.abs(t.clientX - from.x) > Math.abs(dy)) return;
+      if (dy > 0) setSheetOpen(true);
+      else if (from.atTop) setSheetOpen(false);
+    };
+
+    sheet.addEventListener("touchstart", onStart, { passive: true });
+    sheet.addEventListener("touchmove", onMove, { passive: false });
+    sheet.addEventListener("touchend", onEnd, { passive: true });
+    sheet.addEventListener("touchcancel", onEnd, { passive: true });
+
+    return () => {
+      sheet.removeEventListener("touchstart", onStart);
+      sheet.removeEventListener("touchmove", onMove);
+      sheet.removeEventListener("touchend", onEnd);
+      sheet.removeEventListener("touchcancel", onEnd);
+    };
+  }, []);
 
   const patch = (p: Partial<Filters>) => setFilters({ ...filters, ...p });
 
@@ -176,8 +226,8 @@ export function Sidebar({
 
       {/* ---------- telefon: arkusz wysuwany od dołu ---------- */}
       <aside
-        onTouchStart={onSheetTouchStart}
-        onTouchEnd={onSheetTouchEnd}
+        ref={sheetRef}
+        style={{ touchAction: "none" }}
         className={`glass-dim pointer-events-auto z-30 flex flex-col overflow-hidden
           fixed inset-x-0 bottom-0 rounded-t-[26px] transition-[top] duration-300 ease-out md:hidden
           ${sheetOpen ? "top-[68px]" : "top-auto"}`}
@@ -233,7 +283,8 @@ export function Sidebar({
 
         <div
           ref={scrollRef}
-          className={`scroll-thin mt-2 flex-1 overflow-y-auto px-4 pb-5 ${
+          style={{ touchAction: "pan-y" }}
+          className={`scroll-thin mt-2 flex-1 overflow-y-auto overscroll-contain px-4 pb-5 ${
             sheetOpen ? "block" : "hidden"
           }`}
         >

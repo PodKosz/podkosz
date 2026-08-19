@@ -165,6 +165,8 @@ export function MapView({
   const clearCardRef = useRef(() => undefined as void);
   /** znacznik czasu dotknięcia pinezki - chroni wizytówkę przed klikiem mapy z tego samego dotknięcia */
   const lastPinTapRef = useRef(0);
+  /** wizytówka na dotyku - z jej położenia liczymy, gdzie ma wylądować pinezka */
+  const cardRef = useRef<HTMLDivElement | null>(null);
   const onSelectLeadRef = useRef(onSelectLead);
   useEffect(() => {
     onSelectLeadRef.current = onSelectLead;
@@ -179,6 +181,39 @@ export function MapView({
   useEffect(() => {
     clearCardRef.current = clearCard;
   }, [clearCard]);
+
+  /**
+   * Dotknięta pinezka ma stanąć na środku wolnego pola: w poziomie pośrodku ekranu, a w pionie
+   * w połowie odległości między paskiem nawigacji a górną krawędzią wizytówki. Wysokość
+   * wizytówki zależy od treści, więc mierzymy ją po dorysowaniu, a nie zgadujemy.
+   */
+  const centerPin = useCallback((court: Court) => {
+    const map = mapRef.current;
+    const container = containerRef.current;
+    if (!map || !container) return;
+
+    const ease = () => {
+      const box = container.getBoundingClientRect();
+      const card = cardRef.current?.getBoundingClientRect();
+      const nav = document.querySelector("nav")?.getBoundingClientRect();
+      // dolna krawędź paska nawigacji z oddechem - na telefonie pasek jest niższy niż na monitorze
+      const topEdge = (nav ? nav.bottom - box.top : 56) + 10;
+      // bez wizytówki (nie powinno się zdarzyć) zostaje rozsądne domyślne pole
+      const bottomEdge = card ? card.top - box.top : box.height * 0.55;
+      // pinezka jest zaczepiona ostrym końcem, a jej korpus rysuje się wyżej - stąd korekta,
+      // żeby wizualnie leżała pośrodku, nie tuż pod krawędzią wizytówki
+      const target = (topEdge + bottomEdge) / 2 + 26;
+
+      map.easeTo({
+        center: [court.lng, court.lat],
+        offset: [0, target - box.height / 2],
+        duration: 460,
+      });
+    };
+
+    // dwie klatki: pierwsza dorysowuje wizytówkę, druga oddaje jej zmierzone wymiary
+    requestAnimationFrame(() => requestAnimationFrame(ease));
+  }, []);
 
   const reposition = useCallback(() => {
     const map = mapRef.current;
@@ -327,11 +362,7 @@ export function MapView({
           hoverRef.current = court;
           onHoverCourt(court.id);
           reposition();
-          map.easeTo({
-            center: [court.lng, court.lat],
-            offset: [0, -60],
-            duration: 420,
-          });
+          centerPin(court);
           return;
         }
         onSelectCourt(court);
@@ -341,7 +372,7 @@ export function MapView({
         .addTo(map);
       markersRef.current[court.id] = { marker, el };
     }
-  }, [courts, ready, onHoverCourt, onSelectCourt, reposition, coarse]);
+  }, [courts, ready, onHoverCourt, onSelectCourt, reposition, centerPin, coarse]);
 
   /* ---- podświetlenie aktywnej pinezki ---- */
   useEffect(() => {
@@ -455,7 +486,10 @@ export function MapView({
         (coarse ? (
           // dotyk: wizytówka siedzi nad wysuwanym panelem, cała jest linkiem do boiska
           // 266 px zamiast 380 px: karta jest o ~30% mniejsza i nie zjada połowy ekranu
-          <div className="pointer-events-auto fixed inset-x-3 bottom-[158px] z-[35] mx-auto max-w-[266px] rise">
+          <div
+            ref={cardRef}
+            className="pointer-events-auto fixed inset-x-3 bottom-[158px] z-[35] mx-auto max-w-[266px] rise"
+          >
             <Link href={`/boisko/${hover.court.slug}`} className="block">
               <HoverCard court={hover.court} tapHint />
             </Link>
