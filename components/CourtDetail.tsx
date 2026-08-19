@@ -194,7 +194,7 @@ export function CourtDetail({
           razem z przyciskiem. Szerokość kafelków wylicza siatka - panel bierze co najmniej
           300 px, a parametry dzielą resztę równo między siebie.
         */}
-        <section className="relative z-10 -mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-[repeat(6,minmax(0,1fr))_minmax(300px,1.2fr)] lg:items-start">
+        <section className="relative z-10 -mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-[repeat(6,minmax(0,1fr))_minmax(300px,1.2fr)]">
           <Spec icon={<HoopIcon className="h-7 w-7" />} label="Kosze" value={String(court.hoops)} />
           <Spec
             icon={<SurfaceIcon className="h-7 w-7" />}
@@ -374,13 +374,13 @@ function Spec({
   return (
     /* wysokość równa panelowi „kto dziś gra" w tym samym rzędzie, więc wartość i podpis
        spychamy do dolnej krawędzi - inaczej kafelki miałyby puste dno */
-    /* bez h-full: przy items-start wysokość 100% i tak brałaby się z najwyższego elementu
-       w rzędzie, więc rozwinięta siatka godzin rozciągałaby wszystkie kafelki */
-    <div className="glass flex min-h-[148px] flex-col justify-between gap-5 rounded-[20px] p-4 2xl:p-5">
+    /* Kafelki równają się do wysokości panelu „kto dziś gra" (h-full), a wartość z podpisem
+       siedzi pośrodku wolnej przestrzeni pod ikoną - nie przy dolnej krawędzi. */
+    <div className="glass flex h-full min-h-[150px] flex-col rounded-[20px] p-4 2xl:p-5">
       <span className="text-flame">{icon}</span>
-      <span>
-        <p className="text-[19px] font-semibold leading-tight 2xl:text-[22px]">{value}</p>
-        <p className="mt-1 text-[10px] uppercase tracking-[0.14em] text-faint 2xl:text-[11px]">
+      <span className="flex flex-1 flex-col justify-center">
+        <p className="text-[21px] font-semibold leading-[1.15] 2xl:text-[26px]">{value}</p>
+        <p className="mt-1.5 text-[10px] uppercase tracking-[0.14em] text-faint 2xl:text-[11px]">
           {label}
         </p>
       </span>

@@ -93,7 +93,7 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
       nagłówek, stan na dziś, a przycisk przyklejony do dolnej krawędzi (mt-auto), żeby
       równał się z dołem kafelków niezależnie od długości tekstu.
     */
-    <section className="glass flex min-h-[148px] flex-col overflow-hidden rounded-[20px] p-4">
+    <section className="glass relative flex h-full min-h-[150px] flex-col rounded-[20px] p-4">
       <h2 className="flex items-center gap-2 text-[10px] uppercase tracking-[0.12em] text-faint 2xl:text-[11px]">
         <ClockIcon className="h-4 w-4 text-flame" /> Kto dziś gra
       </h2>
@@ -122,8 +122,17 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
       )}
 
       {picking && mine === null && (
-        /* siatka, nie przewijalna lista: wszystkie godziny widać naraz, bez szukania suwakiem */
-        <div className="mt-3 grid grid-cols-4 gap-1.5">
+        /*
+          Siatka godzin jako nakładka nad treścią pod spodem, a nie element w środku panelu:
+          wszystkie godziny widać naraz, a rząd z parametrami boiska nie zmienia wysokości
+          po otwarciu wyboru (kafelki równają się do panelu, więc rosłyby razem z nim).
+        */
+        /* tło nieprzezroczyste, nie „glass": nakładka wisi nad galerią, a na jasnym zdjęciu
+           półprzejrzysta szyba gubiła kontrast i dolne godziny stawały się nieczytelne */
+        <div
+          className="absolute left-0 right-0 top-full z-30 mt-2 grid grid-cols-4 gap-1.5 rounded-[20px] border border-hairline bg-deep p-3 rise"
+          style={{ boxShadow: "0 24px 60px -12px rgba(0,0,0,.85)" }}
+        >
           {HOURS.map((h) => (
             <button
               key={h}
