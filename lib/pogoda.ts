@@ -12,14 +12,54 @@ export interface WeatherHour {
   rain: number;
   /** prędkość wiatru w km/h */
   wind: number;
+  /** kod pogody WMO z open-meteo - z niego wybieramy grafikę */
+  code: number;
+  /** czy o tej godzinie jest dzień (open-meteo: is_day) */
+  day: boolean;
 }
+
+/** Scena rysowana w tle kafelka pogody. */
+export type WeatherScene =
+  | "clear"
+  | "partly"
+  | "overcast"
+  | "fog"
+  | "rain"
+  | "snow"
+  | "storm";
+
+/**
+ * Kody WMO na scenę do narysowania. Grupujemy je grubo - dla gracza liczy się tylko,
+ * czy jest słońce, chmury, mokro, śnieg albo burza.
+ */
+export function weatherScene(code: number): WeatherScene {
+  if (code === 0) return "clear";
+  if (code === 1 || code === 2) return "partly";
+  if (code === 3) return "overcast";
+  if (code === 45 || code === 48) return "fog";
+  if (code >= 95) return "storm";
+  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return "snow";
+  if (code >= 51) return "rain";
+  return "partly";
+}
+
+/** Krótki podpis stanu pogody - pod temperaturą w kafelku. */
+export const SCENE_LABEL: Record<WeatherScene, string> = {
+  clear: "bezchmurnie",
+  partly: "częściowo słonecznie",
+  overcast: "zachmurzenie",
+  fog: "mgła",
+  rain: "deszcz",
+  snow: "śnieg",
+  storm: "burza",
+};
 
 const API = "https://api.open-meteo.com/v1/forecast";
 
 export async function fetchWeather(lat: number, lng: number): Promise<WeatherHour[]> {
   const url =
     `${API}?latitude=${lat.toFixed(3)}&longitude=${lng.toFixed(3)}` +
-    "&hourly=temperature_2m,precipitation,wind_speed_10m" +
+    "&hourly=temperature_2m,precipitation,wind_speed_10m,weather_code,is_day" +
     "&timezone=Europe%2FWarsaw&forecast_days=1";
 
   try {
@@ -32,6 +72,8 @@ export async function fetchWeather(lat: number, lng: number): Promise<WeatherHou
         temperature_2m: number[];
         precipitation: number[];
         wind_speed_10m: number[];
+        weather_code: number[];
+        is_day: number[];
       };
     };
     const h = data.hourly;
@@ -42,6 +84,8 @@ export async function fetchWeather(lat: number, lng: number): Promise<WeatherHou
       temp: Math.round(h.temperature_2m[i]),
       rain: h.precipitation[i] ?? 0,
       wind: Math.round(h.wind_speed_10m[i] ?? 0),
+      code: h.weather_code?.[i] ?? 0,
+      day: (h.is_day?.[i] ?? 1) === 1,
     }));
   } catch {
     // pogoda jest dodatkiem - jej brak nie może psuć karty boiska
