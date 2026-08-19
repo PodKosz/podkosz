@@ -346,16 +346,16 @@ export function CourtDetail({
       </div>
 
       {/* stopka karty boiska - zaproszenie do poprawki wpisu, na samym końcu strony */}
-      <div className={`mt-20 border-t border-hairline pt-8 ${SHELL}`}>
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-[15px] font-semibold">Coś się nie zgadza?</p>
-            <p className="mt-1 text-[14px] text-muted">
-              Zmieniły się godziny, zniknęła siatka, zdjęcia są nieaktualne? Napisz - zaktualizujemy
-              wpis.
-            </p>
+      <div className={`mt-20 border-t border-hairline pt-10 ${SHELL}`}>
+        <div className="mx-auto max-w-xl text-center">
+          <p className="text-[18px] font-semibold">Coś się nie zgadza?</p>
+          <p className="mx-auto mt-2 max-w-md text-[14px] leading-relaxed text-muted">
+            Zmieniły się godziny, zniknęła siatka, zdjęcia są nieaktualne? Napisz - zaktualizujemy
+            wpis.
+          </p>
+          <div className="mt-6">
+            <ReportButton courtId={court.id} label="Zgłoś zmianę" prominent />
           </div>
-          <ReportButton courtId={court.id} label="Zgłoś zmianę" prominent />
         </div>
       </div>
     </main>

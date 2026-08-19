@@ -78,6 +78,13 @@ body {
   background: linear-gradient(135deg, #ffb25c 0%, #ff7a18 45%, #ff4d0a 100%);
 }
 
+/* Przygaszony pomarańcz do akcji drugorzędnych (np. „zgłoś zmianę" w stopce wpisu):
+   ten sam kierunek gradientu, ale ciemniejszy, więc nie konkuruje z głównym przyciskiem.
+   Napis jest jasny, bo na tak ciemnym tle czarny tekst gubi kontrast. */
+.flame-gradient-dim {
+  background: linear-gradient(135deg, #c9761f 0%, #a8480d 45%, #8a2f06 100%);
+}
+
 .flame-text {
   background: linear-gradient(135deg, #ffc27a 0%, #ff7a18 70%);
   -webkit-background-clip: text;

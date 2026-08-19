@@ -42,7 +42,7 @@ export function ReportButton({
         onClick={() => setOpen(true)}
         className={
           prominent
-            ? "glass shrink-0 rounded-full px-5 py-3 text-[14px] font-medium text-ink transition hover:bg-white/10"
+            ? "flame-gradient-dim rounded-2xl px-8 py-4 text-[15px] font-bold text-ink transition hover:brightness-110"
             : "rounded-full px-3 py-3 text-[13px] text-faint transition hover:text-muted"
         }
       >
