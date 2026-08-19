@@ -103,7 +103,8 @@ function Karuzela({ courts }: { courts: Court[] }) {
             href={`/boisko/${c.slug}`}
             className="glass glow-hover group relative aspect-square w-[240px] shrink-0 snap-start overflow-hidden rounded-[26px] sm:w-[268px]"
           >
-            <CourtPhoto photo={c.photos[0]} seed={c.seed} sizes="280px" />
+            {/* pierwsze okładki są od razu w kadrze, więc nie czekają na przewinięcie */}
+            <CourtPhoto photo={c.photos[0]} seed={c.seed} sizes="280px" priority={i < 4} />
 
             {/* przygaszenie dołu pod podpisy */}
             <span className="absolute inset-0 bg-gradient-to-t from-void via-void/45 to-transparent" />
