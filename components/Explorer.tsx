@@ -1,19 +1,28 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MapCourt, toMapCourt } from "@/lib/types";
 import { toApprovedCourts, useSubmissions } from "@/lib/submissions";
 import { supabaseEnabled } from "@/lib/supabase/config";
-import { DEFAULT_FILTERS, Filters, applyFilters, countByType } from "@/lib/filters";
+import { Filters, applyFilters, countByType } from "@/lib/filters";
+import {
+  SZUKANIE_W_BAZIE_OD,
+  filtryDoAdresu,
+  filtryStartowe,
+  szukajWBazie,
+  wedlugTrafnosci,
+  zapiszAdres,
+} from "@/lib/adres";
 import { LeadPoint, listLeadPoints, setLeadStatus } from "@/lib/leads";
 import { MapView } from "./MapView";
 import { Sidebar } from "./Sidebar";
 
 export function Explorer({ courts, isAdmin = false }: { courts: MapCourt[]; isAdmin?: boolean }) {
   const router = useRouter();
-  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
+  // filtry startowe czytamy z adresu, żeby link „mapa Krakowa, tylko oświetlone" działał
+  const [filters, setFilters] = useState<Filters>(filtryStartowe);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
 
@@ -34,8 +43,43 @@ export function Explorer({ courts, isAdmin = false }: { courts: MapCourt[]; isAd
         : [...toApprovedCourts(submissions).map(toMapCourt), ...courts],
     [submissions, courts]
   );
-  const results = useMemo(() => applyFilters(all, filters), [all, filters]);
+  /*
+    Powyżej progu SZUKANIE_W_BAZIE_OD zapytanie tekstowe wykonuje baza (indeks trigramowy,
+    bez znaków diakrytycznych, sortowanie po trafności). Poniżej filtrujemy w przeglądarce -
+    przy kilkunastu wpisach to szybsze niż uderzenie po sieci.
+  */
+  const duzaBaza = all.length >= SZUKANIE_W_BAZIE_OD;
+  const zapytanie = filters.q.trim();
+  const [znalezione, setZnalezione] = useState<{ q: string; ids: string[] } | null>(null);
+
+  useEffect(() => {
+    if (!duzaBaza || zapytanie.length < 2) return;
+    let alive = true;
+    szukajWBazie(zapytanie)
+      .then((ids) => {
+        if (alive) setZnalezione({ q: zapytanie, ids });
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [duzaBaza, zapytanie]);
+
+  const results = useMemo(() => {
+    const lokalne = applyFilters(all, filters);
+    if (!duzaBaza || zapytanie.length < 2) return lokalne;
+    // dopóki baza nie odpowie na aktualne zapytanie, pokazujemy wynik lokalny
+    if (znalezione?.q !== zapytanie) return lokalne;
+    // trafność z bazy + pozostałe filtry (typ, nawierzchnia, oświetlenie) po naszej stronie
+    return wedlugTrafnosci(applyFilters(all, { ...filters, q: "" }), znalezione.ids);
+  }, [all, filters, duzaBaza, zapytanie, znalezione]);
+
   const counts = useMemo(() => countByType(all), [all]);
+
+  /* Filtry lądują w adresie, więc widok da się wysłać linkiem i przetrwa odświeżenie. */
+  useEffect(() => {
+    zapiszAdres(filtryDoAdresu(filters));
+  }, [filters]);
 
   const onSelect = useCallback(
     (c: MapCourt) => router.push(`/boisko/${c.slug}`),

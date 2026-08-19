@@ -8,6 +8,7 @@ import { MapCourt } from "@/lib/types";
 import { CITIES_GEOJSON } from "@/lib/cities";
 import type { LeadPoint } from "@/lib/leads";
 import { HoverCard } from "./HoverCard";
+import { czytajWidok, zapiszWidok } from "@/lib/adres";
 
 const POLAND_BOUNDS: [number, number, number, number] = [13.9, 48.9, 24.3, 55.0];
 
@@ -242,13 +243,23 @@ export function MapView({
     setDiag({ ...diag });
     const push = () => setDiag({ ...diag, errors: [...diag.errors] });
 
+    // Widok zapisany w adresie (m=lat,lng,zoom) ma pierwszeństwo nad kadrem na Polskę:
+    // dzięki temu link do konkretnego miejsca otwiera się tam, gdzie był wysłany.
+    const zAdresu = czytajWidok();
+
     let map: MlMap;
     try {
       map = new MlMap({
         container: containerRef.current,
         style: STYLE,
-        bounds: POLAND_BOUNDS,
-        fitBoundsOptions: { padding: fitPadding(containerRef.current.clientWidth || 1024) },
+        ...(zAdresu
+          ? { center: [zAdresu.lng, zAdresu.lat] as [number, number], zoom: zAdresu.zoom }
+          : {
+              bounds: POLAND_BOUNDS,
+              fitBoundsOptions: {
+                padding: fitPadding(containerRef.current.clientWidth || 1024),
+              },
+            }),
         minZoom: 4.5,
         maxZoom: 18,
         attributionControl: { compact: true },
@@ -292,8 +303,9 @@ export function MapView({
     mapRef.current = map;
 
     // Style w dev-mode dochodzą po hydracji, więc kontener bywa chwilowo zerowy -
-    // pilnujemy rozmiaru i po pierwszym sensownym pomiarze ustawiamy kadr na Polskę.
-    let framed = false;
+    // pilnujemy rozmiaru i po pierwszym sensownym pomiarze ustawiamy kadr na Polskę
+    // (chyba że widok przyszedł z adresu - wtedy go nie ruszamy)
+    let framed = !!zAdresu;
     const ro = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect;
       if (!width || !height) return;
@@ -305,6 +317,14 @@ export function MapView({
     });
     ro.observe(containerRef.current);
 
+    // po każdym przesunięciu zapisujemy kadr w adresie - widok da się wysłać linkiem
+    // i przetrwa odświeżenie strony
+    const zapiszKadr = () => {
+      const c = map.getCenter();
+      zapiszWidok({ lat: c.lat, lng: c.lng, zoom: map.getZoom() });
+    };
+    map.on("moveend", zapiszKadr);
+
     if (typeof window !== "undefined") {
       (window as unknown as { __mapDiag: MapDiag }).__mapDiag = diag;
       // uchwyt do mapy przydatny przy diagnostyce w konsoli - tylko w dev
@@ -314,6 +334,7 @@ export function MapView({
 
     return () => {
       ro.disconnect();
+      map.off("moveend", zapiszKadr);
       map.remove();
       mapRef.current = null;
     };
