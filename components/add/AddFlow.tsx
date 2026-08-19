@@ -20,6 +20,8 @@ import { submitCourt } from "@/lib/queue";
 import { signInWithGoogle } from "@/lib/auth";
 import { supabaseEnabled } from "@/lib/supabase/config";
 import { reverseGeocode } from "@/lib/geo";
+import { NearbyMatch, findNearbyCourts } from "@/lib/duplicates";
+import { formatDistance } from "@/lib/site";
 import { ShotDiagram } from "../ShotDiagram";
 import { CameraCapture } from "./CameraCapture";
 import { ArrowLeftIcon, PinIcon } from "../icons";
@@ -43,6 +45,8 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
   const [photos, setPhotos] = useState<Partial<Record<PhotoKind, string>>>({});
   const [skipped, setSkipped] = useState<PhotoKind[]>([]);
   const [pos, setPos] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null);
+  /** boiska stojące w tym samym miejscu - ostrzeżenie przed dodaniem duplikatu */
+  const [duplicates, setDuplicates] = useState<NearbyMatch[]>([]);
   const [gpsError, setGpsError] = useState<string | null>(null);
   /** co udało się odczytać z lokalizacji - pokazujemy to przy pinezce */
   const [placeNote, setPlaceNote] = useState<string | null>(null);
@@ -146,6 +150,7 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
           accuracy: Math.round(p.coords.accuracy),
         });
         void fillPlace(p.coords.latitude, p.coords.longitude);
+        void checkDuplicates(p.coords.latitude, p.coords.longitude);
       },
       () => setGpsError("Nie udało się pobrać lokalizacji. Wpisz współrzędne ręcznie."),
       { enableHighAccuracy: true, timeout: 12000 }
@@ -177,6 +182,15 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
       );
     } catch {
       setPlaceNote("nie udało się odczytać adresu - wpisz miasto w kolejnym kroku");
+    }
+  };
+
+  /** Sprawdza, czy w tym miejscu nie ma już boiska w bazie. Cicho, bez blokowania kreatora. */
+  const checkDuplicates = async (lat: number, lng: number) => {
+    try {
+      setDuplicates(await findNearbyCourts(lat, lng));
+    } catch {
+      setDuplicates([]);
     }
   };
 
@@ -508,6 +522,39 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
             )}
           </div>
 
+          {duplicates.length > 0 && (
+            <div className="mt-4 rounded-[22px] border border-flame/45 bg-flame/10 p-5">
+              <p className="text-[14px] font-semibold text-glow">
+                {duplicates.length === 1
+                  ? "W tym miejscu mamy już boisko"
+                  : "W tym miejscu mamy już boiska"}
+              </p>
+              <p className="mt-1 text-[13px] text-muted">
+                Sprawdź, czy to nie to samo - drugi taki sam wpis odrzucimy. Jeśli to inne boisko,
+                spokojnie kończ zgłoszenie.
+              </p>
+              <div className="mt-3 space-y-2">
+                {duplicates.map((d) => (
+                  <a
+                    key={d.id}
+                    href={`/boisko/${d.slug}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="glass flex items-center justify-between gap-3 rounded-2xl px-4 py-3 text-left transition hover:brightness-110"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-[14px] font-semibold">{d.name}</span>
+                      <span className="text-[12px] text-muted">{d.city}</span>
+                    </span>
+                    <span className="shrink-0 text-[12px] font-semibold text-flame">
+                      {formatDistance(d.distanceM)}
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
           {(gpsError || pos) && (
             <div className="mt-4 grid grid-cols-2 gap-3">
               <Field label="Szerokość (lat)">
@@ -515,9 +562,11 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
                   type="number"
                   step="0.00001"
                   value={pos?.lat ?? ""}
-                  onChange={(e) =>
-                    setPos({ lat: Number(e.target.value), lng: pos?.lng ?? 0, accuracy: pos?.accuracy })
-                  }
+                  onChange={(e) => {
+                    const lat = Number(e.target.value);
+                    setPos({ lat, lng: pos?.lng ?? 0, accuracy: pos?.accuracy });
+                    if (lat && pos?.lng) void checkDuplicates(lat, pos.lng);
+                  }}
                   className="w-full bg-transparent text-[14px] outline-none"
                 />
               </Field>
@@ -526,9 +575,11 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
                   type="number"
                   step="0.00001"
                   value={pos?.lng ?? ""}
-                  onChange={(e) =>
-                    setPos({ lat: pos?.lat ?? 0, lng: Number(e.target.value), accuracy: pos?.accuracy })
-                  }
+                  onChange={(e) => {
+                    const lng = Number(e.target.value);
+                    setPos({ lat: pos?.lat ?? 0, lng, accuracy: pos?.accuracy });
+                    if (lng && pos?.lat) void checkDuplicates(pos.lat, lng);
+                  }}
                   className="w-full bg-transparent text-[14px] outline-none"
                 />
               </Field>

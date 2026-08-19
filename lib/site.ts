@@ -28,3 +28,10 @@ export function slugifyPlace(name: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 }
+
+/** Odległość dla człowieka: „320 m", „2,4 km", „67 km". */
+export function formatDistance(meters: number) {
+  if (meters < 950) return `${Math.round(meters / 10) * 10} m`;
+  const km = meters / 1000;
+  return `${km < 10 ? km.toFixed(1).replace(".", ",") : Math.round(km)} km`;
+}

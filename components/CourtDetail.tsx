@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ACCESS_LABEL, Court, TYPE_LABEL, surfaceLabel } from "@/lib/types";
-import { slugifyPlace } from "@/lib/site";
+import { formatDistance, slugifyPlace } from "@/lib/site";
+import type { NearbyCourt } from "@/lib/repo";
 import { CourtPhoto } from "./CourtPhoto";
 import { Gallery } from "./Gallery";
 import { ShortsPlayer } from "./ShortsPlayer";
@@ -39,7 +40,7 @@ export function CourtDetail({
   random,
 }: {
   court: Court;
-  nearby?: Court[];
+  nearby?: NearbyCourt[];
   liked?: boolean;
   favorite?: boolean;
   signedIn?: boolean;
@@ -279,17 +280,22 @@ export function CourtDetail({
         {nearby.length > 0 && (
           <section className="mt-14">
             <h2 className="mb-4 text-[13px] uppercase tracking-[0.18em] text-faint">
-              W tym samym województwie
+              Najbliższe boiska
             </h2>
             <div className="grid gap-3 sm:grid-cols-3">
-              {nearby.map((c) => (
+              {nearby.map(({ court: c, distanceM }) => (
                 <Link
                   key={c.id}
                   href={`/boisko/${c.slug}`}
                   className="glass group overflow-hidden rounded-[22px] transition hover:brightness-110"
                 >
-                  <div className="aspect-[16/10] overflow-hidden">
+                  <div className="relative aspect-[16/10] overflow-hidden">
                     <CourtPhoto photo={c.photos[0]} seed={c.seed} />
+                    {distanceM !== null && (
+                      <span className="absolute right-3 top-3 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-semibold text-ink backdrop-blur">
+                        {formatDistance(distanceM)}
+                      </span>
+                    )}
                   </div>
                   <div className="p-4">
                     <p className="truncate text-[15px] font-semibold">{c.name}</p>

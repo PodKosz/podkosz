@@ -84,9 +84,79 @@ export async function getCourtBySlug(slug: string): Promise<Court | null> {
   return data ? rowToCourt(data as unknown as CourtRow) : null;
 }
 
-export async function listNearby(court: Court): Promise<Court[]> {
-  const all = await listCourts();
-  return all.filter((c) => c.id !== court.id && c.voivodeship === court.voivodeship).slice(0, 3);
+/**
+ * Boiska najbliższe podanemu - liczone po odległości w bazie (funkcja `courts_nearby`),
+ * a nie po województwie, bo „to samo województwo" potrafiło pokazywać miejsca 150 km dalej.
+ *
+ * Jeśli migracja z funkcją nie jest jeszcze wgrana, wracamy do starego zachowania -
+ * strona nie może się z tego powodu wywalić.
+ */
+export interface NearbyCourt {
+  court: Court;
+  /** odległość w metrach; null, gdy nie dało się jej policzyć (tryb testowy, brak migracji) */
+  distanceM: number | null;
+}
+
+export async function listNearby(court: Court, limit = 3): Promise<NearbyCourt[]> {
+  const supabase = await supabaseServer();
+  if (!supabase) {
+    return COURTS.filter((c) => c.id !== court.id && c.voivodeship === court.voivodeship)
+      .slice(0, limit)
+      .map((c) => ({ court: c, distanceM: null }));
+  }
+
+  const { data: near, error } = await supabase.rpc("courts_nearby", {
+    in_lat: court.lat,
+    in_lng: court.lng,
+    in_limit: limit,
+    in_skip: court.id,
+  });
+
+  if (error || !near?.length) {
+    if (error) {
+      console.warn("courts_nearby niedostępne, wracam do filtra po województwie", error.message);
+    }
+    const all = await listCourts();
+    return all
+      .filter((c) => c.id !== court.id && c.voivodeship === court.voivodeship)
+      .slice(0, limit)
+      .map((c) => ({ court: c, distanceM: null }));
+  }
+
+  const odleglosci = near as { id: string; distance_m: number }[];
+  const { data } = await supabase
+    .from("courts")
+    .select(COURT_SELECT)
+    .in("id", odleglosci.map((r) => r.id));
+
+  const byId = new Map(
+    ((data ?? []) as unknown as CourtRow[]).map((row) => [row.id, rowToCourt(row)])
+  );
+
+  return odleglosci
+    .map((r): NearbyCourt | null => {
+      const found = byId.get(r.id);
+      return found ? { court: found, distanceM: r.distance_m } : null;
+    })
+    .filter((n): n is NearbyCourt => n !== null);
+}
+
+/** Odległości do boisk zwrócone przez `courts_nearby` - w metrach, po id. */
+export async function nearbyDistances(
+  lat: number,
+  lng: number,
+  limit = 3
+): Promise<Record<string, number>> {
+  const supabase = await supabaseServer();
+  if (!supabase) return {};
+  const { data } = await supabase.rpc("courts_nearby", {
+    in_lat: lat,
+    in_lng: lng,
+    in_limit: limit,
+  });
+  return Object.fromEntries(
+    ((data ?? []) as { id: string; distance_m: number }[]).map((r) => [r.id, r.distance_m])
+  );
 }
 
 export interface Contributor {
