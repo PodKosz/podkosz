@@ -439,3 +439,30 @@ export async function listCourtsForPlace(
     courts: matched,
   };
 }
+
+/* ---------------- profile odkrywców ---------------- */
+
+export interface Author {
+  name: string;
+  slug: string;
+  courts: Court[];
+  likes: number;
+}
+
+/**
+ * Boiska dodane przez jedną osobę, po slugu z adresu. Nazwy autorów nie mają własnej
+ * tabeli - siedzą w kolumnie `added_by_name` - więc dopasowujemy je przez ten sam slug,
+ * którym budujemy adresy podstron miejsc.
+ */
+export async function getAuthor(slug: string): Promise<Author | null> {
+  const courts = await listCourts();
+  const matched = courts.filter((c) => slugifyPlace(c.addedBy) === slug);
+  if (!matched.length) return null;
+
+  return {
+    name: matched[0].addedBy,
+    slug,
+    courts: matched,
+    likes: matched.reduce((sum, c) => sum + c.likes, 0),
+  };
+}

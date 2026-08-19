@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Court, TYPE_LABEL, surfaceLabel } from "@/lib/types";
 import { Place } from "@/lib/repo";
+import { plural } from "@/lib/site";
 import { CourtCard } from "./CourtCard";
 import { ArrowLeftIcon, PinIcon } from "./icons";
 
@@ -49,8 +50,8 @@ export function PlaceListing({
         </h1>
         <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-muted">
           {place.name}:{" "}
-          {courts.length === 1 ? "jedno boisko" : `${courts.length} boisk`} w bazie PodKosza, razem{" "}
-          {hoops} {hoops === 1 ? "kosz" : "koszy"}
+          {courts.length === 1 ? "jedno boisko" : `${courts.length} ${plural(courts.length, ["boisko", "boiska", "boisk"])}`}{" "}
+          w bazie PodKosza, razem {hoops} {plural(hoops, ["kosz", "kosze", "koszy"])}
           {lit > 0 && `, w tym ${lit} z oświetleniem`}. Każdy wpis ma zdjęcia w jednym standardzie,
           nawierzchnię, godziny dostępności i dokładną lokalizację na mapie.
         </p>

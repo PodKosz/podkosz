@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Court, TYPE_LABEL } from "@/lib/types";
+import { slugifyPlace } from "@/lib/site";
 import { CourtPhoto } from "./CourtPhoto";
 import { FireBallIcon, BasketApprovedBadge, PinIcon } from "./icons";
 
@@ -101,12 +102,14 @@ export function RankingTabs({ courts, authors }: { courts: Court[]; authors: Aut
               >
                 {i + 1}
               </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[15px] font-semibold">@{a.name}</span>
+              <Link href={`/gracz/${slugifyPlace(a.name)}`} className="min-w-0 flex-1">
+                <span className="block truncate text-[15px] font-semibold transition hover:text-flame">
+                  @{a.name}
+                </span>
                 <span className="block text-[13px] text-muted">
                   {a.courts} {a.courts === 1 ? "boisko" : "boisk"} w bazie
                 </span>
-              </span>
+              </Link>
               <span className="flex shrink-0 items-center gap-1.5 text-[14px] font-semibold text-glow">
                 <FireBallIcon className="h-4 w-4" /> {a.likes}
               </span>

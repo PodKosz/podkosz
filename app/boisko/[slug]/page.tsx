@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getCourtBySlug, getUserReactions, listNearby } from "@/lib/repo";
 import { getSessionUser } from "@/lib/supabase/server";
 import { SITE_NAME } from "@/lib/site";
+import { fetchWeather } from "@/lib/pogoda";
 import { CourtDetail } from "@/components/CourtDetail";
 import { CourtStructuredData } from "@/components/StructuredData";
 import { LocalCourtDetail } from "@/components/LocalCourtDetail";
@@ -55,8 +56,22 @@ export default async function CourtPage({
   // Bez podpiętej bazy boiska zatwierdzone lokalnie żyją w localStorage.
   if (!court) return <LocalCourtDetail slug={slug} />;
 
-  const [nearby, user] = await Promise.all([listNearby(court), getSessionUser()]);
+  // pogodę pytamy tylko dla boisk odkrytych - pod dachem nie ma znaczenia
+  const [nearby, user, weather] = await Promise.all([
+    listNearby(court),
+    getSessionUser(),
+    court.type === "kryty" ? Promise.resolve([]) : fetchWeather(court.lat, court.lng),
+  ]);
   const { likes, favorites } = await getUserReactions(user?.id ?? null);
+
+  // godzina w Polsce liczona na serwerze, żeby prognoza zaczynała się od właściwej
+  const nowHour = Number(
+    new Intl.DateTimeFormat("pl-PL", {
+      hour: "2-digit",
+      hour12: false,
+      timeZone: "Europe/Warsaw",
+    }).format(new Date())
+  );
 
   return (
     <>
@@ -69,6 +84,8 @@ export default async function CourtPage({
         signedIn={!!user}
         isAdmin={!!user?.isAdmin}
         random={query.losowe === "1" ? { onlyFunny: query.dziwne === "1" } : undefined}
+        weather={weather}
+        nowHour={nowHour}
       />
     </>
   );

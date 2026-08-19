@@ -30,9 +30,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.9,
   }));
 
-  // podstrony miejscowości i województw powstają z danych, więc listę składamy z boisk
+  // podstrony miejscowości, województw i odkrywców powstają z danych, więc listę
+  // składamy z samych boisk
   const miasta = [...new Set(courts.map((c) => slugifyPlace(c.city)))];
   const wojewodztwa = [...new Set(courts.map((c) => slugifyPlace(c.voivodeship)))];
+  const gracze = [...new Set(courts.map((c) => slugifyPlace(c.addedBy)).filter(Boolean))];
 
   return [
     ...statyczne,
@@ -45,6 +47,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${SITE_URL}/miasto/${slug}`,
       changeFrequency: "weekly" as const,
       priority: 0.8,
+    })),
+    ...gracze.map((slug) => ({
+      url: `${SITE_URL}/gracz/${slug}`,
+      changeFrequency: "weekly" as const,
+      priority: 0.4,
     })),
     ...karty,
   ];

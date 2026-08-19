@@ -35,3 +35,16 @@ export function formatDistance(meters: number) {
   const km = meters / 1000;
   return `${km < 10 ? km.toFixed(1).replace(".", ",") : Math.round(km)} km`;
 }
+
+/**
+ * Polska liczba mnoga: 1 boisko, 2-4 boiska, 5+ boisk, ale 12-14 boisk i 22 boiska.
+ * Bez tego licznik pisze „1 płonących piłek" albo „22 osób idzie".
+ */
+export function plural(n: number, forms: [string, string, string]) {
+  const [one, few, many] = forms;
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (n === 1) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
+  return many;
+}

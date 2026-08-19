@@ -2,7 +2,10 @@ import Link from "next/link";
 import { ACCESS_LABEL, Court, TYPE_LABEL, surfaceLabel } from "@/lib/types";
 import { formatDistance, slugifyPlace } from "@/lib/site";
 import type { NearbyCourt } from "@/lib/repo";
+import type { WeatherHour } from "@/lib/pogoda";
 import { CourtPhoto } from "./CourtPhoto";
+import { CheckIn } from "./CheckIn";
+import { Pogoda } from "./Pogoda";
 import { Gallery } from "./Gallery";
 import { ShortsPlayer } from "./ShortsPlayer";
 import { LikeButton } from "./LikeButton";
@@ -38,6 +41,8 @@ export function CourtDetail({
   signedIn = false,
   isAdmin = false,
   random,
+  weather = [],
+  nowHour = 12,
 }: {
   court: Court;
   nearby?: NearbyCourt[];
@@ -48,6 +53,10 @@ export function CourtDetail({
   isAdmin?: boolean;
   /** wejście z losowania - wtedy na dole siedzi pasek „losuj dalej” */
   random?: { onlyFunny: boolean };
+  /** prognoza godzinowa - pusta dla boisk krytych i gdy open-meteo nie odpowiada */
+  weather?: WeatherHour[];
+  /** aktualna godzina w Polsce, policzona na serwerze */
+  nowHour?: number;
 }) {
   return (
     <main className="min-h-dvh pb-24">
@@ -227,6 +236,10 @@ export function CourtDetail({
           </section>
         )}
 
+        <CheckIn courtId={court.id} signedIn={signedIn} />
+
+        {weather.length > 0 && <Pogoda hours={weather} nowHour={nowHour} />}
+
         <section className="mt-12 grid gap-8 lg:grid-cols-[1.6fr_1fr]">
           <div>
             <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">O boisku</h2>
@@ -251,7 +264,12 @@ export function CourtDetail({
           </div>
           <div className="glass rounded-[22px] p-5">
             <h3 className="text-[13px] uppercase tracking-[0.18em] text-faint">Zgłoszone przez</h3>
-            <p className="mt-2 text-[16px] font-semibold">@{court.addedBy}</p>
+            <Link
+              href={`/gracz/${slugifyPlace(court.addedBy)}`}
+              className="mt-2 block text-[16px] font-semibold transition hover:text-flame"
+            >
+              @{court.addedBy}
+            </Link>
             <p className="text-[13px] text-muted">
               dodane {new Date(court.addedAt).toLocaleDateString("pl-PL")}
             </p>
