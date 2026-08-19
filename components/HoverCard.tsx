@@ -1,8 +1,8 @@
 "use client";
 
 import { MapCourt, TYPE_LABEL, surfaceLabel } from "@/lib/types";
-import { useCourtPhotos } from "@/lib/galeria";
-import { CourtPhoto, PhotoPlaceholder } from "./CourtPhoto";
+import { thumbUrl, thumbWidth, useCourtPhotos } from "@/lib/galeria";
+import { PhotoPlaceholder } from "./CourtPhoto";
 import { ClockIcon, FireBallIcon, HoopIcon, BasketApprovedBadge, SurfaceIcon } from "./icons";
 
 /**
@@ -29,8 +29,19 @@ export function HoverCard({ court, tapHint = false }: { court: MapCourt; tapHint
               i === 0 ? "col-span-2 row-span-2" : ""
             }`}
           >
-            {p ? (
-              <CourtPhoto photo={p} seed={court.seed + i} sizes="200px" />
+            {p?.url ? (
+              /*
+                Zwykły <img> ze stałym adresem miniatury, a nie next/image: ten sam adres
+                rozgrzewamy z góry (patrz prefetchCourtPhotos), więc obrazek jest już
+                w pamięci przeglądarki i wizytówka pojawia się bez migania.
+              */
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={thumbUrl(p.url, thumbWidth(i))}
+                alt={p.caption}
+                className="h-full w-full object-cover"
+                decoding="async"
+              />
             ) : (
               // póki zdjęcia lecą z serwera, stoi grafika zastępcza - nic nie przeskakuje
               <PhotoPlaceholder kind={i === 0 ? "narożnik" : "kosz-a"} seed={court.seed + i} />

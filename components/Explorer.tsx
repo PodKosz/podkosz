@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MapCourt, toMapCourt } from "@/lib/types";
 import { toApprovedCourts, useSubmissions } from "@/lib/submissions";
+import { prefetchCourtPhotos } from "@/lib/galeria";
 import { supabaseEnabled } from "@/lib/supabase/config";
 import { Filters, applyFilters, countByType } from "@/lib/filters";
 import {
@@ -115,6 +116,39 @@ export function Explorer({ courts, isAdmin = false }: { courts: MapCourt[]; isAd
   }, [all, filters, duzaBaza, zapytanie, znalezione]);
 
   const counts = useMemo(() => countByType(all), [all]);
+
+  /*
+    Miniatury do wizytówek ściągamy z góry, w bezczynnym momencie po wczytaniu strony:
+    jedno zapytanie po wszystkie boiska plus rozgrzanie obrazków. Bez tego pierwsze
+    najechanie na pinezkę czekało na bibliotekę Supabase, zapytanie do bazy i pobranie
+    zdjęć - czyli widocznie migało.
+
+    Limit 300 boisk to ten sam próg, od którego mapa przechodzi na klastry: przy większej
+    bazie rozgrzewanie wszystkiego byłoby droższe niż zysk, a wtedy i tak nie widać
+    pojedynczych pinezek.
+  */
+  useEffect(() => {
+    if (!all.length || all.length > SZUKANIE_W_BAZIE_OD) return;
+
+    // na dotyku nie ma najeżdżania - tam wizytówka pojawia się po świadomym dotknięciu
+    // pinezki i może dociągnąć swoje trzy miniatury sama; nie ma po co zużywać danych
+    const dotyk = window.matchMedia("(hover: none), (pointer: coarse)").matches;
+    const oszczedzanie = (
+      navigator as unknown as { connection?: { saveData?: boolean } }
+    ).connection?.saveData;
+    if (dotyk || oszczedzanie) return;
+
+    const ids = all.map((c) => c.id);
+
+    const start = () => {
+      void prefetchCourtPhotos(ids).catch(() => undefined);
+    };
+
+    const idle = (window as unknown as { requestIdleCallback?: (cb: () => void) => number })
+      .requestIdleCallback;
+    if (idle) idle(start);
+    else setTimeout(start, 600);
+  }, [all]);
 
   /* Filtry lądują w adresie, więc widok da się wysłać linkiem i przetrwa odświeżenie. */
   useEffect(() => {

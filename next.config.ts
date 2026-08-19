@@ -49,6 +49,12 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "muyhxifftgjnygyrbjqn.supabase.co", pathname: "/storage/**" },
     ],
     formats: ["image/avif", "image/webp"],
+    /*
+      Domyślnie Next dopuszcza tylko jakość 75 i każdą inną odrzuca błędem 400.
+      55 jest dla miniatur w wizytówce nad pinezką - przy 200-320 px różnicy nie widać,
+      a plik jest wyraźnie mniejszy (rozgrzewamy ich kilkadziesiąt z góry).
+    */
+    qualities: [55, 75],
     // szerokości dobrane pod nasze kadry: miniatury w liście, kafelki galerii, zdjęcie tytułowe
     imageSizes: [96, 200, 320, 480],
     deviceSizes: [640, 828, 1080, 1440, 1920, 2560],
