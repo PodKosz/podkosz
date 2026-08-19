@@ -5,6 +5,7 @@ import { ShotDiagram } from "@/components/ShotDiagram";
 import { FireBallIcon } from "@/components/icons";
 import { countCourts } from "@/lib/repo";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
+import { CourtOutline } from "@/components/CourtOutline";
 
 export const metadata: Metadata = {
   title: "O nas - PodKosz",
@@ -46,84 +47,52 @@ export default async function AboutPage() {
       </div>
 
       {/*
-        Licznik bazy leży NA zdjęciu, w środku kadru: zdjęcie wypełnia całą kartę, a za samą
-        liczbą siedzi wygaszenie radialne, żeby czytała się niezależnie od tego, co jest na
-        fotografii. Liczba leci prosto z Supabase przy każdym wejściu.
+        Licznik bazy: bez fotografii, bo zdjęcie pod dużą liczbą zawsze z nią walczyło.
+        Zostaje ciemna karta w kolorach serwisu, dwie dryfujące plamy gradientu i kontur
+        boiska widzianego z góry, który wygasza się przy dolnej krawędzi. Liczba leci
+        prosto z Supabase przy każdym wejściu.
       */}
       <section className="relative mt-12 overflow-hidden rounded-[32px] border border-hairline bg-deep">
-        <div className="absolute inset-0">
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: "url('/o-nas/kosz.jpg')" }}
-          />
-          {/* delikatne przygaszenie całości - zdjęcie ma zostać widoczne, także przy krawędziach */}
-          <div className="absolute inset-0 bg-gradient-to-b from-void/78 via-void/40 to-void/55" />
-          {/* wygaszenie dokładnie za liczbą, żeby czytała się na każdym kadrze */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(58% 44% at 50% 46%, rgba(7,7,10,.74) 0%, rgba(7,7,10,.28) 56%, transparent 80%)",
-            }}
-          />
-          {/* ciepła poświata od dołu - spina zdjęcie z resztą marki */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(to top, rgba(255,77,10,.40) 0%, rgba(255,122,24,.14) 38%, transparent 66%)",
-            }}
-          />
-        </div>
-
-        {/* płynne plamy gradientu w trybie rozjaśniania, więc świecą na zdjęciu */}
         <span
-          className="liquid-blob -left-24 -top-32 h-[420px] w-[520px] mix-blend-screen"
+          className="liquid-blob -left-28 -top-32 h-[380px] w-[520px]"
           style={{
             background:
-              "radial-gradient(circle, rgba(255,122,24,.50) 0%, rgba(255,77,10,.16) 52%, transparent 72%)",
+              "radial-gradient(circle, rgba(255,122,24,.30) 0%, rgba(255,77,10,.10) 55%, transparent 74%)",
           }}
         />
         <span
-          className="liquid-blob -right-32 -top-16 h-[380px] w-[440px] mix-blend-screen"
+          className="liquid-blob -right-28 top-10 h-[340px] w-[420px]"
           style={{
-            background: "radial-gradient(circle, rgba(255,178,92,.38) 0%, transparent 70%)",
+            background: "radial-gradient(circle, rgba(255,178,92,.22) 0%, transparent 70%)",
           }}
         />
 
-        <div className="relative flex min-h-[460px] items-center justify-center sm:min-h-[620px]">
+        {/*
+          Kontur boiska zajmuje dolne 78% karty. Proporcje kadru (840x460) są bliskie
+          proporcjom prawdziwego boiska, więc przy tej wysokości rysunek rozciąga się
+          na niemal całą szerokość karty - liczba siedzi nad linią środkową.
+        */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[78%]">
+          <CourtOutline uid="licznik" />
+        </div>
+
+        <div className="relative min-h-[420px] px-6 pb-10 pt-14 text-center sm:min-h-[560px] sm:pt-20">
+          <p className="text-[14px] font-medium uppercase tracking-[0.36em] text-white/70 sm:text-[17px]">
+            Boisk w bazie
+          </p>
           {/*
-            Liczba siedzi pośrodku kadru, nad tablicą kosza - stąd wrażenie, że jest częścią
-            zdjęcia. leading i dolny odstęp są większe od minimum, bo gradient nakładany przez
-            background-clip: text maluje tylko obszar wiersza: przy ciasnym leadingu dolne
-            krzywe cyfr zostawały niepomalowane i liczba wyglądała jak ucięta.
+            leading powyżej 1 jest tu konieczne: gradient nakładany przez background-clip: text
+            maluje tylko obszar wiersza, a przy ciasnym leadingu dolne krzywe cyfr zostawały
+            niepomalowane i liczba wyglądała jak ucięta.
           */}
-          <div className="px-6 pb-4 text-center">
-            <p className="text-[14px] font-medium uppercase tracking-[0.36em] text-white/75 sm:text-[18px]">
-              Boisk w bazie
+          <p className="mt-3 flame-text pb-3 text-[clamp(112px,22vw,240px)] font-bold leading-[1.04] tracking-[-0.05em] tabular-nums">
+            {total}
+          </p>
+          {total === 0 && (
+            <p className="mx-auto max-w-md text-[15px] text-muted">
+              Baza dopiero rusza - pierwsze boisko możesz dodać właśnie Ty.
             </p>
-            {/*
-              Liczba rysowana konturem: wnętrze cyfr zostaje przezroczyste, więc widać przez nie
-              zdjęcie, a pomarańczowa obwódka trzyma je razem. Wypełnienie gradientem przy tej
-              skali zalewało pół kadru, kontur czyta się lżej i nie walczy ze zdjęciem.
-            */}
-            <p
-              className="mt-2 pb-4 text-[clamp(128px,26vw,300px)] font-bold leading-[1.04] tracking-[-0.05em] tabular-nums"
-              style={{
-                color: "rgba(7,7,10,0.22)",
-                // grubość konturu rośnie razem z liczbą - przy 300 px trzy piksele byłyby nitką
-                WebkitTextStroke: "clamp(2.5px, 0.45vw, 5px) rgba(255,150,50,0.95)",
-                filter: "drop-shadow(0 18px 46px rgba(0,0,0,.8))",
-              }}
-            >
-              {total}
-            </p>
-            {total === 0 && (
-              <p className="mx-auto max-w-md text-[15px] text-white/85">
-                Baza dopiero rusza - pierwsze boisko możesz dodać właśnie Ty.
-              </p>
-            )}
-          </div>
+          )}
         </div>
       </section>
 
