@@ -142,6 +142,8 @@ export function MapView({
   onSelectCourt,
   leads,
   onSelectLead,
+  registerClearCard,
+  sheetOpen = false,
 }: {
   courts: MapCourt[];
   activeId: string | null;
@@ -152,6 +154,10 @@ export function MapView({
   /** szare punkty z OSM - tylko dla administratora, po włączeniu przycisku */
   leads?: LeadPoint[];
   onSelectLead?: (lead: LeadPoint) => void;
+  /** oddaje na zewnątrz funkcję gaszenia wizytówki - woła ją Explorer przy otwarciu arkusza */
+  registerClearCard?: (fn: () => void) => void;
+  /** arkusz z filtrami na telefonie jest rozwinięty - wizytówki wtedy nie pokazujemy */
+  sheetOpen?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MlMap | null>(null);
@@ -188,7 +194,8 @@ export function MapView({
 
   useEffect(() => {
     clearCardRef.current = clearCard;
-  }, [clearCard]);
+    registerClearCard?.(clearCard);
+  }, [clearCard, registerClearCard]);
 
   /**
    * Dotknięta pinezka ma stanąć na środku wolnego pola: w poziomie pośrodku ekranu, a w pionie
@@ -690,6 +697,7 @@ export function MapView({
       <div ref={containerRef} className="h-full w-full" />
 
       {hover &&
+        !sheetOpen &&
         (coarse ? (
           // dotyk: wizytówka siedzi nad wysuwanym panelem, cała jest linkiem do boiska
           // 266 px zamiast 380 px: karta jest o ~30% mniejsza i nie zjada połowy ekranu

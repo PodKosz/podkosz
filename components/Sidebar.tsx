@@ -46,6 +46,8 @@ export function Sidebar({
   counts,
   activeId,
   onHover,
+  sheetOpen,
+  setSheetOpen,
 }: {
   filters: Filters;
   setFilters: (f: Filters) => void;
@@ -53,11 +55,15 @@ export function Sidebar({
   counts: Record<CourtType, number>;
   activeId: string | null;
   onHover: (id: string | null) => void;
+  /*
+    Stan arkusza na telefonie siedzi w Explorerze, bo dotyczy też mapy: przy otwarciu
+    panelu trzeba schować wizytówkę boiska, żeby jedno nie nachodziło na drugie.
+  */
+  sheetOpen: boolean;
+  setSheetOpen: (open: boolean) => void;
 }) {
   const [openSurface, setOpenSurface] = useState(false);
   const [openMore, setOpenMore] = useState(false);
-  /** Na telefonie panel startuje zwinięty, żeby mapa miała cały ekran. */
-  const [sheetOpen, setSheetOpen] = useState(false);
   /** Na komputerze lista filtrów jest schowana pod napisem „filtry”. */
   const [panelOpen, setPanelOpen] = useState(false);
 
@@ -73,6 +79,26 @@ export function Sidebar({
   */
   const sheetRef = useRef<HTMLElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  /*
+    Arkusz ma zawsze pełną wysokość, a zwinięty jest zsunięty w dół transformacją -
+    dzięki temu wysuwanie da się animować (przejście z `top: auto` na konkretną wartość
+    przeglądarka potrafi tylko przeskoczyć). Wysokość widocznego paska mierzymy, bo
+    zależy od tego, ile miejsca zajmuje wyszukiwarka i wiersz z licznikiem.
+  */
+  const stripRef = useRef<HTMLDivElement | null>(null);
+  const [stripH, setStripH] = useState(150);
+
+  useEffect(() => {
+    const el = stripRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => {
+      // aktualizujemy tylko przy zwiniętym arkuszu - wtedy pasek ma docelową wysokość
+      if (!sheetOpen) setStripH(el.offsetHeight);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [sheetOpen]);
 
   useEffect(() => {
     const sheet = sheetRef.current;
@@ -138,7 +164,7 @@ export function Sidebar({
       sheet.removeEventListener("touchend", onEnd);
       sheet.removeEventListener("touchcancel", onEnd);
     };
-  }, []);
+  }, [setSheetOpen]);
 
   const patch = (p: Partial<Filters>) => setFilters({ ...filters, ...p });
 
@@ -222,15 +248,27 @@ export function Sidebar({
       </div>
 
       {/* ---------- telefon: arkusz wysuwany od dołu ---------- */}
+      {/* przygaszenie mapy pod arkuszem - dotknięcie zamyka panel */}
+      <div
+        onClick={() => setSheetOpen(false)}
+        className={`fixed inset-0 z-[25] bg-void/55 backdrop-blur-[2px] transition-opacity duration-300 md:hidden ${
+          sheetOpen ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+      />
+
       <aside
         ref={sheetRef}
-        style={{ touchAction: "none" }}
-        className={`glass-dim pointer-events-auto z-30 flex flex-col overflow-hidden
-          fixed inset-x-0 bottom-0 rounded-t-[26px] transition-[top] duration-300 ease-out md:hidden
-          ${sheetOpen ? "top-[68px]" : "top-auto"}`}
+        style={{
+          touchAction: "none",
+          transform: sheetOpen ? "translateY(0)" : `translateY(calc(100% - ${stripH}px))`,
+          transition: "transform 460ms cubic-bezier(.32,.72,0,1)",
+          willChange: "transform",
+        }}
+        className="glass-dim pointer-events-auto fixed inset-x-0 bottom-0 top-[68px] z-30 flex flex-col overflow-hidden rounded-t-[26px] md:hidden"
       >
+        <div ref={stripRef}>
         <button
-          onClick={() => setSheetOpen((v) => !v)}
+          onClick={() => setSheetOpen(!sheetOpen)}
           className="flex w-full flex-col items-center gap-1.5 pb-1 pt-2.5"
           aria-label={sheetOpen ? "Zwiń panel" : "Rozwiń panel"}
         >
@@ -277,6 +315,7 @@ export function Sidebar({
             </Link>
           </div>
         )}
+        </div>
 
         <div
           ref={scrollRef}

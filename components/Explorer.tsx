@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MapCourt, toMapCourt } from "@/lib/types";
@@ -31,6 +31,23 @@ export function Explorer({ courts, isAdmin = false }: { courts: MapCourt[]; isAd
   const [filters, setFilters] = useState<Filters>(filtryStartowe);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
+  /** Na telefonie panel z filtrami startuje zwinięty, żeby mapa miała cały ekran. */
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  /*
+    Wizytówka boiska (na dotyku) żyje w MapView, a arkusz z filtrami w Sidebarze.
+    Przy otwarciu arkusza jedno nachodziło na drugie, więc mapa udostępnia tu swoją
+    funkcję gaszenia wizytówki, a Explorer woła ją w momencie rozwinięcia panelu.
+  */
+  const clearMapCard = useRef<() => void>(() => undefined);
+  const registerClearCard = useCallback((fn: () => void) => {
+    clearMapCard.current = fn;
+  }, []);
+
+  const openSheet = useCallback((open: boolean) => {
+    setSheetOpen(open);
+    if (open) clearMapCard.current();
+  }, []);
 
   /* Kandydaci z OSM: szare punkty widoczne tylko dla administratora po kliknięciu. */
   const [showLeads, setShowLeads] = useState(false);
@@ -139,6 +156,8 @@ export function Explorer({ courts, isAdmin = false }: { courts: MapCourt[]; isAd
         onSelectCourt={onSelect}
         leads={showLeads ? leads ?? [] : []}
         onSelectLead={setActiveLead}
+        registerClearCard={registerClearCard}
+        sheetOpen={sheetOpen}
       />
       <Sidebar
         filters={filters}
@@ -147,6 +166,8 @@ export function Explorer({ courts, isAdmin = false }: { courts: MapCourt[]; isAd
         counts={counts}
         activeId={activeId}
         onHover={onHoverFromList}
+        sheetOpen={sheetOpen}
+        setSheetOpen={openSheet}
       />
 
       {isAdmin && (
