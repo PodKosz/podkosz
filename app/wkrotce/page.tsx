@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { CourtOutline } from "@/components/CourtOutline";
 
 export const metadata: Metadata = {
   title: "PodKosz - już niedługo",
@@ -11,8 +12,8 @@ export const metadata: Metadata = {
  * Strona zasłony przed premierą - jedyne, co widać z zewnątrz.
  *
  * Nie ma tu nawigacji ani stopki (pomija je układ główny), żeby nic nie prowadziło dalej.
- * Tło to samo światło: dwie dryfujące plamy w kolorach marki i ciepła poświata pod napisem -
- * nic nie kończy się twardą krawędzią.
+ * Tło: przekrzywiony kontur boiska rozciągnięty poza ekran, dwie dryfujące plamy światła
+ * i ciepła poświata pod napisem.
  */
 export default function Wkrotce() {
   return (
@@ -32,6 +33,18 @@ export default function Wkrotce() {
             "radial-gradient(circle, rgba(255,178,92,.18) 0%, rgba(255,122,24,.05) 50%, transparent 78%)",
         }}
       />
+
+      {/*
+        Kontur boiska w tle: większy niż ekran i przekrzywiony, więc widać fragment płyty
+        (pole podkoszowe z lewej, koło środkowe przy środku) zamiast całego rysunku. Linie są
+        przygaszone, żeby nie konkurowały z napisem.
+      */}
+      <div
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[102vw] w-[190vw] opacity-[0.55] sm:h-[58vw] sm:w-[108vw]"
+        style={{ translate: "calc(-50% + 9vw) calc(-50% - 2vh)", rotate: "-11deg" }}
+      >
+        <CourtOutline uid="zaslona" />
+      </div>
 
       {/* ciepłe światło dokładnie pod napisem, żeby litery nie leżały na pustce */}
       <span
