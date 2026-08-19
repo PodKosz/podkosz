@@ -1,13 +1,19 @@
 import { COURTS } from "./data";
-import { Court, PHOTO_KIND_LABEL } from "./types";
+import { Court, MapCourt, PHOTO_KIND_LABEL, toMapCourt } from "./types";
 import { photoUrl, supabaseEnabled } from "./supabase/config";
 import { orderPhotos } from "./photos";
 import { supabaseServer } from "./supabase/server";
+import { supabasePublic } from "./supabase/publiczny";
+import { unstable_cache } from "next/cache";
 import { slugifyPlace } from "./site";
 import type { CourtRow } from "./supabase/types";
 
 const COURT_SELECT =
   "*, court_photos(kind, storage_path, sort)";
+
+/** Ziarno do grafik zastępczych - stałe dla danego boiska. */
+const seedFromId = (id: string) =>
+  Math.abs([...id].reduce((a, c) => a + c.charCodeAt(0), 0)) % 97;
 
 function rowToCourt(row: CourtRow): Court {
   const photos = orderPhotos(
@@ -42,46 +48,144 @@ function rowToCourt(row: CourtRow): Court {
     addedAt: row.created_at.slice(0, 10),
     description: row.description,
     photos: photos.length ? photos : [{ kind: "narożnik" as const, caption: "Boisko" }],
-    seed: Math.abs([...row.id].reduce((a, c) => a + c.charCodeAt(0), 0)) % 97,
+    seed: seedFromId(row.id),
   };
 }
 
+/**
+ * Znacznik pamięci podręcznej dla wszystkiego, co czyta boiska. Panel administratora po
+ * publikacji, edycji albo usunięciu wpisu uderza w /api/odswiez, co unieważnia ten znacznik
+ * i zmiana widać natychmiast - bez tego czekalibyśmy do końca okresu odświeżania.
+ */
+export const COURTS_TAG = "courts";
+
+/** Jak długo trzymamy odczyty boisk bez pytania bazy (sekundy). */
+const COURTS_TTL = 300;
+
+/**
+ * Odczyty publiczne idą przez klient bez ciasteczek, bo tylko takie wyniki wolno trzymać
+ * w pamięci podręcznej. Wcześniej każde wejście na stronę - także od robotów - oznaczało
+ * zapytanie do Supabase o całą tabelę boisk.
+ */
+const fetchCourts = unstable_cache(
+  async (): Promise<Court[]> => {
+    const supabase = supabasePublic();
+    if (!supabase) return COURTS;
+
+    const { data, error } = await supabase
+      .from("courts")
+      .select(COURT_SELECT)
+      .order("likes_count", { ascending: false });
+
+    if (error || !data) return [];
+    return (data as unknown as CourtRow[]).map(rowToCourt);
+  },
+  ["courts-lista"],
+  { tags: [COURTS_TAG], revalidate: COURTS_TTL }
+);
+
 export async function listCourts(): Promise<Court[]> {
-  const supabase = await supabaseServer();
-  if (!supabase) return COURTS;
-
-  const { data, error } = await supabase
-    .from("courts")
-    .select(COURT_SELECT)
-    .order("likes_count", { ascending: false });
-
-  if (error || !data) return [];
-  return (data as unknown as CourtRow[]).map(rowToCourt);
+  return fetchCourts();
 }
+
+/** Kolumny potrzebne mapie i liście - bez złączenia ze zdjęciami. */
+const MAP_SELECT =
+  "id, slug, name, city, voivodeship, lat, lng, type, surface, hoops, lit, access, hours, likes_count, basket_approved, funny";
+
+/**
+ * Boiska na mapę: same skalary, bez zdjęć i opisów. To jest zapytanie, które musi wytrzymać
+ * kilka tysięcy wpisów - stąd osobny, chudy kształt danych zamiast pełnego `Court`.
+ */
+export const listMapCourts = unstable_cache(
+  async (): Promise<MapCourt[]> => {
+    const supabase = supabasePublic();
+    if (!supabase) return COURTS.map(toMapCourt);
+
+    const { data, error } = await supabase
+      .from("courts")
+      .select(MAP_SELECT)
+      .order("likes_count", { ascending: false });
+
+    if (error || !data) return [];
+    return (data as unknown as MapRow[]).map((row) => ({
+      id: row.id,
+      slug: row.slug,
+      name: row.name,
+      city: row.city,
+      voivodeship: row.voivodeship,
+      lat: row.lat,
+      lng: row.lng,
+      type: row.type,
+      surface: row.surface,
+      hoops: row.hoops,
+      lit: row.lit,
+      access: row.access,
+      hours: row.hours,
+      likes: row.likes_count,
+      basketApproved: row.basket_approved,
+      funny: row.funny ?? false,
+      seed: seedFromId(row.id),
+    }));
+  },
+  ["courts-mapa"],
+  { tags: [COURTS_TAG], revalidate: COURTS_TTL }
+);
+
+type MapRow = Pick<
+  CourtRow,
+  | "id"
+  | "slug"
+  | "name"
+  | "city"
+  | "voivodeship"
+  | "lat"
+  | "lng"
+  | "type"
+  | "surface"
+  | "hoops"
+  | "lit"
+  | "access"
+  | "hours"
+  | "likes_count"
+  | "basket_approved"
+  | "funny"
+>;
 
 /** Licznik boisk - tanie zapytanie, bez pobierania wierszy. */
-export async function countCourts(): Promise<number> {
-  const supabase = await supabaseServer();
-  if (!supabase) return COURTS.length;
+export const countCourts = unstable_cache(
+  async (): Promise<number> => {
+    const supabase = supabasePublic();
+    if (!supabase) return COURTS.length;
 
-  const { count } = await supabase
-    .from("courts")
-    .select("id", { count: "exact", head: true });
+    const { count } = await supabase
+      .from("courts")
+      .select("id", { count: "exact", head: true });
 
-  return count ?? 0;
-}
+    return count ?? 0;
+  },
+  ["courts-licznik"],
+  { tags: [COURTS_TAG], revalidate: COURTS_TTL }
+);
+
+const fetchCourtBySlug = unstable_cache(
+  async (slug: string): Promise<Court | null> => {
+    const supabase = supabasePublic();
+    if (!supabase) return COURTS.find((c) => c.slug === slug) ?? null;
+
+    const { data } = await supabase
+      .from("courts")
+      .select(COURT_SELECT)
+      .eq("slug", slug)
+      .maybeSingle();
+
+    return data ? rowToCourt(data as unknown as CourtRow) : null;
+  },
+  ["courts-slug"],
+  { tags: [COURTS_TAG], revalidate: COURTS_TTL }
+);
 
 export async function getCourtBySlug(slug: string): Promise<Court | null> {
-  const supabase = await supabaseServer();
-  if (!supabase) return COURTS.find((c) => c.slug === slug) ?? null;
-
-  const { data } = await supabase
-    .from("courts")
-    .select(COURT_SELECT)
-    .eq("slug", slug)
-    .maybeSingle();
-
-  return data ? rowToCourt(data as unknown as CourtRow) : null;
+  return fetchCourtBySlug(slug);
 }
 
 /**
@@ -97,8 +201,8 @@ export interface NearbyCourt {
   distanceM: number | null;
 }
 
-export async function listNearby(court: Court, limit = 3): Promise<NearbyCourt[]> {
-  const supabase = await supabaseServer();
+async function fetchNearby(court: Court, limit: number): Promise<NearbyCourt[]> {
+  const supabase = supabasePublic();
   if (!supabase) {
     return COURTS.filter((c) => c.id !== court.id && c.voivodeship === court.voivodeship)
       .slice(0, limit)
@@ -141,13 +245,27 @@ export async function listNearby(court: Court, limit = 3): Promise<NearbyCourt[]
     .filter((n): n is NearbyCourt => n !== null);
 }
 
+/**
+ * Najbliższe boiska trzymamy w pamięci podręcznej pod tym samym znacznikiem co listę:
+ * to dane publiczne i zmieniają się tylko wtedy, gdy zmieni się baza boisk.
+ * Kluczem jest identyfikator boiska, więc każda karta ma swój wpis.
+ */
+export async function listNearby(court: Court, limit = 3): Promise<NearbyCourt[]> {
+  const cached = unstable_cache(
+    () => fetchNearby(court, limit),
+    ["courts-nearby", court.id, String(limit)],
+    { tags: [COURTS_TAG], revalidate: COURTS_TTL }
+  );
+  return cached();
+}
+
 /** Odległości do boisk zwrócone przez `courts_nearby` - w metrach, po id. */
 export async function nearbyDistances(
   lat: number,
   lng: number,
   limit = 3
 ): Promise<Record<string, number>> {
-  const supabase = await supabaseServer();
+  const supabase = supabasePublic();
   if (!supabase) return {};
   const { data } = await supabase.rpc("courts_nearby", {
     in_lat: lat,
@@ -165,8 +283,8 @@ export interface Contributor {
   likes: number;
 }
 
-export async function listContributors(): Promise<Contributor[]> {
-  const supabase = await supabaseServer();
+export const listContributors = unstable_cache(async (): Promise<Contributor[]> => {
+  const supabase = supabasePublic();
   if (!supabase) {
     const map = new Map<string, Contributor>();
     for (const c of COURTS) {
@@ -185,7 +303,7 @@ export async function listContributors(): Promise<Contributor[]> {
     .limit(100);
 
   return (data ?? []).map((r) => ({ name: r.name, courts: r.courts, likes: r.likes }));
-}
+}, ["contributors"], { tags: [COURTS_TAG], revalidate: COURTS_TTL });
 
 /** Lajki i ulubione zalogowanego użytkownika - do podświetlenia przycisków. */
 export async function getUserReactions(

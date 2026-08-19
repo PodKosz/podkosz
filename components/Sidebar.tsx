@@ -5,8 +5,8 @@ import Link from "next/link";
 import {
   ACCESS_LABEL,
   Access,
-  Court,
   CourtType,
+  MapCourt,
   SURFACE_LABEL,
   Surface,
   TYPE_LABEL,
@@ -49,7 +49,7 @@ export function Sidebar({
 }: {
   filters: Filters;
   setFilters: (f: Filters) => void;
-  results: Court[];
+  results: MapCourt[];
   counts: Record<CourtType, number>;
   activeId: string | null;
   onHover: (id: string | null) => void;
@@ -310,7 +310,7 @@ function CourtCard({
   active,
   onHover,
 }: {
-  court: Court;
+  court: MapCourt;
   index: number;
   active: boolean;
   onHover: (id: string | null) => void;
@@ -431,7 +431,7 @@ function FiltersAndList({
   patch: (p: Partial<Filters>) => void;
   toggleSurface: (s: Surface) => void;
   counts: Record<CourtType, number>;
-  results: Court[];
+  results: MapCourt[];
   activeId: string | null;
   onHover: (id: string | null) => void;
   openSurface: boolean;

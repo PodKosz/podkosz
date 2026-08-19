@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Court } from "@/lib/types";
+import { MapCourt, toMapCourt } from "@/lib/types";
 import { toApprovedCourts, useSubmissions } from "@/lib/submissions";
 import { supabaseEnabled } from "@/lib/supabase/config";
 import { DEFAULT_FILTERS, Filters, applyFilters, countByType } from "@/lib/filters";
@@ -11,7 +11,7 @@ import { LeadPoint, listLeadPoints, setLeadStatus } from "@/lib/leads";
 import { MapView } from "./MapView";
 import { Sidebar } from "./Sidebar";
 
-export function Explorer({ courts, isAdmin = false }: { courts: Court[]; isAdmin?: boolean }) {
+export function Explorer({ courts, isAdmin = false }: { courts: MapCourt[]; isAdmin?: boolean }) {
   const router = useRouter();
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -28,14 +28,17 @@ export function Explorer({ courts, isAdmin = false }: { courts: Court[]; isAdmin
   // Po podpięciu bazy wszystko przychodzi już z serwera.
   const submissions = useSubmissions();
   const all = useMemo(
-    () => (supabaseEnabled ? courts : [...toApprovedCourts(submissions), ...courts]),
+    () =>
+      supabaseEnabled
+        ? courts
+        : [...toApprovedCourts(submissions).map(toMapCourt), ...courts],
     [submissions, courts]
   );
   const results = useMemo(() => applyFilters(all, filters), [all, filters]);
   const counts = useMemo(() => countByType(all), [all]);
 
   const onSelect = useCallback(
-    (c: Court) => router.push(`/boisko/${c.slug}`),
+    (c: MapCourt) => router.push(`/boisko/${c.slug}`),
     [router]
   );
 

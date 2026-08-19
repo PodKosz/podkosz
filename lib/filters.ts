@@ -1,4 +1,4 @@
-import { Access, Court, CourtType, Surface } from "./types";
+import { Access, CourtType, MapCourt, Surface } from "./types";
 
 export interface Filters {
   q: string;
@@ -28,7 +28,7 @@ export function normalize(s: string) {
   return s.toLowerCase().replace(/[ąćęłńóśźż]/g, (c) => DIACRITICS[c] ?? c);
 }
 
-export function applyFilters(courts: Court[], f: Filters): Court[] {
+export function applyFilters<T extends MapCourt>(courts: T[], f: Filters): T[] {
   const q = normalize(f.q.trim());
   return courts.filter((c) => {
     if (!f.types[c.type]) return false;
@@ -47,7 +47,7 @@ export function applyFilters(courts: Court[], f: Filters): Court[] {
   });
 }
 
-export function countByType(courts: Court[]): Record<CourtType, number> {
+export function countByType(courts: MapCourt[]): Record<CourtType, number> {
   return courts.reduce(
     (acc, c) => ({ ...acc, [c.type]: acc[c.type] + 1 }),
     { otwarty: 0, kryty: 0, streetball: 0 } as Record<CourtType, number>

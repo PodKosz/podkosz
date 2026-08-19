@@ -60,6 +60,19 @@ async function uniqueSlug(base: string, ignoreId?: string) {
 }
 
 /** Tworzy albo aktualizuje boisko razem z galerią. Zwraca slug. */
+/**
+ * Prosi serwer o wyrzucenie boisk z pamięci podręcznej. Odczyty publiczne trzymamy przez
+ * kilka minut, więc bez tego świeżo opublikowane boisko pojawiłoby się na mapie z
+ * opóźnieniem. Błąd tutaj nie może przewrócić zapisu - dane są już w bazie.
+ */
+export async function refreshCourtsCache() {
+  try {
+    await fetch("/api/odswiez", { method: "POST" });
+  } catch {
+    // brak sieci: cache odświeży się sam po czasie
+  }
+}
+
 export async function saveCourt(
   values: CourtValues,
   photos: FormPhoto[],
@@ -128,6 +141,7 @@ export async function saveCourt(
     if (error) throw new Error(`Galeria nie zapisała się: ${error.message}`);
   }
 
+  await refreshCourtsCache();
   return slug;
 }
 
@@ -149,6 +163,8 @@ export async function deleteCourt(courtId: string) {
 
   const { error } = await supabase.from("courts").delete().eq("id", courtId);
   if (error) throw new Error(`Nie udało się usunąć: ${error.message}`);
+
+  await refreshCourtsCache();
 }
 
 export interface AdminCourt extends CourtValues {

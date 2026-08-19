@@ -80,6 +80,56 @@ export interface Court {
   seed: number;
 }
 
+/**
+ * Boisko w wersji na mapę i listę wyników: same wartości skalarne, bez zdjęć, opisu i
+ * komentarzy. Przy kilku tysiącach wpisów zdjęcia stanowią większość wagi odpowiedzi
+ * (kilka adresów po ~150 znaków na boisko), a mapa ani filtry ich nie potrzebują -
+ * galeria dociąga się dopiero na karcie boiska albo w wizytówce nad pinezką.
+ */
+export type MapCourt = Pick<
+  Court,
+  | "id"
+  | "slug"
+  | "name"
+  | "city"
+  | "voivodeship"
+  | "lat"
+  | "lng"
+  | "type"
+  | "surface"
+  | "hoops"
+  | "lit"
+  | "access"
+  | "hours"
+  | "likes"
+  | "basketApproved"
+  | "funny"
+  | "seed"
+>;
+
+/** Zawężenie pełnego boiska do wersji mapowej - używane w trybie testowym bez bazy. */
+export function toMapCourt(court: Court): MapCourt {
+  return {
+    id: court.id,
+    slug: court.slug,
+    name: court.name,
+    city: court.city,
+    voivodeship: court.voivodeship,
+    lat: court.lat,
+    lng: court.lng,
+    type: court.type,
+    surface: court.surface,
+    hoops: court.hoops,
+    lit: court.lit,
+    access: court.access,
+    hours: court.hours,
+    likes: court.likes,
+    basketApproved: court.basketApproved,
+    funny: court.funny ?? false,
+    seed: court.seed,
+  };
+}
+
 export const VOIVODESHIPS = [
   "dolnośląskie",
   "kujawsko-pomorskie",

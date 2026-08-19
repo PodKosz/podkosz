@@ -5,6 +5,7 @@ import { PhotoKind } from "./types";
 import { slugify } from "./slug";
 import { photoUrl, supabaseEnabled } from "./supabase/config";
 import { supabaseBrowser } from "./supabase/client";
+import { refreshCourtsCache } from "./admin";
 import type { SubmissionRow } from "./supabase/types";
 import {
   Submission,
@@ -303,6 +304,8 @@ export function useQueue(): Queue {
         setError(err.message);
         throw new Error(err.message);
       }
+      // opublikowane boisko musi zniknąć z pamięci podręcznej odczytów publicznych
+      await refreshCourtsCache();
       await fetchList();
     },
     [fetchList]

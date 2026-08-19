@@ -1,5 +1,8 @@
-import { Court, TYPE_LABEL, surfaceLabel } from "@/lib/types";
-import { CourtPhoto } from "./CourtPhoto";
+"use client";
+
+import { MapCourt, TYPE_LABEL, surfaceLabel } from "@/lib/types";
+import { useCourtPhotos } from "@/lib/galeria";
+import { CourtPhoto, PhotoPlaceholder } from "./CourtPhoto";
 import { ClockIcon, FireBallIcon, HoopIcon, BasketApprovedBadge, SurfaceIcon } from "./icons";
 
 /**
@@ -8,8 +11,10 @@ import { ClockIcon, FireBallIcon, HoopIcon, BasketApprovedBadge, SurfaceIcon } f
  * Wersja dotykowa jest o ~30% mniejsza od tej na kursor: szerokość ogranicza wrapper na mapie,
  * a marginesy i kroje pisma schodzą tutaj, żeby karta nie zajmowała pół ekranu telefonu.
  */
-export function HoverCard({ court, tapHint = false }: { court: Court; tapHint?: boolean }) {
-  const thumbs = court.photos.slice(0, 3);
+export function HoverCard({ court, tapHint = false }: { court: MapCourt; tapHint?: boolean }) {
+  // zdjęcia nie przychodzą razem z listą boisk - dociągamy je dla tej jednej pinezki
+  const thumbs = useCourtPhotos(court.id, 3);
+  const kadry = thumbs.length ? thumbs : [null, null, null];
   return (
     <div
       className={`glass overflow-hidden rounded-[22px] rise ${
@@ -17,9 +22,14 @@ export function HoverCard({ court, tapHint = false }: { court: Court; tapHint?: 
       }`}
     >
       <div className="grid grid-cols-3 gap-[2px] bg-white/5">
-        {thumbs.map((p, i) => (
+        {kadry.map((p, i) => (
           <div key={i} className={`aspect-[4/3] overflow-hidden ${i === 0 ? "col-span-2 row-span-2" : ""}`}>
-            <CourtPhoto photo={p} seed={court.seed + i} />
+            {p ? (
+              <CourtPhoto photo={p} seed={court.seed + i} />
+            ) : (
+              // póki zdjęcia lecą z serwera, stoi grafika zastępcza - nic nie przeskakuje
+              <PhotoPlaceholder kind={i === 0 ? "narożnik" : "kosz-a"} seed={court.seed + i} />
+            )}
           </div>
         ))}
       </div>

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { Map as MlMap, Marker, StyleSpecification, setWorkerUrl } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { Court } from "@/lib/types";
+import { MapCourt } from "@/lib/types";
 import { CITIES_GEOJSON } from "@/lib/cities";
 import type { LeadPoint } from "@/lib/leads";
 import { HoverCard } from "./HoverCard";
@@ -19,6 +19,13 @@ const fitPadding = (width: number) =>
   width < 768
     ? { top: 90, bottom: 200, left: 24, right: 24 }
     : { top: 70, bottom: 70, left: 430, right: 70 };
+
+/** Od tylu boisk mapa przechodzi z pinezek HTML na warstwę GeoJSON z klastrami. */
+const CLUSTER_FROM = 300;
+/** Od tego przybliżenia zamiast kropek rysujemy pełne pinezki. */
+const PIN_ZOOM = 11;
+/** Górny limit pinezek HTML naraz - powyżej i tak zlewałyby się w plamę. */
+const PIN_LIMIT = 160;
 
 // Worker MapLibre serwujemy z /public - patrz scripts/copy-maplibre-worker.mjs.
 setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
@@ -135,12 +142,12 @@ export function MapView({
   leads,
   onSelectLead,
 }: {
-  courts: Court[];
+  courts: MapCourt[];
   activeId: string | null;
   focusId: string | null;
   highlightVoivodeship: string;
   onHoverCourt: (id: string | null) => void;
-  onSelectCourt: (court: Court) => void;
+  onSelectCourt: (court: MapCourt) => void;
   /** szare punkty z OSM - tylko dla administratora, po włączeniu przycisku */
   leads?: LeadPoint[];
   onSelectLead?: (lead: LeadPoint) => void;
@@ -151,8 +158,8 @@ export function MapView({
   const [ready, setReady] = useState(false);
   const [diag, setDiag] = useState<MapDiag | null>(null);
   const [showDiag, setShowDiag] = useState(false);
-  const [hover, setHover] = useState<{ court: Court; x: number; y: number } | null>(null);
-  const hoverRef = useRef<Court | null>(null);
+  const [hover, setHover] = useState<{ court: MapCourt; x: number; y: number } | null>(null);
+  const hoverRef = useRef<MapCourt | null>(null);
   /**
    * Na ekranie dotykowym nie ma najeżdżania: pierwsze dotknięcie pinezki podświetla ją
    * i pokazuje wizytówkę, a dopiero dotknięcie wizytówki otwiera kartę boiska.
@@ -187,7 +194,7 @@ export function MapView({
    * w połowie odległości między paskiem nawigacji a górną krawędzią wizytówki. Wysokość
    * wizytówki zależy od treści, więc mierzymy ją po dorysowaniu, a nie zgadujemy.
    */
-  const centerPin = useCallback((court: Court) => {
+  const centerPin = useCallback((court: MapCourt) => {
     const map = mapRef.current;
     const container = containerRef.current;
     if (!map || !container) return;
@@ -321,21 +328,24 @@ export function MapView({
     return () => clearTimeout(t);
   }, []);
 
-  /* ---- markery ---- */
+  /* ---- pinezki i klastry ----
+     Przy kilkunastu boiskach każde dostaje własną pinezkę HTML - tak jak dotąd.
+     Powyżej CLUSTER_FROM wpisów tysiące elementów DOM zabiłyby przeglądarkę, więc punkty
+     lecą jako warstwa GeoJSON z klastrowaniem, a ładne pinezki rysujemy tylko dla tego, co
+     naprawdę widać na ekranie po przybliżeniu. Wygląd mapy przy dzisiejszej bazie się nie
+     zmienia - mechanizm jest gotowy na import boisk z OpenStreetMap. */
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
 
-    const seen = new Set(courts.map((c) => c.id));
-    for (const [id, entry] of Object.entries(markersRef.current)) {
-      if (!seen.has(id)) {
-        entry.marker.remove();
-        delete markersRef.current[id];
-      }
-    }
+    const clustered = courts.length >= CLUSTER_FROM;
+    const byId = new Map(courts.map((c) => [c.id, c]));
 
-    for (const court of courts) {
-      if (markersRef.current[court.id]) continue;
+    /** Tworzy (albo zwraca istniejącą) pinezkę HTML dla boiska. */
+    const ensureMarker = (court: MapCourt) => {
+      const gotowa = markersRef.current[court.id];
+      if (gotowa) return gotowa;
+
       const el = document.createElement("div");
       el.className = "court-marker";
       el.innerHTML = markerHtml(court);
@@ -367,12 +377,188 @@ export function MapView({
         }
         onSelectCourt(court);
       });
+
       const marker = new Marker({ element: el, anchor: "bottom" })
         .setLngLat([court.lng, court.lat])
         .addTo(map);
-      markersRef.current[court.id] = { marker, el };
+      const entry = { marker, el };
+      markersRef.current[court.id] = entry;
+      return entry;
+    };
+
+    /** Usuwa pinezki, których nie ma na liście `zostaw`. */
+    const pruneMarkers = (zostaw: Set<string>) => {
+      for (const [id, entry] of Object.entries(markersRef.current)) {
+        if (!zostaw.has(id)) {
+          entry.marker.remove();
+          delete markersRef.current[id];
+        }
+      }
+    };
+
+    /* --- tryb prosty: wszystkie boiska jako pinezki --- */
+    if (!clustered) {
+      for (const id of ["boiska-liczby", "boiska-klastry", "boiska-punkty"]) {
+        if (map.getLayer(id)) map.removeLayer(id);
+      }
+      if (map.getSource("boiska")) map.removeSource("boiska");
+
+      pruneMarkers(new Set(courts.map((c) => c.id)));
+      for (const court of courts) ensureMarker(court);
+      for (const [id, { el }] of Object.entries(markersRef.current)) {
+        el.dataset.active = String(id === activeId);
+      }
+      return;
     }
-  }, [courts, ready, onHoverCourt, onSelectCourt, reposition, centerPin, coarse]);
+
+    /* --- tryb dużej bazy: klastry + pinezki tylko na widocznym fragmencie --- */
+    const data = {
+      type: "FeatureCollection" as const,
+      features: courts.map((c) => ({
+        type: "Feature" as const,
+        geometry: { type: "Point" as const, coordinates: [c.lng, c.lat] },
+        properties: { id: c.id },
+      })),
+    };
+
+    /**
+     * Dorysowuje pinezki HTML dla punktów widocznych na ekranie po przybliżeniu.
+     *
+     * Widoczne boiska liczymy z tablicy w pamięci, a nie przez `queryRenderedFeatures`:
+     * warstwa kropek jest w trybie pinezek przezroczysta, a przezroczystych elementów to
+     * zapytanie nie zwraca - raz ukryte kropki nigdy by się nie odnalazły i pinezki
+     * przestawałyby powstawać (sprawdzone na żywej mapie).
+     */
+    const syncPins = () => {
+      if (!map.getLayer("boiska-punkty")) return;
+
+      const pokazKropki = (widoczne: boolean) => {
+        map.setPaintProperty("boiska-punkty", "circle-opacity", widoczne ? 1 : 0);
+        map.setPaintProperty("boiska-punkty", "circle-stroke-opacity", widoczne ? 1 : 0);
+      };
+
+      if (map.getZoom() < PIN_ZOOM) {
+        pokazKropki(true);
+        pruneMarkers(new Set());
+        return;
+      }
+
+      const bounds = map.getBounds();
+      const widoczne = courts.filter((c) => bounds.contains([c.lng, c.lat]));
+
+      // przy zbyt wielu punktach na ekranie zostawiamy kropki - pinezki byłyby kaszą
+      if (widoczne.length > PIN_LIMIT) {
+        pokazKropki(true);
+        pruneMarkers(new Set());
+        return;
+      }
+
+      pokazKropki(false);
+      const wybrane = new Set(widoczne.map((c) => c.id));
+      pruneMarkers(wybrane);
+      for (const court of widoczne) {
+        ensureMarker(court).el.dataset.active = String(court.id === activeId);
+      }
+    };
+
+    const attach = () => {
+      const source = map.getSource("boiska");
+      if (source) {
+        (source as unknown as { setData: (d: typeof data) => void }).setData(data);
+        syncPins();
+        return;
+      }
+
+      map.addSource("boiska", {
+        type: "geojson",
+        data,
+        cluster: true,
+        clusterMaxZoom: PIN_ZOOM - 1,
+        clusterRadius: 55,
+      });
+
+      map.addLayer({
+        id: "boiska-klastry",
+        type: "circle",
+        source: "boiska",
+        filter: ["has", "point_count"],
+        paint: {
+          "circle-color": "#ff7a18",
+          "circle-opacity": 0.9,
+          "circle-radius": ["step", ["get", "point_count"], 16, 10, 21, 50, 27, 200, 34],
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "rgba(8,8,11,0.85)",
+        },
+      });
+
+      map.addLayer({
+        id: "boiska-liczby",
+        type: "symbol",
+        source: "boiska",
+        filter: ["has", "point_count"],
+        layout: {
+          "text-field": ["get", "point_count_abbreviated"],
+          "text-font": ["Noto Sans Bold"],
+          "text-size": 13,
+        },
+        paint: { "text-color": "#12060a" },
+      });
+
+      // Pojedyncze punkty: widoczne, dopóki nie zastąpią ich pinezki HTML. Warstwa zostaje
+      // w stylu z zerową przezroczystością, bo właśnie z niej odczytujemy, co jest na ekranie.
+      map.addLayer({
+        id: "boiska-punkty",
+        type: "circle",
+        source: "boiska",
+        filter: ["!", ["has", "point_count"]],
+        paint: {
+          "circle-radius": 6,
+          "circle-color": "#ff7a18",
+          "circle-stroke-width": 1.4,
+          "circle-stroke-color": "rgba(8,8,11,0.9)",
+        },
+      });
+
+      // klik w klaster przybliża do miejsca, w którym się rozsypuje
+      map.on("click", "boiska-klastry", (e) => {
+        const f = e.features?.[0];
+        const clusterId = f?.properties?.cluster_id;
+        if (clusterId == null || !f) return;
+        const [lng, lat] = (f.geometry as unknown as { coordinates: [number, number] }).coordinates;
+        const src = map.getSource("boiska") as unknown as {
+          getClusterExpansionZoom: (id: number) => Promise<number>;
+        };
+        void Promise.resolve(src.getClusterExpansionZoom(Number(clusterId)))
+          .then((zoom) => map.easeTo({ center: [lng, lat], zoom, duration: 500 }))
+          .catch(() => map.easeTo({ center: [lng, lat], zoom: map.getZoom() + 2 }));
+      });
+      map.on("mouseenter", "boiska-klastry", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", "boiska-klastry", () => {
+        map.getCanvas().style.cursor = "";
+      });
+
+      // pojedyncza kropka (gdy pinezek nie rysujemy) też ma prowadzić do boiska
+      map.on("click", "boiska-punkty", (e) => {
+        const id = String(e.features?.[0]?.properties?.id ?? "");
+        const court = byId.get(id);
+        if (court) onSelectCourt(court);
+      });
+
+      syncPins();
+    };
+
+    if (map.getLayer("carto")) attach();
+    else map.once("styledata", attach);
+
+    map.on("moveend", syncPins);
+    map.on("idle", syncPins);
+    return () => {
+      map.off("moveend", syncPins);
+      map.off("idle", syncPins);
+    };
+  }, [courts, ready, activeId, onHoverCourt, onSelectCourt, reposition, centerPin, coarse]);
 
   /* ---- podświetlenie aktywnej pinezki ---- */
   useEffect(() => {
@@ -562,7 +748,7 @@ export function MapView({
   );
 }
 
-function markerHtml(court: Court) {
+function markerHtml(court: MapCourt) {
   const big = court.likes >= 200;
   const size = big ? 46 : 38;
   // Boiska z wyróżnieniem Heat świecą na fioletowo - mają odróżniać się na pierwszy rzut oka.
