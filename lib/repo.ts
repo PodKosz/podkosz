@@ -3,6 +3,7 @@ import { Court, PHOTO_KIND_LABEL } from "./types";
 import { photoUrl, supabaseEnabled } from "./supabase/config";
 import { orderPhotos } from "./photos";
 import { supabaseServer } from "./supabase/server";
+import { slugifyPlace } from "./site";
 import type { CourtRow } from "./supabase/types";
 
 const COURT_SELECT =
@@ -177,4 +178,76 @@ export async function randomCourtSlug(
   const { data } = await query;
 
   return pick(((data ?? []) as { slug: string }[]).map((r) => r.slug));
+}
+
+/* ---------------- podstrony miejscowości i województw ---------------- */
+
+export interface Place {
+  /** nazwa w oryginalnej pisowni, np. „Zielona Góra" */
+  name: string;
+  slug: string;
+  courts: number;
+  /** województwo miejscowości; dla samego województwa równe nazwie */
+  voivodeship: string;
+}
+
+/**
+ * Miejscowości i województwa wyliczone z bazy boisk. Slug musi być odwracalny w jedną
+ * stronę (nazwa → adres), więc dopasowanie w drugą stronę robimy przez tę listę,
+ * a nie przez odgadywanie polskich znaków z adresu.
+ */
+export async function listPlaces(): Promise<{ cities: Place[]; voivodeships: Place[] }> {
+  const courts = await listCourts();
+
+  const cities = new Map<string, Place>();
+  const voivodeships = new Map<string, Place>();
+
+  for (const court of courts) {
+    const citySlug = slugifyPlace(court.city);
+    const city = cities.get(citySlug) ?? {
+      name: court.city,
+      slug: citySlug,
+      courts: 0,
+      voivodeship: court.voivodeship,
+    };
+    city.courts += 1;
+    cities.set(citySlug, city);
+
+    const vSlug = slugifyPlace(court.voivodeship);
+    const voivodeship = voivodeships.get(vSlug) ?? {
+      name: court.voivodeship,
+      slug: vSlug,
+      courts: 0,
+      voivodeship: court.voivodeship,
+    };
+    voivodeship.courts += 1;
+    voivodeships.set(vSlug, voivodeship);
+  }
+
+  const bySize = (a: Place, b: Place) => b.courts - a.courts || a.name.localeCompare(b.name, "pl");
+  return {
+    cities: [...cities.values()].sort(bySize),
+    voivodeships: [...voivodeships.values()].sort(bySize),
+  };
+}
+
+/** Boiska w miejscowości albo w województwie, po slugu z adresu. Null = nie ma takiego miejsca. */
+export async function listCourtsForPlace(
+  kind: "city" | "voivodeship",
+  slug: string
+): Promise<{ place: Place; courts: Court[] } | null> {
+  const courts = await listCourts();
+  const field = kind === "city" ? "city" : "voivodeship";
+  const matched = courts.filter((c) => slugifyPlace(c[field]) === slug);
+  if (!matched.length) return null;
+
+  return {
+    place: {
+      name: matched[0][field],
+      slug,
+      courts: matched.length,
+      voivodeship: matched[0].voivodeship,
+    },
+    courts: matched,
+  };
 }

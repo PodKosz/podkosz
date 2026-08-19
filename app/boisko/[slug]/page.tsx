@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { getCourtBySlug, getUserReactions, listNearby } from "@/lib/repo";
 import { getSessionUser } from "@/lib/supabase/server";
+import { SITE_NAME } from "@/lib/site";
 import { CourtDetail } from "@/components/CourtDetail";
+import { CourtStructuredData } from "@/components/StructuredData";
 import { LocalCourtDetail } from "@/components/LocalCourtDetail";
 
 export async function generateMetadata({
@@ -12,9 +14,31 @@ export async function generateMetadata({
   const { slug } = await params;
   const court = await getCourtBySlug(slug);
   if (!court) return { title: "Boisko - PodKosz" };
+
+  const title = `${court.name}, ${court.city} - boisko do koszykówki`;
+  const path = `/boisko/${court.slug}`;
+  // zdjęcie tytułowe jako podgląd przy udostępnianiu; boiska bez zdjęć dostają logo serwisu
+  const photo = court.photos.find((p) => p.url)?.url;
+
   return {
-    title: `${court.name}, ${court.city} - boisko do koszykówki`,
+    title,
     description: court.description,
+    alternates: { canonical: path },
+    openGraph: {
+      type: "article",
+      locale: "pl_PL",
+      siteName: SITE_NAME,
+      title,
+      description: court.description,
+      url: path,
+      images: [{ url: photo ?? "/icon.svg", alt: `${court.name}, ${court.city}` }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: court.description,
+      images: photo ? [photo] : undefined,
+    },
   };
 }
 
@@ -35,14 +59,17 @@ export default async function CourtPage({
   const { likes, favorites } = await getUserReactions(user?.id ?? null);
 
   return (
-    <CourtDetail
-      court={court}
-      nearby={nearby}
-      liked={likes.has(court.id)}
-      favorite={favorites.has(court.id)}
-      signedIn={!!user}
-      isAdmin={!!user?.isAdmin}
-      random={query.losowe === "1" ? { onlyFunny: query.dziwne === "1" } : undefined}
-    />
+    <>
+      <CourtStructuredData court={court} />
+      <CourtDetail
+        court={court}
+        nearby={nearby}
+        liked={likes.has(court.id)}
+        favorite={favorites.has(court.id)}
+        signedIn={!!user}
+        isAdmin={!!user?.isAdmin}
+        random={query.losowe === "1" ? { onlyFunny: query.dziwne === "1" } : undefined}
+      />
+    </>
   );
 }

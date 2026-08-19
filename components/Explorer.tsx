@@ -92,7 +92,6 @@ export function Explorer({ courts, isAdmin = false }: { courts: Court[]; isAdmin
         counts={counts}
         activeId={activeId}
         onHover={onHoverFromList}
-        onSelect={onSelect}
       />
 
       {isAdmin && (

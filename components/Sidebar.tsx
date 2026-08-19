@@ -46,7 +46,6 @@ export function Sidebar({
   counts,
   activeId,
   onHover,
-  onSelect,
 }: {
   filters: Filters;
   setFilters: (f: Filters) => void;
@@ -54,7 +53,6 @@ export function Sidebar({
   counts: Record<CourtType, number>;
   activeId: string | null;
   onHover: (id: string | null) => void;
-  onSelect: (c: Court) => void;
 }) {
   const [openSurface, setOpenSurface] = useState(false);
   const [openMore, setOpenMore] = useState(false);
@@ -213,8 +211,7 @@ export function Sidebar({
                 results={results}
                 activeId={activeId}
                 onHover={onHover}
-                onSelect={onSelect}
-                openSurface={openSurface}
+                    openSurface={openSurface}
                 setOpenSurface={setOpenSurface}
                 openMore={openMore}
                 setOpenMore={setOpenMore}
@@ -296,7 +293,6 @@ export function Sidebar({
             results={results}
             activeId={activeId}
             onHover={onHover}
-            onSelect={onSelect}
             openSurface={openSurface}
             setOpenSurface={setOpenSurface}
             openMore={openMore}
@@ -313,20 +309,24 @@ function CourtCard({
   index,
   active,
   onHover,
-  onSelect,
 }: {
   court: Court;
   index: number;
   active: boolean;
   onHover: (id: string | null) => void;
-  onSelect: (c: Court) => void;
 }) {
   const Icon = TYPE_ICON[court.type];
   return (
-    <button
+    /*
+      Wiersz jest odnośnikiem, a nie przyciskiem: wcześniej przejście robił dopiero
+      router.push w JavaScripcie, więc w kodzie strony nie istniał ani jeden link do karty
+      boiska - wyszukiwarki nie miały jak ich znaleźć. onClick zostaje, bo Explorer
+      przy wyborze robi jeszcze swoje (podświetlenie, zamknięcie arkusza).
+    */
+    <Link
+      href={`/boisko/${court.slug}`}
       onMouseEnter={() => onHover(court.id)}
       onMouseLeave={() => onHover(null)}
-      onClick={() => onSelect(court)}
       className={`flex w-full items-center gap-3 rounded-2xl border p-2.5 text-left transition ${
         active
           ? "border-flame/50 bg-gradient-to-r from-flame/18 to-transparent"
@@ -359,7 +359,7 @@ function CourtCard({
         <FireBallIcon className="h-3.5 w-3.5" />
         {court.likes}
       </span>
-    </button>
+    </Link>
   );
 }
 
@@ -422,7 +422,6 @@ function FiltersAndList({
   results,
   activeId,
   onHover,
-  onSelect,
   openSurface,
   setOpenSurface,
   openMore,
@@ -435,7 +434,6 @@ function FiltersAndList({
   results: Court[];
   activeId: string | null;
   onHover: (id: string | null) => void;
-  onSelect: (c: Court) => void;
   openSurface: boolean;
   setOpenSurface: (fn: (v: boolean) => boolean) => void;
   openMore: boolean;
@@ -586,7 +584,6 @@ function FiltersAndList({
             index={i + 1}
             active={c.id === activeId}
             onHover={onHover}
-            onSelect={onSelect}
           />
         ))}
         {!results.length && (

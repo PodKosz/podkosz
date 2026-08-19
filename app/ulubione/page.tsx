@@ -2,9 +2,7 @@
 import Link from "next/link";
 import { listFavoriteCourts } from "@/lib/repo";
 import { getSessionUser } from "@/lib/supabase/server";
-import { CourtPhoto } from "@/components/CourtPhoto";
-import { FireBallIcon, PinIcon } from "@/components/icons";
-import { TYPE_LABEL } from "@/lib/types";
+import { CourtCard } from "@/components/CourtCard";
 
 export const metadata: Metadata = {
   title: "Ulubione boiska - PodKosz",
@@ -46,26 +44,7 @@ export default async function FavoritesPage() {
 
       <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {courts.map((c) => (
-          <Link
-            key={c.id}
-            href={`/boisko/${c.slug}`}
-            className="glass overflow-hidden rounded-[22px] transition hover:brightness-110"
-          >
-            <div className="aspect-[16/10] overflow-hidden">
-              <CourtPhoto photo={c.photos[0]} seed={c.seed} />
-            </div>
-            <div className="flex items-center gap-3 p-4">
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[15px] font-semibold">{c.name}</span>
-                <span className="flex items-center gap-1 text-[13px] text-muted">
-                  <PinIcon className="h-3.5 w-3.5" /> {c.city} · {TYPE_LABEL[c.type]}
-                </span>
-              </span>
-              <span className="flex items-center gap-1 text-[14px] font-semibold text-glow">
-                <FireBallIcon className="h-4 w-4" /> {c.likes}
-              </span>
-            </div>
-          </Link>
+          <CourtCard key={c.id} court={c} />
         ))}
       </div>
     </main>

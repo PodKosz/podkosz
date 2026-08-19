@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ACCESS_LABEL, Court, TYPE_LABEL, surfaceLabel } from "@/lib/types";
+import { slugifyPlace } from "@/lib/site";
 import { CourtPhoto } from "./CourtPhoto";
 import { Gallery } from "./Gallery";
 import { ShortsPlayer } from "./ShortsPlayer";
@@ -229,6 +230,23 @@ export function CourtDetail({
           <div>
             <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">O boisku</h2>
             <p className="mt-3 text-[17px] leading-relaxed text-ink/90">{court.description}</p>
+
+            {/* odnośniki do podstron miejsca: nawigacja dla ludzi i ścieżka dla wyszukiwarek */}
+            <p className="mt-5 flex flex-wrap items-center gap-2 text-[13px] text-muted">
+              Więcej boisk:
+              <Link
+                href={`/miasto/${slugifyPlace(court.city)}`}
+                className="rounded-full border border-hairline bg-white/6 px-3 py-1 transition hover:text-ink"
+              >
+                {court.city}
+              </Link>
+              <Link
+                href={`/wojewodztwo/${slugifyPlace(court.voivodeship)}`}
+                className="rounded-full border border-hairline bg-white/6 px-3 py-1 transition hover:text-ink"
+              >
+                {court.voivodeship}
+              </Link>
+            </p>
           </div>
           <div className="glass rounded-[22px] p-5">
             <h3 className="text-[13px] uppercase tracking-[0.18em] text-faint">Zgłoszone przez</h3>
