@@ -51,99 +51,174 @@ export function RankingTabs({ courts, authors }: { courts: Court[]; authors: Aut
   );
 }
 
+/** Ile okładek wystaje za aktywną - dalsze czekają poza kadrem. */
+const ZA_AKTYWNA = 3;
+
 /**
- * Top 10 jako okładki: kwadratowe kafelki przewijane w poziomie, z zatrzymywaniem
- * na kolejnej pozycji. Kursor na kafelku podnosi go i zapala pomarańczową poświatę.
+ * Top 10 jako stos okładek: aktywna jest największa i z przodu, kolejne wystają za nią
+ * w prawo, coraz mniejsze i coraz bardziej przygaszone. Strzałki po bokach przestawiają
+ * stos, kliknięcie w wystającą okładkę wysuwa ją na przód, a na telefonie działa gest.
  */
 function Karuzela({ courts }: { courts: Court[] }) {
-  const row = useRef<HTMLDivElement | null>(null);
+  const [aktywny, setAktywny] = useState(0);
+  /** początek gestu - zapamiętany, żeby po puszczeniu palca poznać kierunek */
+  const dotyk = useRef<number | null>(null);
 
-  const przewin = (kierunek: 1 | -1) => {
-    const el = row.current;
-    if (!el) return;
-    // szerokość jednego kafelka wraz z odstępem - przewijamy dokładnie o jedną okładkę
-    const kafelek = el.firstElementChild?.getBoundingClientRect().width ?? 260;
-    el.scrollBy({ left: kierunek * (kafelek + 16), behavior: "smooth" });
-  };
+  const przesun = (kierunek: 1 | -1) =>
+    setAktywny((i) => Math.min(courts.length - 1, Math.max(0, i + kierunek)));
 
   if (!courts.length) return null;
 
   return (
-    <section className="relative">
-      <div className="mb-4 flex items-end justify-between gap-4">
+    <section>
+      <div className="mb-5 flex items-end justify-between gap-4">
         <div>
           <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">Top {courts.length}</h2>
-          <p className="mt-1 text-[14px] text-muted">
-            Najczęściej podpalane boiska w bazie. Przewiń w prawo.
-          </p>
+          <p className="mt-1 text-[14px] text-muted">Najczęściej podpalane boiska w bazie.</p>
         </div>
 
-        {/* strzałki w szkle - na telefonie wystarcza sam gest przewijania */}
-        <div className="hidden shrink-0 gap-2 sm:flex">
-          {([-1, 1] as const).map((k) => (
-            <button
-              key={k}
-              onClick={() => przewin(k)}
-              aria-label={k === -1 ? "Poprzednie boiska" : "Następne boiska"}
-              className="glass grid h-10 w-10 place-items-center rounded-full text-muted transition hover:text-flame"
-            >
-              <ArrowLeftIcon className={`h-4 w-4 ${k === 1 ? "rotate-180" : ""}`} />
-            </button>
-          ))}
-        </div>
+        {/* licznik jak na okładce płyty - od razu widać, w którym miejscu stosu jesteśmy */}
+        <p className="shrink-0 text-[13px] tabular-nums text-faint">
+          <span className="flame-text text-[22px] font-semibold">
+            {String(aktywny + 1).padStart(2, "0")}
+          </span>
+          <span className="mx-1.5">/</span>
+          {String(courts.length).padStart(2, "0")}
+        </p>
       </div>
 
-      <div
-        ref={row}
-        className="cover-row -mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-3"
-      >
-        {courts.map((c, i) => (
-          <Link
-            key={c.id}
-            href={`/boisko/${c.slug}`}
-            className="glass glow-hover group relative aspect-square w-[240px] shrink-0 snap-start overflow-hidden rounded-[26px] sm:w-[268px]"
+      {/*
+        Rozmiary stosu trzymamy w zmiennych CSS: --w to bok okładki, --peek odstęp między
+        kolejnymi okładkami, --shift przesunięcie całego stosu w lewo, żeby jego masa
+        wypadła na środku kolumny. Na telefonie wszystko ciaśniejsze.
+      */}
+      <div className="relative [--peek:0.46] [--shift:0.15] [--w:min(52vw,200px)] sm:[--peek:0.66] sm:[--shift:0.55] sm:[--w:min(34vw,320px)]">
+        <div
+          className="okladki-scena relative -mx-6 h-[calc(var(--w)+72px)] sm:mx-0"
+          onTouchStart={(e) => {
+            dotyk.current = e.touches[0].clientX;
+          }}
+          onTouchEnd={(e) => {
+            const start = dotyk.current;
+            dotyk.current = null;
+            if (start === null) return;
+            const przesuniecie = e.changedTouches[0].clientX - start;
+            if (Math.abs(przesuniecie) > 40) przesun(przesuniecie < 0 ? 1 : -1);
+          }}
+        >
+          {courts.map((c, i) => {
+            const d = i - aktywny;
+            const aktywna = d === 0;
+            const widoczna = d >= 0 && d <= ZA_AKTYWNA;
+            /* okładki już odwiedzone wyjeżdżają o jedno miejsce w lewo i gasną */
+            const miejsce = Math.max(d, -1);
+
+            return (
+              <Link
+                key={c.id}
+                href={`/boisko/${c.slug}`}
+                onClick={(e) => {
+                  // wystająca okładka najpierw wjeżdża na przód, dopiero z przodu prowadzi dalej
+                  if (!aktywna) {
+                    e.preventDefault();
+                    setAktywny(i);
+                  }
+                }}
+                tabIndex={widoczna ? undefined : -1}
+                aria-hidden={!widoczna}
+                className={`okladka glass group absolute left-1/2 top-1/2 aspect-square w-[var(--w)] overflow-hidden rounded-[28px] ${
+                  aktywna ? "okladka-aktywna" : ""
+                }`}
+                style={{
+                  zIndex: 20 - d,
+                  opacity: widoczna ? 1 : 0,
+                  pointerEvents: widoczna ? undefined : "none",
+                  transform: `translate(calc(-50% + var(--w) * (${miejsce} * var(--peek) - var(--shift))), -50%) scale(${(
+                    1 -
+                    Math.max(d, 0) * 0.12
+                  ).toFixed(3)})`,
+                }}
+              >
+                {/* okładki na wierzchu stosu wczytują się od razu, bez doładowywania */}
+                <CourtPhoto photo={c.photos[0]} seed={c.seed} sizes="360px" priority={i < 3} />
+
+                {/* wygaszenie dołu pod podpisy */}
+                <span className="okladka-zaslona pointer-events-none absolute inset-0" />
+
+                {/* dalsze okładki są przygaszone, żeby aktywna wychodziła na przód */}
+                <span
+                  className={`pointer-events-none absolute inset-0 bg-void transition-opacity duration-500 ${
+                    aktywna ? "opacity-0" : "opacity-40"
+                  }`}
+                />
+
+                {/* poświata pod kursorem - płynna plama w kolorze marki */}
+                <span
+                  className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                  style={{
+                    background:
+                      "radial-gradient(130% 100% at 50% 118%, rgba(255,122,24,.42) 0%, rgba(255,77,10,.18) 38%, rgba(255,77,10,.05) 62%, transparent 80%)",
+                  }}
+                />
+
+                {/* numer pozycji jako znak wodny */}
+                <span
+                  className="pointer-events-none absolute -bottom-7 right-3 flame-text text-[clamp(84px,15vw,140px)] font-bold leading-none tabular-nums opacity-25 transition-opacity duration-500 group-hover:opacity-45"
+                  aria-hidden
+                >
+                  {i + 1}
+                </span>
+
+                {/*
+                  Numerek i plakietki tylko na aktywnej okładce: na wystających i tak schowałby
+                  je kadr z przodu, a same wystające czyta się po dużej cyfrze w tle.
+                */}
+                <span
+                  className={`absolute left-4 top-4 flex items-center gap-2 transition-opacity duration-500 ${
+                    aktywna ? "opacity-100" : "opacity-0"
+                  }`}
+                >
+                  <span className="glass-dim grid h-9 w-9 place-items-center rounded-full text-[14px] font-bold text-glow">
+                    {i + 1}
+                  </span>
+                  {c.basketApproved && <BasketApprovedBadge />}
+                  {c.funny && <FunnyBadge />}
+                </span>
+
+                {/* podpisy tylko na aktywnej - wystające okładki zostają czystym kadrem */}
+                <span
+                  className={`absolute inset-x-4 bottom-4 transition-opacity duration-500 ${
+                    aktywna ? "opacity-100" : "opacity-0"
+                  }`}
+                >
+                  <span className="block truncate text-[17px] font-semibold sm:text-[19px]">
+                    {c.name}
+                  </span>
+                  <span className="mt-0.5 flex items-center gap-1.5 text-[13px] text-white/70">
+                    <PinIcon className="h-3.5 w-3.5 text-flame" /> {c.city}
+                  </span>
+                  <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-black/45 px-2.5 py-1 text-[13px] font-bold text-glow backdrop-blur">
+                    <FireBallIcon className="h-4 w-4" /> {c.likes}
+                  </span>
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* strzałki po bokach stosu - poza maską scenki, żeby same nie gasły */}
+        {([-1, 1] as const).map((k) => (
+          <button
+            key={k}
+            onClick={() => przesun(k)}
+            disabled={k === -1 ? aktywny === 0 : aktywny === courts.length - 1}
+            aria-label={k === -1 ? "Poprzednia okładka" : "Następna okładka"}
+            className={`glass absolute top-1/2 z-30 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full text-muted transition hover:text-flame disabled:pointer-events-none disabled:opacity-20 sm:h-12 sm:w-12 ${
+              k === -1 ? "left-0" : "right-0"
+            }`}
           >
-            {/* pierwsze okładki są od razu w kadrze, więc nie czekają na przewinięcie */}
-            <CourtPhoto photo={c.photos[0]} seed={c.seed} sizes="280px" priority={i < 4} />
-
-            {/* przygaszenie dołu pod podpisy */}
-            <span className="absolute inset-0 bg-gradient-to-t from-void via-void/45 to-transparent" />
-
-            {/* poświata pod kursorem - płynna plama w kolorze marki */}
-            <span
-              className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-              style={{
-                background:
-                  "radial-gradient(120% 90% at 50% 110%, rgba(255,122,24,.45) 0%, rgba(255,77,10,.16) 45%, transparent 72%)",
-              }}
-            />
-
-            {/* numer pozycji jako znak wodny */}
-            <span
-              className="pointer-events-none absolute -bottom-6 right-2 flame-text text-[112px] font-bold leading-none tabular-nums opacity-30 transition-opacity duration-300 group-hover:opacity-60"
-              aria-hidden
-            >
-              {i + 1}
-            </span>
-
-            <span className="absolute left-4 top-4 flex items-center gap-2">
-              <span className="glass-dim grid h-9 w-9 place-items-center rounded-full text-[14px] font-bold text-glow">
-                {i + 1}
-              </span>
-              {c.basketApproved && <BasketApprovedBadge />}
-              {c.funny && <FunnyBadge />}
-            </span>
-
-            <span className="absolute inset-x-4 bottom-4">
-              <span className="block truncate text-[17px] font-semibold">{c.name}</span>
-              <span className="mt-0.5 flex items-center gap-1.5 text-[13px] text-white/70">
-                <PinIcon className="h-3.5 w-3.5 text-flame" /> {c.city}
-              </span>
-              <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-black/45 px-2.5 py-1 text-[13px] font-bold text-glow backdrop-blur">
-                <FireBallIcon className="h-4 w-4" /> {c.likes}
-              </span>
-            </span>
-          </Link>
+            <ArrowLeftIcon className={`h-4 w-4 ${k === 1 ? "rotate-180" : ""}`} />
+          </button>
         ))}
       </div>
     </section>

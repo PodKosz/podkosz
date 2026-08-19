@@ -15,21 +15,29 @@ export default async function RankingPage() {
   const sorted = [...courts].sort((a, b) => b.likes - a.likes);
 
   return (
-    <main className="relative mx-auto min-h-dvh max-w-5xl overflow-hidden px-6 pb-24 pt-28">
-      {/* płynne plamy gradientu za nagłówkiem - ta sama faktura co na stronie „o nas" */}
-      <span
-        className="liquid-blob -left-32 -top-24 h-[380px] w-[520px]"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(255,122,24,.20) 0%, rgba(255,77,10,.06) 55%, transparent 74%)",
-        }}
-      />
-      <span
-        className="liquid-blob -right-40 top-10 h-[320px] w-[420px]"
-        style={{
-          background: "radial-gradient(circle, rgba(255,178,92,.14) 0%, transparent 70%)",
-        }}
-      />
+    <main className="relative mx-auto min-h-dvh max-w-5xl px-6 pb-24 pt-28">
+      {/*
+        Płynne plamy gradientu za nagłówkiem. Siedzą w warstwie na całą szerokość okna, a nie
+        w kolumnie tekstu: przycięte do kolumny kończyły się widoczną, twardą krawędzią.
+        Same plamy wygasają do przezroczystości długo przed swoim brzegiem, więc światło
+        rozpływa się w tle bez żadnej linii.
+      */}
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <span
+          className="liquid-blob left-[4vw] top-[-6rem] h-[520px] w-[680px]"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(255,122,24,.20) 0%, rgba(255,77,10,.07) 46%, rgba(255,77,10,.02) 66%, transparent 80%)",
+          }}
+        />
+        <span
+          className="liquid-blob right-[2vw] top-[8vh] h-[460px] w-[560px]"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(255,178,92,.13) 0%, rgba(255,178,92,.04) 48%, transparent 78%)",
+          }}
+        />
+      </div>
 
       <header className="relative mb-10">
         <p className="text-[12px] uppercase tracking-[0.2em] text-flame">Ranking</p>
