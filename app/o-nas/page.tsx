@@ -81,11 +81,12 @@ export default async function AboutPage() {
             Boisk w bazie
           </p>
           {/*
-            leading powyżej 1 jest tu konieczne: gradient nakładany przez background-clip: text
-            maluje tylko obszar wiersza, a przy ciasnym leadingu dolne krzywe cyfr zostawały
-            niepomalowane i liczba wyglądała jak ucięta.
+            Gradient nakładany przez background-clip: text maluje tylko pudełko wiersza, więc
+            liczba potrzebuje zapasu z dwóch stron: leading powyżej 1 (inaczej dolne krzywe cyfr
+            zostawały niepomalowane) i wcięcie z prawej, bo ujemny tracking odejmuje odstęp także
+            po ostatniej cyfrze - i to jej prawy bok zostawał nieomalowany.
           */}
-          <p className="mt-2 flame-text pb-3 text-[clamp(84px,20vw,236px)] font-bold leading-[1.04] tracking-[-0.05em] tabular-nums sm:mt-3">
+          <p className="mt-2 flame-text pb-3 pr-[0.08em] text-[clamp(84px,20vw,236px)] font-bold leading-[1.04] tracking-[-0.05em] tabular-nums sm:mt-3">
             {total}
           </p>
           {total === 0 && (
