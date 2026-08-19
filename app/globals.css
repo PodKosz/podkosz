@@ -328,3 +328,53 @@ select option {
 .lime-ring {
   box-shadow: 0 0 0 1px rgba(182, 255, 61, 0.45), 0 8px 26px -10px rgba(182, 255, 61, 0.6);
 }
+
+/* ---------- Karuzela okładek w rankingu ---------- */
+
+/* Poziome przewijanie bez widocznego paska - kafelki zatrzymują się jak okładki płyt. */
+.cover-row {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.cover-row::-webkit-scrollbar {
+  display: none;
+}
+
+/* Pomarańczowa poświata pod kursorem: unosi kafelek i podświetla krawędź. */
+.glow-hover {
+  transition:
+    box-shadow 280ms cubic-bezier(0.32, 0.72, 0, 1),
+    transform 280ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.glow-hover:hover {
+  transform: translateY(-6px);
+  box-shadow:
+    0 0 0 1px rgba(255, 122, 24, 0.55),
+    0 22px 70px -14px rgba(255, 77, 10, 0.8);
+}
+
+/* Podświetlenie wiersza listy - ciepła smuga wjeżdżająca od lewej. */
+.row-glow {
+  position: relative;
+  overflow: hidden;
+  transition:
+    box-shadow 240ms ease,
+    transform 240ms ease;
+}
+.row-glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(255, 122, 24, 0.16) 0%, transparent 55%);
+  opacity: 0;
+  transition: opacity 240ms ease;
+  pointer-events: none;
+}
+.row-glow:hover::before {
+  opacity: 1;
+}
+.row-glow:hover {
+  box-shadow:
+    0 0 0 1px rgba(255, 122, 24, 0.35),
+    0 14px 40px -16px rgba(255, 77, 10, 0.6);
+}
