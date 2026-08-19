@@ -34,19 +34,15 @@ export function CourtOutline({
     >
       <defs>
         {/*
-          Linie najmocniejsze w środku, gasną przy bokach - kadr nie ma twardych końców.
-          gradientUnits="userSpaceOnUse" jest tu konieczne: domyślny objectBoundingBox liczy
-          gradient osobno dla każdego elementu, a pionowa linia ma zerową szerokość pudełka,
-          więc znikała (widać to było w wyeksportowanym PNG).
+          Gradient liczony osobno dla każdego elementu (domyślny objectBoundingBox): dzięki
+          temu KAŻDA linia gaśnie na swoich końcach, a nie tylko przy krawędziach kadru.
+          To właśnie daje efekt rozpływających się boków boiska.
+
+          Haczyk: element o zerowej szerokości pudełka (czysto pionowa linia) nie ma jak
+          takiego gradientu rozłożyć i w ogóle się nie rysuje - linia środkowa dostaje
+          więc własny, stały kolor (patrz niżej).
         */}
-        <linearGradient
-          id={`line-${uid}`}
-          gradientUnits="userSpaceOnUse"
-          x1="0"
-          y1="0"
-          x2="840"
-          y2="0"
-        >
+        <linearGradient id={`line-${uid}`} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0" stopColor="rgba(255,122,24,0)" />
           <stop offset="0.18" stopColor="rgba(255,150,60,0.65)" />
           <stop offset="0.5" stopColor="rgba(255,186,110,1)" />
@@ -60,8 +56,8 @@ export function CourtOutline({
         {/* płyta boiska */}
         <rect x="40" y="40" width="760" height="380" rx="6" strokeWidth="2.4" />
 
-        {/* linia środkowa i koło środkowe */}
-        <path d="M420 40v380" strokeWidth="1.6" />
+        {/* linia środkowa - stały kolor, bo gradient per element nie działa na pionowej linii */}
+        <path d="M420 40v380" strokeWidth="1.6" stroke="rgba(255,178,92,0.5)" />
         <circle cx="420" cy="230" r="62" strokeWidth="1.8" />
 
         {/* pola podkoszowe z półkolami rzutów wolnych */}
@@ -74,9 +70,10 @@ export function CourtOutline({
         <path d="M40 92h34a186 186 0 0 1 0 276H40" strokeWidth="1.6" />
         <path d="M800 92h-34a186 186 0 0 0 0 276h34" strokeWidth="1.6" />
 
-        {/* tablice i obręcze */}
+        {/* tablice i obręcze - tablice mają stały, ledwo widoczny kolor, bo leżą dokładnie
+            tam, gdzie gradient wygasza rysunek; bez tego nie rysowałyby się wcale */}
         <g strokeWidth="2.6">
-          <path d="M62 196v68M778 196v68" />
+          <path d="M62 196v68M778 196v68" stroke="rgba(255,150,60,0.26)" />
           <circle cx="76" cy="230" r="9" strokeWidth="1.8" />
           <circle cx="764" cy="230" r="9" strokeWidth="1.8" />
         </g>
