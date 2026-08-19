@@ -99,10 +99,22 @@ export default async function AboutPage() {
             krzywe cyfr zostawały niepomalowane i liczba wyglądała jak ucięta.
           */}
           <div className="px-6 pb-4 text-center">
-            <p className="text-[12px] uppercase tracking-[0.26em] text-white/60">Boisk w bazie</p>
+            <p className="text-[14px] font-medium uppercase tracking-[0.36em] text-white/75 sm:text-[18px]">
+              Boisk w bazie
+            </p>
+            {/*
+              Liczba rysowana konturem: wnętrze cyfr zostaje przezroczyste, więc widać przez nie
+              zdjęcie, a pomarańczowa obwódka trzyma je razem. Wypełnienie gradientem przy tej
+              skali zalewało pół kadru, kontur czyta się lżej i nie walczy ze zdjęciem.
+            */}
             <p
-              className="mt-3 flame-text pb-3 text-[clamp(104px,20vw,220px)] font-bold leading-[1.02] tracking-[-0.045em] tabular-nums"
-              style={{ filter: "drop-shadow(0 16px 48px rgba(0,0,0,.85))" }}
+              className="mt-2 pb-4 text-[clamp(128px,26vw,300px)] font-bold leading-[1.04] tracking-[-0.05em] tabular-nums"
+              style={{
+                color: "rgba(7,7,10,0.22)",
+                // grubość konturu rośnie razem z liczbą - przy 300 px trzy piksele byłyby nitką
+                WebkitTextStroke: "clamp(2.5px, 0.45vw, 5px) rgba(255,150,50,0.95)",
+                filter: "drop-shadow(0 18px 46px rgba(0,0,0,.8))",
+              }}
             >
               {total}
             </p>

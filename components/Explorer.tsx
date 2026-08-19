@@ -15,7 +15,13 @@ import {
   wedlugTrafnosci,
   zapiszAdres,
 } from "@/lib/adres";
-import { LeadPoint, listLeadPoints, setLeadStatus } from "@/lib/leads";
+/*
+  Kandydatów z OpenStreetMap widzi wyłącznie administrator (przycisk renderujemy tylko dla
+  niego, a tabela w bazie ma politykę „tylko admin"). Modułu nie importujemy statycznie:
+  wtedy jego kod - razem z zapytaniami do Overpass - trafiałby do paczki JS każdego
+  odwiedzającego. Dociągamy go dopiero w chwili kliknięcia przycisku.
+*/
+import type { LeadPoint } from "@/lib/leads";
 import { MapView } from "./MapView";
 import { Sidebar } from "./Sidebar";
 
@@ -102,6 +108,7 @@ export function Explorer({ courts, isAdmin = false }: { courts: MapCourt[]; isAd
     setLeadsBusy(true);
     setLeadsError(null);
     try {
+      const { listLeadPoints } = await import("@/lib/leads");
       setLeads(await listLeadPoints());
     } catch (e) {
       setLeadsError((e as Error).message);
@@ -114,6 +121,7 @@ export function Explorer({ courts, isAdmin = false }: { courts: MapCourt[]; isAd
     setLeads((list) => (list ?? []).filter((l) => l.id !== id));
     setActiveLead(null);
     try {
+      const { setLeadStatus } = await import("@/lib/leads");
       await setLeadStatus(id, "rejected");
     } catch (e) {
       setLeadsError((e as Error).message);
