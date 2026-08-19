@@ -88,80 +88,79 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
   };
 
   return (
-    <section className="glass mt-12 overflow-hidden rounded-[24px]">
-      <div className="flex flex-wrap items-center justify-between gap-4 p-6">
-        <div className="min-w-0">
-          <h2 className="flex items-center gap-2 text-[13px] uppercase tracking-[0.18em] text-faint">
-            <ClockIcon className="h-4 w-4 text-flame" /> Kto dziś gra
-          </h2>
-          <p className="mt-2 text-[20px] font-semibold leading-snug">
-            {razem === 0
-              ? "Nikt się jeszcze nie zapisał"
-              : `${razem} ${plural(razem, ["osoba idzie", "osoby idą", "osób idzie"])} dziś na to boisko`}
-          </p>
-          {razem > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {slots.map((s) => (
-                <span
-                  key={s.hour}
-                  className="rounded-full border border-flame/40 bg-flame/12 px-3 py-1 text-[13px] font-semibold text-glow"
-                >
-                  {String(s.hour).padStart(2, "0")}:00 · {s.people}
-                </span>
-              ))}
-            </div>
-          )}
-          {razem === 0 && (
-            <p className="mt-1 text-[13px] text-muted">
-              Bądź pierwszy - napisz, o której idziesz, i daj innym szansę dołączyć.
-            </p>
-          )}
-        </div>
+    /*
+      Panel stoi w jednym rzędzie z kafelkami parametrów boiska, więc jest wąski i wysoki:
+      nagłówek, stan na dziś, a przycisk przyklejony do dolnej krawędzi (mt-auto), żeby
+      równał się z dołem kafelków niezależnie od długości tekstu.
+    */
+    <section className="glass flex h-full flex-col overflow-hidden rounded-[20px] p-4">
+      <h2 className="flex items-center gap-2 text-[10px] uppercase tracking-[0.12em] text-faint 2xl:text-[11px]">
+        <ClockIcon className="h-4 w-4 text-flame" /> Kto dziś gra
+      </h2>
 
-        <div className="shrink-0">
-          {mine !== null ? (
-            <div className="text-right">
-              <p className="text-[14px] font-semibold text-glow">
-                Idziesz o {String(mine).padStart(2, "0")}:00
-              </p>
-              <button
-                onClick={() => void odwolaj()}
-                disabled={busy}
-                className="mt-1 text-[13px] text-faint transition hover:text-ember"
-              >
-                odwołaj
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => (signedIn ? setPicking((v) => !v) : void zapisz(18))}
-              className="rounded-2xl flame-gradient px-5 py-3 text-[14px] font-bold text-black transition hover:brightness-110"
+      <p className="mt-2 text-[15px] font-semibold leading-snug 2xl:text-[16px]">
+        {razem === 0
+          ? "Nikt się jeszcze nie zapisał"
+          : `${razem} ${plural(razem, ["osoba idzie", "osoby idą", "osób idzie"])} dziś na to boisko`}
+      </p>
+
+      {razem > 0 ? (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {slots.map((s) => (
+            <span
+              key={s.hour}
+              className="rounded-full border border-flame/40 bg-flame/12 px-2.5 py-0.5 text-[12px] font-semibold text-glow"
             >
-              {picking ? "wybierz godzinę" : "Idę dziś zagrać"}
-            </button>
-          )}
+              {String(s.hour).padStart(2, "0")}:00 · {s.people}
+            </span>
+          ))}
         </div>
-      </div>
+      ) : (
+        <p className="mt-1 text-[12px] leading-snug text-muted">
+          Bądź pierwszy - napisz, o której idziesz, i daj innym szansę dołączyć.
+        </p>
+      )}
 
       {picking && mine === null && (
-        <div className="border-t border-hairline p-6 pt-5">
-          <p className="text-[13px] text-muted">O której będziesz na miejscu?</p>
-          <div className="scroll-thin mt-3 flex gap-2 overflow-x-auto pb-1">
-            {HOURS.map((h) => (
-              <button
-                key={h}
-                onClick={() => void zapisz(h)}
-                disabled={busy}
-                className="shrink-0 rounded-full border border-hairline bg-white/6 px-3.5 py-2 text-[13px] font-semibold transition hover:border-flame/50 hover:text-glow"
-              >
-                {String(h).padStart(2, "0")}:00
-              </button>
-            ))}
-          </div>
+        <div className="scroll-thin mt-3 flex gap-1.5 overflow-x-auto pb-1">
+          {HOURS.map((h) => (
+            <button
+              key={h}
+              onClick={() => void zapisz(h)}
+              disabled={busy}
+              className="shrink-0 rounded-full border border-hairline bg-white/6 px-3 py-1.5 text-[12px] font-semibold transition hover:border-flame/50 hover:text-glow"
+            >
+              {String(h).padStart(2, "0")}:00
+            </button>
+          ))}
         </div>
       )}
 
-      {hint && <p className="border-t border-hairline px-6 py-3 text-[13px] text-muted">{hint}</p>}
+      {hint && <p className="mt-2 text-[12px] leading-snug text-muted">{hint}</p>}
+
+      <div className="mt-auto pt-4">
+        {mine !== null ? (
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[13px] font-semibold text-glow">
+              Idziesz o {String(mine).padStart(2, "0")}:00
+            </p>
+            <button
+              onClick={() => void odwolaj()}
+              disabled={busy}
+              className="text-[12px] text-faint transition hover:text-ember"
+            >
+              odwołaj
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => (signedIn ? setPicking((v) => !v) : void zapisz(18))}
+            className="w-full rounded-2xl flame-gradient px-4 py-3 text-[13px] font-bold text-black transition hover:brightness-110"
+          >
+            {picking ? "wybierz godzinę" : "Idę dziś zagrać"}
+          </button>
+        )}
+      </div>
     </section>
   );
 }

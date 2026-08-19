@@ -100,33 +100,33 @@ export function CourtDetail({
           </div>
 
           {/*
-            Na telefonie kolejność jest inna niż na dużym ekranie: najpierw tytuł, pod nim
-            plakietki, a potem współrzędne z ulubionymi po prawej. Wszystko trzyma się dołu
-            zdjęcia, w obszarze gradientu, żeby nie zasłaniać kadru.
+            Tytuł, a pod nim jedna linia: współrzędne i zaraz obok plakietki (typ boiska,
+            województwo, wyróżnienia). Wszystko trzyma się dołu zdjęcia, w obszarze
+            gradientu, żeby nie zasłaniać kadru. Na telefonie linia zawija się sama.
           */}
           <div className="flex flex-col">
-            <h1 className="order-1 text-[22px] font-semibold leading-[1.1] tracking-[-0.02em] sm:order-2 sm:mt-3 sm:text-[clamp(34px,6vw,64px)] sm:leading-[1.02]">
+            <h1 className="text-[22px] font-semibold leading-[1.1] tracking-[-0.02em] sm:mt-3 sm:text-[clamp(34px,6vw,64px)] sm:leading-[1.02]">
               {court.name}
             </h1>
 
-            <div className="order-2 mt-2 flex flex-wrap items-center gap-1.5 sm:order-1 sm:mt-0 sm:gap-2">
-              <span className="rounded-full border border-hairline bg-white/8 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] text-muted sm:px-3 sm:py-1 sm:text-[11px] sm:tracking-[0.14em]">
-                {TYPE_LABEL[court.type]}
-              </span>
-              <span className="rounded-full border border-hairline bg-white/8 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] text-muted sm:px-3 sm:py-1 sm:text-[11px] sm:tracking-[0.14em]">
-                {court.voivodeship}
-              </span>
-              {court.basketApproved && <BasketApprovedBadge />}
-              {court.funny && <FunnyBadge />}
-            </div>
-
-            <div className="order-3 mt-2 flex items-center gap-3">
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
               <p className="flex min-w-0 items-center gap-1.5 text-[13px] text-muted sm:gap-2 sm:text-[15px]">
                 <PinIcon className="h-4 w-4 shrink-0 text-flame" />
                 <span className="truncate">
                   {court.city} · {court.lat.toFixed(4)}, {court.lng.toFixed(4)}
                 </span>
               </p>
+
+              <span className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <span className="rounded-full border border-hairline bg-white/8 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] text-muted sm:px-3 sm:py-1 sm:text-[11px] sm:tracking-[0.14em]">
+                  {TYPE_LABEL[court.type]}
+                </span>
+                <span className="rounded-full border border-hairline bg-white/8 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] text-muted sm:px-3 sm:py-1 sm:text-[11px] sm:tracking-[0.14em]">
+                  {court.voivodeship}
+                </span>
+                {court.basketApproved && <BasketApprovedBadge />}
+                {court.funny && <FunnyBadge />}
+              </span>
               {/* na telefonie ulubione siedzą przy współrzędnych, na dużym ekranie w rzędzie akcji */}
               <span className="ml-auto shrink-0 sm:hidden">
                 <FavoriteButton
@@ -172,29 +172,38 @@ export function CourtDetail({
           warstwy hero są pozycjonowane absolutnie, więc bez tego malowałyby się NAD
           kafelkami i ścinały im górną krawędź razem z zaokrągleniem.
         */}
-        <section className="relative z-10 -mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-          <Spec icon={<HoopIcon className="h-5 w-5" />} label="Kosze" value={String(court.hoops)} />
+        {/*
+          Jeden rząd: sześć węższych kafelków z parametrami i zaraz obok panel „kto dziś gra"
+          razem z przyciskiem. Szerokość kafelków wylicza siatka - panel bierze co najmniej
+          300 px, a parametry dzielą resztę równo między siebie.
+        */}
+        <section className="relative z-10 -mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-[repeat(6,minmax(0,1fr))_minmax(300px,1.2fr)]">
+          <Spec icon={<HoopIcon className="h-4.5 w-4.5" />} label="Kosze" value={String(court.hoops)} />
           <Spec
-            icon={<SurfaceIcon className="h-5 w-5" />}
+            icon={<SurfaceIcon className="h-4.5 w-4.5" />}
             label="Nawierzchnia"
             value={surfaceLabel(court.surface)}
           />
-          <Spec icon={<ClockIcon className="h-5 w-5" />} label="Godziny" value={court.hours} />
+          <Spec icon={<ClockIcon className="h-4.5 w-4.5" />} label="Godziny" value={court.hours} />
           <Spec
-            icon={<CourtIcon className="h-5 w-5" />}
+            icon={<CourtIcon className="h-4.5 w-4.5" />}
             label="Dostęp"
             value={ACCESS_LABEL[court.access]}
           />
           <Spec
-            icon={<BulbIcon className="h-5 w-5" />}
+            icon={<BulbIcon className="h-4.5 w-4.5" />}
             label="Oświetlenie"
             value={court.lit ? "Tak" : "Brak"}
           />
           <Spec
-            icon={<FenceIcon className="h-5 w-5" />}
+            icon={<FenceIcon className="h-4.5 w-4.5" />}
             label="Ogrodzenie"
             value={court.fenced ? "Tak" : "Brak"}
           />
+
+          <div className="col-span-2 sm:col-span-3 lg:col-span-1">
+            <CheckIn courtId={court.id} signedIn={signedIn} />
+          </div>
         </section>
 
         {court.basketApproved && court.basketNote && (
@@ -235,10 +244,6 @@ export function CourtDetail({
             </div>
           </section>
         )}
-
-        <CheckIn courtId={court.id} signedIn={signedIn} />
-
-        {weather.length > 0 && <Pogoda hours={weather} nowHour={nowHour} />}
 
         <section className="mt-12 grid gap-8 lg:grid-cols-[1.6fr_1fr]">
           <div>
@@ -326,8 +331,10 @@ export function CourtDetail({
             </div>
           </section>
         )}
-      </div>
 
+        {/* pogoda zamyka stronę - to informacja „na wyjście", nie parametr boiska */}
+        {weather.length > 0 && <Pogoda hours={weather} nowHour={nowHour} />}
+      </div>
     </main>
   );
 }
@@ -342,10 +349,16 @@ function Spec({
   value: string;
 }) {
   return (
-    <div className="glass rounded-[20px] p-4 2xl:p-5">
+    /* wysokość równa panelowi „kto dziś gra" w tym samym rzędzie, więc wartość i podpis
+       spychamy do dolnej krawędzi - inaczej kafelki miałyby puste dno */
+    <div className="glass flex h-full flex-col justify-between gap-6 rounded-[20px] p-3.5 2xl:p-4">
       <span className="text-flame">{icon}</span>
-      <p className="mt-2 text-[15px] font-semibold leading-tight 2xl:text-[17px]">{value}</p>
-      <p className="mt-0.5 text-[11px] uppercase tracking-[0.14em] text-faint">{label}</p>
+      <span>
+        <p className="text-[14px] font-semibold leading-tight 2xl:text-[16px]">{value}</p>
+        <p className="mt-0.5 text-[10px] uppercase tracking-[0.12em] text-faint 2xl:text-[11px]">
+          {label}
+        </p>
+      </span>
     </div>
   );
 }
