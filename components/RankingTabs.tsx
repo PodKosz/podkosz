@@ -64,8 +64,9 @@ function Karuzela({ courts }: { courts: Court[] }) {
   /** początek gestu - zapamiętany, żeby po puszczeniu palca poznać kierunek */
   const dotyk = useRef<number | null>(null);
 
+  /* stos jest zapętlony: po ostatniej okładce wraca pierwsza i odwrotnie */
   const przesun = (kierunek: 1 | -1) =>
-    setAktywny((i) => Math.min(courts.length - 1, Math.max(0, i + kierunek)));
+    setAktywny((i) => (i + kierunek + courts.length) % courts.length);
 
   if (!courts.length) return null;
 
@@ -93,8 +94,21 @@ function Karuzela({ courts }: { courts: Court[] }) {
         wypadła na środku kolumny. Na telefonie wszystko ciaśniejsze.
       */}
       <div className="relative [--peek:0.46] [--shift:0.15] [--w:min(52vw,200px)] sm:[--peek:0.66] sm:[--shift:0.55] sm:[--w:min(34vw,320px)]">
+        {/*
+          Ciepła kałuża światła pod stosem. Wychodzi poza scenę okładek w dół, więc poświata
+          aktywnej okładki nie kończy się w powietrzu - płynnie przechodzi w listę pod spodem.
+        */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -bottom-16 left-0 h-[220px] w-[72%] blur-[70px] sm:left-[3%] sm:w-[62%]"
+          style={{
+            background:
+              "radial-gradient(closest-side, rgba(255,77,10,.32) 0%, rgba(255,122,24,.12) 52%, transparent 100%)",
+          }}
+        />
+
         <div
-          className="okladki-scena relative -mx-6 h-[calc(var(--w)+72px)] sm:mx-0"
+          className="okladki-scena relative -mx-6 h-[calc(var(--w)+150px)] sm:mx-0"
           onTouchStart={(e) => {
             dotyk.current = e.touches[0].clientX;
           }}
@@ -107,11 +121,12 @@ function Karuzela({ courts }: { courts: Court[] }) {
           }}
         >
           {courts.map((c, i) => {
-            const d = i - aktywny;
+            /* dystans liczony po okręgu - dzięki temu za dziesiątką znów staje pierwsza */
+            const d = (i - aktywny + courts.length) % courts.length;
             const aktywna = d === 0;
-            const widoczna = d >= 0 && d <= ZA_AKTYWNA;
-            /* okładki już odwiedzone wyjeżdżają o jedno miejsce w lewo i gasną */
-            const miejsce = Math.max(d, -1);
+            const widoczna = d <= ZA_AKTYWNA;
+            /* okładki poza kadrem czekają o jedno miejsce w lewo, niewidoczne */
+            const miejsce = widoczna ? d : -1;
 
             return (
               <Link
@@ -135,7 +150,7 @@ function Karuzela({ courts }: { courts: Court[] }) {
                   pointerEvents: widoczna ? undefined : "none",
                   transform: `translate(calc(-50% + var(--w) * (${miejsce} * var(--peek) - var(--shift))), -50%) scale(${(
                     1 -
-                    Math.max(d, 0) * 0.12
+                    Math.max(miejsce, 0) * 0.12
                   ).toFixed(3)})`,
                 }}
               >
@@ -211,9 +226,8 @@ function Karuzela({ courts }: { courts: Court[] }) {
           <button
             key={k}
             onClick={() => przesun(k)}
-            disabled={k === -1 ? aktywny === 0 : aktywny === courts.length - 1}
             aria-label={k === -1 ? "Poprzednia okładka" : "Następna okładka"}
-            className={`glass absolute top-1/2 z-30 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full text-muted transition hover:text-flame disabled:pointer-events-none disabled:opacity-20 sm:h-12 sm:w-12 ${
+            className={`glass absolute top-1/2 z-30 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full text-muted transition hover:text-flame sm:h-12 sm:w-12 ${
               k === -1 ? "left-0" : "right-0"
             }`}
           >
@@ -230,10 +244,20 @@ function Lista({ courts, od }: { courts: Court[]; od: number }) {
   if (!courts.length) return null;
 
   return (
-    <section className="mt-14">
+    <section className="relative mt-14">
       <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">
         Miejsca {od}-{od + courts.length - 1}
       </h2>
+
+      {/* rozmyta pomarańczowa poświata pod wierszami - zamyka sekcję i wtapia ją w tło */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-[4%] -bottom-28 h-[300px] blur-[90px]"
+        style={{
+          background:
+            "radial-gradient(closest-side, rgba(255,77,10,.34) 0%, rgba(255,122,24,.13) 52%, transparent 100%)",
+        }}
+      />
 
       <ol className="mt-4 space-y-2">
         {courts.map((c, i) => (
