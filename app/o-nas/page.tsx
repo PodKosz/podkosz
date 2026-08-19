@@ -9,7 +9,7 @@ import { FeedbackDialog } from "@/components/FeedbackDialog";
 export const metadata: Metadata = {
   title: "O nas - PodKosz",
   description:
-    "Budujemy najdokładniejszą bazę boisk do koszykówki w Polsce - ze zdjęciami w dobrej jakości, dodawaną przez graczy.",
+    "Największa mapa boisk do koszykówki w Polsce: zdjęcia z kilku ujęć, nawierzchnia, kosze, oświetlenie i godziny. Bazę buduje społeczność - każdy może dodać boisko.",
 };
 
 export const revalidate = 0;
@@ -21,79 +21,96 @@ export default async function AboutPage() {
     <main className="mx-auto min-h-dvh max-w-4xl px-6 pb-24 pt-28">
       <p className="text-[12px] uppercase tracking-[0.2em] text-flame">O projekcie</p>
       <h1 className="mt-2 text-[clamp(32px,5.5vw,56px)] font-semibold leading-[1.05] tracking-[-0.02em]">
-        Każde boisko w Polsce, ze zdjęciami które coś mówią
+        Największa mapa boisk do koszykówki w Polsce
       </h1>
-      <p className="mt-5 max-w-2xl text-[17px] leading-relaxed text-muted">
-        Szukanie miejsca do gry w obcym mieście kończy się zwykle na rozmytym zdjęciu sprzed ośmiu
-        lat. Robimy to inaczej: sześć konkretnych kadrów z każdego boiska, zawsze te same ujęcia,
-        zawsze z GPS-em. Dzięki temu widzisz stan obręczy i nawierzchni, zanim wsiądziesz w tramwaj.
-      </p>
+      <div className="mt-5 max-w-2xl space-y-4 text-[17px] leading-relaxed text-muted">
+        <p>
+          Szukanie miejsca do gry w obcym mieście kończy się zwykle na jednym rozmytym zdjęciu
+          sprzed ośmiu lat. U nas każde boisko ma komplet kadrów z różnych stron: całą płytę,
+          osobno każdy kosz, zbliżenie na obręcz i siatkę oraz detal nawierzchni. Widzisz, czy
+          obręcz jest prosta i czy beton nie jest spękany, zanim wsiądziesz w tramwaj.
+        </p>
+        <p>
+          Do zdjęć dokładamy to, co decyduje o tym, czy warto tam jechać: rodzaj nawierzchni,
+          liczbę koszy, oświetlenie, ogrodzenie, godziny i zasady dostępu oraz dokładną pinezkę
+          z GPS-u. Mapę przefiltrujesz po nawierzchni, typie boiska, województwie i dostępności,
+          sprawdzisz prognozę na dziś dla boisk odkrytych, zobaczysz, kto wybiera się tam zagrać
+          i o której, podpalisz swoje ulubione miejsca i zapiszesz je na własną listę.
+        </p>
+        <p className="text-ink/90">
+          Najważniejsze: tej bazy nie tworzy żadna instytucja. Buduje ją społeczność - każdy może
+          dodać boisko, które zna, w trzy minuty i bez zakładania konta. Zgłoszenie sprawdzamy i
+          publikujemy, a Ty trafiasz do rankingu odkrywców.
+        </p>
+      </div>
 
-      {/* licznik bazy - liczba leci prosto z Supabase przy każdym wejściu */}
+      {/*
+        Licznik bazy leży NA zdjęciu, nie nad nim: zdjęcie wypełnia całą kartę, a nad nim
+        siedzi ciemne przygaszenie i płynne plamy gradientu, żeby liczba była czytelna
+        niezależnie od kadru. Liczba leci prosto z Supabase przy każdym wejściu.
+      */}
       <section className="relative mt-12 overflow-hidden rounded-[32px] border border-hairline bg-deep">
-        {/* płynne tło: trzy plamy gradientu dryfujące w różnym tempie */}
-        <span
-          className="liquid-blob -left-24 -top-32 h-[420px] w-[520px]"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(255,122,24,.55) 0%, rgba(255,77,10,.18) 52%, transparent 72%)",
-          }}
-        />
-        <span
-          className="liquid-blob -right-32 -top-16 h-[380px] w-[440px]"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(255,178,92,.42) 0%, transparent 70%)",
-          }}
-        />
-        <span
-          className="liquid-blob bottom-[38%] left-1/3 h-[300px] w-[360px]"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(255,61,0,.35) 0%, transparent 68%)",
-          }}
-        />
-
-        <div className="relative px-6 pt-14 text-center">
-          <p className="text-[12px] uppercase tracking-[0.26em] text-white/55">Boisk w bazie</p>
-          <p className="mt-3 flame-text text-[clamp(80px,17vw,164px)] font-bold leading-[0.86] tracking-[-0.045em] tabular-nums">
-            {total}
-          </p>
-          <p className="mx-auto mt-5 max-w-md text-[15px] leading-relaxed text-white/70">
-            {total === 0
-              ? "Baza dopiero rusza - pierwsze boisko możesz dodać właśnie Ty."
-              : "Każde z nich ma komplet zdjęć w tym samym standardzie i pinezkę z GPS-u."}
-          </p>
-        </div>
-
-        {/* zdjęcie wtopione maską: brzegi rozpływają się w karcie zamiast ciąć ją krawędzią */}
-        <div className="relative mt-6 h-[280px] sm:h-[380px]">
+        <div className="absolute inset-0">
           <div
             className="absolute inset-0 bg-cover bg-center"
-            style={{
-              backgroundImage: "url('/o-nas/kosz.jpg')",
-              maskImage:
-                "linear-gradient(to bottom, transparent 0%, #000 30%, #000 80%, transparent 100%)",
-              WebkitMaskImage:
-                "linear-gradient(to bottom, transparent 0%, #000 30%, #000 80%, transparent 100%)",
-            }}
+            style={{ backgroundImage: "url('/o-nas/kosz.jpg')" }}
           />
-          {/* ciepła poświata podnosząca się od dołu - spina zdjęcie z resztą marki */}
+          {/* góra karty ciemna pod tekst, dół zostaje odsłonięty */}
+          <div className="absolute inset-0 bg-gradient-to-b from-void/95 via-void/55 to-transparent" />
+          {/* ciepła poświata od dołu - spina zdjęcie z resztą marki */}
           <div
             className="absolute inset-0"
             style={{
               background:
-                "linear-gradient(to top, rgba(255,77,10,.42) 0%, rgba(255,122,24,.16) 34%, transparent 62%)",
+                "linear-gradient(to top, rgba(255,77,10,.40) 0%, rgba(255,122,24,.14) 38%, transparent 66%)",
             }}
           />
         </div>
+
+        {/* płynne plamy gradientu w trybie rozjaśniania, więc świecą na zdjęciu */}
+        <span
+          className="liquid-blob -left-24 -top-32 h-[420px] w-[520px] mix-blend-screen"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(255,122,24,.50) 0%, rgba(255,77,10,.16) 52%, transparent 72%)",
+          }}
+        />
+        <span
+          className="liquid-blob -right-32 -top-16 h-[380px] w-[440px] mix-blend-screen"
+          style={{
+            background: "radial-gradient(circle, rgba(255,178,92,.38) 0%, transparent 70%)",
+          }}
+        />
+
+        <div className="relative flex min-h-[460px] flex-col sm:min-h-[600px]">
+          {/* liczba w górnej części, nad przygaszonym niebem - nie wchodzi na tablicę kosza */}
+          <div className="px-6 pt-12 text-center sm:pt-16">
+            <p className="text-[12px] uppercase tracking-[0.26em] text-white/60">Boisk w bazie</p>
+            <p
+              className="mt-2 flame-text text-[clamp(96px,19vw,200px)] font-bold leading-[0.82] tracking-[-0.05em] tabular-nums"
+              style={{ filter: "drop-shadow(0 14px 44px rgba(0,0,0,.8))" }}
+            >
+              {total}
+            </p>
+          </div>
+
+          {/* podpis w szklanym pasku przy dolnej krawędzi - zawsze czytelny, niezależnie od kadru */}
+          <div className="mt-auto border-t border-white/12 bg-black/45 px-6 py-5 backdrop-blur-md">
+            <p className="mx-auto max-w-xl text-center text-[15px] leading-relaxed text-white/90">
+              {total === 0
+                ? "Baza dopiero rusza - pierwsze boisko możesz dodać właśnie Ty."
+                : "Każde z nich ma komplet zdjęć w tym samym standardzie i pinezkę z GPS-u. Wszystkie dodali tacy gracze jak Ty."}
+            </p>
+          </div>
+        </div>
       </section>
 
-      <section className="mt-14 grid gap-4 sm:grid-cols-3">
+      <section className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          ["Znajdź", "Mapa, filtry po nawierzchni, dostępności i województwie."],
-          ["Dodaj", "Sześć zdjęć z telefonu, GPS przypina pinezkę."],
-          ["Podpal", "Płonąca piłka to głos społeczności - buduje ranking."],
+          ["Znajdź", "Mapa całej Polski, filtry po nawierzchni, dostępności i województwie."],
+          ["Sprawdź", "Zdjęcia z kilku ujęć, kosze, oświetlenie, godziny i pogoda na dziś."],
+          ["Dodaj", "Sześć kadrów z telefonu, GPS przypina pinezkę. Bez konta."],
+          ["Podpal", "Płonąca piłka to głos społeczności - z niej powstaje ranking."],
         ].map(([t, d], i) => (
           <div key={t} className="glass rounded-[22px] p-5">
             <span className="grid h-9 w-9 place-items-center rounded-full flame-gradient text-[14px] font-bold text-black">
@@ -103,6 +120,50 @@ export default async function AboutPage() {
             <p className="mt-1 text-[14px] leading-relaxed text-muted">{d}</p>
           </div>
         ))}
+      </section>
+
+      <section className="mt-16">
+        <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">Jak dodać boisko</h2>
+        <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-muted">
+          Cały proces robisz telefonem, stojąc na boisku. Kreator prowadzi krok po kroku i nie
+          puści dalej, dopóki nie masz obowiązkowego zestawu kadrów - dzięki temu wszystkie karty
+          w bazie wyglądają tak samo dobrze.
+        </p>
+
+        <ol className="mt-6 space-y-3">
+          {[
+            [
+              "Otwórz „Dodaj boisko”",
+              "Konto nie jest wymagane. Z kontem dostaniesz maila, gdy boisko pojawi się na mapie, i wejdziesz do rankingu odkrywców.",
+            ],
+            [
+              "Zrób zdjęcia według podpowiedzi",
+              "Przy każdym ujęciu masz na ekranie rysunek i wskazówkę, gdzie stanąć. Kosz B pomijasz tylko wtedy, gdy boisko naprawdę ma jeden kosz.",
+            ],
+            [
+              "Pobierz lokalizację ze środka boiska",
+              "Pinezka trafia dokładnie tam, gdzie stoisz, a miasto i województwo uzupełniają się same. Jeśli to boisko już u nas jest, kreator od razu to pokaże.",
+            ],
+            [
+              "Uzupełnij szczegóły i wyślij",
+              "Nawierzchnia, liczba koszy, oświetlenie, ogrodzenie, godziny i krótki opis od siebie - to właśnie te informacje ludzie czytają przed wyjściem z domu.",
+            ],
+            [
+              "Czekasz na sprawdzenie",
+              "Przeglądam zgłoszenia zwykle w ciągu doby. Po publikacji dostajesz maila z linkiem do swojej karty boiska.",
+            ],
+          ].map(([t, d], i) => (
+            <li key={t} className="glass flex gap-4 rounded-[20px] p-5">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-flame/50 bg-flame/12 text-[13px] font-bold text-glow">
+                {i + 1}
+              </span>
+              <span>
+                <span className="block text-[16px] font-semibold">{t}</span>
+                <span className="mt-1 block text-[14px] leading-relaxed text-muted">{d}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
       </section>
 
       <section className="mt-16">
@@ -133,8 +194,8 @@ export default async function AboutPage() {
           ))}
         </div>
         <p className="mt-4 text-[13px] text-faint">
-          Kosz B pomijamy tylko wtedy, gdy boisko naprawdę ma jeden kosz. Do tego można dorzucić
-          maksymalnie trzy dodatkowe ujęcia ogólne - otoczenie, wejście, oświetlenie.
+          Do obowiązkowego zestawu można dorzucić maksymalnie trzy dodatkowe ujęcia ogólne -
+          otoczenie, wejście, lampy albo widok z drugiego narożnika.
         </p>
       </section>
 
