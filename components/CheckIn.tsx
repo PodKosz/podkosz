@@ -93,7 +93,7 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
       nagłówek, stan na dziś, a przycisk przyklejony do dolnej krawędzi (mt-auto), żeby
       równał się z dołem kafelków niezależnie od długości tekstu.
     */
-    <section className="glass flex h-full flex-col overflow-hidden rounded-[20px] p-4">
+    <section className="glass flex min-h-[148px] flex-col overflow-hidden rounded-[20px] p-4">
       <h2 className="flex items-center gap-2 text-[10px] uppercase tracking-[0.12em] text-faint 2xl:text-[11px]">
         <ClockIcon className="h-4 w-4 text-flame" /> Kto dziś gra
       </h2>
@@ -122,15 +122,16 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
       )}
 
       {picking && mine === null && (
-        <div className="scroll-thin mt-3 flex gap-1.5 overflow-x-auto pb-1">
+        /* siatka, nie przewijalna lista: wszystkie godziny widać naraz, bez szukania suwakiem */
+        <div className="mt-3 grid grid-cols-4 gap-1.5">
           {HOURS.map((h) => (
             <button
               key={h}
               onClick={() => void zapisz(h)}
               disabled={busy}
-              className="shrink-0 rounded-full border border-hairline bg-white/6 px-3 py-1.5 text-[12px] font-semibold transition hover:border-flame/50 hover:text-glow"
+              className="rounded-xl border border-hairline bg-white/6 py-2 text-[12px] font-semibold tabular-nums transition hover:border-flame/50 hover:text-glow"
             >
-              {String(h).padStart(2, "0")}:00
+              {h}:00
             </button>
           ))}
         </div>
@@ -140,16 +141,16 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
 
       <div className="mt-auto pt-4">
         {mine !== null ? (
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-[13px] font-semibold text-glow">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[14px] font-semibold text-glow">
               Idziesz o {String(mine).padStart(2, "0")}:00
             </p>
             <button
               onClick={() => void odwolaj()}
               disabled={busy}
-              className="text-[12px] text-faint transition hover:text-ember"
+              className="rounded-2xl flame-gradient px-5 py-2.5 text-[13px] font-bold text-black transition hover:brightness-110 disabled:opacity-60"
             >
-              odwołaj
+              Odwołaj
             </button>
           </div>
         ) : (

@@ -4,8 +4,20 @@ import { useState } from "react";
 import { REPORT_REASONS, ReportReason, sendReport } from "@/lib/reports";
 import { supabaseEnabled } from "@/lib/supabase/config";
 
-/** „Zgłoś błąd" na karcie boiska - dostępne również bez konta. */
-export function ReportButton({ courtId }: { courtId: string }) {
+/**
+ * „Zgłoś błąd" na karcie boiska - dostępne również bez konta.
+ * `label` i `prominent` pozwalają użyć tego samego przycisku w stopce karty, gdzie ma
+ * wyglądać jak zaproszenie do działania, a nie jak drobny odnośnik przy akcjach.
+ */
+export function ReportButton({
+  courtId,
+  label = "Zgłoś błąd",
+  prominent = false,
+}: {
+  courtId: string;
+  label?: string;
+  prominent?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<ReportReason>("godziny");
   const [comment, setComment] = useState("");
@@ -28,9 +40,13 @@ export function ReportButton({ courtId }: { courtId: string }) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="rounded-full px-3 py-3 text-[13px] text-faint transition hover:text-muted"
+        className={
+          prominent
+            ? "glass shrink-0 rounded-full px-5 py-3 text-[14px] font-medium text-ink transition hover:bg-white/10"
+            : "rounded-full px-3 py-3 text-[13px] text-faint transition hover:text-muted"
+        }
       >
-        Zgłoś błąd
+        {label}
       </button>
 
       {open && (

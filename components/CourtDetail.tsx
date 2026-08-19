@@ -162,6 +162,23 @@ export function CourtDetail({
               Prowadź do boiska
             </a>
             <ReportButton courtId={court.id} />
+
+            {/* autor wpisu i data - przy akcjach, po prawej stronie rzędu */}
+            <p className="ml-auto hidden text-right text-[13px] leading-tight text-muted lg:block">
+              <span className="block text-[11px] uppercase tracking-[0.16em] text-faint">
+                Zgłoszone przez
+              </span>
+              <Link
+                href={`/gracz/${slugifyPlace(court.addedBy)}`}
+                className="font-semibold text-ink transition hover:text-flame"
+              >
+                @{court.addedBy}
+              </Link>
+              <span className="text-faint">
+                {" "}
+                · {new Date(court.addedAt).toLocaleDateString("pl-PL")}
+              </span>
+            </p>
           </div>
         </div>
       </section>
@@ -177,26 +194,26 @@ export function CourtDetail({
           razem z przyciskiem. Szerokość kafelków wylicza siatka - panel bierze co najmniej
           300 px, a parametry dzielą resztę równo między siebie.
         */}
-        <section className="relative z-10 -mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-[repeat(6,minmax(0,1fr))_minmax(300px,1.2fr)]">
-          <Spec icon={<HoopIcon className="h-4.5 w-4.5" />} label="Kosze" value={String(court.hoops)} />
+        <section className="relative z-10 -mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-[repeat(6,minmax(0,1fr))_minmax(300px,1.2fr)] lg:items-start">
+          <Spec icon={<HoopIcon className="h-7 w-7" />} label="Kosze" value={String(court.hoops)} />
           <Spec
-            icon={<SurfaceIcon className="h-4.5 w-4.5" />}
+            icon={<SurfaceIcon className="h-7 w-7" />}
             label="Nawierzchnia"
             value={surfaceLabel(court.surface)}
           />
-          <Spec icon={<ClockIcon className="h-4.5 w-4.5" />} label="Godziny" value={court.hours} />
+          <Spec icon={<ClockIcon className="h-7 w-7" />} label="Godziny" value={court.hours} />
           <Spec
-            icon={<CourtIcon className="h-4.5 w-4.5" />}
+            icon={<CourtIcon className="h-7 w-7" />}
             label="Dostęp"
             value={ACCESS_LABEL[court.access]}
           />
           <Spec
-            icon={<BulbIcon className="h-4.5 w-4.5" />}
+            icon={<BulbIcon className="h-7 w-7" />}
             label="Oświetlenie"
             value={court.lit ? "Tak" : "Brak"}
           />
           <Spec
-            icon={<FenceIcon className="h-4.5 w-4.5" />}
+            icon={<FenceIcon className="h-7 w-7" />}
             label="Ogrodzenie"
             value={court.fenced ? "Tak" : "Brak"}
           />
@@ -245,45 +262,6 @@ export function CourtDetail({
           </section>
         )}
 
-        <section className="mt-12 grid gap-8 lg:grid-cols-[1.6fr_1fr]">
-          <div>
-            <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">O boisku</h2>
-            <p className="mt-3 text-[17px] leading-relaxed text-ink/90">{court.description}</p>
-
-            {/* odnośniki do podstron miejsca: nawigacja dla ludzi i ścieżka dla wyszukiwarek */}
-            <p className="mt-5 flex flex-wrap items-center gap-2 text-[13px] text-muted">
-              Więcej boisk:
-              <Link
-                href={`/miasto/${slugifyPlace(court.city)}`}
-                className="rounded-full border border-hairline bg-white/6 px-3 py-1 transition hover:text-ink"
-              >
-                {court.city}
-              </Link>
-              <Link
-                href={`/wojewodztwo/${slugifyPlace(court.voivodeship)}`}
-                className="rounded-full border border-hairline bg-white/6 px-3 py-1 transition hover:text-ink"
-              >
-                {court.voivodeship}
-              </Link>
-            </p>
-          </div>
-          <div className="glass rounded-[22px] p-5">
-            <h3 className="text-[13px] uppercase tracking-[0.18em] text-faint">Zgłoszone przez</h3>
-            <Link
-              href={`/gracz/${slugifyPlace(court.addedBy)}`}
-              className="mt-2 block text-[16px] font-semibold transition hover:text-flame"
-            >
-              @{court.addedBy}
-            </Link>
-            <p className="text-[13px] text-muted">
-              dodane {new Date(court.addedAt).toLocaleDateString("pl-PL")}
-            </p>
-            <div className="mt-4 border-t border-hairline pt-4 text-[13px] text-muted">
-              Coś się nie zgadza? Napisz do nas - zaktualizujemy wpis.
-            </div>
-          </div>
-        </section>
-
         <section className="mt-14">
           <h2 className="mb-4 text-[13px] uppercase tracking-[0.18em] text-faint">
             Galeria · {court.photos.length} zdjęć
@@ -299,6 +277,39 @@ export function CourtDetail({
             }
           />
         </section>
+
+
+        {/*
+          Opis boiska idzie po galerii i jest największym tekstem na stronie - to jedyne
+          zdanie napisane ręką człowieka, więc ma prawo krzyczeć. Gradient marki zamiast
+          zwykłej bieli.
+        */}
+        <section className="mt-16">
+          <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">O boisku</h2>
+          <p className="mt-4 max-w-4xl flame-text text-[clamp(24px,3.4vw,40px)] font-semibold leading-[1.25] tracking-[-0.01em]">
+            {court.description}
+          </p>
+
+          {/* odnośniki do podstron miejsca: nawigacja dla ludzi i ścieżka dla wyszukiwarek */}
+          <p className="mt-6 flex flex-wrap items-center gap-2 text-[13px] text-muted">
+            Więcej boisk:
+            <Link
+              href={`/miasto/${slugifyPlace(court.city)}`}
+              className="rounded-full border border-hairline bg-white/6 px-3 py-1 transition hover:text-ink"
+            >
+              {court.city}
+            </Link>
+            <Link
+              href={`/wojewodztwo/${slugifyPlace(court.voivodeship)}`}
+              className="rounded-full border border-hairline bg-white/6 px-3 py-1 transition hover:text-ink"
+            >
+              {court.voivodeship}
+            </Link>
+          </p>
+        </section>
+
+        {/* pod opisem pogoda, a pod nią najbliższe boiska */}
+        {weather.length > 0 && <Pogoda hours={weather} nowHour={nowHour} />}
 
         {nearby.length > 0 && (
           <section className="mt-14">
@@ -332,8 +343,20 @@ export function CourtDetail({
           </section>
         )}
 
-        {/* pogoda zamyka stronę - to informacja „na wyjście", nie parametr boiska */}
-        {weather.length > 0 && <Pogoda hours={weather} nowHour={nowHour} />}
+      </div>
+
+      {/* stopka karty boiska - zaproszenie do poprawki wpisu, na samym końcu strony */}
+      <div className={`mt-20 border-t border-hairline pt-8 ${SHELL}`}>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-[15px] font-semibold">Coś się nie zgadza?</p>
+            <p className="mt-1 text-[14px] text-muted">
+              Zmieniły się godziny, zniknęła siatka, zdjęcia są nieaktualne? Napisz - zaktualizujemy
+              wpis.
+            </p>
+          </div>
+          <ReportButton courtId={court.id} label="Zgłoś zmianę" prominent />
+        </div>
       </div>
     </main>
   );
@@ -351,11 +374,13 @@ function Spec({
   return (
     /* wysokość równa panelowi „kto dziś gra" w tym samym rzędzie, więc wartość i podpis
        spychamy do dolnej krawędzi - inaczej kafelki miałyby puste dno */
-    <div className="glass flex h-full flex-col justify-between gap-6 rounded-[20px] p-3.5 2xl:p-4">
+    /* bez h-full: przy items-start wysokość 100% i tak brałaby się z najwyższego elementu
+       w rzędzie, więc rozwinięta siatka godzin rozciągałaby wszystkie kafelki */
+    <div className="glass flex min-h-[148px] flex-col justify-between gap-5 rounded-[20px] p-4 2xl:p-5">
       <span className="text-flame">{icon}</span>
       <span>
-        <p className="text-[14px] font-semibold leading-tight 2xl:text-[16px]">{value}</p>
-        <p className="mt-0.5 text-[10px] uppercase tracking-[0.12em] text-faint 2xl:text-[11px]">
+        <p className="text-[19px] font-semibold leading-tight 2xl:text-[22px]">{value}</p>
+        <p className="mt-1 text-[10px] uppercase tracking-[0.14em] text-faint 2xl:text-[11px]">
           {label}
         </p>
       </span>
