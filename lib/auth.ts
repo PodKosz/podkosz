@@ -4,7 +4,7 @@ import { supabaseBrowser } from "./supabase/client";
 
 /** Logowanie kontem Google. Po powrocie wracamy tam, skąd użytkownik wyszedł. */
 export async function signInWithGoogle(next = "/") {
-  const supabase = supabaseBrowser();
+  const supabase = await supabaseBrowser();
   if (!supabase) {
     throw new Error(
       "Logowanie będzie dostępne po podpięciu projektu Supabase (brak kluczy w .env.local)."
@@ -20,7 +20,7 @@ export async function signInWithGoogle(next = "/") {
 }
 
 export async function signOut() {
-  const supabase = supabaseBrowser();
+  const supabase = await supabaseBrowser();
   if (!supabase) return;
   await supabase.auth.signOut();
   location.reload();

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MapCourt, toMapCourt } from "@/lib/types";
@@ -22,8 +23,24 @@ import {
   odwiedzającego. Dociągamy go dopiero w chwili kliknięcia przycisku.
 */
 import type { LeadPoint } from "@/lib/leads";
-import { MapView } from "./MapView";
+/*
+  Mapa (MapLibre) to 912 kB paczki JS - najcięższy element całego serwisu. Wczytujemy ją
+  dynamicznie, po hydracji: szkielet i lista boisk pojawiają się od razu, a mapa dojeżdża
+  chwilę później. Bez tego przeglądarka musiała najpierw pobrać i sparsować cały MapLibre,
+  zanim cokolwiek dało się kliknąć.
+*/
+const MapView = dynamic(() => import("./MapView").then((m) => m.MapView), {
+  ssr: false,
+  loading: () => (
+    <div className="absolute inset-0 grid place-items-center bg-void">
+      <div className="w-[min(560px,72vw)] opacity-25">
+        <CourtOutline uid="mapa-szkielet" />
+      </div>
+    </div>
+  ),
+});
 import { Sidebar } from "./Sidebar";
+import { CourtOutline } from "./CourtOutline";
 
 export function Explorer({ courts, isAdmin = false }: { courts: MapCourt[]; isAdmin?: boolean }) {
   const router = useRouter();

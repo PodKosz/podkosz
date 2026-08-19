@@ -14,7 +14,7 @@ export interface CheckinSlot {
  * tylko godziny i liczby. Własną deklarację widzi wyłącznie jej autor (RLS).
  */
 export async function fetchCheckins(courtId: string): Promise<CheckinSlot[]> {
-  const supabase = supabaseBrowser();
+  const supabase = await supabaseBrowser();
   if (!supabase) return [];
 
   const { data, error } = await supabase.rpc("checkins_for_court", { in_court: courtId });
@@ -28,7 +28,7 @@ export async function fetchCheckins(courtId: string): Promise<CheckinSlot[]> {
 
 /** Godzina, na którą zalogowany użytkownik zapisał się dziś na to boisko (albo null). */
 export async function fetchMySlot(courtId: string): Promise<number | null> {
-  const supabase = supabaseBrowser();
+  const supabase = await supabaseBrowser();
   if (!supabase) return null;
 
   const today = new Date().toISOString().slice(0, 10);
@@ -44,7 +44,7 @@ export async function fetchMySlot(courtId: string): Promise<number | null> {
 
 /** Zapisuje deklarację na dziś. Druga deklaracja na tym boisku nadpisuje pierwszą. */
 export async function declareToday(courtId: string, hour: number): Promise<void> {
-  const supabase = supabaseBrowser();
+  const supabase = await supabaseBrowser();
   if (!supabase) throw new Error("Brak połączenia z bazą.");
 
   const {
@@ -67,7 +67,7 @@ export async function declareToday(courtId: string, hour: number): Promise<void>
 
 /** Odwołuje własną deklarację na dziś. */
 export async function cancelToday(courtId: string): Promise<void> {
-  const supabase = supabaseBrowser();
+  const supabase = await supabaseBrowser();
   if (!supabase) return;
   const today = new Date().toISOString().slice(0, 10);
   await supabase.from("checkins").delete().eq("court_id", courtId).eq("day", today);

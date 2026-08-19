@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { supabaseBrowser } from "./supabase/client";
+import { supabaseEnabled } from "./supabase/config";
 
 export interface FeedbackRow {
   id: string;
@@ -14,7 +15,7 @@ export interface FeedbackRow {
 
 /** Zapisuje opinię. Limit (1 na dobę z jednego IP) pilnuje wyzwalacz w bazie. */
 export async function sendFeedback(message: string, contact: string) {
-  const supabase = supabaseBrowser();
+  const supabase = await supabaseBrowser();
   if (!supabase) throw new Error("Wysyłanie opinii wymaga podpiętej bazy.");
 
   const {
@@ -48,11 +49,11 @@ export async function sendFeedback(message: string, contact: string) {
 
 export function useFeedback() {
   const [items, setItems] = useState<FeedbackRow[]>([]);
-  const [loading, setLoading] = useState(() => !!supabaseBrowser());
+  const [loading, setLoading] = useState(supabaseEnabled);
   const [error, setError] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
-    const supabase = supabaseBrowser();
+    const supabase = await supabaseBrowser();
     if (!supabase) return;
     const res = await supabase
       .from("feedback")
@@ -64,19 +65,21 @@ export function useFeedback() {
   }, []);
 
   useEffect(() => {
-    const supabase = supabaseBrowser();
-    if (!supabase) return;
     let alive = true;
-    supabase
-      .from("feedback")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .then((res: { data: unknown; error: { message: string } | null }) => {
-        if (!alive) return;
-        setError(res.error ? res.error.message : null);
-        setItems((res.data ?? []) as FeedbackRow[]);
-        setLoading(false);
-      });
+
+    void (async () => {
+      const supabase = await supabaseBrowser();
+      if (!supabase || !alive) return;
+      const res = await supabase
+        .from("feedback")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (!alive) return;
+      setError(res.error ? res.error.message : null);
+      setItems((res.data ?? []) as FeedbackRow[]);
+      setLoading(false);
+    })();
+
     return () => {
       alive = false;
     };
@@ -84,7 +87,7 @@ export function useFeedback() {
 
   const setStatus = useCallback(
     async (id: string, status: "open" | "done") => {
-      const supabase = supabaseBrowser();
+      const supabase = await supabaseBrowser();
       if (!supabase) return;
       const { error: err } = await supabase
         .from("feedback")
@@ -98,7 +101,7 @@ export function useFeedback() {
 
   const remove = useCallback(
     async (id: string) => {
-      const supabase = supabaseBrowser();
+      const supabase = await supabaseBrowser();
       if (!supabase) return;
       const { error: err } = await supabase.from("feedback").delete().eq("id", id);
       if (err) setError(err.message);

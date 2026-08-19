@@ -37,6 +37,22 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+
+  /*
+    Zdjęcia boisk leżą w Supabase Storage jako pełnowymiarowe JPEG-i (300-600 kB każdy,
+    do 2500 px szerokości). Puszczamy je przez optymalizator Next: dostawca przycina je
+    do potrzebnej szerokości i podaje w AVIF/WebP, co przy galerii boiska oznacza
+    kilkadziesiąt razy mniej bajtów niż surowe pliki.
+  */
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "muyhxifftgjnygyrbjqn.supabase.co", pathname: "/storage/**" },
+    ],
+    formats: ["image/avif", "image/webp"],
+    // szerokości dobrane pod nasze kadry: miniatury w liście, kafelki galerii, zdjęcie tytułowe
+    imageSizes: [96, 200, 320, 480],
+    deviceSizes: [640, 828, 1080, 1440, 1920, 2560],
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

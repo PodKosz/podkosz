@@ -42,14 +42,14 @@ export function isNewPhoto(
   return "file" in p;
 }
 
-function client() {
-  const supabase = supabaseBrowser();
+async function client() {
+  const supabase = await supabaseBrowser();
   if (!supabase) throw new Error("Brak połączenia z bazą - uzupełnij .env.local");
   return supabase;
 }
 
 async function uniqueSlug(base: string, ignoreId?: string) {
-  const supabase = client();
+  const supabase = await client();
   let slug = base || "boisko";
   for (let n = 2; n < 60; n++) {
     const { data } = await supabase.from("courts").select("id").eq("slug", slug).maybeSingle();
@@ -78,7 +78,7 @@ export async function saveCourt(
   photos: FormPhoto[],
   courtId?: string
 ): Promise<string> {
-  const supabase = client();
+  const supabase = await client();
   const slug = await uniqueSlug(
     `${slugify(values.city)}-${slugify(values.name)}`.replace(/^-|-$/g, ""),
     courtId
@@ -146,7 +146,7 @@ export async function saveCourt(
 }
 
 export async function deleteCourt(courtId: string) {
-  const supabase = client();
+  const supabase = await client();
   const { data } = await supabase
     .from("court_photos")
     .select("storage_path")
@@ -175,7 +175,7 @@ export interface AdminCourt extends CourtValues {
 }
 
 export async function listCourtsForAdmin(): Promise<AdminCourt[]> {
-  const supabase = client();
+  const supabase = await client();
   const { data, error } = await supabase
     .from("courts")
     .select("*, court_photos(kind, storage_path, sort)")

@@ -43,7 +43,11 @@ export function Gallery({ court, video }: { court: Court; video?: React.ReactNod
         className={`group relative overflow-hidden rounded-[20px] border border-hairline transition hover:border-flame/50 ${ratio} ${extraClass}`}
       >
         <span className="absolute inset-0">
-          <CourtPhoto photo={photos[index]} seed={court.seed + index * 3} />
+          <CourtPhoto
+            photo={photos[index]}
+            seed={court.seed + index * 3}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
         </span>
         <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent p-2.5 text-left text-[10px] uppercase tracking-[0.1em] text-ink/85 sm:text-[11px]">
           {photos[index].caption}

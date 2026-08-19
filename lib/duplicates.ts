@@ -23,7 +23,7 @@ export async function findNearbyCourts(
   lng: number,
   radiusM = 120
 ): Promise<NearbyMatch[]> {
-  const supabase = supabaseBrowser();
+  const supabase = await supabaseBrowser();
   if (!supabase) return [];
 
   const { data, error } = await supabase.rpc("courts_in_radius", {

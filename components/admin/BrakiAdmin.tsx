@@ -30,11 +30,11 @@ export function BrakiAdmin() {
 
   useEffect(() => {
     let alive = true;
-    const supabase = supabaseBrowser();
 
     // setState wyłącznie w callbacku obietnicy - synchroniczny setState w ciele efektu
     // wywołuje kaskadę renderów
     const load = async (): Promise<{ rows: Brak[]; error: string | null }> => {
+      const supabase = await supabaseBrowser();
       if (!supabase) return { rows: [], error: null };
       const { data, error: err } = await supabase
         .from("courts_braki")

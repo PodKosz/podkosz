@@ -62,7 +62,7 @@ export function CourtDetail({
     <main className="min-h-dvh pb-24">
       <section className="relative h-[62vh] max-h-[780px] min-h-[420px] w-full overflow-hidden">
         <div className="absolute inset-0">
-          <CourtPhoto photo={court.photos[0]} seed={court.seed} />
+          <CourtPhoto photo={court.photos[0]} seed={court.seed} priority sizes="100vw" />
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-void via-void/45 to-void/70" />
         {/*
@@ -324,7 +324,7 @@ export function CourtDetail({
                   className="glass group overflow-hidden rounded-[22px] transition hover:brightness-110"
                 >
                   <div className="relative aspect-[16/10] overflow-hidden">
-                    <CourtPhoto photo={c.photos[0]} seed={c.seed} />
+                    <CourtPhoto photo={c.photos[0]} seed={c.seed} sizes="(max-width: 640px) 100vw, 380px" />
                     {distanceM !== null && (
                       <span className="absolute right-3 top-3 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-semibold text-ink backdrop-blur">
                         {formatDistance(distanceM)}

@@ -121,7 +121,7 @@ export const SZUKANIE_W_BAZIE_OD = 300;
  * Puste, gdy migracja `courts_search` nie jest wgrana - wtedy zostaje filtr w przeglądarce.
  */
 export async function szukajWBazie(q: string, limit = 50): Promise<string[]> {
-  const supabase = supabaseBrowser();
+  const supabase = await supabaseBrowser();
   if (!supabase) return [];
 
   const { data, error } = await supabase.rpc("courts_search", { in_q: q, in_limit: limit });

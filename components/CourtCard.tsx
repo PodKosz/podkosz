@@ -14,7 +14,7 @@ export function CourtCard({ court, showCity = true }: { court: Court; showCity?:
       className="glass overflow-hidden rounded-[22px] transition hover:brightness-110"
     >
       <div className="relative aspect-[16/10] overflow-hidden">
-        <CourtPhoto photo={court.photos[0]} seed={court.seed} />
+        <CourtPhoto photo={court.photos[0]} seed={court.seed} sizes="(max-width: 640px) 100vw, 380px" />
         {(court.basketApproved || court.funny) && (
           <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
             {court.basketApproved && <BasketApprovedBadge />}

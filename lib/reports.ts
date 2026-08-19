@@ -27,7 +27,7 @@ export const REASON_LABEL: Record<ReportReason, string> = REPORT_REASONS.reduce(
 
 /** Wysyła zgłoszenie błędu. Działa też dla gościa bez konta. */
 export async function sendReport(courtId: string, reason: ReportReason, comment: string) {
-  const supabase = supabaseBrowser();
+  const supabase = await supabaseBrowser();
   if (!supabase) throw new Error("Zgłaszanie błędów wymaga podpiętej bazy.");
 
   const {
@@ -107,7 +107,7 @@ export function useReports() {
   };
 
   const fetchRows = useCallback(async () => {
-    const supabase = supabaseBrowser();
+    const supabase = await supabaseBrowser();
     if (!supabase) {
       setLoading(false);
       return;
@@ -124,20 +124,22 @@ export function useReports() {
   }, []);
 
   useEffect(() => {
-    const supabase = supabaseBrowser();
-    if (!supabase) return;
     let alive = true;
-    supabase
-      .from("reports")
-      .select("*, courts(slug, name, city)")
-      .eq("status", "open")
-      .order("created_at", { ascending: false })
-      .then((res: { data: unknown; error: { message: string } | null }) => {
-        if (!alive) return;
-        setError(res.error ? res.error.message : null);
-        setCourts(group((res.data ?? []) as RawReport[]));
-        setLoading(false);
-      });
+
+    void (async () => {
+      const supabase = await supabaseBrowser();
+      if (!supabase || !alive) return;
+      const res = await supabase
+        .from("reports")
+        .select("*, courts(slug, name, city)")
+        .eq("status", "open")
+        .order("created_at", { ascending: false });
+      if (!alive) return;
+      setError(res.error ? res.error.message : null);
+      setCourts(group((res.data ?? []) as unknown as RawReport[]));
+      setLoading(false);
+    })();
+
     return () => {
       alive = false;
     };
@@ -146,7 +148,7 @@ export function useReports() {
   /** Zamyka pojedyncze zgłoszenie albo wszystkie dla danego boiska. */
   const resolve = useCallback(
     async (ids: string[]) => {
-      const supabase = supabaseBrowser();
+      const supabase = await supabaseBrowser();
       if (!supabase) return;
       const {
         data: { user },

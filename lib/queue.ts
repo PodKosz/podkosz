@@ -47,7 +47,7 @@ async function dataUrlToBlob(dataUrl: string) {
 }
 
 export async function submitCourt(input: NewSubmission): Promise<void> {
-  const supabase = supabaseBrowser();
+  const supabase = await supabaseBrowser();
 
   if (!supabase) {
     addSubmission({
@@ -138,7 +138,7 @@ export async function submitCourt(input: NewSubmission): Promise<void> {
  * zgłoszenie i karta boiska współdzielą te same ścieżki po akceptacji.
  */
 async function removeUnusedFiles(
-  supabase: NonNullable<ReturnType<typeof supabaseBrowser>>,
+  supabase: NonNullable<Awaited<ReturnType<typeof supabaseBrowser>>>,
   paths: string[]
 ) {
   if (!paths.length) return;
@@ -233,7 +233,7 @@ export function useQueue(): Queue {
   const [error, setError] = useState<string | null>(null);
 
   const fetchList = useCallback(async () => {
-    const supabase = supabaseBrowser();
+    const supabase = await supabaseBrowser();
     if (!supabase) return;
     const res = await supabase
       .from("submissions")
@@ -252,20 +252,20 @@ export function useQueue(): Queue {
   // Pierwsze pobranie kolejki. setState wyłącznie w callbacku obietnicy -
   // synchroniczny setState w ciele efektu jest w tym projekcie błędem lintera.
   useEffect(() => {
-    const supabase = supabaseBrowser();
-    if (!supabase) return;
     let alive = true;
 
-    supabase
-      .from("submissions")
-      .select("*, submission_photos(id, kind, storage_path, sort)")
-      .order("created_at", { ascending: false })
-      .then((res: { data: unknown; error: { message: string } | null }) => {
-        if (!alive) return;
-        setError(res.error ? res.error.message : null);
-        setRemote(((res.data ?? []) as SubmissionRow[]).map(rowToSubmission));
-        setLoading(false);
-      });
+    void (async () => {
+      const supabase = await supabaseBrowser();
+      if (!supabase || !alive) return;
+      const res = await supabase
+        .from("submissions")
+        .select("*, submission_photos(id, kind, storage_path, sort)")
+        .order("created_at", { ascending: false });
+      if (!alive) return;
+      setError(res.error ? res.error.message : null);
+      setRemote(((res.data ?? []) as unknown as SubmissionRow[]).map(rowToSubmission));
+      setLoading(false);
+    })();
 
     return () => {
       alive = false;
@@ -274,7 +274,7 @@ export function useQueue(): Queue {
 
   const patch = useCallback(
     async (id: string, p: Partial<Submission>) => {
-      const supabase = supabaseBrowser();
+      const supabase = await supabaseBrowser();
       if (!supabase) {
         updateSubmission(id, p);
         return;
@@ -294,7 +294,7 @@ export function useQueue(): Queue {
 
   const approve = useCallback(
     async (id: string) => {
-      const supabase = supabaseBrowser();
+      const supabase = await supabaseBrowser();
       if (!supabase) {
         updateSubmission(id, { status: "approved" });
         return;
@@ -320,7 +320,7 @@ export function useQueue(): Queue {
 
   /** Trwałe usunięcie zgłoszenia zabiera ze sobą jego zdjęcia ze Storage. */
   const remove = useCallback(async (id: string) => {
-    const supabase = supabaseBrowser();
+    const supabase = await supabaseBrowser();
     if (!supabase) {
       removeSubmission(id);
       return;
@@ -347,7 +347,7 @@ export function useQueue(): Queue {
 
   const removePhoto = useCallback(async (submission: Submission, index: number) => {
     const photo = submission.photos[index];
-    const supabase = supabaseBrowser();
+    const supabase = await supabaseBrowser();
     if (!supabase) {
       updateSubmission(submission.id, {
         photos: submission.photos.filter((_, i) => i !== index),

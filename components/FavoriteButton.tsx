@@ -24,7 +24,7 @@ export function FavoriteButton({
   const [hint, setHint] = useState<string | null>(null);
 
   const toggle = async () => {
-    const supabase = supabaseBrowser();
+    const supabase = await supabaseBrowser();
     if (!supabase || !signedIn) {
       if (supabaseEnabled) {
         signInWithGoogle(path).catch((e: Error) => setHint(e.message));

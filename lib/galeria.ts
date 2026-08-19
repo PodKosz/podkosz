@@ -21,7 +21,7 @@ export async function fetchCourtPhotos(courtId: string): Promise<CourtPhotoRef[]
   const gotowe = cache.get(courtId);
   if (gotowe) return gotowe;
 
-  const supabase = supabaseBrowser();
+  const supabase = await supabaseBrowser();
   if (!supabase) {
     // tryb testowy: zdjęcia (a właściwie grafiki zastępcze) siedzą w danych demo
     const demo = COURTS.find((c) => c.id === courtId)?.photos ?? [];

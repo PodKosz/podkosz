@@ -23,9 +23,14 @@ export function HoverCard({ court, tapHint = false }: { court: MapCourt; tapHint
     >
       <div className="grid grid-cols-3 gap-[2px] bg-white/5">
         {kadry.map((p, i) => (
-          <div key={i} className={`aspect-[4/3] overflow-hidden ${i === 0 ? "col-span-2 row-span-2" : ""}`}>
+          <div
+            key={i}
+            className={`relative aspect-[4/3] overflow-hidden ${
+              i === 0 ? "col-span-2 row-span-2" : ""
+            }`}
+          >
             {p ? (
-              <CourtPhoto photo={p} seed={court.seed + i} />
+              <CourtPhoto photo={p} seed={court.seed + i} sizes="200px" />
             ) : (
               // póki zdjęcia lecą z serwera, stoi grafika zastępcza - nic nie przeskakuje
               <PhotoPlaceholder kind={i === 0 ? "narożnik" : "kosz-a"} seed={court.seed + i} />

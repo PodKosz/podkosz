@@ -1,27 +1,43 @@
+import Image from "next/image";
 import { CourtPhotoRef, PhotoKind } from "@/lib/types";
 
 /**
- * Placeholder zdjęcia boiska - generowany deterministycznie z ziarna.
- * Gdy w bazie pojawi się `url`, komponent renderuje prawdziwe zdjęcie.
+ * Zdjęcie boiska albo grafika zastępcza (generowana deterministycznie z ziarna).
+ *
+ * Prawdziwe zdjęcia idą przez next/image, więc:
+ *  - przeglądarka dostaje AVIF/WebP przycięty do potrzebnej szerokości, a nie surowy
+ *    JPEG po 300-600 kB (karta boiska ładowała tak kilka megabajtów),
+ *  - wszystko poza kadrem tytułowym wczytuje się leniwie, przy dojściu do niego.
+ *
+ * `sizes` mówi optymalizatorowi, jak szeroki będzie kadr - bez tego dostawalibyśmy
+ * zawsze najszerszy warian.
  */
 export function CourtPhoto({
   photo,
   seed,
   className = "",
   alt,
+  sizes = "100vw",
+  priority = false,
 }: {
   photo: CourtPhotoRef;
   seed: number;
   className?: string;
   alt?: string;
+  /** szerokość kadru w układzie strony - do wyboru wariantu zdjęcia */
+  sizes?: string;
+  /** kadr tytułowy: wczytujemy od razu, bez czekania na przewinięcie */
+  priority?: boolean;
 }) {
   if (photo.url) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
+      <Image
         src={photo.url}
         alt={alt ?? photo.caption}
-        className={`h-full w-full object-cover ${className}`}
+        fill
+        sizes={sizes}
+        priority={priority}
+        className={`object-cover ${className}`}
       />
     );
   }

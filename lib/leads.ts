@@ -129,7 +129,7 @@ async function askOverpass(): Promise<OsmElement[]> {
  * statusów tych już przejrzanych.
  */
 export async function importOsmLeads(onStep: (msg: string) => void) {
-  const supabase = supabaseBrowser();
+  const supabase = await supabaseBrowser();
   if (!supabase) throw new Error("Import wymaga podpiętej bazy.");
 
   onStep("Pytam OpenStreetMap o boiska w Polsce… to trwa do dwóch minut.");
@@ -163,7 +163,7 @@ export async function importOsmLeads(onStep: (msg: string) => void) {
 
 /** Punkty do szarych pinezek: tylko nieprzejrzane. */
 export async function listLeadPoints(): Promise<LeadPoint[]> {
-  const supabase = supabaseBrowser();
+  const supabase = await supabaseBrowser();
   if (!supabase) return [];
   const rows: LeadPoint[] = [];
   const page = 1000;
@@ -185,7 +185,7 @@ export async function listLeadPoints(): Promise<LeadPoint[]> {
 }
 
 export async function getLead(id: string): Promise<Lead | null> {
-  const supabase = supabaseBrowser();
+  const supabase = await supabaseBrowser();
   if (!supabase) return null;
   const { data, error } = await supabase.from("court_leads").select("*").eq("id", id).maybeSingle();
   if (error) throw new Error(error.message);
@@ -193,7 +193,7 @@ export async function getLead(id: string): Promise<Lead | null> {
 }
 
 export async function setLeadStatus(id: string, status: LeadStatus) {
-  const supabase = supabaseBrowser();
+  const supabase = await supabaseBrowser();
   if (!supabase) return;
   const { error } = await supabase.from("court_leads").update({ status }).eq("id", id);
   if (error) throw new Error(error.message);
@@ -201,7 +201,7 @@ export async function setLeadStatus(id: string, status: LeadStatus) {
 
 /** Po publikacji boiska z kandydata: znika z mapy i wskazuje na wpis. */
 export async function markLeadAdded(leadId: string, courtSlug: string) {
-  const supabase = supabaseBrowser();
+  const supabase = await supabaseBrowser();
   if (!supabase) return;
   const { data } = await supabase.from("courts").select("id").eq("slug", courtSlug).maybeSingle();
   await supabase
@@ -217,7 +217,7 @@ export interface LeadCounts {
 }
 
 async function countBy(status: LeadStatus) {
-  const supabase = supabaseBrowser();
+  const supabase = await supabaseBrowser();
   if (!supabase) return 0;
   const { count } = await supabase
     .from("court_leads")
@@ -234,7 +234,7 @@ export function useLeads(status: LeadStatus, limit = 60) {
   const [error, setError] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
-    const supabase = supabaseBrowser();
+    const supabase = await supabaseBrowser();
     if (!supabase) return;
     try {
       const [list, n, a, r] = await Promise.all([

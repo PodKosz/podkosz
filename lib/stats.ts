@@ -50,7 +50,7 @@ export function useAdminOverview() {
   const [error, setError] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
-    const supabase = supabaseBrowser();
+    const supabase = await supabaseBrowser();
     if (!supabase) return;
     const res = await supabase.rpc("admin_overview");
     if (res.error) setError(res.error.message);
@@ -71,18 +71,3 @@ export function useAdminOverview() {
   return { data, loading, error, reload };
 }
 
-/**
- * Odnotowuje wizytę raz na sesję przeglądarki. Funkcja w bazie sama wyciąga adres
- * z nagłówka i zapisuje wyłącznie jego skrót - nigdzie nie trzymamy czytelnego IP.
- */
-export async function pingVisit() {
-  const supabase = supabaseBrowser();
-  if (!supabase) return;
-  try {
-    if (sessionStorage.getItem("podkosz-visit") === "1") return;
-    sessionStorage.setItem("podkosz-visit", "1");
-  } catch {
-    // tryb prywatny bez sessionStorage - wtedy po prostu policzymy wizytę raz na wejście
-  }
-  await supabase.rpc("log_visit");
-}

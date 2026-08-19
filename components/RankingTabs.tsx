@@ -40,7 +40,11 @@ export function RankingTabs({ courts, authors }: { courts: Court[]; authors: Aut
                 }`}
               >
                 <div className="relative aspect-[16/11] overflow-hidden">
-                  <CourtPhoto photo={c.photos[0]} seed={c.seed} />
+                  <CourtPhoto
+                    photo={c.photos[0]}
+                    seed={c.seed}
+                    sizes="(max-width: 640px) 100vw, 340px"
+                  />
                   <span className="absolute left-4 top-4 grid h-11 w-11 place-items-center rounded-full flame-gradient text-[18px] font-bold text-black">
                     {i + 1}
                   </span>
@@ -68,8 +72,8 @@ export function RankingTabs({ courts, authors }: { courts: Court[]; authors: Aut
                   <span className="w-8 shrink-0 text-center text-[15px] font-semibold text-faint">
                     {i + 4}
                   </span>
-                  <span className="h-14 w-20 shrink-0 overflow-hidden rounded-xl">
-                    <CourtPhoto photo={c.photos[0]} seed={c.seed} />
+                  <span className="relative h-14 w-20 shrink-0 overflow-hidden rounded-xl">
+                    <CourtPhoto photo={c.photos[0]} seed={c.seed} sizes="96px" />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">

@@ -31,7 +31,7 @@ export function LikeButton({
 
   const toggle = async () => {
     if (busy) return;
-    const supabase = supabaseBrowser();
+    const supabase = await supabaseBrowser();
 
     if (supabaseEnabled && !signedIn) {
       setHint("Podpalanie boisk wymaga konta - kliknij, żeby zalogować się przez Google.");
@@ -92,7 +92,9 @@ export function LikeButton({
   );
 }
 
-async function uid(supabase: NonNullable<ReturnType<typeof supabaseBrowser>>) {
+type Klient = NonNullable<Awaited<ReturnType<typeof supabaseBrowser>>>;
+
+async function uid(supabase: Klient) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
