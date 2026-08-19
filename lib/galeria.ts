@@ -31,11 +31,16 @@ function gestoscEkranu() {
   return typeof window !== "undefined" && window.devicePixelRatio > 1.5 ? 2 : 1;
 }
 
-/** Szerokość miniatury dla danego kadru w wizytówce (0 = duży kadr). */
+/**
+ * Szerokość miniatury dla danego kadru w wizytówce (0 = duży kadr).
+ *
+ * Tylko duży kadr dostaje szerszy plik na gęstych ekranach - dwa małe mają po ~105 px,
+ * więc 200 px wystarcza im nawet przy podwójnej gęstości, a rozgrzewamy ich dwa razy
+ * więcej niż dużych.
+ */
 export const thumbWidth = (index: number) => {
-  const gesty = gestoscEkranu() === 2;
-  if (index === 0) return gesty ? 480 : 320;
-  return gesty ? 320 : 200;
+  if (index === 0) return gestoscEkranu() === 2 ? 480 : 320;
+  return 200;
 };
 
 /**
