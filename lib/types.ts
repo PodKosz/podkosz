@@ -13,7 +13,7 @@ export type Access = "24h" | "godziny" | "ograniczony";
 /**
  * Kadry w kolejności, w jakiej się je robi i w jakiej lecą na karcie boiska.
  * Sześć pierwszych to zestaw obowiązkowy (kosz B wolno pominąć), trzy ostatnie
- * to dodatkowe ujęcia ogólne — nazwy `narożnik-2` i `ogólne-1` zostają, bo takie
+ * to dodatkowe ujęcia ogólne - nazwy `narożnik-2` i `ogólne-1` zostają, bo takie
  * kadry mają już zdjęcia wgrane wcześniej z panelu.
  */
 export type PhotoKind =
@@ -129,11 +129,11 @@ export interface PhotoStep {
   title: string;
   /** jedno zdanie pod kafelkiem z przykładowym kadrem */
   hint: string;
-  /** dłuższa podpowiedź — leci na ekran w trakcie robienia zdjęcia */
+  /** dłuższa podpowiedź - leci na ekran w trakcie robienia zdjęcia */
   tip: string;
   /** kadr do pominięcia jednym kliknięciem (boisko z jednym koszem) */
   skippable?: boolean;
-  /** ponad obowiązkowy zestaw — użytkownik może dorzucić, ale nie musi */
+  /** ponad obowiązkowy zestaw - użytkownik może dorzucić, ale nie musi */
   extra?: boolean;
 }
 
@@ -146,14 +146,14 @@ export const PHOTO_STEPS: PhotoStep[] = [
   {
     kind: "narożnik",
     title: "Całe boisko z narożnika",
-    hint: "Cała płyta i oba kosze w jednym kadrze — to zdjęcie tytułowe.",
+    hint: "Cała płyta i oba kosze w jednym kadrze - to zdjęcie tytułowe.",
     tip: "Cofnij się do samego rogu płyty i trzymaj telefon poziomo. Linia boczna powinna prowadzić w głąb kadru, a oba kosze zmieścić się w środku. To zdjęcie widać na mapie i na górze karty boiska.",
   },
   {
     kind: "kosz-a",
     title: "Kosz A na wprost",
     hint: "Na wprost tablicy, cały kosz ze słupkiem w kadrze.",
-    tip: "Stań kilka metrów przed tablicą, dokładnie na jej środku. W kadrze ma być cała tablica, obręcz i słupek aż do ziemi — po tym poznać, czy kosz jest prosty i na jakiej wysokości.",
+    tip: "Stań kilka metrów przed tablicą, dokładnie na jej środku. W kadrze ma być cała tablica, obręcz i słupek aż do ziemi - po tym poznać, czy kosz jest prosty i na jakiej wysokości.",
   },
   {
     kind: "kosz-b",
@@ -172,19 +172,19 @@ export const PHOTO_STEPS: PhotoStep[] = [
     kind: "nawierzchnia",
     title: "Detal nawierzchni",
     hint: "Kadr w dół na podłoże, z linią boiska.",
-    tip: "Stań na linii i skieruj telefon w dół z wysokości pasa. Ma być widać fakturę, spękania i stan malowania — po tym ludzie oceniają, czy da się tu grać.",
+    tip: "Stań na linii i skieruj telefon w dół z wysokości pasa. Ma być widać fakturę, spękania i stan malowania - po tym ludzie oceniają, czy da się tu grać.",
   },
   {
     kind: "ogólne-2",
     title: "Całe boisko z drugiej strony",
-    hint: "Drugie ujęcie całości — z przeciwnej strony niż kadr 1.",
+    hint: "Drugie ujęcie całości - z przeciwnej strony niż kadr 1.",
     tip: "Przejdź na przeciwną stronę i zrób całość jeszcze raz. Dzięki temu widać otoczenie i to, co zasłaniało pierwsze zdjęcie: ogrodzenie, ławki, wejście.",
   },
   {
     kind: "narożnik-2",
     title: "Ogólne dodatkowe 1",
     hint: "Cokolwiek, co warto pokazać: otoczenie, wejście, oświetlenie.",
-    tip: "Zestaw obowiązkowy masz już kompletny. Dodatkowe ujęcie to bonus — otoczenie boiska, wejście, lampy, ławki albo widok z drugiego narożnika.",
+    tip: "Zestaw obowiązkowy masz już kompletny. Dodatkowe ujęcie to bonus - otoczenie boiska, wejście, lampy, ławki albo widok z drugiego narożnika.",
     extra: true,
   },
   {
@@ -198,7 +198,7 @@ export const PHOTO_STEPS: PhotoStep[] = [
     kind: "ogólne-3",
     title: "Ogólne dodatkowe 3",
     hint: "Ostatni bonusowy kadr.",
-    tip: "Ostatnie dodatkowe ujęcie — więcej niż trzech bonusów nie zbieramy, żeby karty boisk zostały porównywalne.",
+    tip: "Ostatnie dodatkowe ujęcie - więcej niż trzech bonusów nie zbieramy, żeby karty boisk zostały porównywalne.",
     extra: true,
   },
 ];
@@ -206,5 +206,5 @@ export const PHOTO_STEPS: PhotoStep[] = [
 /** Kadry, bez których zgłoszenie nie przechodzi dalej (kosz B można pominąć). */
 export const REQUIRED_PHOTO_STEPS = PHOTO_STEPS.filter((s) => !s.extra);
 
-/** Dodatkowe ujęcia ogólne — do trzech, całkowicie opcjonalne. */
+/** Dodatkowe ujęcia ogólne - do trzech, całkowicie opcjonalne. */
 export const EXTRA_PHOTO_STEPS = PHOTO_STEPS.filter((s) => s.extra);

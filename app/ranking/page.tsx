@@ -3,7 +3,7 @@ import { listContributors, listCourts } from "@/lib/repo";
 import { RankingTabs } from "@/components/RankingTabs";
 
 export const metadata: Metadata = {
-  title: "Ranking — PodKosz",
+  title: "Ranking - PodKosz",
   description:
     "Najpopularniejsze boiska do koszykówki w Polsce według liczby lajków oraz ranking osób, które dodały ich najwięcej.",
 };
@@ -23,7 +23,7 @@ export default async function RankingPage() {
         </h1>
         <p className="mt-3 max-w-xl text-[15px] text-muted">
           Kolejność wyznaczają płonące piłki od społeczności. Podpalaj boiska, na których dobrze się
-          gra — i dodawaj własne, żeby wejść do rankingu odkrywców.
+          gra - i dodawaj własne, żeby wejść do rankingu odkrywców.
         </p>
       </header>
 
@@ -31,7 +31,7 @@ export default async function RankingPage() {
         <RankingTabs courts={sorted} authors={authors} />
       ) : (
         <p className="glass rounded-[24px] p-10 text-center text-[15px] text-muted">
-          Baza jest jeszcze pusta — dodaj pierwsze boisko.
+          Baza jest jeszcze pusta - dodaj pierwsze boisko.
         </p>
       )}
     </main>

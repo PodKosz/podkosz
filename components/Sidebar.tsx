@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import {
   ACCESS_LABEL,
@@ -63,6 +63,35 @@ export function Sidebar({
   /** Na komputerze lista filtrów jest schowana pod napisem „filtry”. */
   const [panelOpen, setPanelOpen] = useState(false);
 
+  /*
+    Gest na telefonie: przeciągnięcie w górę wyciąga arkusz, w dół go schowa.
+    Zamykamy tylko wtedy, gdy lista jest przewinięta na samą górę - inaczej
+    zwykłe przewijanie wyników zamykałoby panel.
+  */
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const swipe = useRef<{ y: number; x: number; atTop: boolean } | null>(null);
+
+  const onSheetTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    swipe.current = {
+      y: t.clientY,
+      x: t.clientX,
+      atTop: (scrollRef.current?.scrollTop ?? 0) <= 2,
+    };
+  };
+
+  const onSheetTouchEnd = (e: React.TouchEvent) => {
+    const start = swipe.current;
+    swipe.current = null;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    const dy = start.y - t.clientY;
+    // ruch bardziej poziomy niż pionowy to nie jest ten gest
+    if (Math.abs(dy) < 44 || Math.abs(t.clientX - start.x) > Math.abs(dy)) return;
+    if (dy > 0) setSheetOpen(true);
+    else if (start.atTop) setSheetOpen(false);
+  };
+
   const patch = (p: Partial<Filters>) => setFilters({ ...filters, ...p });
 
   const toggleSurface = (s: Surface) =>
@@ -76,7 +105,7 @@ export function Sidebar({
     <>
       {/* ---------- komputer: osobne pudełka jedno pod drugim ---------- */}
       <div className="pointer-events-none absolute left-5 top-5 bottom-5 z-30 hidden w-[386px] flex-col gap-3 md:flex">
-        {/* logo bez kafelka — leży wprost na mapie, cień trzyma czytelność */}
+        {/* logo bez kafelka - leży wprost na mapie, cień trzyma czytelność */}
         <div
           className="pointer-events-auto shrink-0 pl-1"
           style={{ filter: "drop-shadow(0 6px 20px rgba(0,0,0,.85))" }}
@@ -147,6 +176,8 @@ export function Sidebar({
 
       {/* ---------- telefon: arkusz wysuwany od dołu ---------- */}
       <aside
+        onTouchStart={onSheetTouchStart}
+        onTouchEnd={onSheetTouchEnd}
         className={`glass-dim pointer-events-auto z-30 flex flex-col overflow-hidden
           fixed inset-x-0 bottom-0 rounded-t-[26px] transition-[top] duration-300 ease-out md:hidden
           ${sheetOpen ? "top-[68px]" : "top-auto"}`}
@@ -201,6 +232,7 @@ export function Sidebar({
         )}
 
         <div
+          ref={scrollRef}
           className={`scroll-thin mt-2 flex-1 overflow-y-auto px-4 pb-5 ${
             sheetOpen ? "block" : "hidden"
           }`}
@@ -330,7 +362,7 @@ function Collapsible({
   );
 }
 
-/** Filtry i lista wyników — ta sama treść na komputerze i w arkuszu na telefonie. */
+/** Filtry i lista wyników - ta sama treść na komputerze i w arkuszu na telefonie. */
 function FiltersAndList({
   filters,
   patch,

@@ -11,7 +11,7 @@ import { PlayIcon } from "./icons";
 
 /**
  * Shorts z boiska. Wypełnia kafelek, w którym siedzi (ramkę i proporcje ustala galeria).
- * Domyślnie stoi miniatura z pomarańczowym trójkątem w szkle — film wczytuje się dopiero
+ * Domyślnie stoi miniatura z pomarańczowym trójkątem w szkle - film wczytuje się dopiero
  * po kliknięciu, więc nic nie startuje samo i nie zjada danych.
  */
 export function ShortsPlayer({ url, title }: { url: string; title: string }) {
@@ -49,7 +49,7 @@ export function ShortsPlayer({ url, title }: { url: string; title: string }) {
       />
       <span className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-black/30" />
 
-      {/* szklany krążek z pomarańczowym trójkątem — czysta krawędź, poświata pod spodem */}
+      {/* szklany krążek z pomarańczowym trójkątem - czysta krawędź, poświata pod spodem */}
       <span className="absolute left-1/2 top-1/2 grid h-[76px] w-[76px] -translate-x-1/2 -translate-y-1/2 place-items-center">
         <span
           className="absolute inset-[-24px] rounded-full opacity-80 blur-md transition group-hover:opacity-100"

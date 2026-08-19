@@ -41,7 +41,7 @@ interface Scene {
   target: Vec3;
   shapes: Shape[];
   /**
-   * Punkty, które muszą wejść w kadr. Reszta geometrii może wyjść za krawędź —
+   * Punkty, które muszą wejść w kadr. Reszta geometrii może wyjść za krawędź -
    * dokładnie tak, jak na prawdziwym zdjęciu. Bez tego kadruje się całą scenę.
    */
   frame?: Vec3[];
@@ -199,7 +199,7 @@ function hoop(x0: number, { net = true, mesh = false }: { net?: boolean; mesh?: 
         ],
       });
       if (mesh) {
-        // druga rodzina nitek w przeciwną stronę — z bliska siatka ma romby
+        // druga rodzina nitek w przeciwną stronę - z bliska siatka ma romby
         shapes.push({
           ink: "net",
           pts: [
@@ -234,7 +234,7 @@ function fullCourt(): Shape[] {
   ];
 }
 
-/** Prosty deterministyczny generator — rysunek ma zawsze wyglądać tak samo. */
+/** Prosty deterministyczny generator - rysunek ma zawsze wyglądać tak samo. */
 function rnd(seed: number) {
   let s = seed;
   return () => {
@@ -244,12 +244,12 @@ function rnd(seed: number) {
 }
 
 /**
- * Detal nawierzchni z bliska: wycinek około metra na metr — pas malowanej linii,
+ * Detal nawierzchni z bliska: wycinek około metra na metr - pas malowanej linii,
  * spękania i ziarno kruszywa. Dopiero w takim zbliżeniu widać stan płyty.
  */
 function surfacePatch(): Shape[] {
   const shapes: Shape[] = [
-    // sama płyta — wypełnienie z zapasem poza kadr, żeby czytało się jako podłoże
+    // sama płyta - wypełnienie z zapasem poza kadr, żeby czytało się jako podłoże
     { ink: "edge", pts: quad(0.5, 3, 11, 12.5), closed: true, filled: true },
     // linia boiska: 5 cm farby biegnące przez kadr
     { ink: "paint", pts: quad(4.3, MID - 0.025, 6.3, MID + 0.025), closed: true, filled: true },
@@ -265,7 +265,7 @@ function surfacePatch(): Shape[] {
   ];
   cracks.forEach((pts) => shapes.push({ ink: "crack", pts }));
 
-  // ziarno kruszywa — drobne kółka rozsypane po całym wycinku
+  // ziarno kruszywa - drobne kółka rozsypane po całym wycinku
   const rand = rnd(20260817);
   for (let i = 0; i < 60; i++) {
     const x = 4.45 + rand() * 1.75;
@@ -309,7 +309,7 @@ function hoopScene(x0: number, eye: Vec3): Scene {
 }
 
 const SCENES: Record<PhotoKind, () => Scene> = {
-  // 1. całość z narożnika — kadr tytułowy
+  // 1. całość z narożnika - kadr tytułowy
   "narożnik": () => ({
     eye: [-4, -5, 4.2],
     target: [16, MID, 0.5],
@@ -319,7 +319,7 @@ const SCENES: Record<PhotoKind, () => Scene> = {
   // 2. kosz A na wprost
   "kosz-a": () => hoopScene(0, [8.6, MID + 0.4, 1.6]),
 
-  // 3. kosz B — kamera lekko z boku, żeby kadr nie był kopią kosza A
+  // 3. kosz B - kamera lekko z boku, żeby kadr nie był kopią kosza A
   "kosz-b": () => hoopScene(L, [L - 8, MID - 1.1, 1.65]),
 
   // 4. detal obręczy i siatki
@@ -347,7 +347,7 @@ const SCENES: Record<PhotoKind, () => Scene> = {
     ],
   }),
 
-  // 6. całość z drugiej strony — od linii bocznej
+  // 6. całość z drugiej strony - od linii bocznej
   "ogólne-2": () => ({
     eye: [L / 2 + 1.5, -10.5, 3.3],
     target: [L / 2, MID, 1.1],
@@ -441,7 +441,7 @@ export function ShotDiagram({
       )}
 
       {scene.shapes.map((shape, i) => {
-        // wypełnienia to płyta boiska i pas farby — na nakładce zostaje sam kontur
+        // wypełnienia to płyta boiska i pas farby - na nakładce zostaje sam kontur
         if (shape.filled && mode === "overlay" && shape.ink !== "paint") return null;
         const style = inks[shape.ink];
         const filled = !!shape.filled;

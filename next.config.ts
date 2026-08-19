@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 /**
  * Nagłówki bezpieczeństwa dla całego serwisu.
- * Nagłówki dobrane tak, żeby nic nie psuły działania aplikacji — pełne CSP ze
+ * Nagłówki dobrane tak, żeby nic nie psuły działania aplikacji - pełne CSP ze
  * `script-src` wymagałoby nonce'ów generowanych w middleware.
  */
 const securityHeaders = [
@@ -11,7 +11,7 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   {
     key: "Permissions-Policy",
-    // geolokalizacja i aparat są potrzebne w kreatorze zgłoszeń — tylko dla nas
+    // geolokalizacja i aparat są potrzebne w kreatorze zgłoszeń - tylko dla nas
     value: "camera=(self), geolocation=(self), microphone=(), payment=(), usb=()",
   },
   {
@@ -22,7 +22,7 @@ const securityHeaders = [
     key: "Content-Security-Policy",
     // Bez `default-src` i `script-src`: Next wstrzykuje skrypty inline do hydratacji,
     // a polityka bez nonce po prostu je blokuje i strona przestaje reagować
-    // (sprawdzone — przyciski przestały działać). Zostawiamy reguły, które nic nie psują,
+    // (sprawdzone - przyciski przestały działać). Zostawiamy reguły, które nic nie psują,
     // a zamykają realne wektory: osadzanie w cudzej ramce, wtyczki, podmianę <base>
     // i wysyłkę formularza na obcy adres.
     value: [

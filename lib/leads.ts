@@ -6,7 +6,7 @@ import { supabaseBrowser } from "./supabase/client";
 
 /**
  * Kandydaci na boiska z OpenStreetMap. Baza OSM ma w Polsce ponad 8 tysięcy obiektów
- * `leisure=pitch` + `sport=basketball` — to gotowa lista miejsc do sprawdzenia.
+ * `leisure=pitch` + `sport=basketball` - to gotowa lista miejsc do sprawdzenia.
  * Nie bierzemy nic z Google Maps: ich regulamin zabrania budowania własnej bazy miejsc
  * na podstawie wyników, a OSM (licencja ODbL) wprost na to pozwala przy podaniu źródła.
  */
@@ -40,7 +40,7 @@ export interface Lead {
   created_at: string;
 }
 
-/** Lekki punkt do rysowania na mapie — bez tagów, żeby nie ciągnąć megabajtów. */
+/** Lekki punkt do rysowania na mapie - bez tagów, żeby nie ciągnąć megabajtów. */
 export interface LeadPoint {
   id: string;
   name: string;
@@ -226,7 +226,7 @@ async function countBy(status: LeadStatus) {
   return count ?? 0;
 }
 
-/** Lista do panelu — z limitem, bo kandydatów są tysiące. */
+/** Lista do panelu - z limitem, bo kandydatów są tysiące. */
 export function useLeads(status: LeadStatus, limit = 60) {
   const [items, setItems] = useState<Lead[]>([]);
   const [counts, setCounts] = useState<LeadCounts>({ new: 0, added: 0, rejected: 0 });
@@ -258,7 +258,7 @@ export function useLeads(status: LeadStatus, limit = 60) {
     }
   }, [status, limit]);
 
-  // setState siedzi w callbackach obietnicy wewnątrz `reload` — synchroniczne
+  // setState siedzi w callbackach obietnicy wewnątrz `reload` - synchroniczne
   // wywołanie w ciele efektu jest w tym projekcie zgłaszane przez lintera.
   useEffect(() => {
     const timer = setTimeout(() => void reload(), 0);

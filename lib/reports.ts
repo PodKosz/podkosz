@@ -82,7 +82,7 @@ interface RawReport extends ReportRow {
 
 export function useReports() {
   const [courts, setCourts] = useState<ReportedCourt[]>([]);
-  // bez bazy nie ma czego wczytywać — startujemy od razu w stanie gotowym
+  // bez bazy nie ma czego wczytywać - startujemy od razu w stanie gotowym
   const [loading, setLoading] = useState(() => !!supabaseBrowser());
   const [error, setError] = useState<string | null>(null);
 

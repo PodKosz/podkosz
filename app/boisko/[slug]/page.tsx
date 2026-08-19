@@ -11,9 +11,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const court = await getCourtBySlug(slug);
-  if (!court) return { title: "Boisko — PodKosz" };
+  if (!court) return { title: "Boisko - PodKosz" };
   return {
-    title: `${court.name}, ${court.city} — boisko do koszykówki`,
+    title: `${court.name}, ${court.city} - boisko do koszykówki`,
     description: court.description,
   };
 }

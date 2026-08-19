@@ -44,7 +44,7 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
   const [skipped, setSkipped] = useState<PhotoKind[]>([]);
   const [pos, setPos] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null);
   const [gpsError, setGpsError] = useState<string | null>(null);
-  /** co udało się odczytać z lokalizacji — pokazujemy to przy pinezce */
+  /** co udało się odczytać z lokalizacji - pokazujemy to przy pinezce */
   const [placeNote, setPlaceNote] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "",
@@ -113,7 +113,7 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
   };
 
   /**
-   * Wstecz z kadru: poprzedni kadr obowiązkowy, a z pierwszego — przegląd zdjęć
+   * Wstecz z kadru: poprzedni kadr obowiązkowy, a z pierwszego - przegląd zdjęć
    * (albo instrukcja, jeśli nie ma jeszcze ani jednego zdjęcia).
    */
   const goBack = (kind: PhotoKind) => {
@@ -153,7 +153,7 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
   };
 
   /**
-   * Miasto i województwo bierzemy z lokalizacji — użytkownik nie musi ich wpisywać.
+   * Miasto i województwo bierzemy z lokalizacji - użytkownik nie musi ich wpisywać.
    * Pola zostają widoczne w kolejnym kroku, więc zawsze można poprawić.
    */
   const fillPlace = async (lat: number, lng: number) => {
@@ -164,7 +164,7 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
         ? (found?.voivodeship as string)
         : "";
       if (!found || (!found.city && !region)) {
-        setPlaceNote("nie rozpoznałem adresu — wpisz miasto w kolejnym kroku");
+        setPlaceNote("nie rozpoznałem adresu - wpisz miasto w kolejnym kroku");
         return;
       }
       setForm((f) => ({
@@ -173,10 +173,10 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
         voivodeship: f.voivodeship || region,
       }));
       setPlaceNote(
-        [found.city, region].filter(Boolean).join(", ") + " — uzupełnione z lokalizacji"
+        [found.city, region].filter(Boolean).join(", ") + " - uzupełnione z lokalizacji"
       );
     } catch {
-      setPlaceNote("nie udało się odczytać adresu — wpisz miasto w kolejnym kroku");
+      setPlaceNote("nie udało się odczytać adresu - wpisz miasto w kolejnym kroku");
     }
   };
 
@@ -234,9 +234,9 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
             Dodaj boisko do mapy
           </h1>
           <p className="mt-3 text-[15px] leading-relaxed text-muted">
-            Zajmie ci to 3 minuty. Prowadzimy cię kadr po kadrze — przy każdym zdjęciu masz na
+            Zajmie ci to 3 minuty. Prowadzimy cię kadr po kadrze - przy każdym zdjęciu masz na
             ekranie schemat i podpowiedź, jak je ustawić. Potem telefon przypina pinezkę z GPS, a my
-            sprawdzamy zgłoszenie i publikujemy. Konto nie jest wymagane — ale z kontem dostaniesz
+            sprawdzamy zgłoszenie i publikujemy. Konto nie jest wymagane - ale z kontem dostaniesz
             powiadomienie o publikacji i punkty w rankingu.
           </p>
 
@@ -267,10 +267,10 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
 
           <ul className="mt-6 space-y-2 text-[13px] text-muted">
             <li>· Rób zdjęcia poziomo (telefon na bok), przy dziennym świetle.</li>
-            <li>· Nie fotografuj ludzi w zbliżeniu — zgłoszenia z twarzami odrzucamy.</li>
+            <li>· Nie fotografuj ludzi w zbliżeniu - zgłoszenia z twarzami odrzucamy.</li>
             <li>· Boisko z jednym koszem? Kadr „Kosz B” pomijasz jednym przyciskiem.</li>
             <li>
-              · Na końcu możesz dorzucić do trzech dodatkowych ujęć ogólnych — otoczenie, wejście,
+              · Na końcu możesz dorzucić do trzech dodatkowych ujęć ogólnych - otoczenie, wejście,
               oświetlenie.
             </li>
           </ul>
@@ -426,7 +426,7 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
           </div>
 
           <h3 className="mt-8 text-[12px] uppercase tracking-[0.18em] text-faint">
-            Dodatkowe ujęcia — opcjonalnie, maksymalnie {EXTRA_PHOTO_STEPS.length}
+            Dodatkowe ujęcia - opcjonalnie, maksymalnie {EXTRA_PHOTO_STEPS.length}
           </h3>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
             {extrasTaken.map((s) => (
@@ -462,7 +462,7 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
             onBack={() => setStage("intro")}
             onNext={() => setStage("gps")}
             nextDisabled={!shotsComplete}
-            nextLabel="Dalej — lokalizacja"
+            nextLabel="Dalej - lokalizacja"
           />
         </section>
       )}
@@ -471,7 +471,7 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
         <section className="rise">
           <h2 className="text-[24px] font-semibold tracking-tight">Gdzie stoisz?</h2>
           <p className="mt-2 text-[14px] text-muted">
-            Stań na środku boiska i pobierz lokalizację — pinezka trafi dokładnie tam, gdzie jesteś.
+            Stań na środku boiska i pobierz lokalizację - pinezka trafi dokładnie tam, gdzie jesteś.
           </p>
 
           <div className="glass mt-6 rounded-[24px] p-6 text-center">
@@ -485,7 +485,7 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
                 </p>
                 <p className="mt-1 text-[13px] text-muted">
                   dokładność ±{pos.accuracy ?? "?"} m
-                  {(pos.accuracy ?? 0) > 30 && " — spróbuj ponownie na otwartej przestrzeni"}
+                  {(pos.accuracy ?? 0) > 30 && " - spróbuj ponownie na otwartej przestrzeni"}
                 </p>
                 {placeNote && <p className="mt-1 text-[13px] text-flame">{placeNote}</p>}
                 <button
@@ -539,7 +539,7 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
             onBack={() => setStage("shots")}
             onNext={() => setStage("details")}
             nextDisabled={!pos}
-            nextLabel="Dalej — szczegóły"
+            nextLabel="Dalej - szczegóły"
           />
         </section>
       )}
@@ -548,7 +548,7 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
         <section className="rise">
           <h2 className="text-[24px] font-semibold tracking-tight">Szczegóły boiska</h2>
           <p className="mt-2 text-[14px] text-muted">
-            Miasto i województwo wpisaliśmy z Twojej lokalizacji — sprawdź tylko, czy się zgadza.
+            Miasto i województwo wpisaliśmy z Twojej lokalizacji - sprawdź tylko, czy się zgadza.
             Resztę pól uzupełnij albo zostaw, poprawimy je przy weryfikacji.
           </p>
 
@@ -674,7 +674,7 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
             onBack={() => setStage("gps")}
             onNext={() => setStage("author")}
             nextDisabled={!form.name || !form.city || !form.voivodeship}
-            nextLabel="Dalej — podsumowanie"
+            nextLabel="Dalej - podsumowanie"
           />
         </section>
       )}
@@ -742,7 +742,7 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
             )}
             {author.mode === "account" && !user && !supabaseEnabled && (
               <p className="rounded-2xl border border-hairline bg-white/4 px-4 py-3 text-[13px] text-muted">
-                Logowanie Google ruszy po podpięciu bazy — na razie zgłoszenie poleci jako
+                Logowanie Google ruszy po podpięciu bazy - na razie zgłoszenie poleci jako
                 anonimowe.
               </p>
             )}
@@ -779,7 +779,7 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
           <h2 className="mt-6 text-[28px] font-semibold tracking-tight">Zgłoszenie wysłane</h2>
           <p className="mx-auto mt-3 max-w-md text-[15px] text-muted">
             Trafiło do kolejki weryfikacji. Sprawdzamy zdjęcia i dane, a po akceptacji pinezka
-            pojawia się na mapie — zwykle w ciągu doby.
+            pojawia się na mapie - zwykle w ciągu doby.
           </p>
           <div className="mt-8 flex justify-center gap-3">
             <Link
@@ -964,7 +964,7 @@ function Summary({
   return (
     <div className="glass mt-6 grid grid-cols-2 gap-x-4 gap-y-3 rounded-[22px] p-5 text-[13px] sm:grid-cols-4">
       <Cell label="Zdjęcia" value={`${photos} szt.`} />
-      <Cell label="Boisko" value={`${name || "—"}${city ? `, ${city}` : ""}`} />
+      <Cell label="Boisko" value={`${name || "-"}${city ? `, ${city}` : ""}`} />
       <Cell label="GPS" value={pos ? `${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)}` : "brak"} />
       <Cell label="Godziny" value={hours} />
     </div>

@@ -44,7 +44,7 @@ export function CourtDetail({
   signedIn?: boolean;
   /** administrator dostaje skrót do edycji tego wpisu */
   isAdmin?: boolean;
-  /** wejście z losowania — wtedy na dole siedzi pasek „losuj dalej” */
+  /** wejście z losowania - wtedy na dole siedzi pasek „losuj dalej” */
   random?: { onlyFunny: boolean };
 }) {
   return (
@@ -54,72 +54,99 @@ export function CourtDetail({
           <CourtPhoto photo={court.photos[0]} seed={court.seed} />
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-void via-void/45 to-void/70" />
-        {/* mocniejsze wygaszenie dołu: kafelki parametrów wchodzą na zdjęcie i muszą być czytelne */}
-        <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-void via-void/85 to-transparent" />
+        {/*
+          Mocniejsze wygaszenie dołu: kafelki parametrów wchodzą na zdjęcie i muszą być czytelne.
+          Na telefonie pas jest wyższy, bo tytuł, plakietki, współrzędne i przyciski stoją niżej -
+          wszystkie muszą leżeć na przygaszonym tle, nie na samym kadrze.
+        */}
+        <div className="absolute inset-x-0 bottom-0 h-72 bg-gradient-to-t from-void via-void/85 to-transparent sm:h-56" />
 
         <div className={`relative flex h-full flex-col justify-end pb-10 ${SHELL}`}>
-          <div className="mb-auto mt-24 flex items-center gap-3">
+          <div className="mb-auto mt-16 flex flex-wrap items-center gap-2 sm:mt-24 sm:gap-3">
             <Link
               href="/"
-              className="glass inline-flex w-fit items-center gap-2 rounded-full px-4 py-2 text-[12px] uppercase tracking-[0.14em] text-muted transition hover:text-ink"
+              className="glass inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-muted transition hover:text-ink sm:gap-2 sm:px-4 sm:py-2 sm:text-[12px] sm:tracking-[0.14em]"
             >
-              <ArrowLeftIcon className="h-4 w-4" /> mapa
+              <ArrowLeftIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> mapa
             </Link>
             {isAdmin && (
               <Link
                 href={`/admin?edytuj=${court.slug}`}
-                className="inline-flex w-fit items-center gap-2 rounded-full flame-gradient px-4 py-2 text-[12px] font-bold uppercase tracking-[0.14em] text-black transition hover:brightness-110"
+                className="inline-flex w-fit items-center gap-1.5 rounded-full flame-gradient px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-black transition hover:brightness-110 sm:gap-2 sm:px-4 sm:py-2 sm:text-[12px] sm:tracking-[0.14em]"
               >
-                <PencilIcon className="h-4 w-4" /> edytuj
+                <PencilIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> edytuj
               </Link>
             )}
             {random && (
               <Link
                 href={`/losowe?omin=${court.slug}${random.onlyFunny ? "&dziwne=1" : ""}`}
                 prefetch={false}
-                className="inline-flex w-fit items-center gap-2 rounded-full flame-gradient px-4 py-2 text-[12px] font-bold uppercase tracking-[0.14em] text-black transition hover:brightness-110"
+                className="inline-flex w-fit items-center gap-1.5 rounded-full flame-gradient px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-black transition hover:brightness-110 sm:gap-2 sm:px-4 sm:py-2 sm:text-[12px] sm:tracking-[0.14em]"
               >
-                <DiceIcon className="h-4 w-4" /> losuj dalej
+                <DiceIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> losuj dalej
               </Link>
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-hairline bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-muted">
-              {TYPE_LABEL[court.type]}
-            </span>
-            <span className="rounded-full border border-hairline bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-muted">
-              {court.voivodeship}
-            </span>
-            {court.basketApproved && <BasketApprovedBadge />}
-            {court.funny && <FunnyBadge />}
+          {/*
+            Na telefonie kolejność jest inna niż na dużym ekranie: najpierw tytuł, pod nim
+            plakietki, a potem współrzędne z ulubionymi po prawej. Wszystko trzyma się dołu
+            zdjęcia, w obszarze gradientu, żeby nie zasłaniać kadru.
+          */}
+          <div className="flex flex-col">
+            <h1 className="order-1 text-[22px] font-semibold leading-[1.1] tracking-[-0.02em] sm:order-2 sm:mt-3 sm:text-[clamp(34px,6vw,64px)] sm:leading-[1.02]">
+              {court.name}
+            </h1>
+
+            <div className="order-2 mt-2 flex flex-wrap items-center gap-1.5 sm:order-1 sm:mt-0 sm:gap-2">
+              <span className="rounded-full border border-hairline bg-white/8 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] text-muted sm:px-3 sm:py-1 sm:text-[11px] sm:tracking-[0.14em]">
+                {TYPE_LABEL[court.type]}
+              </span>
+              <span className="rounded-full border border-hairline bg-white/8 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] text-muted sm:px-3 sm:py-1 sm:text-[11px] sm:tracking-[0.14em]">
+                {court.voivodeship}
+              </span>
+              {court.basketApproved && <BasketApprovedBadge />}
+              {court.funny && <FunnyBadge />}
+            </div>
+
+            <div className="order-3 mt-2 flex items-center gap-3">
+              <p className="flex min-w-0 items-center gap-1.5 text-[13px] text-muted sm:gap-2 sm:text-[15px]">
+                <PinIcon className="h-4 w-4 shrink-0 text-flame" />
+                <span className="truncate">
+                  {court.city} · {court.lat.toFixed(4)}, {court.lng.toFixed(4)}
+                </span>
+              </p>
+              {/* na telefonie ulubione siedzą przy współrzędnych, na dużym ekranie w rzędzie akcji */}
+              <span className="ml-auto shrink-0 sm:hidden">
+                <FavoriteButton
+                  courtId={court.id}
+                  initiallyFavorite={favorite}
+                  signedIn={signedIn}
+                  compact
+                />
+              </span>
+            </div>
           </div>
 
-          <h1 className="mt-3 text-[clamp(34px,6vw,64px)] font-semibold leading-[1.02] tracking-[-0.02em]">
-            {court.name}
-          </h1>
-          <p className="mt-2 flex items-center gap-2 text-[15px] text-muted">
-            <PinIcon className="h-4 w-4 text-flame" /> {court.city} · {court.lat.toFixed(4)},{" "}
-            {court.lng.toFixed(4)}
-          </p>
-
-          <div className="mt-6 flex flex-wrap items-center gap-3">
+          <div className="mt-4 flex flex-wrap items-center gap-2 sm:mt-6 sm:gap-3">
             <LikeButton
               courtId={court.id}
               initial={court.likes}
               initiallyLiked={liked}
               signedIn={signedIn}
             />
-            <FavoriteButton
-              courtId={court.id}
-              initiallyFavorite={favorite}
-              signedIn={signedIn}
-            />
+            <span className="hidden sm:block">
+              <FavoriteButton
+                courtId={court.id}
+                initiallyFavorite={favorite}
+                signedIn={signedIn}
+              />
+            </span>
             <a
               href={`https://www.google.com/maps/dir/?api=1&destination=${court.lat},${court.lng}`}
               target="_blank"
               rel="noreferrer"
-              className="glass rounded-full px-5 py-3 text-[14px] font-medium text-ink transition hover:bg-white/10"
+              className="glass rounded-full px-4 py-2.5 text-[13px] font-medium text-ink transition hover:bg-white/10 sm:px-5 sm:py-3 sm:text-[14px]"
             >
               Prowadź do boiska
             </a>
@@ -191,7 +218,7 @@ export function CourtDetail({
                 </blockquote>
 
                 <p className="mt-5 text-[13px] text-white/55">
-                  — Basket, twórca PodKosza
+                  - Basket, twórca PodKosza
                 </p>
               </div>
             </div>
@@ -210,7 +237,7 @@ export function CourtDetail({
               dodane {new Date(court.addedAt).toLocaleDateString("pl-PL")}
             </p>
             <div className="mt-4 border-t border-hairline pt-4 text-[13px] text-muted">
-              Coś się nie zgadza? Napisz do nas — zaktualizujemy wpis.
+              Coś się nie zgadza? Napisz do nas - zaktualizujemy wpis.
             </div>
           </div>
         </section>

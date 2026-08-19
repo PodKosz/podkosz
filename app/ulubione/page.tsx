@@ -7,7 +7,7 @@ import { FireBallIcon, PinIcon } from "@/components/icons";
 import { TYPE_LABEL } from "@/lib/types";
 
 export const metadata: Metadata = {
-  title: "Ulubione boiska — PodKosz",
+  title: "Ulubione boiska - PodKosz",
   robots: { index: false, follow: false },
 };
 

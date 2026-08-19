@@ -42,3 +42,6 @@ next-env.d.ts
 
 # kopiowane z node_modules przez scripts/copy-maplibre-worker.mjs
 /public/maplibre
+
+# lokalna konfiguracja narzedzi
+/.claude/

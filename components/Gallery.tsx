@@ -8,9 +8,9 @@ import { Lightbox } from "./Lightbox";
 /**
  * Galeria układana pod konkretne kadry, a nie w równą siatkę: tytułowe całe boisko dostaje
  * szeroki panel, kosze stoją pionowo po bokach, a detale (obręcz i nawierzchnia) siedzą
- * między nimi — wiersz jest symetryczny względem osi. Film z boiska jest jednym z kafelków:
+ * między nimi - wiersz jest symetryczny względem osi. Film z boiska jest jednym z kafelków:
  * na dużym ekranie stoi pionowo w tym samym wierszu co kosze, na telefonie ląduje na końcu.
- * Dolne rzędy dzielimy tak, żeby każdy był pełny — nigdy nie zostaje puste miejsce.
+ * Dolne rzędy dzielimy tak, żeby każdy był pełny - nigdy nie zostaje puste miejsce.
  */
 export function Gallery({ court, video }: { court: Court; video?: React.ReactNode }) {
   const [open, setOpen] = useState<number | null>(null);
@@ -32,7 +32,7 @@ export function Gallery({ court, video }: { court: Court; video?: React.ReactNod
   const portraits = [hoopA, hoopB].filter((i) => i >= 0);
 
   /**
-   * Zdjęcie leży w warstwie absolutnej — inaczej jego naturalna wysokość rozpycha
+   * Zdjęcie leży w warstwie absolutnej - inaczej jego naturalna wysokość rozpycha
    * kafelek i cały wiersz mozaiki.
    */
   const tile = (index: number, ratio: string, extraClass = "") =>
@@ -51,8 +51,8 @@ export function Gallery({ court, video }: { court: Court; video?: React.ReactNod
       </button>
     );
 
-  /* Dolne kadry dzielimy na rzędy po maksymalnie trzy, ale równo — 3, 3, 2 zamiast
-     3, 3, 1 — żeby żaden rząd nie kończył się pustym miejscem. */
+  /* Dolne kadry dzielimy na rzędy po maksymalnie trzy, ale równo - 3, 3, 2 zamiast
+     3, 3, 1 - żeby żaden rząd nie kończył się pustym miejscem. */
   const bottom = [wide, ...rest].filter((i) => i >= 0);
   const rowCount = Math.max(1, Math.ceil(bottom.length / 3));
   const rows: number[][] = Array.from({ length: rowCount }, () => []);
@@ -69,7 +69,7 @@ export function Gallery({ court, video }: { court: Court; video?: React.ReactNod
     3: "aspect-[4/3] w-full",
   };
 
-  /** Kolumny wiersza z koszami — film dokłada czwartą, węższą kolumnę na dużym ekranie. */
+  /** Kolumny wiersza z koszami - film dokłada czwartą, węższą kolumnę na dużym ekranie. */
   const middleGrid =
     portraits.length === 2
       ? video
@@ -100,7 +100,7 @@ export function Gallery({ court, video }: { court: Court; video?: React.ReactNod
   return (
     <>
       <div className="space-y-3">
-        {/* kadr tytułowy — najszerszy, żeby od razu było widać całą płytę */}
+        {/* kadr tytułowy - najszerszy, żeby od razu było widać całą płytę */}
         {tile(heroIndex, "aspect-[16/9] w-full")}
 
         {/* kosze pionowo po bokach, detale w środku, film z prawej */}
@@ -128,7 +128,7 @@ export function Gallery({ court, video }: { court: Court; video?: React.ReactNod
           </div>
         )}
 
-        {/* pozostałe kadry — rzędy zawsze pełne */}
+        {/* pozostałe kadry - rzędy zawsze pełne */}
         {rows.map(
           (row, ri) =>
             row.length > 0 && (

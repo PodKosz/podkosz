@@ -1,5 +1,5 @@
 /**
- * Polskie etykiety miast — kafelki CARTO są anglojęzyczne, więc bazę bierzemy bez
+ * Polskie etykiety miast - kafelki CARTO są anglojęzyczne, więc bazę bierzemy bez
  * podpisów (`dark_nolabels`) i rysujemy własną warstwę nazw.
  * `rank` steruje tym, przy jakim zoomie nazwa się pojawia.
  */

@@ -29,7 +29,7 @@ export function StatsAdmin() {
           <code className="mx-1 rounded bg-black/40 px-1.5 py-0.5">
             supabase/migration-statystyki-plakietka-shorts.sql
           </code>
-          — dokłada funkcję <code>admin_overview()</code>.
+          - dokłada funkcję <code>admin_overview()</code>.
         </p>
       </div>
     );
@@ -85,7 +85,7 @@ export function StatsAdmin() {
                       Math.max(1, (data.storage_bytes / Math.max(data.photos, 1)) * 8)
                   )
                 )
-              : "—"}
+              : "-"}
           </b>{" "}
           boisk po osiem zdjęć.
         </p>
@@ -118,7 +118,7 @@ export function StatsAdmin() {
         <h2 className="mb-2 text-[15px] font-semibold text-ink">Co z tego wynika</h2>
         <ul className="space-y-1.5">
           <li>
-            · Zgłoszenia i błędy warto domykać na bieżąco —{" "}
+            · Zgłoszenia i błędy warto domykać na bieżąco -{" "}
             {data.submissions_pending + data.reports_open + data.feedback_open === 0
               ? "w tej chwili nic nie czeka."
               : `czeka ${data.submissions_pending + data.reports_open + data.feedback_open} spraw.`}
@@ -131,7 +131,7 @@ export function StatsAdmin() {
             </Link>
           </li>
           <li>
-            · Unikalne adresy IP liczymy od wdrożenia tej wersji i wyłącznie jako skróty —
+            · Unikalne adresy IP liczymy od wdrożenia tej wersji i wyłącznie jako skróty -
             surowych adresów nie zapisujemy, więc statystyka jest zgodna z RODO.
           </li>
         </ul>

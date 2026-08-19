@@ -1,5 +1,5 @@
 -- =====================================================================
---  PodKosz — schemat bazy
+--  PodKosz - schemat bazy
 --  Wklej całość do Supabase → SQL Editor → Run. Skrypt jest idempotentny.
 -- =====================================================================
 

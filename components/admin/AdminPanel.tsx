@@ -49,9 +49,9 @@ const VIEWS: [View, string][] = [
 export function AdminPanel({ isAdmin, signedIn }: { isAdmin: boolean; signedIn: boolean }) {
   const path = usePathname();
   const params = useSearchParams();
-  // ?edytuj=<slug> — skrót z przycisku „Edytuj” na karcie boiska
+  // ?edytuj=<slug> - skrót z przycisku „Edytuj” na karcie boiska
   const editSlug = params.get("edytuj");
-  // ?nowe=<id kandydata> — skrót z szarej pinezki na mapie
+  // ?nowe=<id kandydata> - skrót z szarej pinezki na mapie
   const newLeadId = params.get("nowe");
   const queue = useQueue();
   const [view, setView] = useState<View>(
@@ -140,7 +140,7 @@ export function AdminPanel({ isAdmin, signedIn }: { isAdmin: boolean; signedIn: 
     flash(
       s.author.email
         ? `Odrzucono. Autor dostanie powód: „${reason}”.`
-        : "Odrzucono. Zgłoszenie anonimowe — brak adresu do powiadomienia."
+        : "Odrzucono. Zgłoszenie anonimowe - brak adresu do powiadomienia."
     );
   };
 
@@ -309,7 +309,7 @@ function Header({
     ],
     feedback: [
       "Opinie",
-      "Co użytkownicy chcieliby poprawić. Każdy może wysłać jedną opinię na dobę — okienko jest na stronie „O nas”.",
+      "Co użytkownicy chcieliby poprawić. Każdy może wysłać jedną opinię na dobę - okienko jest na stronie „O nas”.",
     ],
     stats: [
       "Statystyki",
@@ -317,7 +317,7 @@ function Header({
     ],
     leads: [
       "Kandydaci OSM",
-      "Boiska wypatrzone w OpenStreetMap — lista miejsc do sprawdzenia. Widzisz je tylko Ty, jako szare pinezki na mapie po włączeniu przycisku.",
+      "Boiska wypatrzone w OpenStreetMap - lista miejsc do sprawdzenia. Widzisz je tylko Ty, jako szare pinezki na mapie po włączeniu przycisku.",
     ],
     new: [
       "Dodaj boisko ręcznie",
@@ -335,7 +335,7 @@ function Header({
       <p className="mt-3 max-w-2xl text-[15px] text-muted">
         {lead}
         {!live && (
-          <span className="text-faint"> Tryb testowy — dane siedzą w tej przeglądarce.</span>
+          <span className="text-faint"> Tryb testowy - dane siedzą w tej przeglądarce.</span>
         )}
       </p>
 
@@ -389,7 +389,7 @@ function Editor({
         />
       )}
       <h3 className="text-[11px] uppercase tracking-[0.16em] text-faint">
-        Zdjęcia — klik powiększa, × usuwa nieudane
+        Zdjęcia - klik powiększa, × usuwa nieudane
       </h3>
       <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
         {s.photos.map((p, i) => (
@@ -441,7 +441,7 @@ function Editor({
             onChange={(e) => onPatch({ voivodeship: e.target.value })}
             className="w-full bg-transparent outline-none"
           >
-            <option value="">—</option>
+            <option value="">-</option>
             {VOIVODESHIPS.map((w) => (
               <option key={w} value={w}>
                 {w}
@@ -541,7 +541,7 @@ function Editor({
         >
           <BasketApprovedBadge />
           <span className="text-[13px] text-muted">
-            Twoja rekomendacja — fioletowa sekcja na karcie i fioletowa pinezka na mapie
+            Twoja rekomendacja - fioletowa sekcja na karcie i fioletowa pinezka na mapie
           </span>
           <span className="switch ml-auto" data-on={!!s.basketApproved} />
         </button>
@@ -590,7 +590,7 @@ function Editor({
       {s.status === "pending" && rejecting && (
         <div className="mt-6">
           <h3 className="text-[11px] uppercase tracking-[0.16em] text-faint">
-            Powód odrzucenia — trafi do autora
+            Powód odrzucenia - trafi do autora
           </h3>
           <div className="mt-3 space-y-2">
             {REJECT_REASONS.map((r) => (

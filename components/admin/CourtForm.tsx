@@ -31,7 +31,7 @@ import { youtubeId } from "@/lib/youtube";
 /** Pełna lista kadrów do wyboru przy dodawaniu ręcznym, w kolejności wyświetlania. */
 const KINDS = PHOTO_DISPLAY_ORDER;
 
-/** Środek Polski — dopóki pinezka tu stoi, znaczy że nikt jej nie ruszył. */
+/** Środek Polski - dopóki pinezka tu stoi, znaczy że nikt jej nie ruszył. */
 const DEFAULT_LAT = 52.0;
 const DEFAULT_LNG = 19.4;
 
@@ -41,8 +41,8 @@ const REGION_HINT: Record<RegionState, string> = {
   idle: "uzupełnia się samo z pinezki albo z nazwy miasta",
   loading: "sprawdzam lokalizację…",
   pin: "uzupełnione z pinezki na mapie",
-  city: "uzupełnione z nazwy miasta — sprawdź, jeśli to mała miejscowość",
-  fail: "nie rozpoznałem lokalizacji — wybierz z listy",
+  city: "uzupełnione z nazwy miasta - sprawdź, jeśli to mała miejscowość",
+  fail: "nie rozpoznałem lokalizacji - wybierz z listy",
 };
 
 function emptyValues(): CourtValues {
@@ -79,7 +79,7 @@ export function CourtForm({
   initial?: AdminCourt;
   /** wstępnie wypełnione pola, np. z kandydata OSM */
   prefill?: Partial<CourtValues>;
-  /** kandydat, z którego powstaje wpis — po zapisie znika z mapy */
+  /** kandydat, z którego powstaje wpis - po zapisie znika z mapy */
   leadId?: string;
   onSaved: (slug: string) => void;
   onCancel?: () => void;
@@ -104,12 +104,12 @@ export function CourtForm({
   const isVoivodeship = (w: string): w is (typeof VOIVODESHIPS)[number] =>
     VOIVODESHIPS.includes(w as (typeof VOIVODESHIPS)[number]);
 
-  /** Pinezka postawiona na mapie albo wklejona ze współrzędnych — wtedy jej wierzymy. */
+  /** Pinezka postawiona na mapie albo wklejona ze współrzędnych - wtedy jej wierzymy. */
   const pinSet = (lat: number, lng: number) =>
     Math.abs(lat - DEFAULT_LAT) > 0.0005 || Math.abs(lng - DEFAULT_LNG) > 0.0005;
 
   /**
-   * Z pinezki wyciągamy województwo (i miasto, jeśli puste) — to najpewniejsze źródło.
+   * Z pinezki wyciągamy województwo (i miasto, jeśli puste) - to najpewniejsze źródło.
    * `force` nadpisuje też wpisane miasto: tak działa przycisk „uzupełnij z mapy”.
    */
   const fillFromPin = async (lat: number, lng: number, force = false) => {
@@ -260,7 +260,7 @@ export function CourtForm({
     <div className="space-y-8">
       <section>
         <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">
-          Zdjęcia z dysku — kolejność na stronie ustala rodzaj kadru
+          Zdjęcia z dysku - kolejność na stronie ustala rodzaj kadru
         </h2>
         <p className="mt-1.5 text-[12px] text-muted">
           Każdemu zdjęciu przypisujesz kadr, a kolejność na stronie wynika z jego numeru:
@@ -317,7 +317,7 @@ export function CourtForm({
                     {KINDS.map((k, n) => (
                       <option key={k} value={k}>
                         {n + 1}. {PHOTO_KIND_LABEL[k]}
-                        {k === "narożnik" ? " — TYTUŁOWE" : ""}
+                        {k === "narożnik" ? " - TYTUŁOWE" : ""}
                       </option>
                     ))}
                   </select>
@@ -521,7 +521,7 @@ export function CourtForm({
           >
             <BasketApprovedBadge />
             <span className="text-[13px] text-muted">
-              Twoja osobista rekomendacja — sekcja na karcie boiska
+              Twoja osobista rekomendacja - sekcja na karcie boiska
             </span>
             <span className="switch ml-auto" data-on={v.basketApproved} />
           </button>
@@ -556,13 +556,13 @@ export function CourtForm({
           >
             <FunnyBadge />
             <span className="text-[13px] text-muted">
-              Dziwne albo śmieszne boisko — limonkowa plakietka i osobne losowanie
+              Dziwne albo śmieszne boisko - limonkowa plakietka i osobne losowanie
             </span>
             <span className="switch ml-auto" data-on={v.funny} />
           </button>
         </div>
 
-        <Field label="Film z boiska — link do YouTube Shorts (opcjonalnie)">
+        <Field label="Film z boiska - link do YouTube Shorts (opcjonalnie)">
           <input
             value={v.shortsUrl}
             onChange={(e) => set({ shortsUrl: e.target.value })}
@@ -573,7 +573,7 @@ export function CourtForm({
         {v.shortsUrl.trim() && (
           <p className="text-[11px] text-faint">
             {youtubeId(v.shortsUrl)
-              ? `Rozpoznany film: ${youtubeId(v.shortsUrl)} — na karcie boiska pojawi się pionowy odtwarzacz z przyciskiem play.`
+              ? `Rozpoznany film: ${youtubeId(v.shortsUrl)} - na karcie boiska pojawi się pionowy odtwarzacz z przyciskiem play.`
               : "Nie rozpoznaję tego linku. Wklej adres w formie youtube.com/shorts/… albo youtu.be/…"}
           </p>
         )}

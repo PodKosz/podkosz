@@ -10,7 +10,7 @@
   --color-ember: #ff4d0a;
   --color-glow: #ffb25c;
 
-  /* Basket Approved — osobista rekomendacja twórcy, celowo w kontrze do pomarańczy */
+  /* Basket Approved - osobista rekomendacja twórcy, celowo w kontrze do pomarańczy */
   --color-basket: #a855f7;
   --color-basket-deep: #6d28d9;
   --color-basket-glow: #e9d5ff;
@@ -308,7 +308,7 @@ select option {
   }
 }
 
-/* Limonkowa plakietka „dziwne boisko” — ma krzyczeć inaczej niż pomarańcz i fiolet. */
+/* Limonkowa plakietka „dziwne boisko” - ma krzyczeć inaczej niż pomarańcz i fiolet. */
 .lime-gradient {
   background: linear-gradient(135deg, #d8ff8a 0%, #b6ff3d 45%, #6fbf00 100%);
 }

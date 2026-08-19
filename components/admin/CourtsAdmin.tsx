@@ -13,7 +13,7 @@ export function CourtsAdmin({
   editSlug,
 }: {
   onChanged?: () => void;
-  /** slug z adresu ?edytuj= — otwiera edytor tego boiska od razu po wczytaniu listy */
+  /** slug z adresu ?edytuj= - otwiera edytor tego boiska od razu po wczytaniu listy */
   editSlug?: string | null;
 }) {
   const [courts, setCourts] = useState<AdminCourt[]>([]);

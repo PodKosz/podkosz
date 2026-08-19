@@ -11,7 +11,7 @@ export interface SubmissionPhoto {
   kind: PhotoKind;
   /** dataURL z aparatu (tryb testowy) albo publiczny adres ze Storage */
   url: string;
-  /** ścieżka w buckecie — potrzebna do usunięcia pliku */
+  /** ścieżka w buckecie - potrzebna do usunięcia pliku */
   path?: string;
   /** identyfikator wiersza w submission_photos */
   id?: string;
@@ -107,12 +107,12 @@ export function removeSubmission(id: string) {
   saveSubmissions(loadSubmissions().filter((s) => s.id !== id));
 }
 
-/** Hook z synchronizacją — bez setState w efekcie, bezpieczny przy SSR. */
+/** Hook z synchronizacją - bez setState w efekcie, bezpieczny przy SSR. */
 export function useSubmissions(): Submission[] {
   return useSyncExternalStore(subscribe, loadSubmissions, () => EMPTY);
 }
 
-/** true dopiero po hydracji — zapobiega mignięciu treści zależnej od localStorage. */
+/** true dopiero po hydracji - zapobiega mignięciu treści zależnej od localStorage. */
 export function useHydrated(): boolean {
   return useSyncExternalStore(
     subscribe,

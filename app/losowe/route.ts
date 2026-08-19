@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { randomCourtSlug } from "@/lib/repo";
 
 /**
- * „Pokaż losowe boisko” — przerzuca prosto na kartę losowego boiska.
+ * „Pokaż losowe boisko” - przerzuca prosto na kartę losowego boiska.
  * Parametr `dziwne=1` zawęża losowanie do boisk z limonkową plakietką.
  * Do adresu docelowego dokładamy `losowe=1`, bo po tym karta boiska wie,
  * że ma pokazać przycisk „losuj dalej”.
@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const onlyFunny = searchParams.get("dziwne") === "1";
-  // `omin` to boisko, które użytkownik właśnie widzi — nie chcemy wylosować go ponownie
+  // `omin` to boisko, które użytkownik właśnie widzi - nie chcemy wylosować go ponownie
   const skip = searchParams.get("omin") ?? undefined;
 
   const slug =

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { REPORT_REASONS, ReportReason, sendReport } from "@/lib/reports";
 import { supabaseEnabled } from "@/lib/supabase/config";
 
-/** „Zgłoś błąd" na karcie boiska — dostępne również bez konta. */
+/** „Zgłoś błąd" na karcie boiska - dostępne również bez konta. */
 export function ReportButton({ courtId }: { courtId: string }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<ReportReason>("godziny");
@@ -62,7 +62,7 @@ export function ReportButton({ courtId }: { courtId: string }) {
               <>
                 <h2 className="text-[20px] font-semibold tracking-tight">Coś się nie zgadza?</h2>
                 <p className="mt-1.5 text-[13px] text-muted">
-                  Zaznacz, co jest nie tak. Zgłoszenie jest anonimowe — konto nie jest potrzebne.
+                  Zaznacz, co jest nie tak. Zgłoszenie jest anonimowe - konto nie jest potrzebne.
                 </p>
 
                 <div className="mt-5 space-y-1.5">
@@ -103,7 +103,7 @@ export function ReportButton({ courtId }: { courtId: string }) {
 
                 {!supabaseEnabled && (
                   <p className="mt-3 text-[12px] text-faint">
-                    Tryb testowy — zgłoszenia ruszą po podpięciu bazy.
+                    Tryb testowy - zgłoszenia ruszą po podpięciu bazy.
                   </p>
                 )}
                 {error && <p className="mt-3 text-[12px] text-ember">{error}</p>}

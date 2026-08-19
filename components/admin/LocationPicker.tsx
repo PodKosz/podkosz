@@ -33,7 +33,7 @@ const PICKER_STYLE: StyleSpecification = {
   ],
 };
 
-/** Klikasz na mapie albo przeciągasz pinezkę — współrzędne lecą do formularza. */
+/** Klikasz na mapie albo przeciągasz pinezkę - współrzędne lecą do formularza. */
 export function LocationPicker({
   lat,
   lng,
@@ -115,7 +115,7 @@ export function LocationPicker({
     setQuery(hit.label.split(",").slice(0, 2).join(", "));
   }, []);
 
-  /** Ustawia pinezkę wprost na współrzędnych — bez pytania geokodera. */
+  /** Ustawia pinezkę wprost na współrzędnych - bez pytania geokodera. */
   const jumpTo = useCallback((point: LatLng) => {
     onChangeRef.current(
       Number(point.lat.toFixed(6)),
@@ -208,7 +208,7 @@ export function LocationPicker({
       />
       {pinned ? (
         <p className="text-[11px] text-basket">
-          Przypięto ze współrzędnych: {pinned} — możesz jeszcze doprecyzować przeciągnięciem.
+          Przypięto ze współrzędnych: {pinned} - możesz jeszcze doprecyzować przeciągnięciem.
         </p>
       ) : (
         <p className="text-[11px] text-faint">

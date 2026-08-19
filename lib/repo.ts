@@ -58,7 +58,7 @@ export async function listCourts(): Promise<Court[]> {
   return (data as unknown as CourtRow[]).map(rowToCourt);
 }
 
-/** Licznik boisk — tanie zapytanie, bez pobierania wierszy. */
+/** Licznik boisk - tanie zapytanie, bez pobierania wierszy. */
 export async function countCourts(): Promise<number> {
   const supabase = await supabaseServer();
   if (!supabase) return COURTS.length;
@@ -116,7 +116,7 @@ export async function listContributors(): Promise<Contributor[]> {
   return (data ?? []).map((r) => ({ name: r.name, courts: r.courts, likes: r.likes }));
 }
 
-/** Lajki i ulubione zalogowanego użytkownika — do podświetlenia przycisków. */
+/** Lajki i ulubione zalogowanego użytkownika - do podświetlenia przycisków. */
 export async function getUserReactions(
   userId: string | null
 ): Promise<{ likes: Set<string>; favorites: Set<string> }> {

@@ -61,7 +61,7 @@ export function useAdminOverview() {
     setLoading(false);
   }, []);
 
-  // setState leci w callbacku obietnicy — synchroniczny setState w ciele efektu
+  // setState leci w callbacku obietnicy - synchroniczny setState w ciele efektu
   // jest w tym projekcie zgłaszany przez lintera.
   useEffect(() => {
     const timer = setTimeout(() => void reload(), 0);
@@ -73,7 +73,7 @@ export function useAdminOverview() {
 
 /**
  * Odnotowuje wizytę raz na sesję przeglądarki. Funkcja w bazie sama wyciąga adres
- * z nagłówka i zapisuje wyłącznie jego skrót — nigdzie nie trzymamy czytelnego IP.
+ * z nagłówka i zapisuje wyłącznie jego skrót - nigdzie nie trzymamy czytelnego IP.
  */
 export async function pingVisit() {
   const supabase = supabaseBrowser();
@@ -82,7 +82,7 @@ export async function pingVisit() {
     if (sessionStorage.getItem("podkosz-visit") === "1") return;
     sessionStorage.setItem("podkosz-visit", "1");
   } catch {
-    // tryb prywatny bez sessionStorage — wtedy po prostu policzymy wizytę raz na wejście
+    // tryb prywatny bez sessionStorage - wtedy po prostu policzymy wizytę raz na wejście
   }
   await supabase.rpc("log_visit");
 }

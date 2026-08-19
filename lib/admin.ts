@@ -44,7 +44,7 @@ export function isNewPhoto(
 
 function client() {
   const supabase = supabaseBrowser();
-  if (!supabase) throw new Error("Brak połączenia z bazą — uzupełnij .env.local");
+  if (!supabase) throw new Error("Brak połączenia z bazą - uzupełnij .env.local");
   return supabase;
 }
 
@@ -103,7 +103,7 @@ export async function saveCourt(
     id = (data as { id: string }).id;
   }
 
-  // Ścieżki zdjęć w kolejności z formularza — nowe pliki lądują w Storage.
+  // Ścieżki zdjęć w kolejności z formularza - nowe pliki lądują w Storage.
   const paths: { kind: PhotoKind; storage_path: string }[] = [];
   for (const [i, photo] of photos.entries()) {
     if (isNewPhoto(photo)) {
@@ -119,7 +119,7 @@ export async function saveCourt(
     }
   }
 
-  // Galerię odtwarzamy w całości — prościej i zawsze zgodnie z kolejnością na ekranie.
+  // Galerię odtwarzamy w całości - prościej i zawsze zgodnie z kolejnością na ekranie.
   await supabase.from("court_photos").delete().eq("court_id", id);
   if (paths.length) {
     const { error } = await supabase.from("court_photos").insert(
@@ -140,7 +140,7 @@ export async function deleteCourt(courtId: string) {
 
   const files = ((data ?? []) as { storage_path: string }[]).map((r) => r.storage_path);
 
-  // Pliki kasujemy przed wierszem boiska — inaczej stracilibyśmy ścieżki i zostałyby sieroty.
+  // Pliki kasujemy przed wierszem boiska - inaczej stracilibyśmy ścieżki i zostałyby sieroty.
   // Brakujący plik nie blokuje usunięcia wpisu; blokuje wyłącznie realny błąd Storage.
   if (files.length) {
     const { error: storageError } = await supabase.storage.from("court-photos").remove(files);

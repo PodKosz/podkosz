@@ -4,7 +4,7 @@ import { useState } from "react";
 import { sendFeedback } from "@/lib/feedback";
 import { supabaseEnabled } from "@/lib/supabase/config";
 
-/** Okienko „co możemy poprawić" — otwierane przyciskiem podanym w children. */
+/** Okienko „co możemy poprawić" - otwierane przyciskiem podanym w children. */
 export function FeedbackDialog({ label = "Co możemy poprawić?" }: { label?: string }) {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
@@ -14,7 +14,7 @@ export function FeedbackDialog({ label = "Co możemy poprawić?" }: { label?: st
 
   const submit = async () => {
     if (message.trim().length < 3) {
-      setError("Napisz choć kilka słów — inaczej nie będę wiedział, co poprawić.");
+      setError("Napisz choć kilka słów - inaczej nie będę wiedział, co poprawić.");
       return;
     }
     setState("sending");
@@ -66,7 +66,7 @@ export function FeedbackDialog({ label = "Co możemy poprawić?" }: { label?: st
               <>
                 <h2 className="text-[20px] font-semibold tracking-tight">Co możemy poprawić?</h2>
                 <p className="mt-1.5 text-[13px] text-muted">
-                  Czego brakuje, co przeszkadza, co byś zmienił. Piszesz do mnie bezpośrednio —
+                  Czego brakuje, co przeszkadza, co byś zmienił. Piszesz do mnie bezpośrednio -
                   konto nie jest potrzebne.
                 </p>
 
@@ -98,7 +98,7 @@ export function FeedbackDialog({ label = "Co możemy poprawić?" }: { label?: st
 
                 {!supabaseEnabled && (
                   <p className="mt-3 text-[12px] text-faint">
-                    Tryb testowy — opinie ruszą po podpięciu bazy.
+                    Tryb testowy - opinie ruszą po podpięciu bazy.
                   </p>
                 )}
                 {error && <p className="mt-3 text-[12px] text-ember">{error}</p>}

@@ -19,7 +19,7 @@ export function NewFromLead({ leadId, onSaved }: { leadId: string; onSaved: (slu
     getLead(leadId)
       .then((found) => {
         if (!alive) return;
-        if (!found) setError("Nie znalazłem tego kandydata — mógł już zostać przejrzany.");
+        if (!found) setError("Nie znalazłem tego kandydata - mógł już zostać przejrzany.");
         else setLead(found);
       })
       .catch((e: Error) => {
@@ -64,7 +64,7 @@ export function NewFromLead({ leadId, onSaved }: { leadId: string; onSaved: (slu
           {lead.lat.toFixed(5)}, {lead.lng.toFixed(5)}
         </span>
         {lead.access_hint && ` · w OSM oznaczone jako dostęp „${lead.access_hint}”`}
-        . Sprawdź pinezkę, wpisz nazwę i wrzuć zdjęcia — po zapisie kandydat zniknie z mapy.
+        . Sprawdź pinezkę, wpisz nazwę i wrzuć zdjęcia - po zapisie kandydat zniknie z mapy.
       </div>
       <CourtForm prefill={prefill} leadId={lead.id} onSaved={onSaved} />
     </div>

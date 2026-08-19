@@ -20,17 +20,17 @@ const fitPadding = (width: number) =>
     ? { top: 90, bottom: 200, left: 24, right: 24 }
     : { top: 70, bottom: 70, left: 430, right: 70 };
 
-// Worker MapLibre serwujemy z /public — patrz scripts/copy-maplibre-worker.mjs.
+// Worker MapLibre serwujemy z /public - patrz scripts/copy-maplibre-worker.mjs.
 setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
 const STYLE: StyleSpecification = {
   version: 8,
-  // fonts.openmaptiles.org oddaje HTML zamiast pliku .pbf — Protomaps serwuje poprawne glify
+  // fonts.openmaptiles.org oddaje HTML zamiast pliku .pbf - Protomaps serwuje poprawne glify
   glyphs: "https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf",
   sources: {
     carto: {
       type: "raster",
-      // bez podpisów — kafelki CARTO mają nazwy po angielsku, dokładamy własne
+      // bez podpisów - kafelki CARTO mają nazwy po angielsku, dokładamy własne
       tiles: [
         "https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png",
         "https://b.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png",
@@ -50,7 +50,7 @@ const STYLE: StyleSpecification = {
       id: "carto",
       type: "raster",
       source: "carto",
-      // ocieplenie i wyciszenie kafelków — bez dotykania warstw własnych
+      // ocieplenie i wyciszenie kafelków - bez dotykania warstw własnych
       paint: {
         "raster-opacity": 0.92,
         "raster-saturation": -0.35,
@@ -141,7 +141,7 @@ export function MapView({
   highlightVoivodeship: string;
   onHoverCourt: (id: string | null) => void;
   onSelectCourt: (court: Court) => void;
-  /** szare punkty z OSM — tylko dla administratora, po włączeniu przycisku */
+  /** szare punkty z OSM - tylko dla administratora, po włączeniu przycisku */
   leads?: LeadPoint[];
   onSelectLead?: (lead: LeadPoint) => void;
 }) {
@@ -163,7 +163,7 @@ export function MapView({
       window.matchMedia("(hover: none), (pointer: coarse)").matches
   );
   const clearCardRef = useRef(() => undefined as void);
-  /** znacznik czasu dotknięcia pinezki — chroni wizytówkę przed klikiem mapy z tego samego dotknięcia */
+  /** znacznik czasu dotknięcia pinezki - chroni wizytówkę przed klikiem mapy z tego samego dotknięcia */
   const lastPinTapRef = useRef(0);
   const onSelectLeadRef = useRef(onSelectLead);
   useEffect(() => {
@@ -229,7 +229,7 @@ export function MapView({
     map.on("styledata", () => {
       diag.style = true;
       push();
-      // pinezki wieszamy już po sparsowaniu stylu — nie czekamy na `load`, które
+      // pinezki wieszamy już po sparsowaniu stylu - nie czekamy na `load`, które
       // w nieaktywnej karcie przeglądarki potrafi nie przyjść wcale
       setReady(true);
     });
@@ -249,7 +249,7 @@ export function MapView({
     });
     mapRef.current = map;
 
-    // Style w dev-mode dochodzą po hydracji, więc kontener bywa chwilowo zerowy —
+    // Style w dev-mode dochodzą po hydracji, więc kontener bywa chwilowo zerowy -
     // pilnujemy rozmiaru i po pierwszym sensownym pomiarze ustawiamy kadr na Polskę.
     let framed = false;
     const ro = new ResizeObserver(([entry]) => {
@@ -265,7 +265,7 @@ export function MapView({
 
     if (typeof window !== "undefined") {
       (window as unknown as { __mapDiag: MapDiag }).__mapDiag = diag;
-      // uchwyt do mapy przydatny przy diagnostyce w konsoli — tylko w dev
+      // uchwyt do mapy przydatny przy diagnostyce w konsoli - tylko w dev
       if (process.env.NODE_ENV !== "production")
         (window as unknown as { __map: MlMap }).__map = map;
     }
@@ -278,7 +278,7 @@ export function MapView({
   }, [reposition]);
 
   /* Diagnostyka po 5 s bez wstania mapy. W karcie w tle przeglądarka wstrzymuje
-     klatki animacji i MapLibre celowo nic nie rysuje — wtedy panel milczy. */
+     klatki animacji i MapLibre celowo nic nie rysuje - wtedy panel milczy. */
   useEffect(() => {
     const t = setTimeout(() => {
       if (!document.hidden) setShowDiag(true);
@@ -305,7 +305,7 @@ export function MapView({
       el.className = "court-marker";
       el.innerHTML = markerHtml(court);
       // Zdarzenia myszy tylko tam, gdzie jest prawdziwe najeżdżanie. Na dotyku przeglądarka
-      // wysyła po kliknięciu sztuczne mouseenter i zaraz mouseleave — to gasiło wizytówkę
+      // wysyła po kliknięciu sztuczne mouseenter i zaraz mouseleave - to gasiło wizytówkę
       // po chwili od dotknięcia pinezki.
       if (!coarse) {
         el.addEventListener("mouseenter", () => {
@@ -352,7 +352,7 @@ export function MapView({
 
   /* ---- szare punkty kandydatów z OSM ----
      Tysiące pinezek HTML zabiłyby przeglądarkę, więc lecą jako warstwa GeoJSON.
-     Nie czekamy na zdarzenie `load` (w karcie w tle nigdy nie przychodzi) — wystarczy
+     Nie czekamy na zdarzenie `load` (w karcie w tle nigdy nie przychodzi) - wystarczy
      sparsowany styl, czyli obecność warstwy bazowej. */
   useEffect(() => {
     const map = mapRef.current;
@@ -454,7 +454,8 @@ export function MapView({
       {hover &&
         (coarse ? (
           // dotyk: wizytówka siedzi nad wysuwanym panelem, cała jest linkiem do boiska
-          <div className="pointer-events-auto fixed inset-x-3 bottom-[158px] z-[35] mx-auto max-w-[380px] rise">
+          // 266 px zamiast 380 px: karta jest o ~30% mniejsza i nie zjada połowy ekranu
+          <div className="pointer-events-auto fixed inset-x-3 bottom-[158px] z-[35] mx-auto max-w-[266px] rise">
             <Link href={`/boisko/${hover.court.slug}`} className="block">
               <HoverCard court={hover.court} tapHint />
             </Link>
@@ -530,7 +531,7 @@ export function MapView({
 function markerHtml(court: Court) {
   const big = court.likes >= 200;
   const size = big ? 46 : 38;
-  // Boiska z wyróżnieniem Heat świecą na fioletowo — mają odróżniać się na pierwszy rzut oka.
+  // Boiska z wyróżnieniem Heat świecą na fioletowo - mają odróżniać się na pierwszy rzut oka.
   const glow = court.basketApproved
     ? "rgba(168,85,247,.6) 0%, rgba(109,40,217,.2) 45%, transparent 70%"
     : "rgba(255,122,24,.55) 0%, rgba(255,77,10,.18) 45%, transparent 70%";

@@ -13,7 +13,7 @@ const TABS: [LeadStatus, string][] = [
 
 /**
  * Kandydaci z OpenStreetMap: import całej Polski jednym przyciskiem i lista do przeglądania.
- * Kandydatów jest kilka tysięcy, więc główną przeglądarką jest mapa (szare pinezki) —
+ * Kandydatów jest kilka tysięcy, więc główną przeglądarką jest mapa (szare pinezki) -
  * tutaj jest import, licznik i podręczna lista ostatnich wpisów.
  */
 export function LeadsAdmin() {
@@ -49,7 +49,7 @@ export function LeadsAdmin() {
         <h2 className="text-[15px] font-semibold">Baza kandydatów z OpenStreetMap</h2>
         <p className="mt-1.5 max-w-2xl text-[13px] leading-relaxed text-muted">
           Import zaciąga z OSM wszystkie obiekty oznaczone jako boisko do koszykówki w Polsce
-          (obecnie ponad 8 tysięcy). Nic nie trafia na mapę publicznie — punkty widzisz tylko Ty,
+          (obecnie ponad 8 tysięcy). Nic nie trafia na mapę publicznie - punkty widzisz tylko Ty,
           jako szare pinezki po włączeniu przycisku „kandydaci OSM” na mapie. Klikasz pinezkę,
           dodajesz boisko ze zdjęciami, a kandydat znika z listy.
         </p>
@@ -84,7 +84,7 @@ export function LeadsAdmin() {
         )}
 
         <p className="mt-3 text-[11px] text-faint">
-          Źródło: OpenStreetMap, licencja ODbL. Współrzędne traktujemy jako podpowiedź — nazwę,
+          Źródło: OpenStreetMap, licencja ODbL. Współrzędne traktujemy jako podpowiedź - nazwę,
           opis i zdjęcia i tak robisz sam.
         </p>
       </section>
@@ -118,7 +118,7 @@ export function LeadsAdmin() {
       {!loading && !items.length && (
         <p className="glass rounded-[24px] p-10 text-center text-[15px] text-muted">
           {tab === "new"
-            ? "Brak kandydatów — zacznij od importu z OSM."
+            ? "Brak kandydatów - zacznij od importu z OSM."
             : "Nic tu jeszcze nie ma."}
         </p>
       )}

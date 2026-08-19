@@ -7,7 +7,7 @@ import { PinIcon } from "../icons";
 
 type Sort = "count" | "newest";
 
-/** Boiska ze zgłoszonymi błędami — domyślnie te z największą liczbą zgłoszeń. */
+/** Boiska ze zgłoszonymi błędami - domyślnie te z największą liczbą zgłoszeń. */
 export function ReportsAdmin() {
   const { courts, loading, error, resolve } = useReports();
   const [sort, setSort] = useState<Sort>("count");

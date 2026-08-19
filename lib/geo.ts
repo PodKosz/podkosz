@@ -47,7 +47,7 @@ export async function reverseGeocode(
 }
 
 /**
- * Województwo po samej nazwie miasta — do automatycznego uzupełniania formularza.
+ * Województwo po samej nazwie miasta - do automatycznego uzupełniania formularza.
  * Bierzemy pierwsze trafienie z Nominatim ograniczone do Polski i miejscowości.
  */
 export async function voivodeshipForCity(city: string): Promise<string | null> {

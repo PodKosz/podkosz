@@ -1,6 +1,6 @@
 ﻿-- =====================================================================
 --  OPCJONALNIE: 18 przykładowych boisk, żeby mapa nie była pusta na starcie.
---  Wklej do SQL Editor → Run. Zdjęć nie ma — karty pokażą grafiki zastępcze.
+--  Wklej do SQL Editor → Run. Zdjęć nie ma - karty pokażą grafiki zastępcze.
 --
 --  Kasowanie danych demo:
 --    delete from courts where added_by_name = 'demo';
@@ -15,9 +15,9 @@ values
   ('krakow-park-jordana','Park Jordana','Kraków','małopolskie',50.0630,19.9200,'otwarty','poliuretan',2,true,true,'godziny','06:00 - 22:00','Tartan, ogrodzone, oświetlone do 22.',true,287,'demo'),
   ('krakow-zalew-nowohucki','Zalew Nowohucki','Kraków','małopolskie',50.0402,20.0468,'streetball','beton',1,false,false,'24h','całą dobę','Jeden kosz nad wodą.',false,74,'demo'),
   ('gdansk-zaspa','Zaspa','Gdańsk','pomorskie',54.3900,18.6100,'otwarty','poliuretan',2,true,true,'24h','całą dobę','Boisko między blokami z muralami w tle.',false,331,'demo'),
-  ('gdansk-brzezno-przy-plazy','Brzeźno — przy plaży','Gdańsk','pomorskie',54.4051,18.6304,'streetball','asfalt',2,false,true,'24h','całą dobę','200 metrów od morza.',false,142,'demo'),
+  ('gdansk-brzezno-przy-plazy','Brzeźno - przy plaży','Gdańsk','pomorskie',54.4051,18.6304,'streetball','asfalt',2,false,true,'24h','całą dobę','200 metrów od morza.',false,142,'demo'),
   ('poznan-cytadela','Cytadela','Poznań','wielkopolskie',52.4231,16.9351,'otwarty','beton',2,false,false,'24h','całą dobę','Betonowa płyta na skarpie parku.',false,205,'demo'),
-  ('poznan-malta-kompleks','Malta — kompleks','Poznań','wielkopolskie',52.4019,16.9797,'otwarty','poliuretan',2,true,true,'godziny','08:00 - 21:00','Dwa pełne boiska obok siebie przy jeziorze.',false,118,'demo'),
+  ('poznan-malta-kompleks','Malta - kompleks','Poznań','wielkopolskie',52.4019,16.9797,'otwarty','poliuretan',2,true,true,'godziny','08:00 - 21:00','Dwa pełne boiska obok siebie przy jeziorze.',false,118,'demo'),
   ('wroclaw-wyspa-slodowa','Wyspa Słodowa','Wrocław','dolnośląskie',51.1153,17.0351,'streetball','beton',1,true,false,'24h','całą dobę','Legendarny kosz na wyspie.',true,264,'demo'),
   ('wroclaw-park-poludniowy','Park Południowy','Wrocław','dolnośląskie',51.0900,17.0200,'otwarty','asfalt',2,false,true,'godziny','07:00 - 21:00','Spokojne boisko w cieniu.',false,61,'demo'),
   ('katowice-dolina-trzech-stawow','Dolina Trzech Stawów','Katowice','śląskie',50.2450,19.0400,'otwarty','poliuretan',2,true,true,'24h','całą dobę','Nowy kompleks sportowy w parku.',false,193,'demo'),

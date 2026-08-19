@@ -2,12 +2,12 @@ import { supabaseServer } from "@/lib/supabase/server";
 
 /**
  * Wysyła opinię na maila projektu. Działa tylko wtedy, gdy w środowisku jest klucz
- * do dostawcy poczty — bez niego opinia i tak siedzi w bazie i widać ją w panelu.
+ * do dostawcy poczty - bez niego opinia i tak siedzi w bazie i widać ją w panelu.
  *
  * Wymagane zmienne (Vercel → Settings → Environment Variables):
- *   RESEND_API_KEY   — klucz z resend.com
- *   FEEDBACK_TO      — adres odbiorcy, np. podkoszpl@gmail.com
- *   FEEDBACK_FROM    — adres nadawcy z domeny potwierdzonej w Resend
+ *   RESEND_API_KEY   - klucz z resend.com
+ *   FEEDBACK_TO      - adres odbiorcy, np. podkoszpl@gmail.com
+ *   FEEDBACK_FROM    - adres nadawcy z domeny potwierdzonej w Resend
  */
 export async function POST(request: Request) {
   const key = process.env.RESEND_API_KEY;
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   }
 
   // Opinia musi istnieć w bazie i nie być jeszcze wysłana. Funkcja „zaklepuje” wiersz,
-  // więc każde kolejne uderzenie w ten endpoint tą samą treścią dostaje odmowę —
+  // więc każde kolejne uderzenie w ten endpoint tą samą treścią dostaje odmowę -
   // inaczej dałoby się zasypać skrzynkę powtarzanym żądaniem.
   const supabase = await supabaseServer();
   if (!supabase) {
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     body: JSON.stringify({
       from,
       to: [to],
-      subject: "PodKosz — nowa opinia",
+      subject: "PodKosz - nowa opinia",
       text: `${message}\n\n---\nKontakt: ${contact || "nie podano"}`,
     }),
   });

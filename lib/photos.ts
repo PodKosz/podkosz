@@ -1,9 +1,9 @@
 import { PhotoKind } from "./types";
 
 /**
- * Kolejność zdjęć na stronie — niezależna od tego, w jakiej kolejności trafiły do bazy.
+ * Kolejność zdjęć na stronie - niezależna od tego, w jakiej kolejności trafiły do bazy.
  * Jest identyczna z kolejnością robienia zdjęć w kreatorze (PHOTO_STEPS): najpierw całość
- * z narożnika (kadr tytułowy — leci też do dymka nad pinezką), potem oba kosze, detale
+ * z narożnika (kadr tytułowy - leci też do dymka nad pinezką), potem oba kosze, detale
  * i całość z drugiej strony. Dodatkowe ujęcia ogólne lądują na końcu galerii.
  */
 export const PHOTO_DISPLAY_ORDER: PhotoKind[] = [

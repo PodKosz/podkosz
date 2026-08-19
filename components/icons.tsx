@@ -122,7 +122,7 @@ export function PencilIcon(props: P) {
 }
 
 /**
- * Płonąca piłka. Wariant "flame" to jednostka lajka, "heat" — wyróżnienie od twórcy.
+ * Płonąca piłka. Wariant "flame" to jednostka lajka, "heat" - wyróżnienie od twórcy.
  */
 export function FireBallIcon({
   variant = "flame",
@@ -156,7 +156,7 @@ export function FireBallIcon({
   );
 }
 
-/** Odznaka "Basket Approved" — rekomendacja przyznawana osobiście przez twórcę. */
+/** Odznaka "Basket Approved" - rekomendacja przyznawana osobiście przez twórcę. */
 export function BasketApprovedBadge({ className = "" }: { className?: string }) {
   return (
     <span
@@ -190,7 +190,7 @@ export function FunnyBadge({
   );
 }
 
-/** Pomarańczowy trójkącik play w szkle — używany na miniaturze filmiku. */
+/** Pomarańczowy trójkącik play w szkle - używany na miniaturze filmiku. */
 export function PlayIcon(props: P) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
@@ -199,7 +199,7 @@ export function PlayIcon(props: P) {
   );
 }
 
-/** Kostka do losowania — „losowe boisko” i „losuj dalej”. */
+/** Kostka do losowania - „losowe boisko” i „losuj dalej”. */
 export function DiceIcon(props: P) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" {...props}>

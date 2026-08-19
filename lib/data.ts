@@ -33,7 +33,7 @@ const raw: Seed[] = [
     addedBy: "kuba_h",
     addedAt: "2026-04-11",
     description:
-      "Pełnowymiarowa płyta w środku parku. Nowy poliuretan położony w 2024, linie wyraźne, obręcze z siatkami łańcuchowymi. Wieczorami komplet — trzeba czekać na wygraną.",
+      "Pełnowymiarowa płyta w środku parku. Nowy poliuretan położony w 2024, linie wyraźne, obręcze z siatkami łańcuchowymi. Wieczorami komplet - trzeba czekać na wygraną.",
     seed: 11,
   },
   {
@@ -121,7 +121,7 @@ const raw: Seed[] = [
     addedBy: "nowa_huta_ball",
     addedAt: "2026-06-07",
     description:
-      "Jeden kosz nad wodą. Beton szorstki, obręcz bez siatki — miejsce na spokojne rzucanie o zachodzie.",
+      "Jeden kosz nad wodą. Beton szorstki, obręcz bez siatki - miejsce na spokojne rzucanie o zachodzie.",
     seed: 63,
   },
   {
@@ -148,7 +148,7 @@ const raw: Seed[] = [
   },
   {
     id: "c7",
-    name: "Brzeźno — przy plaży",
+    name: "Brzeźno - przy plaży",
     city: "Gdańsk",
     voivodeship: "pomorskie",
     lat: 54.4051,
@@ -192,7 +192,7 @@ const raw: Seed[] = [
   },
   {
     id: "c9",
-    name: "Malta — kompleks",
+    name: "Malta - kompleks",
     city: "Poznań",
     voivodeship: "wielkopolskie",
     lat: 52.4019,
@@ -231,7 +231,7 @@ const raw: Seed[] = [
     addedBy: "wro_street",
     addedAt: "2026-03-05",
     description:
-      "Legendarny kosz na wyspie. Jeden kosz, zero ogrodzenia, maksimum klimatu — latem gra się do północy.",
+      "Legendarny kosz na wyspie. Jeden kosz, zero ogrodzenia, maksimum klimatu - latem gra się do północy.",
     seed: 3,
   },
   {

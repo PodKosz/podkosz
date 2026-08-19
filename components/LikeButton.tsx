@@ -34,7 +34,7 @@ export function LikeButton({
     const supabase = supabaseBrowser();
 
     if (supabaseEnabled && !signedIn) {
-      setHint("Podpalanie boisk wymaga konta — kliknij, żeby zalogować się przez Google.");
+      setHint("Podpalanie boisk wymaga konta - kliknij, żeby zalogować się przez Google.");
       return;
     }
 
@@ -63,7 +63,9 @@ export function LikeButton({
         onClick={hint && supabaseEnabled && !signedIn ? () => signInWithGoogle(path) : toggle}
         aria-pressed={liked}
         className={`group flex items-center gap-2 rounded-full border transition active:scale-95 ${
-          big ? "px-5 py-3 text-[15px]" : "px-3 py-1.5 text-[13px]"
+          big
+            ? "px-4 py-2.5 text-[13px] sm:px-5 sm:py-3 sm:text-[15px]"
+            : "px-3 py-1.5 text-[13px]"
         } ${
           liked
             ? "border-transparent flame-gradient font-bold text-black flame-ring"
@@ -71,7 +73,9 @@ export function LikeButton({
         }`}
       >
         <FireBallIcon
-          className={`${big ? "h-5 w-5" : "h-4 w-4"} transition-transform group-hover:scale-110`}
+          className={`${
+            big ? "h-4 w-4 sm:h-5 sm:w-5" : "h-4 w-4"
+          } transition-transform group-hover:scale-110`}
         />
         {count}
         {big && (

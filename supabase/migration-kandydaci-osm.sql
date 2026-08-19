@@ -1,5 +1,5 @@
 -- Kandydaci na boiska: punkty zaciągnięte z OpenStreetMap (leisure=pitch + sport=basketball).
--- Widzi je wyłącznie administrator — na mapie jako szare pinezki po włączeniu przycisku.
+-- Widzi je wyłącznie administrator - na mapie jako szare pinezki po włączeniu przycisku.
 -- Dane pochodzą z OSM (licencja ODbL), więc przy publikacji boiska i tak wpisujemy własne
 -- zdjęcia i opis, a punkt służy tylko jako podpowiedź „tu jest boisko, sprawdź je”.
 

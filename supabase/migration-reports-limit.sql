@@ -1,7 +1,7 @@
 -- =====================================================================
 --  Limit zgłoszeń błędów: jedno na boisko z jednego adresu IP na dobę.
 --
---  Kontrola siedzi w wyzwalaczu bazy, a nie w przeglądarce — obejście przez
+--  Kontrola siedzi w wyzwalaczu bazy, a nie w przeglądarce - obejście przez
 --  bezpośrednie wywołanie REST API nic nie da. IP nie jest zapisywane:
 --  trzymamy wyłącznie jego skrót z solą, wystarczający do rozpoznania powtórki.
 -- =====================================================================

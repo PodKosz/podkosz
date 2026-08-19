@@ -5,9 +5,9 @@ import { VisitPing } from "@/components/VisitPing";
 import { getSessionUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "PodKosz — baza boisk do koszykówki w Polsce",
+  title: "PodKosz - baza boisk do koszykówki w Polsce",
   description:
-    "Interaktywna mapa boisk do koszykówki w Polsce. Zdjęcia, nawierzchnia, liczba koszy i godziny dostępności — dodawane przez graczy.",
+    "Interaktywna mapa boisk do koszykówki w Polsce. Zdjęcia, nawierzchnia, liczba koszy i godziny dostępności - dodawane przez graczy.",
 };
 
 export default async function RootLayout({

@@ -29,7 +29,7 @@ export async function sendFeedback(message: string, contact: string) {
 
   if (error) {
     if (/raz na dobę/.test(error.message)) {
-      throw new Error("Opinię można wysłać raz na dobę — Twoją poprzednią już mamy. Dzięki!");
+      throw new Error("Opinię można wysłać raz na dobę - Twoją poprzednią już mamy. Dzięki!");
     }
     throw new Error(error.message);
   }

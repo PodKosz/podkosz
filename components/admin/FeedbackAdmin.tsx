@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useFeedback } from "@/lib/feedback";
 
-/** Opinie od użytkowników — najnowsze na górze, z możliwością odhaczenia. */
+/** Opinie od użytkowników - najnowsze na górze, z możliwością odhaczenia. */
 export function FeedbackAdmin() {
   const { items, loading, error, setStatus, remove } = useFeedback();
   const [tab, setTab] = useState<"open" | "done">("open");

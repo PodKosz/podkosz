@@ -11,10 +11,13 @@ export function FavoriteButton({
   courtId,
   initiallyFavorite = false,
   signedIn = false,
+  compact = false,
 }: {
   courtId: string;
   initiallyFavorite?: boolean;
   signedIn?: boolean;
+  /** mniejsza wersja - na telefonie stoi w jednym rzędzie ze współrzędnymi */
+  compact?: boolean;
 }) {
   const path = usePathname();
   const [fav, setFav] = useState(initiallyFavorite);
@@ -52,14 +55,13 @@ export function FavoriteButton({
       <button
         onClick={toggle}
         aria-pressed={fav}
-        className={`glass flex items-center gap-2 rounded-full px-5 py-3 text-[14px] font-medium transition hover:bg-white/10 ${
-          fav ? "text-glow" : "text-ink"
-        }`}
+        className={`glass flex items-center gap-1.5 rounded-full font-medium transition hover:bg-white/10 ${
+          compact ? "px-3 py-1.5 text-[12px]" : "gap-2 px-5 py-3 text-[14px]"
+        } ${fav ? "text-glow" : "text-ink"}`}
       >
         <svg
           viewBox="0 0 24 24"
-          className="h-4.5 w-4.5"
-          style={{ width: 18, height: 18 }}
+          style={{ width: compact ? 15 : 18, height: compact ? 15 : 18 }}
           fill={fav ? "currentColor" : "none"}
           stroke="currentColor"
           strokeWidth="1.6"

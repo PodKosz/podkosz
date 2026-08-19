@@ -7,9 +7,9 @@ import { countCourts } from "@/lib/repo";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 
 export const metadata: Metadata = {
-  title: "O nas — PodKosz",
+  title: "O nas - PodKosz",
   description:
-    "Budujemy najdokładniejszą bazę boisk do koszykówki w Polsce — ze zdjęciami w dobrej jakości, dodawaną przez graczy.",
+    "Budujemy najdokładniejszą bazę boisk do koszykówki w Polsce - ze zdjęciami w dobrej jakości, dodawaną przez graczy.",
 };
 
 export const revalidate = 0;
@@ -29,7 +29,7 @@ export default async function AboutPage() {
         zawsze z GPS-em. Dzięki temu widzisz stan obręczy i nawierzchni, zanim wsiądziesz w tramwaj.
       </p>
 
-      {/* licznik bazy — liczba leci prosto z Supabase przy każdym wejściu */}
+      {/* licznik bazy - liczba leci prosto z Supabase przy każdym wejściu */}
       <section className="relative mt-12 overflow-hidden rounded-[32px] border border-hairline bg-deep">
         {/* płynne tło: trzy plamy gradientu dryfujące w różnym tempie */}
         <span
@@ -61,7 +61,7 @@ export default async function AboutPage() {
           </p>
           <p className="mx-auto mt-5 max-w-md text-[15px] leading-relaxed text-white/70">
             {total === 0
-              ? "Baza dopiero rusza — pierwsze boisko możesz dodać właśnie Ty."
+              ? "Baza dopiero rusza - pierwsze boisko możesz dodać właśnie Ty."
               : "Każde z nich ma komplet zdjęć w tym samym standardzie i pinezkę z GPS-u."}
           </p>
         </div>
@@ -78,7 +78,7 @@ export default async function AboutPage() {
                 "linear-gradient(to bottom, transparent 0%, #000 30%, #000 80%, transparent 100%)",
             }}
           />
-          {/* ciepła poświata podnosząca się od dołu — spina zdjęcie z resztą marki */}
+          {/* ciepła poświata podnosząca się od dołu - spina zdjęcie z resztą marki */}
           <div
             className="absolute inset-0"
             style={{
@@ -93,7 +93,7 @@ export default async function AboutPage() {
         {[
           ["Znajdź", "Mapa, filtry po nawierzchni, dostępności i województwie."],
           ["Dodaj", "Sześć zdjęć z telefonu, GPS przypina pinezkę."],
-          ["Podpal", "Płonąca piłka to głos społeczności — buduje ranking."],
+          ["Podpal", "Płonąca piłka to głos społeczności - buduje ranking."],
         ].map(([t, d], i) => (
           <div key={t} className="glass rounded-[22px] p-5">
             <span className="grid h-9 w-9 place-items-center rounded-full flame-gradient text-[14px] font-bold text-black">
@@ -134,7 +134,7 @@ export default async function AboutPage() {
         </div>
         <p className="mt-4 text-[13px] text-faint">
           Kosz B pomijamy tylko wtedy, gdy boisko naprawdę ma jeden kosz. Do tego można dorzucić
-          maksymalnie trzy dodatkowe ujęcia ogólne — otoczenie, wejście, oświetlenie.
+          maksymalnie trzy dodatkowe ujęcia ogólne - otoczenie, wejście, oświetlenie.
         </p>
       </section>
 
@@ -159,7 +159,7 @@ export default async function AboutPage() {
           <h2 className="text-[20px] font-semibold">Co możemy poprawić?</h2>
           <p className="mt-1 text-[14px] text-muted">
             Brakuje filtra, coś nie działa na Twoim telefonie, masz pomysł na nową funkcję?
-            Napisz — czytam wszystko.
+            Napisz - czytam wszystko.
           </p>
         </div>
         <FeedbackDialog label="Napisz opinię" />

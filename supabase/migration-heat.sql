@@ -18,7 +18,7 @@ do $$ begin
   end if;
 end $$;
 
--- funkcja publikująca odwołuje się do kolumny po nazwie — odtwarzamy ją
+-- funkcja publikująca odwołuje się do kolumny po nazwie - odtwarzamy ją
 create or replace function approve_submission(sub_id uuid)
 returns uuid language plpgsql security definer set search_path = public as $$
 declare

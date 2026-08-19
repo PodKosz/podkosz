@@ -3,7 +3,7 @@ import { AddFlow } from "@/components/add/AddFlow";
 import { getSessionUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Dodaj boisko — PodKosz",
+  title: "Dodaj boisko - PodKosz",
   description:
     "Zrób 6 zdjęć według instrukcji, przypnij lokalizację GPS i dodaj boisko do ogólnopolskiej bazy.",
 };

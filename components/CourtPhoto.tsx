@@ -1,7 +1,7 @@
 import { CourtPhotoRef, PhotoKind } from "@/lib/types";
 
 /**
- * Placeholder zdjęcia boiska — generowany deterministycznie z ziarna.
+ * Placeholder zdjęcia boiska - generowany deterministycznie z ziarna.
  * Gdy w bazie pojawi się `url`, komponent renderuje prawdziwe zdjęcie.
  */
 export function CourtPhoto({

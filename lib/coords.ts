@@ -53,11 +53,11 @@ function parseDm(text: string): LatLng | null {
   return inRange(point) ? point : null;
 }
 
-/** Zapis dziesiętny: 50.033861, 19.872611 — także z przecinkiem jako separatorem ułamka. */
+/** Zapis dziesiętny: 50.033861, 19.872611 - także z przecinkiem jako separatorem ułamka. */
 function parseDecimal(text: string): LatLng | null {
   const cleaned = text.replace(/[NnEe]\b/g, "").trim();
 
-  // "50,0338 19,8726" albo "50,0338; 19,8726" — przecinek jest tu ułamkiem
+  // "50,0338 19,8726" albo "50,0338; 19,8726" - przecinek jest tu ułamkiem
   const commaDecimal = cleaned.match(
     /^\s*(-?\d{1,3},\d+)\s*[;\s]\s*(-?\d{1,3},\d+)\s*$/
   );
@@ -71,7 +71,7 @@ function parseDecimal(text: string): LatLng | null {
   );
   if (dotDecimal) {
     const point = { lat: Number(dotDecimal[1]), lng: Number(dotDecimal[2]) };
-    // sam "2, 3" to raczej nie współrzędne — wymagamy części dziesiętnej
+    // sam "2, 3" to raczej nie współrzędne - wymagamy części dziesiętnej
     if (!/\./.test(dotDecimal[1]) && !/\./.test(dotDecimal[2])) return null;
     return inRange(point) ? point : null;
   }

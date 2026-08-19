@@ -104,7 +104,7 @@ export async function submitCourt(input: NewSubmission): Promise<void> {
   if (error) {
     if (/limit zg/i.test(error.message)) {
       throw new Error(
-        "Z tego urządzenia wysłano dziś już kilka boisk. Kolejne przyjmiemy jutro — " +
+        "Z tego urządzenia wysłano dziś już kilka boisk. Kolejne przyjmiemy jutro - " +
           "a jeśli masz ich więcej, napisz do nas przez „O nas”."
       );
     }
@@ -133,7 +133,7 @@ export async function submitCourt(input: NewSubmission): Promise<void> {
 /* ------------------------------------------------------------------ */
 
 /**
- * Kasuje pliki z bucketa, ale pomija te, na które wskazuje już opublikowane boisko —
+ * Kasuje pliki z bucketa, ale pomija te, na które wskazuje już opublikowane boisko -
  * zgłoszenie i karta boiska współdzielą te same ścieżki po akceptacji.
  */
 async function removeUnusedFiles(
@@ -248,7 +248,7 @@ export function useQueue(): Queue {
     void fetchList();
   }, [fetchList]);
 
-  // Pierwsze pobranie kolejki. setState wyłącznie w callbacku obietnicy —
+  // Pierwsze pobranie kolejki. setState wyłącznie w callbacku obietnicy -
   // synchroniczny setState w ciele efektu jest w tym projekcie błędem lintera.
   useEffect(() => {
     const supabase = supabaseBrowser();

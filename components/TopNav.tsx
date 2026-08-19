@@ -19,7 +19,7 @@ export function TopNav({ user }: { user: AuthUser | null }) {
 
   return (
     <div className="pointer-events-none fixed inset-x-0 top-0 z-40 flex items-center justify-between gap-2 p-3 sm:p-5">
-      {/* na telefonie logo jest zawsze, także na mapie — inaczej nie ma jak wrócić */}
+      {/* na telefonie logo jest zawsze, także na mapie - inaczej nie ma jak wrócić */}
       <div className="pointer-events-auto shrink-0">
         <span className="md:hidden">
           <Brand compact />

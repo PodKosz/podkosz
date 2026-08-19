@@ -5,7 +5,7 @@ import Link from "next/link";
 
 /**
  * Logo: boisko widziane z góry, z piłką w kole środkowym.
- * Gradient ma identyfikator z useId — dwa loga na stronie (nawigacja + panel) miały
+ * Gradient ma identyfikator z useId - dwa loga na stronie (nawigacja + panel) miały
  * wcześniej ten sam `id`, a `url(#…)` trafiał do tego ukrytego i ikona znikała.
  */
 export function Brand({ compact = false }: { compact?: boolean }) {
@@ -45,7 +45,7 @@ export function Brand({ compact = false }: { compact?: boolean }) {
         </svg>
       </span>
 
-      {/* na wąskich ekranach zostaje sama ikona — inaczej pasek nawigacji nie mieści się w szerokości */}
+      {/* na wąskich ekranach zostaje sama ikona - inaczej pasek nawigacji nie mieści się w szerokości */}
       <span
         className={`font-bold leading-none tracking-tight ${
           compact ? "hidden text-[19px] sm:inline" : "text-[28px]"

@@ -3,7 +3,7 @@ import { AdminPanel } from "@/components/admin/AdminPanel";
 import { getSessionUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Panel administratora — PodKosz",
+  title: "Panel administratora - PodKosz",
   robots: { index: false, follow: false },
 };
 
