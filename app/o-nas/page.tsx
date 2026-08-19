@@ -26,9 +26,10 @@ export default async function AboutPage() {
       <div className="mt-5 max-w-2xl space-y-4 text-[17px] leading-relaxed text-muted">
         <p>
           Szukanie miejsca do gry w obcym mieście kończy się zwykle na jednym rozmytym zdjęciu
-          sprzed ośmiu lat. U nas każde boisko ma komplet kadrów z różnych stron: całą płytę,
-          osobno każdy kosz, zbliżenie na obręcz i siatkę oraz detal nawierzchni. Widzisz, czy
-          obręcz jest prosta i czy beton nie jest spękany, zanim wsiądziesz w tramwaj.
+          sprzed ośmiu lat. U nas każde boisko ma komplet kadrów z różnych stron: całe boisko
+          z narożnika, osobno każdy kosz, zbliżenie na obręcz i siatkę oraz detal nawierzchni.
+          Widzisz, czy obręcz jest prosta i czy beton nie jest spękany, zanim pojedziesz na
+          boisko.
         </p>
         <p>
           Do zdjęć dokładamy to, co decyduje o tym, czy warto tam jechać: rodzaj nawierzchni,
@@ -45,9 +46,9 @@ export default async function AboutPage() {
       </div>
 
       {/*
-        Licznik bazy leży NA zdjęciu, nie nad nim: zdjęcie wypełnia całą kartę, a nad nim
-        siedzi ciemne przygaszenie i płynne plamy gradientu, żeby liczba była czytelna
-        niezależnie od kadru. Liczba leci prosto z Supabase przy każdym wejściu.
+        Licznik bazy leży NA zdjęciu, w środku kadru: zdjęcie wypełnia całą kartę, a za samą
+        liczbą siedzi wygaszenie radialne, żeby czytała się niezależnie od tego, co jest na
+        fotografii. Liczba leci prosto z Supabase przy każdym wejściu.
       */}
       <section className="relative mt-12 overflow-hidden rounded-[32px] border border-hairline bg-deep">
         <div className="absolute inset-0">
@@ -55,8 +56,16 @@ export default async function AboutPage() {
             className="absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: "url('/o-nas/kosz.jpg')" }}
           />
-          {/* góra karty ciemna pod tekst, dół zostaje odsłonięty */}
-          <div className="absolute inset-0 bg-gradient-to-b from-void/95 via-void/55 to-transparent" />
+          {/* delikatne przygaszenie całości - zdjęcie ma zostać widoczne, także przy krawędziach */}
+          <div className="absolute inset-0 bg-gradient-to-b from-void/78 via-void/40 to-void/55" />
+          {/* wygaszenie dokładnie za liczbą, żeby czytała się na każdym kadrze */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(58% 44% at 50% 46%, rgba(7,7,10,.74) 0%, rgba(7,7,10,.28) 56%, transparent 80%)",
+            }}
+          />
           {/* ciepła poświata od dołu - spina zdjęcie z resztą marki */}
           <div
             className="absolute inset-0"
@@ -82,44 +91,28 @@ export default async function AboutPage() {
           }}
         />
 
-        <div className="relative flex min-h-[460px] flex-col sm:min-h-[600px]">
-          {/* liczba w górnej części, nad przygaszonym niebem - nie wchodzi na tablicę kosza */}
-          <div className="px-6 pt-12 text-center sm:pt-16">
+        <div className="relative flex min-h-[460px] items-center justify-center sm:min-h-[620px]">
+          {/*
+            Liczba siedzi pośrodku kadru, nad tablicą kosza - stąd wrażenie, że jest częścią
+            zdjęcia. leading i dolny odstęp są większe od minimum, bo gradient nakładany przez
+            background-clip: text maluje tylko obszar wiersza: przy ciasnym leadingu dolne
+            krzywe cyfr zostawały niepomalowane i liczba wyglądała jak ucięta.
+          */}
+          <div className="px-6 pb-4 text-center">
             <p className="text-[12px] uppercase tracking-[0.26em] text-white/60">Boisk w bazie</p>
             <p
-              className="mt-2 flame-text text-[clamp(96px,19vw,200px)] font-bold leading-[0.82] tracking-[-0.05em] tabular-nums"
-              style={{ filter: "drop-shadow(0 14px 44px rgba(0,0,0,.8))" }}
+              className="mt-3 flame-text pb-3 text-[clamp(104px,20vw,220px)] font-bold leading-[1.02] tracking-[-0.045em] tabular-nums"
+              style={{ filter: "drop-shadow(0 16px 48px rgba(0,0,0,.85))" }}
             >
               {total}
             </p>
-          </div>
-
-          {/* podpis w szklanym pasku przy dolnej krawędzi - zawsze czytelny, niezależnie od kadru */}
-          <div className="mt-auto border-t border-white/12 bg-black/45 px-6 py-5 backdrop-blur-md">
-            <p className="mx-auto max-w-xl text-center text-[15px] leading-relaxed text-white/90">
-              {total === 0
-                ? "Baza dopiero rusza - pierwsze boisko możesz dodać właśnie Ty."
-                : "Każde z nich ma komplet zdjęć w tym samym standardzie i pinezkę z GPS-u. Wszystkie dodali tacy gracze jak Ty."}
-            </p>
+            {total === 0 && (
+              <p className="mx-auto max-w-md text-[15px] text-white/85">
+                Baza dopiero rusza - pierwsze boisko możesz dodać właśnie Ty.
+              </p>
+            )}
           </div>
         </div>
-      </section>
-
-      <section className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          ["Znajdź", "Mapa całej Polski, filtry po nawierzchni, dostępności i województwie."],
-          ["Sprawdź", "Zdjęcia z kilku ujęć, kosze, oświetlenie, godziny i pogoda na dziś."],
-          ["Dodaj", "Sześć kadrów z telefonu, GPS przypina pinezkę. Bez konta."],
-          ["Podpal", "Płonąca piłka to głos społeczności - z niej powstaje ranking."],
-        ].map(([t, d], i) => (
-          <div key={t} className="glass rounded-[22px] p-5">
-            <span className="grid h-9 w-9 place-items-center rounded-full flame-gradient text-[14px] font-bold text-black">
-              {i + 1}
-            </span>
-            <h2 className="mt-3 text-[17px] font-semibold">{t}</h2>
-            <p className="mt-1 text-[14px] leading-relaxed text-muted">{d}</p>
-          </div>
-        ))}
       </section>
 
       <section className="mt-16">
