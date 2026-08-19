@@ -52,7 +52,11 @@ export default async function AboutPage() {
         boiska widzianego z góry, który wygasza się przy dolnej krawędzi. Liczba leci
         prosto z Supabase przy każdym wejściu.
       */}
-      <section className="relative mt-12 overflow-hidden rounded-[32px] border border-hairline bg-deep">
+      {/*
+        Proporcje karty trzymamy blisko proporcji boiska (1,83), a na telefonie 16:9 - inaczej
+        kontur rozciągnięty na blok byłby zauważalnie zdeformowany.
+      */}
+      <section className="relative mt-12 aspect-[16/9] overflow-hidden rounded-[32px] border border-hairline bg-deep sm:aspect-[840/460]">
         <span
           className="liquid-blob -left-28 -top-32 h-[380px] w-[520px]"
           style={{
@@ -67,16 +71,12 @@ export default async function AboutPage() {
           }}
         />
 
-        {/*
-          Kontur boiska zajmuje dolne 78% karty. Proporcje kadru (840x460) są bliskie
-          proporcjom prawdziwego boiska, więc przy tej wysokości rysunek rozciąga się
-          na niemal całą szerokość karty - liczba siedzi nad linią środkową.
-        */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[78%]">
+        {/* kontur boiska wypełnia całą kartę - liczba i podpis siedzą dokładnie w jego środku */}
+        <div className="pointer-events-none absolute inset-0">
           <CourtOutline uid="licznik" />
         </div>
 
-        <div className="relative min-h-[420px] px-6 pb-10 pt-14 text-center sm:min-h-[560px] sm:pt-20">
+        <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
           <p className="text-[14px] font-medium uppercase tracking-[0.36em] text-white/70 sm:text-[17px]">
             Boisk w bazie
           </p>
@@ -85,7 +85,7 @@ export default async function AboutPage() {
             maluje tylko obszar wiersza, a przy ciasnym leadingu dolne krzywe cyfr zostawały
             niepomalowane i liczba wyglądała jak ucięta.
           */}
-          <p className="mt-3 flame-text pb-3 text-[clamp(112px,22vw,240px)] font-bold leading-[1.04] tracking-[-0.05em] tabular-nums">
+          <p className="mt-2 flame-text pb-3 text-[clamp(84px,20vw,236px)] font-bold leading-[1.04] tracking-[-0.05em] tabular-nums sm:mt-3">
             {total}
           </p>
           {total === 0 && (

@@ -18,18 +18,35 @@ export function CourtOutline({
 }) {
   const linia = `url(#line-${uid})`;
 
+  /*
+    preserveAspectRatio="none" rozciąga rysunek dokładnie na blok, w którym siedzi.
+    Proporcje boiska (1,83) i karty różnią się o kilka procent, więc zniekształcenie jest
+    niewidoczne, a linie dochodzą do wszystkich krawędzi zamiast kończyć się w powietrzu.
+  */
   return (
     <svg
       viewBox="0 0 840 460"
-      preserveAspectRatio="xMidYMax meet"
+      preserveAspectRatio="none"
       className={`h-full w-full ${className}`}
       fill="none"
       aria-hidden
       style={{ filter: "drop-shadow(0 0 18px rgba(255,122,24,.28))" }}
     >
       <defs>
-        {/* linie najmocniejsze w środku, gasną przy bokach - kadr nie ma twardych końców */}
-        <linearGradient id={`line-${uid}`} x1="0" y1="0" x2="1" y2="0">
+        {/*
+          Linie najmocniejsze w środku, gasną przy bokach - kadr nie ma twardych końców.
+          gradientUnits="userSpaceOnUse" jest tu konieczne: domyślny objectBoundingBox liczy
+          gradient osobno dla każdego elementu, a pionowa linia ma zerową szerokość pudełka,
+          więc znikała (widać to było w wyeksportowanym PNG).
+        */}
+        <linearGradient
+          id={`line-${uid}`}
+          gradientUnits="userSpaceOnUse"
+          x1="0"
+          y1="0"
+          x2="840"
+          y2="0"
+        >
           <stop offset="0" stopColor="rgba(255,122,24,0)" />
           <stop offset="0.18" stopColor="rgba(255,150,60,0.65)" />
           <stop offset="0.5" stopColor="rgba(255,186,110,1)" />
@@ -37,17 +54,9 @@ export function CourtOutline({
           <stop offset="1" stopColor="rgba(255,122,24,0)" />
         </linearGradient>
 
-        <linearGradient id={`fade-${uid}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#fff" />
-          <stop offset="0.58" stopColor="#fff" />
-          <stop offset="0.99" stopColor="#000" />
-        </linearGradient>
-        <mask id={`mask-${uid}`}>
-          <rect width="840" height="460" fill={`url(#fade-${uid})`} />
-        </mask>
       </defs>
 
-      <g mask={`url(#mask-${uid})`} stroke={linia} strokeLinecap="round" strokeLinejoin="round">
+      <g stroke={linia} strokeLinecap="round" strokeLinejoin="round">
         {/* płyta boiska */}
         <rect x="40" y="40" width="760" height="380" rx="6" strokeWidth="2.4" />
 
