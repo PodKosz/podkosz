@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
@@ -25,6 +25,7 @@ import { CourtForm } from "./CourtForm";
 import { ReportsAdmin } from "./ReportsAdmin";
 import { FeedbackAdmin } from "./FeedbackAdmin";
 import { LeadsAdmin } from "./LeadsAdmin";
+import { BrakiAdmin } from "./BrakiAdmin";
 import { StatsAdmin } from "./StatsAdmin";
 import { NewFromLead } from "./NewFromLead";
 
@@ -34,12 +35,13 @@ const TABS: [SubmissionStatus, string][] = [
   ["rejected", "Odrzucone"],
 ];
 
-type View = "queue" | "stats" | "reports" | "feedback" | "courts" | "leads" | "new";
+type View = "queue" | "stats" | "reports" | "braki" | "feedback" | "courts" | "leads" | "new";
 
 const VIEWS: [View, string][] = [
   ["queue", "Kolejka zgłoszeń"],
   ["stats", "Statystyki"],
   ["reports", "Błędy w danych"],
+  ["braki", "Braki w danych"],
   ["feedback", "Opinie"],
   ["courts", "Boiska na mapie"],
   ["leads", "Kandydaci OSM"],
@@ -60,11 +62,153 @@ export function AdminPanel({ isAdmin, signedIn }: { isAdmin: boolean; signedIn: 
   const [tab, setTab] = useState<SubmissionStatus>("pending");
   const [openId, setOpenId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  /** zaznaczone zgłoszenia do publikacji paczką */
+  const [picked, setPicked] = useState<string[]>([]);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  /** czy w otwartym zgłoszeniu jest rozwinięty formularz odrzucenia (skrót R) */
+  const [rejecting, setRejecting] = useState(false);
 
   const flash = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3200);
   };
+
+  const list = queue.list;
+  const visible = list.filter((s) => s.status === tab);
+  const open = list.find((s) => s.id === openId) ?? null;
+
+  /**
+   * Powiadamia autora o decyzji. Endpoint sam pilnuje, żeby ta sama decyzja nie poszła
+   * dwa razy, a brak konfiguracji poczty nie może wywrócić moderacji.
+   */
+  const notifyAuthor = async (
+    s: Submission,
+    decision: "approved" | "rejected",
+    reason?: string
+  ) => {
+    if (!s.author.email) return false;
+    try {
+      const res = await fetch("/api/mail-zgloszenie", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          submissionId: s.id,
+          decision,
+          reason,
+          courtName: s.name,
+        }),
+      });
+      const data = (await res.json()) as { sent?: boolean };
+      return !!data.sent;
+    } catch {
+      return false;
+    }
+  };
+
+  /*
+    Skróty klawiszowe kolejki. Przy pięćdziesięciu zgłoszeniach dziennie różnica między
+    klikaniem i klawiaturą to kilkanaście minut. Ignorujemy klawisze wpisywane w pola
+    tekstowe, żeby nie odrzucać zgłoszenia przy pisaniu powodu.
+  */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (view !== "queue" || e.ctrlKey || e.metaKey || e.altKey) return;
+
+      const cel = e.target as HTMLElement | null;
+      if (
+        cel &&
+        (cel.tagName === "INPUT" ||
+          cel.tagName === "TEXTAREA" ||
+          cel.tagName === "SELECT" ||
+          cel.isContentEditable)
+      ) {
+        return;
+      }
+
+      const idx = visible.findIndex((x) => x.id === openId);
+      const key = e.key.toLowerCase();
+
+      if (key === "escape") {
+        setOpenId(null);
+        setRejecting(false);
+      } else if (key === "j") {
+        const next = visible[idx < 0 ? 0 : Math.min(idx + 1, visible.length - 1)];
+        if (next) {
+          setOpenId(next.id);
+          setRejecting(false);
+        }
+      } else if (key === "k") {
+        const prev = visible[idx <= 0 ? 0 : idx - 1];
+        if (prev) {
+          setOpenId(prev.id);
+          setRejecting(false);
+        }
+      } else if (key === "a" && open?.status === "pending") {
+        e.preventDefault();
+      } else if (key === "r" && open?.status === "pending") {
+        e.preventDefault();
+        setRejecting(true);
+      } else {
+        return;
+      }
+    };
+
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [view, visible, openId, open]);
+
+  /** Publikuje po kolei wszystkie zaznaczone zgłoszenia. */
+  const approveMany = async () => {
+    setBulkBusy(true);
+    let ok = 0;
+    for (const id of picked) {
+      const s = list.find((x) => x.id === id);
+      if (!s || s.status !== "pending") continue;
+      try {
+        await queue.approve(id);
+        await notifyAuthor(s, "approved");
+        ok += 1;
+      } catch {
+        // pojedyncza wywrotka nie może zatrzymać reszty paczki
+      }
+    }
+    setPicked([]);
+    setBulkBusy(false);
+    flash(`Opublikowano ${ok} z ${picked.length} zaznaczonych.`);
+  };
+
+
+  const approve = async (s: Submission) => {
+    try {
+      await queue.approve(s.id);
+      setOpenId(null);
+      const sent = await notifyAuthor(s, "approved");
+      flash(
+        sent
+          ? "Opublikowano. Autor dostał maila o publikacji."
+          : s.author.email
+            ? "Opublikowano. Maila nie udało się wysłać - sprawdź konfigurację poczty."
+            : "Opublikowano. Pinezka jest już na mapie."
+      );
+    } catch (e) {
+      flash(`Nie udało się opublikować: ${(e as Error).message}`);
+    }
+  };
+
+  const reject = async (s: Submission, reason: string) => {
+    await queue.reject(s.id, reason);
+    setOpenId(null);
+    const sent = await notifyAuthor(s, "rejected", reason);
+    flash(
+      sent
+        ? `Odrzucono. Autor dostał maila z powodem: „${reason}”.`
+        : s.author.email
+          ? "Odrzucono. Maila nie udało się wysłać - sprawdź konfigurację poczty."
+          : "Odrzucono. Zgłoszenie anonimowe - brak adresu do powiadomienia."
+    );
+  };
+
+
 
   /* Z podpiętą bazą kolejkę widzi wyłącznie administrator (pilnuje tego też RLS). */
   if (supabaseEnabled && !isAdmin) {
@@ -98,6 +242,8 @@ export function AdminPanel({ isAdmin, signedIn }: { isAdmin: boolean; signedIn: 
           <CourtsAdmin editSlug={editSlug} />
         ) : view === "reports" ? (
           <ReportsAdmin />
+        ) : view === "braki" ? (
+          <BrakiAdmin />
         ) : view === "feedback" ? (
           <FeedbackAdmin />
         ) : view === "leads" ? (
@@ -115,34 +261,6 @@ export function AdminPanel({ isAdmin, signedIn }: { isAdmin: boolean; signedIn: 
       </div>
     );
   }
-
-  const list = queue.list;
-  const visible = list.filter((s) => s.status === tab);
-  const open = list.find((s) => s.id === openId) ?? null;
-
-  const approve = async (s: Submission) => {
-    try {
-      await queue.approve(s.id);
-      setOpenId(null);
-      flash(
-        s.author.email
-          ? "Opublikowano. Autor dostanie powiadomienie o publikacji."
-          : "Opublikowano. Pinezka jest już na mapie."
-      );
-    } catch (e) {
-      flash(`Nie udało się opublikować: ${(e as Error).message}`);
-    }
-  };
-
-  const reject = async (s: Submission, reason: string) => {
-    await queue.reject(s.id, reason);
-    setOpenId(null);
-    flash(
-      s.author.email
-        ? `Odrzucono. Autor dostanie powód: „${reason}”.`
-        : "Odrzucono. Zgłoszenie anonimowe - brak adresu do powiadomienia."
-    );
-  };
 
   return (
     <div className="relative">
@@ -206,9 +324,60 @@ export function AdminPanel({ isAdmin, signedIn }: { isAdmin: boolean; signedIn: 
         </div>
       )}
 
+      {tab === "pending" && visible.length > 1 && (
+        <div className="mb-3 flex flex-wrap items-center gap-3">
+          <button
+            onClick={() =>
+              setPicked(picked.length === visible.length ? [] : visible.map((s) => s.id))
+            }
+            className="rounded-full border border-hairline bg-white/5 px-4 py-2 text-[12px] uppercase tracking-[0.1em] text-muted transition hover:text-ink"
+          >
+            {picked.length === visible.length ? "odznacz wszystkie" : "zaznacz wszystkie"}
+          </button>
+          {picked.length > 0 && (
+            <button
+              onClick={() => void approveMany()}
+              disabled={bulkBusy}
+              className="rounded-full flame-gradient px-4 py-2 text-[12px] font-bold uppercase tracking-[0.1em] text-black transition hover:brightness-110 disabled:opacity-60"
+            >
+              {bulkBusy
+                ? "publikuję…"
+                : `opublikuj zaznaczone (${picked.length})`}
+            </button>
+          )}
+          <span className="text-[12px] text-faint">
+            skróty: A - opublikuj otwarte, R - odrzuć, J / K - następne i poprzednie, Esc - zwiń
+          </span>
+        </div>
+      )}
+
       <div className="space-y-3">
         {visible.map((s) => (
-          <article key={s.id} className="glass overflow-hidden rounded-[24px]">
+          <article
+            key={s.id}
+            className={`glass overflow-hidden rounded-[24px] ${
+              openId === s.id ? "ring-1 ring-flame/50" : ""
+            }`}
+          >
+            <div className="flex items-center gap-3 p-4 pb-0">
+              {tab === "pending" && (
+                <label className="flex shrink-0 cursor-pointer items-center gap-2 text-[12px] text-muted">
+                  <input
+                    type="checkbox"
+                    checked={picked.includes(s.id)}
+                    onChange={() =>
+                      setPicked(
+                        picked.includes(s.id)
+                          ? picked.filter((id) => id !== s.id)
+                          : [...picked, s.id]
+                      )
+                    }
+                    className="h-4 w-4 accent-[var(--color-flame)]"
+                  />
+                  do publikacji
+                </label>
+              )}
+            </div>
             <button
               onClick={() => setOpenId(openId === s.id ? null : s.id)}
               className="flex w-full items-center gap-4 p-4 text-left"
@@ -249,6 +418,8 @@ export function AdminPanel({ isAdmin, signedIn }: { isAdmin: boolean; signedIn: 
             {open?.id === s.id && (
               <Editor
                 s={open}
+                rejecting={rejecting}
+                setRejecting={setRejecting}
                 onPatch={(p) => queue.patch(s.id, p)}
                 onDeletePhoto={(i) => queue.removePhoto(open, i)}
                 onApprove={() => approve(open)}
@@ -307,6 +478,10 @@ function Header({
       "Błędy w danych",
       "Zgłoszenia od użytkowników: złe godziny, nieaktualne informacje, zdjęcia nie z tego boiska. Domyślnie na górze te boiska, na które skarży się najwięcej osób.",
     ],
+    braki: [
+      "Braki w danych",
+      "Opublikowane boiska z lukami: bez zdjęć, bez godzin, bez nawierzchni albo z jednozdaniowym opisem. Lista do odhaczenia, zamiast szukania po mapie.",
+    ],
     feedback: [
       "Opinie",
       "Co użytkownicy chcieliby poprawić. Każdy może wysłać jedną opinię na dobę - okienko jest na stronie „O nas”.",
@@ -363,6 +538,8 @@ function Editor({
   onApprove,
   onReject,
   onDelete,
+  rejecting,
+  setRejecting,
 }: {
   s: Submission;
   onPatch: (p: Partial<Submission>) => void;
@@ -370,8 +547,10 @@ function Editor({
   onApprove: () => void;
   onReject: (reason: string) => void;
   onDelete: () => void;
+  /** stan formularza odrzucenia siedzi w rodzicu, żeby dał się włączyć skrótem klawiszowym */
+  rejecting: boolean;
+  setRejecting: (v: boolean) => void;
 }) {
-  const [rejecting, setRejecting] = useState(false);
   const [customReason, setCustomReason] = useState("");
   const [zoom, setZoom] = useState<number | null>(null);
 

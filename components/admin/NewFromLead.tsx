@@ -46,6 +46,12 @@ export function NewFromLead({ leadId, onSaved }: { leadId: string; onSaved: (slu
     );
   }
 
+  /*
+    Z tagów OSM bierzemy wszystko, co da się przemapować na nasze pola: nazwę, nawierzchnię,
+    liczbę koszy, oświetlenie i dostęp. Dzięki temu publikacja jednego kandydata to
+    kilkanaście sekund, a nie dwie minuty przepisywania - przy tysiącach wpisów to różnica
+    między „da się" i „nie da się".
+  */
   const prefill: Partial<CourtValues> = {
     name: lead.name,
     lat: lead.lat,
@@ -53,6 +59,11 @@ export function NewFromLead({ leadId, onSaved }: { leadId: string; onSaved: (slu
     surface: (lead.surface as Surface) ?? "beton",
     hoops: lead.hoops ?? 2,
     lit: lead.lit ?? false,
+    // OSM oznacza boiska zamknięte jako private/customers/permit/no - u nas to „ograniczony"
+    access: lead.access_hint ? "ograniczony" : "24h",
+    hours: lead.access_hint ? "" : "całą dobę",
+    // pinezki z leisure=pitch to boiska odkryte
+    type: "otwarty",
   };
 
   return (
