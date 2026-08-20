@@ -21,3 +21,13 @@ export const CIASTKO_WEJSCIA = "podkosz-przepustka";
 
 /** Adres strony zasłony. */
 export const SCIEZKA_ZASLONY = "/wkrotce";
+
+/**
+ * Jak długo pamiętamy wynik sprawdzenia adresu IP (w milisekundach).
+ *
+ * Blokady IP sprawdza middleware przy każdym żądaniu, więc bez pamięci byłoby to zapytanie
+ * do bazy za każdym razem. Adres niezablokowany trzymamy dłużej (to przypadek typowy),
+ * zablokowany krócej, żeby zdjęcie blokady działało od razu.
+ */
+export const PAMIEC_IP_WOLNY = 5 * 60 * 1000;
+export const PAMIEC_IP_ZBANOWANY = 60 * 1000;

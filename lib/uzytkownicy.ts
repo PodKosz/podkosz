@@ -189,3 +189,99 @@ export function useZablokowaneNicki() {
 
   return { items, dodaj, usun };
 }
+
+/* ------------------------------------------------------------------ */
+/*  Blokady adresów IP                                                 */
+/* ------------------------------------------------------------------ */
+
+export interface BanIP {
+  ip: string;
+  reason: string | null;
+  banned_until: string;
+  created_at: string;
+}
+
+/**
+ * Blokady IP działają obok blokad kont: zgłoszenia, opinie i raporty można wysłać bez
+ * logowania, więc czasem trzeba odciąć samo źródło. Zablokowany adres nie wchodzi nawet
+ * na stronę - odsiewa go middleware, jeszcze przed jakimkolwiek zapisem.
+ */
+export function useBanyIP() {
+  const [items, setItems] = useState<BanIP[]>([]);
+
+  const wczytaj = useCallback(async () => {
+    const supabase = await supabaseBrowser();
+    if (!supabase) return;
+
+    const { data } = await supabase
+      .from("ip_bans")
+      .select("ip, reason, banned_until, created_at")
+      .order("banned_until", { ascending: false });
+
+    setItems((data ?? []) as BanIP[]);
+  }, []);
+
+  useEffect(() => {
+    let aktualne = true;
+    void (async () => {
+      const supabase = await supabaseBrowser();
+      if (!supabase || !aktualne) return;
+
+      const { data } = await supabase
+        .from("ip_bans")
+        .select("ip, reason, banned_until, created_at")
+        .order("banned_until", { ascending: false });
+
+      if (aktualne) setItems((data ?? []) as BanIP[]);
+    })();
+    return () => {
+      aktualne = false;
+    };
+  }, []);
+
+  /** Blokuje adres na podaną liczbę dni. Zwraca komunikat błędu albo null. */
+  const zablokuj = useCallback(
+    async (ip: string, dni: number, powod: string): Promise<string | null> => {
+      const adres = ip.trim();
+      /* prosty sanity check - IPv4 albo IPv6 w zapisie z dwukropkami */
+      if (!/^[0-9.]{7,15}$/.test(adres) && !/^[0-9a-fA-F:]{3,45}$/.test(adres)) {
+        return "To nie wygląda na adres IP.";
+      }
+      if (!Number.isFinite(dni) || dni < 1 || dni > 3650) {
+        return "Liczba dni musi być z przedziału 1-3650.";
+      }
+
+      const supabase = await supabaseBrowser();
+      if (!supabase) return BLAD_BAZY;
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      const doKiedy = new Date(Date.now() + dni * 24 * 3600 * 1000).toISOString();
+
+      const { error } = await supabase.from("ip_bans").upsert({
+        ip: adres,
+        reason: powod.trim() || null,
+        banned_until: doKiedy,
+        created_by: user?.id ?? null,
+      });
+
+      if (error) return error.message;
+
+      await wczytaj();
+      return null;
+    },
+    [wczytaj]
+  );
+
+  const usun = useCallback(async (ip: string) => {
+    const supabase = await supabaseBrowser();
+    if (!supabase) return;
+
+    await supabase.from("ip_bans").delete().eq("ip", ip);
+    setItems((lista) => lista.filter((b) => b.ip !== ip));
+  }, []);
+
+  return { items, zablokuj, usun, odswiez: wczytaj };
+}

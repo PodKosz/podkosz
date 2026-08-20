@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useUzytkownicy, useZablokowaneNicki } from "@/lib/uzytkownicy";
+import { useBanyIP, useUzytkownicy, useZablokowaneNicki } from "@/lib/uzytkownicy";
 import { slugifyPlace } from "@/lib/site";
 
 /**
@@ -159,7 +159,120 @@ export function UsersAdmin() {
         </p>
       )}
 
+      <BlokadyIP />
       <ZablokowaneNicki />
+    </div>
+  );
+}
+
+/**
+ * Blokady adresów IP - na wypadek, gdy ktoś psuje serwis bez konta (zgłoszenia, opinie
+ * i raporty da się wysłać jako gość). Zablokowany adres nie wchodzi nawet na stronę.
+ * Domyślnie na 30 dni, bo adresy krążą między abonentami i stare blokady trafiają
+ * w niewinnych ludzi.
+ */
+function BlokadyIP() {
+  const { items, zablokuj, usun } = useBanyIP();
+  const [ip, setIp] = useState("");
+  const [dni, setDni] = useState("30");
+  const [powod, setPowod] = useState("");
+  const [blad, setBlad] = useState<string | null>(null);
+  const [zapisuje, setZapisuje] = useState(false);
+
+  const zapisz = async () => {
+    setZapisuje(true);
+    const wynik = await zablokuj(ip, Number(dni), powod);
+    setZapisuje(false);
+    setBlad(wynik);
+    if (!wynik) {
+      setIp("");
+      setPowod("");
+      setDni("30");
+    }
+  };
+
+  return (
+    <div className="glass rounded-[24px] p-6">
+      <h2 className="text-[17px] font-semibold tracking-tight">Blokady IP</h2>
+      <p className="mt-2 max-w-3xl text-[13px] leading-relaxed text-muted">
+        Zablokowany adres dostaje stronę „Dostęp zablokowany” i nie widzi serwisu - to zapora
+        na wypadek zgłoszeń i opinii wysyłanych bez konta. Adresy znajdziesz w logach Vercela
+        (Deployments → Logs, kolumna z adresem klienta). Blokada wygasa sama.
+      </p>
+
+      <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+        <input
+          value={ip}
+          onChange={(e) => {
+            setIp(e.target.value);
+            setBlad(null);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void zapisz();
+          }}
+          placeholder="np. 83.10.44.187"
+          className="min-w-0 flex-1 rounded-2xl border border-hairline bg-white/6 px-4 py-3 text-[14px] outline-none transition focus:border-ember/60 sm:max-w-[220px]"
+        />
+        <span className="flex items-center gap-2">
+          <input
+            value={dni}
+            onChange={(e) => setDni(e.target.value.replace(/\D/g, ""))}
+            className="w-[86px] rounded-2xl border border-hairline bg-white/6 px-4 py-3 text-[14px] tabular-nums outline-none transition focus:border-ember/60"
+          />
+          <span className="text-[13px] text-muted">dni</span>
+        </span>
+        <input
+          value={powod}
+          onChange={(e) => setPowod(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void zapisz();
+          }}
+          placeholder="powód (opcjonalnie)"
+          className="min-w-0 flex-1 rounded-2xl border border-hairline bg-white/6 px-4 py-3 text-[14px] outline-none transition focus:border-ember/60"
+        />
+        <button
+          onClick={() => void zapisz()}
+          disabled={zapisuje || !ip.trim()}
+          className="shrink-0 rounded-2xl border border-ember/50 px-5 py-3 text-[13px] font-bold uppercase tracking-[0.1em] text-ember transition hover:bg-ember/10 disabled:opacity-40"
+        >
+          {zapisuje ? "Blokuję…" : "Zablokuj IP"}
+        </button>
+      </div>
+
+      {blad && (
+        <p className="mt-3 rounded-2xl border border-ember/40 bg-ember/10 px-4 py-3 text-[13px] text-ember">
+          {blad}
+        </p>
+      )}
+
+      {items.length ? (
+        <ul className="mt-5 space-y-2">
+          {items.map((b) => (
+            <li
+              key={b.ip}
+              className="flex items-center gap-4 rounded-[16px] border border-hairline px-4 py-3"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[14px] font-medium tabular-nums">
+                  {b.ip}
+                </span>
+                <span className="block truncate text-[12px] text-muted">
+                  blokada do {new Date(b.banned_until).toLocaleDateString("pl-PL")}
+                  {b.reason ? ` · ${b.reason}` : ""}
+                </span>
+              </span>
+              <button
+                onClick={() => void usun(b.ip)}
+                className="shrink-0 rounded-full border border-hairline px-4 py-2 text-[12px] font-medium text-muted transition hover:text-ink"
+              >
+                Zdejmij
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-5 text-[13px] text-faint">Brak zablokowanych adresów.</p>
+      )}
     </div>
   );
 }
