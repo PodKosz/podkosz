@@ -30,6 +30,13 @@ create trigger beta_testers_lower
 
 alter table public.beta_testers enable row level security;
 
+/*
+  Nowa tabela nie dostaje uprawnień automatycznie - bez tego zalogowany dostawał
+  „permission denied for table beta_testers" jeszcze przed sprawdzeniem RLS.
+  O to, że widzi ją tylko administrator, dba polityka poniżej.
+*/
+grant select, insert, update, delete on table public.beta_testers to authenticated;
+
 drop policy if exists "beta_testers_admin" on public.beta_testers;
 create policy "beta_testers_admin" on public.beta_testers
   for all
