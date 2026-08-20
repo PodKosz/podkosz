@@ -1,5 +1,5 @@
 import { COURTS } from "./data";
-import { Court, MapCourt, PHOTO_KIND_LABEL, toMapCourt } from "./types";
+import { Court, CourtPhotoRef, MapCourt, PHOTO_KIND_LABEL, toMapCourt } from "./types";
 import { photoUrl, supabaseEnabled } from "./supabase/config";
 import { orderPhotos } from "./photos";
 import { supabaseServer } from "./supabase/server";
@@ -306,6 +306,79 @@ export const listContributors = unstable_cache(async (): Promise<Contributor[]> 
 }, ["contributors"], { tags: [COURTS_TAG], revalidate: COURTS_TTL });
 
 /** Lajki i ulubione zalogowanego użytkownika - do podświetlenia przycisków. */
+/* ---------------- ranking odkrywców z kadrami ---------------- */
+
+export interface KadrOdkrywcy {
+  slug: string;
+  name: string;
+  photo: CourtPhotoRef;
+  seed: number;
+}
+
+export interface OdkrywcaRanking {
+  name: string;
+  slug: string;
+  /** liczba opublikowanych boisk - to ona wyznacza miejsce w rankingu */
+  courts: number;
+  likes: number;
+  avatar: string | null;
+  /** zdjęcia tytułowe własnych boisk, od najczęściej podpalanych */
+  kadry: KadrOdkrywcy[];
+}
+
+/** Avatary z profili, żeby ranking pokazywał twarze, a nie same nicki. */
+const fetchAvatary = unstable_cache(
+  async (): Promise<Record<string, string>> => {
+    const supabase = supabasePublic();
+    if (!supabase) return {};
+
+    const { data } = await supabase.from("profiles").select("display_name, avatar_url");
+    const out: Record<string, string> = {};
+    for (const r of (data ?? []) as { display_name: string | null; avatar_url: string | null }[]) {
+      if (r.display_name && r.avatar_url) out[r.display_name] = r.avatar_url;
+    }
+    return out;
+  },
+  ["avatary-odkrywcow"],
+  { revalidate: COURTS_TTL }
+);
+
+/**
+ * Ranking odkrywców: kolejność wyznacza liczba opublikowanych boisk (zgłoszenia czekające
+ * w kolejce się nie liczą - w tabeli `courts` są tylko te zatwierdzone), a przy równej
+ * liczbie decydują zebrane podpalenia.
+ *
+ * Do każdej osoby dokładamy zdjęcia tytułowe jej boisk, bo ranking rysuje je wokół avatara.
+ */
+export async function listRankingOdkrywcow(ile = 25): Promise<OdkrywcaRanking[]> {
+  const [odkrywcy, courts, avatary] = await Promise.all([
+    listContributors(),
+    listCourts(),
+    fetchAvatary(),
+  ]);
+
+  return odkrywcy.slice(0, ile).map((o) => {
+    const moje = courts
+      .filter((c) => c.addedBy === o.name)
+      .sort((a, b) => b.likes - a.likes)
+      .slice(0, 10);
+
+    return {
+      name: o.name,
+      slug: slugifyPlace(o.name),
+      courts: o.courts,
+      likes: o.likes,
+      avatar: avatary[o.name] ?? null,
+      kadry: moje.map((c) => ({
+        slug: c.slug,
+        name: c.name,
+        photo: c.photos[0],
+        seed: c.seed,
+      })),
+    };
+  });
+}
+
 export async function getUserReactions(
   userId: string | null
 ): Promise<{ likes: Set<string>; favorites: Set<string> }> {

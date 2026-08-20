@@ -3,8 +3,10 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { Court, TYPE_LABEL } from "@/lib/types";
-import { slugifyPlace, plural } from "@/lib/site";
+import type { OdkrywcaRanking } from "@/lib/repo";
+import { plural } from "@/lib/site";
 import { CourtPhoto } from "./CourtPhoto";
+import { OrbitaOdkrywcow } from "./ranking/OrbitaOdkrywcow";
 import {
   ArrowLeftIcon,
   BasketApprovedBadge,
@@ -13,39 +15,73 @@ import {
   PinIcon,
 } from "./icons";
 
-type Author = { name: string; courts: number; likes: number };
-
 /** Ile boisk pokazujemy w karuzeli okładek, a ile w liście pod nią. */
 const TOP = 10;
 const LISTA_DO = 25;
 
-export function RankingTabs({ courts, authors }: { courts: Court[]; authors: Author[] }) {
-  const [tab, setTab] = useState<"boiska" | "gracze">("boiska");
+/** Konstelacja bierze pięć pierwszych miejsc, reszta idzie listą. */
+const TOP_GRACZY = 5;
+
+export function RankingTabs({
+  courts,
+  odkrywcy,
+}: {
+  courts: Court[];
+  odkrywcy: OdkrywcaRanking[];
+}) {
+  const [tab, setTab] = useState<"gracze" | "boiska">("gracze");
+
+  const naglowek =
+    tab === "gracze"
+      ? {
+          tytul: "Ranking odkrywców",
+          opis:
+            "Miejsce zależy od liczby boisk, które ktoś dodał i które przeszły sprawdzenie. Przy równej liczbie wyżej stoi ten, kogo boiska częściej podpalano.",
+        }
+      : {
+          tytul: "Najgorętsze boiska w Polsce",
+          opis:
+            "Kolejność wyznaczają płonące piłki od społeczności. Podpalaj boiska, na których dobrze się gra.",
+        };
 
   return (
     <>
-      {/* przełącznik w szkle - ta sama faktura co panele na mapie */}
-      <div className="glass mb-10 inline-flex gap-1 rounded-full p-1">
-        {(["boiska", "gracze"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`rounded-full px-6 py-2.5 text-[13px] font-medium uppercase tracking-[0.12em] transition ${
-              tab === t ? "flame-gradient text-black" : "text-muted hover:text-ink"
-            }`}
-          >
-            {t}
-          </button>
-        ))}
-      </div>
+      {/*
+        Przełącznik stoi nad tytułem i na środku: najpierw wybierasz, czego szukasz - graczy
+        czy boisk - a tytuł i opis dopasowują się do wyboru.
+      */}
+      <header className="mb-12 flex flex-col items-center text-center">
+        <div className="glass inline-flex gap-1 rounded-full p-1">
+          {(["gracze", "boiska"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`rounded-full px-6 py-2.5 text-[13px] font-medium uppercase tracking-[0.12em] transition ${
+                tab === t ? "flame-gradient text-black" : "text-muted hover:text-ink"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
 
-      {tab === "boiska" ? (
+        <p className="mt-8 text-[12px] uppercase tracking-[0.2em] text-flame">Ranking</p>
+        <h1 className="mt-2 text-[clamp(30px,5vw,52px)] font-semibold leading-tight tracking-[-0.02em]">
+          {naglowek.tytul}
+        </h1>
+        <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-muted">{naglowek.opis}</p>
+      </header>
+
+      {tab === "gracze" ? (
+        <>
+          <Konstelacja odkrywcy={odkrywcy.slice(0, TOP_GRACZY)} />
+          <ListaGraczy odkrywcy={odkrywcy.slice(TOP_GRACZY, LISTA_DO)} od={TOP_GRACZY + 1} />
+        </>
+      ) : (
         <>
           <Karuzela courts={courts.slice(0, TOP)} />
           <Lista courts={courts.slice(TOP, LISTA_DO)} od={TOP + 1} />
         </>
-      ) : (
-        <Odkrywcy authors={authors} />
       )}
     </>
   );
@@ -299,32 +335,109 @@ function Lista({ courts, od }: { courts: Court[]; od: number }) {
   );
 }
 
-/** Ranking odkrywców - ta sama szklana faktura co lista boisk. */
-function Odkrywcy({ authors }: { authors: Author[] }) {
+/** Nagłówek i konstelacja pięciu pierwszych miejsc. */
+function Konstelacja({ odkrywcy }: { odkrywcy: OdkrywcaRanking[] }) {
+  if (!odkrywcy.length) {
+    return (
+      <p className="glass rounded-[24px] p-10 text-center text-[15px] text-muted">
+        Nikt jeszcze nie dodał boiska. Bądź pierwszy.
+      </p>
+    );
+  }
+
   return (
-    <ol className="space-y-2">
-      {authors.map((a, i) => (
-        <li key={a.name} className="glass row-glow flex items-center gap-4 rounded-[20px] px-4 py-3.5">
-          <span
-            className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-[14px] font-bold ${
-              i < 3 ? "flame-gradient text-black" : "glass-dim text-muted"
-            }`}
-          >
-            {i + 1}
-          </span>
-          <Link href={`/gracz/${slugifyPlace(a.name)}`} className="min-w-0 flex-1">
-            <span className="block truncate text-[15px] font-semibold transition hover:text-flame">
-              @{a.name}
-            </span>
-            <span className="block text-[13px] text-muted">
-              {a.courts} {plural(a.courts, ["boisko", "boiska", "boisk"])} w bazie
-            </span>
-          </Link>
-          <span className="flex shrink-0 items-center gap-1.5 text-[14px] font-semibold text-glow">
-            <FireBallIcon className="h-4 w-4" /> {a.likes}
-          </span>
-        </li>
-      ))}
-    </ol>
+    <section>
+      <div className="mb-8 text-center">
+        <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">
+          Top {odkrywcy.length}
+        </h2>
+        <p className="mx-auto mt-1 max-w-lg text-[14px] leading-relaxed text-muted">
+          Wielkość kręgu to liczba opublikowanych boisk. Wokół avatara krążą ich zdjęcia
+          tytułowe - kliknij, żeby wejść na kartę boiska.
+        </p>
+      </div>
+
+      <div className="py-4 sm:py-8">
+        <OrbitaOdkrywcow odkrywcy={odkrywcy} />
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Miejsca 6-25: szklane wiersze z avatarem, liczbą boisk i podglądem trzech kadrów.
+ * Ta sama faktura co lista boisk w drugiej zakładce.
+ */
+function ListaGraczy({ odkrywcy, od }: { odkrywcy: OdkrywcaRanking[]; od: number }) {
+  if (!odkrywcy.length) return null;
+
+  return (
+    <section className="relative mt-16">
+      <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">
+        Miejsca {od}-{od + odkrywcy.length - 1}
+      </h2>
+
+      {/* rozmyta pomarańczowa poświata pod wierszami - zamyka sekcję i wtapia ją w tło */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-[4%] -bottom-28 h-[300px] blur-[90px]"
+        style={{
+          background:
+            "radial-gradient(closest-side, rgba(255,77,10,.30) 0%, rgba(255,122,24,.11) 52%, transparent 100%)",
+        }}
+      />
+
+      <ol className="relative mt-4 space-y-2">
+        {odkrywcy.map((o, i) => (
+          <li key={o.slug}>
+            <Link
+              href={`/gracz/${o.slug}`}
+              className="glass row-glow flex items-center gap-4 rounded-[20px] p-3"
+            >
+              <span className="h-12 w-[3px] shrink-0 rounded-full flame-gradient opacity-70" />
+
+              <span className="w-7 shrink-0 text-center text-[15px] font-semibold tabular-nums text-faint">
+                {od + i}
+              </span>
+
+              <span className="relative grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full ring-1 ring-flame/40">
+                {o.avatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={o.avatar} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="flame-gradient grid h-full w-full place-items-center text-[15px] font-bold text-black">
+                    {o.name.slice(0, 1).toUpperCase()}
+                  </span>
+                )}
+              </span>
+
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[15px] font-semibold">@{o.name}</span>
+                <span className="block truncate text-[13px] text-muted">
+                  {o.courts} {plural(o.courts, ["boisko", "boiska", "boisk"])} w bazie
+                </span>
+              </span>
+
+              {/* trzy kadry na zakładkę - zapowiedź tego, co widać w konstelacji wyżej */}
+              <span className="hidden shrink-0 items-center sm:flex">
+                {o.kadry.slice(0, 3).map((k, j) => (
+                  <span
+                    key={k.slug}
+                    className="relative h-10 w-10 overflow-hidden rounded-full ring-2 ring-void"
+                    style={{ marginLeft: j ? -12 : 0, zIndex: 3 - j }}
+                  >
+                    <CourtPhoto photo={k.photo} seed={k.seed} sizes="80px" />
+                  </span>
+                ))}
+              </span>
+
+              <span className="flex w-16 shrink-0 items-center justify-end gap-1.5 text-[15px] font-bold text-glow">
+                <FireBallIcon className="h-4 w-4" /> {o.likes}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
