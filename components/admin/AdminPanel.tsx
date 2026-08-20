@@ -27,6 +27,7 @@ import { FeedbackAdmin } from "./FeedbackAdmin";
 import { LeadsAdmin } from "./LeadsAdmin";
 import { BrakiAdmin } from "./BrakiAdmin";
 import { StatsAdmin } from "./StatsAdmin";
+import { BetaAdmin } from "./BetaAdmin";
 import { NewFromLead } from "./NewFromLead";
 
 const TABS: [SubmissionStatus, string][] = [
@@ -35,7 +36,16 @@ const TABS: [SubmissionStatus, string][] = [
   ["rejected", "Odrzucone"],
 ];
 
-type View = "queue" | "stats" | "reports" | "braki" | "feedback" | "courts" | "leads" | "new";
+type View =
+  | "queue"
+  | "stats"
+  | "reports"
+  | "braki"
+  | "feedback"
+  | "courts"
+  | "leads"
+  | "beta"
+  | "new";
 
 const VIEWS: [View, string][] = [
   ["queue", "Kolejka zgłoszeń"],
@@ -45,6 +55,7 @@ const VIEWS: [View, string][] = [
   ["feedback", "Opinie"],
   ["courts", "Boiska na mapie"],
   ["leads", "Kandydaci OSM"],
+  ["beta", "Beta testerzy"],
   ["new", "Dodaj ręcznie"],
 ];
 
@@ -248,6 +259,8 @@ export function AdminPanel({ isAdmin, signedIn }: { isAdmin: boolean; signedIn: 
           <FeedbackAdmin />
         ) : view === "leads" ? (
           <LeadsAdmin />
+        ) : view === "beta" ? (
+          <BetaAdmin />
         ) : newLeadId ? (
           <NewFromLead leadId={newLeadId} onSaved={() => undefined} />
         ) : (
@@ -493,6 +506,10 @@ function Header({
     leads: [
       "Kandydaci OSM",
       "Boiska wypatrzone w OpenStreetMap - lista miejsc do sprawdzenia. Widzisz je tylko Ty, jako szare pinezki na mapie po włączeniu przycisku.",
+    ],
+    beta: [
+      "Beta testerzy",
+      "Adresy, które wchodzą na stronę przed premierą. Osoba z listy loguje się przez Google tym adresem i widzi cały serwis; wszyscy inni zostają na „Już niedługo”.",
     ],
     new: [
       "Dodaj boisko ręcznie",

@@ -19,6 +19,7 @@ export async function middleware(request: NextRequest) {
 
   let response = NextResponse.next({ request });
   let zalogowany = false;
+  let klient: ReturnType<typeof createServerClient> | null = null;
 
   if (supabaseEnabled) {
     const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -36,6 +37,7 @@ export async function middleware(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
     zalogowany = Boolean(user);
+    klient = supabase;
   }
 
   if (!ZASLONA) return response;
@@ -55,10 +57,33 @@ export async function middleware(request: NextRequest) {
     return przekierowanie;
   }
 
-  const wpuszczony =
-    zalogowany ||
-    request.cookies.get(CIASTKO_WEJSCIA)?.value === "1" ||
-    ZAWSZE_DOSTEPNE.some((p) => sciezka === p || sciezka.startsWith(`${p}/`));
+  const zPrzepustka = request.cookies.get(CIASTKO_WEJSCIA)?.value === "1";
+  const zawszeDostepny = ZAWSZE_DOSTEPNE.some(
+    (p) => sciezka === p || sciezka.startsWith(`${p}/`)
+  );
+
+  /*
+    Zalogowanego pytamy bazy, czy go wpuścić: administrator i adresy z listy beta testerów
+    przechodzą, reszta zostaje na zasłonie. Wynik zapisujemy w przepustce na tydzień, żeby
+    nie odpytywać bazy przy każdym żądaniu.
+  */
+  let betaWpuszczony = false;
+  if (!zPrzepustka && !zawszeDostepny && zalogowany && klient) {
+    const { data } = await klient.rpc("czy_wpuscic");
+    betaWpuszczony = data === true;
+  }
+
+  const wpuszczony = zPrzepustka || zawszeDostepny || betaWpuszczony;
+
+  if (wpuszczony && betaWpuszczony) {
+    response.cookies.set(CIASTKO_WEJSCIA, "1", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: true,
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+    });
+  }
 
   if (!wpuszczony) {
     /*

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { WejscieBeta } from "@/components/WejscieBeta";
 import { CourtOutline } from "@/components/CourtOutline";
 
 export const metadata: Metadata = {
@@ -105,8 +106,10 @@ export default function Wkrotce() {
           Już niedługo
         </h1>
 
-        <p className="mt-6 max-w-md text-[15px] leading-relaxed text-muted sm:text-[16px]">
-          Chcemy zbudować największą mapę boisk do koszykówki w Polsce. Otwieramy wkrótce!
+        {/* łamanie wpisane ręcznie: „w Polsce" ma zamykać pierwszy wiersz */}
+        <p className="mt-6 flex max-w-[64ch] flex-col text-[15px] leading-relaxed text-muted sm:text-[16px]">
+          <span>Chcemy zbudować największą mapę boisk do koszykówki w Polsce.</span>
+          <span>Otwieramy wkrótce!</span>
         </p>
 
         {/* delikatna kreska w kolorach marki zamiast pustki pod tekstem */}
@@ -117,6 +120,9 @@ export default function Wkrotce() {
               "linear-gradient(90deg, transparent 0%, rgba(255,122,24,.85) 50%, transparent 100%)",
           }}
         />
+
+        {/* wejście dla zaproszonych do testów - reszta świata zostaje na tej stronie */}
+        <WejscieBeta />
       </div>
     </main>
   );
