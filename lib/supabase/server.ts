@@ -27,6 +27,8 @@ export interface SessionUser {
   name: string;
   avatar: string | null;
   isAdmin: boolean;
+  /** konto zablokowane przez administratora - nie może nic zapisywać */
+  isBanned: boolean;
 }
 
 export async function getSessionUser(): Promise<SessionUser | null> {
@@ -40,7 +42,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, avatar_url, role")
+    .select("display_name, avatar_url, role, banned_at")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -55,5 +57,6 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     avatar:
       profile?.avatar_url ?? ((user.user_metadata?.avatar_url as string | undefined) ?? null),
     isAdmin: profile?.role === "admin",
+    isBanned: Boolean(profile?.banned_at),
   };
 }

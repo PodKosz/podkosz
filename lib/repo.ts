@@ -8,14 +8,14 @@ import { unstable_cache } from "next/cache";
 import { slugifyPlace } from "./site";
 import type { CourtRow } from "./supabase/types";
 
-const COURT_SELECT =
+export const COURT_SELECT =
   "*, court_photos(kind, storage_path, sort)";
 
 /** Ziarno do grafik zastępczych - stałe dla danego boiska. */
 const seedFromId = (id: string) =>
   Math.abs([...id].reduce((a, c) => a + c.charCodeAt(0), 0)) % 97;
 
-function rowToCourt(row: CourtRow): Court {
+export function rowToCourt(row: CourtRow): Court {
   const photos = orderPhotos(
     [...(row.court_photos ?? [])].sort((a, b) => a.sort - b.sort)
   ).map((p) => ({

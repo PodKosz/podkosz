@@ -17,7 +17,14 @@ export async function GET() {
 
   return Response.json(
     {
-      user: user ? { name: user.name, avatar: user.avatar, isAdmin: user.isAdmin } : null,
+      user: user
+        ? {
+            name: user.name,
+            avatar: user.avatar,
+            isAdmin: user.isAdmin,
+            isBanned: user.isBanned,
+          }
+        : null,
       likes: [...likes],
       favorites: [...favorites],
     },

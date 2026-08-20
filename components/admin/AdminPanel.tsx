@@ -28,6 +28,7 @@ import { LeadsAdmin } from "./LeadsAdmin";
 import { BrakiAdmin } from "./BrakiAdmin";
 import { StatsAdmin } from "./StatsAdmin";
 import { BetaAdmin } from "./BetaAdmin";
+import { UsersAdmin } from "./UsersAdmin";
 import { NewFromLead } from "./NewFromLead";
 
 const TABS: [SubmissionStatus, string][] = [
@@ -45,6 +46,7 @@ type View =
   | "courts"
   | "leads"
   | "beta"
+  | "users"
   | "new";
 
 const VIEWS: [View, string][] = [
@@ -56,6 +58,7 @@ const VIEWS: [View, string][] = [
   ["courts", "Boiska na mapie"],
   ["leads", "Kandydaci OSM"],
   ["beta", "Beta testerzy"],
+  ["users", "Użytkownicy"],
   ["new", "Dodaj ręcznie"],
 ];
 
@@ -261,6 +264,8 @@ export function AdminPanel({ isAdmin, signedIn }: { isAdmin: boolean; signedIn: 
           <LeadsAdmin />
         ) : view === "beta" ? (
           <BetaAdmin />
+        ) : view === "users" ? (
+          <UsersAdmin />
         ) : newLeadId ? (
           <NewFromLead leadId={newLeadId} onSaved={() => undefined} />
         ) : (
@@ -506,6 +511,10 @@ function Header({
     leads: [
       "Kandydaci OSM",
       "Boiska wypatrzone w OpenStreetMap - lista miejsc do sprawdzenia. Widzisz je tylko Ty, jako szare pinezki na mapie po włączeniu przycisku.",
+    ],
+    users: [
+      "Użytkownicy",
+      "Konta w serwisie. Blokada nie usuwa konta - osoba nadal przegląda mapę, ale baza odrzuca jej zgłoszenia, podpalenia, ulubione i zapisy na grę. Niżej lista słów zakazanych w nickach.",
     ],
     beta: [
       "Beta testerzy",

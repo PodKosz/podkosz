@@ -11,6 +11,7 @@ export interface AuthUser {
   name: string;
   avatar: string | null;
   isAdmin: boolean;
+  isBanned?: boolean;
 }
 
 export function AuthMenu({ user }: { user: AuthUser | null }) {
@@ -61,6 +62,13 @@ export function AuthMenu({ user }: { user: AuthUser | null }) {
 
       {open && (
         <div className="glass absolute right-0 top-12 w-56 overflow-hidden rounded-2xl p-1.5">
+          <Link
+            href="/konto"
+            onClick={() => setOpen(false)}
+            className="block rounded-xl px-3 py-2.5 text-[13px] text-muted transition hover:bg-white/8 hover:text-ink"
+          >
+            Moje konto
+          </Link>
           <Link
             href="/ulubione"
             onClick={() => setOpen(false)}

@@ -17,6 +17,8 @@ export interface SesjaUzytkownik {
   name: string;
   avatar: string | null;
   isAdmin: boolean;
+  /** konto zablokowane - zapisy odrzuca też baza */
+  isBanned: boolean;
 }
 
 export interface Sesja {

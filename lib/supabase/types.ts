@@ -68,6 +68,9 @@ export interface ProfileRow {
   id: string;
   display_name: string | null;
   avatar_url: string | null;
+  banned_at: string | null;
+  banned_reason: string | null;
+  nick_changed_at: string | null;
   role: "user" | "admin";
 }
 
