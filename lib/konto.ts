@@ -44,12 +44,19 @@ const PUSTE: DaneKonta = {
   nickZmieniony: null,
 };
 
-export async function pobierzKonto(userId: string): Promise<DaneKonta> {
+export async function pobierzKonto(userId: string, nick: string): Promise<DaneKonta> {
   const supabase = await supabaseServer();
   if (!supabase) return PUSTE;
 
-  const [dodane, kolejka, podpalenia, ulubione, historia, profil] = await Promise.all([
+  /*
+    Boiska szukamy dwoma drogami: po powiązaniu z kontem i po podpisie autora. Wpisy dodane
+    ręcznie z panelu mają w bazie sam podpis, bez identyfikatora konta - a to wciąż te same
+    boiska tej samej osoby (tak samo liczy je publiczny profil odkrywcy).
+  */
+  const [dodane, dodanePodpisem, kolejka, podpalenia, ulubione, historia, profil] =
+    await Promise.all([
     supabase.from("courts").select(COURT_SELECT).eq("added_by", userId),
+    supabase.from("courts").select(COURT_SELECT).eq("added_by_name", nick),
     supabase.from("submissions").select("status").eq("author_id", userId),
     supabase.from("likes").select("court_id"),
     supabase.from("favorites").select(`court_id, courts!inner(${COURT_SELECT})`),
@@ -61,7 +68,11 @@ export async function pobierzKonto(userId: string): Promise<DaneKonta> {
     supabase.from("profiles").select("nick_changed_at").eq("id", userId).maybeSingle(),
   ]);
 
-  const moje = ((dodane.data ?? []) as unknown as CourtRow[]).map(rowToCourt);
+  const wiersze = [
+    ...((dodane.data ?? []) as unknown as CourtRow[]),
+    ...((dodanePodpisem.data ?? []) as unknown as CourtRow[]),
+  ];
+  const moje = [...new Map(wiersze.map((r) => [r.id, r])).values()].map(rowToCourt);
   const zgloszenia = (kolejka.data ?? []) as { status: string }[];
 
   return {

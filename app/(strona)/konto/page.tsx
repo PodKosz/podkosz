@@ -38,7 +38,7 @@ export default async function KontoPage() {
     );
   }
 
-  const dane = await pobierzKonto(user.id);
+  const dane = await pobierzKonto(user.id, user.name);
   const odznaki = badgesFor(dane.dodane.length, dane.zebranePodpalenia);
   const nastepna = nextBadge(dane.dodane.length);
 
