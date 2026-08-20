@@ -32,9 +32,36 @@ async function pobierzLista(): Promise<{ items: Uzytkownik[]; error: string | nu
   const supabase = await supabaseBrowser();
   if (!supabase) return { items: [], error: BLAD_BAZY };
 
-  const { data, error } = await supabase.rpc("lista_uzytkownikow");
-  if (error) return { items: [], error: error.message };
-  return { items: (data ?? []) as Uzytkownik[], error: null };
+  const [konta, boiska] = await Promise.all([
+    supabase.rpc("lista_uzytkownikow"),
+    supabase.from("courts").select("added_by, added_by_name, likes_count"),
+  ]);
+
+  if (konta.error) return { items: [], error: konta.error.message };
+
+  /*
+    Boiska dopisane ręcznie z panelu mają w bazie tylko podpis autora, bez identyfikatora
+    konta - a to wciąż te same wpisy tej samej osoby. Liczymy więc oba przypadki, tak samo
+    jak robi to strona „Moje konto" i publiczny profil odkrywcy.
+  */
+  const wiersze = (boiska.data ?? []) as {
+    added_by: string | null;
+    added_by_name: string | null;
+    likes_count: number;
+  }[];
+
+  const items = ((konta.data ?? []) as Uzytkownik[]).map((u) => {
+    const moje = wiersze.filter(
+      (c) => c.added_by === u.id || (u.display_name && c.added_by_name === u.display_name)
+    );
+    return {
+      ...u,
+      courts: moje.length,
+      likes: moje.reduce((suma, c) => suma + (c.likes_count ?? 0), 0),
+    };
+  });
+
+  return { items, error: null };
 }
 
 export function useUzytkownicy() {

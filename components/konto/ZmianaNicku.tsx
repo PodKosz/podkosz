@@ -3,12 +3,33 @@
 import { useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
+/*
+  Komunikaty tłumaczymy na własne: reguły siedzą w bazie (żeby nie dało się ich obejść poza
+  formularzem), ale wyjątki z Postgresa brzmią jak z konsoli.
+*/
+function ladnyKomunikat(surowy: string): string {
+  if (/od 3 do 24/.test(surowy)) return "Nick musi mieć od 3 do 24 znaków.";
+  if (/zawiera/.test(surowy))
+    return "Nick może zawierać tylko litery, cyfry, spację, kropkę, kreskę i podkreślnik.";
+  if (/zablokowany/.test(surowy)) return "Ten nick jest zablokowany - wybierz inny.";
+  if (/zaj/.test(surowy)) return "Ten nick jest już zajęty - wybierz inny.";
+  if (/zablokowane/.test(surowy)) return "Konto jest zablokowane - nie można zmienić nicku.";
+
+  const data = surowy.match(/(\d{2}\.\d{2}\.\d{4})/);
+  if (/14 dni/.test(surowy)) {
+    return data
+      ? `Nick można zmieniać raz na 14 dni. Następna zmiana od ${data[1]}.`
+      : "Nick można zmieniać raz na 14 dni.";
+  }
+
+  return surowy;
+}
+
 /**
  * Zmiana nicku.
  *
- * Reguły (długość, dozwolone znaki, lista zablokowanych słów, zajętość, jedna zmiana na
- * 14 dni) pilnuje wyzwalacz w bazie - tutaj tylko pokazujemy komunikat, który stamtąd wraca.
- * Dzięki temu nie da się ich obejść, wysyłając zapytanie poza formularzem.
+ * Długość, dozwolone znaki, listę zablokowanych słów, zajętość i limit jednej zmiany na
+ * 14 dni pilnuje wyzwalacz w bazie - formularz tylko pokazuje, co stamtąd wróciło.
  */
 export function ZmianaNicku({
   nick,
@@ -52,7 +73,7 @@ export function ZmianaNicku({
     setZapisuje(false);
 
     if (error) {
-      setStan({ blad: error.message });
+      setStan({ blad: ladnyKomunikat(error.message) });
       return;
     }
 
