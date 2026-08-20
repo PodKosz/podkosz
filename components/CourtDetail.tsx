@@ -4,12 +4,10 @@ import { formatDistance, slugifyPlace } from "@/lib/site";
 import type { NearbyCourt } from "@/lib/repo";
 import type { WeatherHour } from "@/lib/pogoda";
 import { CourtPhoto } from "./CourtPhoto";
-import { CheckIn } from "./CheckIn";
+import { LinkEdycji, PasekLosowania, Podpalenie, Ulubione, ZagramDzis } from "./reakcje";
 import { Pogoda } from "./Pogoda";
 import { Gallery } from "./Gallery";
 import { ShortsPlayer } from "./ShortsPlayer";
-import { LikeButton } from "./LikeButton";
-import { FavoriteButton } from "./FavoriteButton";
 import { ReportButton } from "./ReportButton";
 import {
   ArrowLeftIcon,
@@ -20,9 +18,7 @@ import {
   FireBallIcon,
   HoopIcon,
   BasketApprovedBadge,
-  DiceIcon,
   FunnyBadge,
-  PencilIcon,
   PinIcon,
   SurfaceIcon,
 } from "./icons";
@@ -33,26 +29,19 @@ import {
  */
 const SHELL = "mx-auto w-full max-w-6xl px-6 2xl:max-w-[min(1720px,88vw)] 2xl:px-10";
 
+/*
+  Karta boiska jest taka sama dla wszystkich - wszystko, co zależy od patrzącego (podpalenie,
+  ulubione, skrót administratora, pasek losowania), dociągają komponenty z `reakcje.tsx`
+  już w przeglądarce. Dopiero to pozwala trzymać tę stronę w pamięci podręcznej.
+*/
 export function CourtDetail({
   court,
   nearby = [],
-  liked = false,
-  favorite = false,
-  signedIn = false,
-  isAdmin = false,
-  random,
   weather = [],
   nowHour = 12,
 }: {
   court: Court;
   nearby?: NearbyCourt[];
-  liked?: boolean;
-  favorite?: boolean;
-  signedIn?: boolean;
-  /** administrator dostaje skrót do edycji tego wpisu */
-  isAdmin?: boolean;
-  /** wejście z losowania - wtedy na dole siedzi pasek „losuj dalej” */
-  random?: { onlyFunny: boolean };
   /** prognoza godzinowa - pusta dla boisk krytych i gdy open-meteo nie odpowiada */
   weather?: WeatherHour[];
   /** aktualna godzina w Polsce, policzona na serwerze */
@@ -80,23 +69,8 @@ export function CourtDetail({
             >
               <ArrowLeftIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> mapa
             </Link>
-            {isAdmin && (
-              <Link
-                href={`/admin?edytuj=${court.slug}`}
-                className="inline-flex w-fit items-center gap-1.5 rounded-full flame-gradient px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-black transition hover:brightness-110 sm:gap-2 sm:px-4 sm:py-2 sm:text-[12px] sm:tracking-[0.14em]"
-              >
-                <PencilIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> edytuj
-              </Link>
-            )}
-            {random && (
-              <Link
-                href={`/losowe?omin=${court.slug}${random.onlyFunny ? "&dziwne=1" : ""}`}
-                prefetch={false}
-                className="inline-flex w-fit items-center gap-1.5 rounded-full flame-gradient px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-black transition hover:brightness-110 sm:gap-2 sm:px-4 sm:py-2 sm:text-[12px] sm:tracking-[0.14em]"
-              >
-                <DiceIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> losuj dalej
-              </Link>
-            )}
+            <LinkEdycji slug={court.slug} />
+            <PasekLosowania slug={court.slug} />
           </div>
 
           {/*
@@ -129,29 +103,15 @@ export function CourtDetail({
               </span>
               {/* na telefonie ulubione siedzą przy współrzędnych, na dużym ekranie w rzędzie akcji */}
               <span className="ml-auto shrink-0 sm:hidden">
-                <FavoriteButton
-                  courtId={court.id}
-                  initiallyFavorite={favorite}
-                  signedIn={signedIn}
-                  compact
-                />
+                <Ulubione courtId={court.id} compact />
               </span>
             </div>
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-2 sm:mt-6 sm:gap-3">
-            <LikeButton
-              courtId={court.id}
-              initial={court.likes}
-              initiallyLiked={liked}
-              signedIn={signedIn}
-            />
+            <Podpalenie courtId={court.id} likes={court.likes} />
             <span className="hidden sm:block">
-              <FavoriteButton
-                courtId={court.id}
-                initiallyFavorite={favorite}
-                signedIn={signedIn}
-              />
+              <Ulubione courtId={court.id} />
             </span>
             <a
               href={`https://www.google.com/maps/dir/?api=1&destination=${court.lat},${court.lng}`}
@@ -219,7 +179,7 @@ export function CourtDetail({
           />
 
           <div className="col-span-2 sm:col-span-3 lg:col-span-1">
-            <CheckIn courtId={court.id} signedIn={signedIn} />
+            <ZagramDzis courtId={court.id} />
           </div>
         </section>
 

@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSesja } from "@/lib/sesja";
 import { Brand } from "./Brand";
-import { AuthMenu, AuthUser } from "./AuthMenu";
+import { AuthMenu } from "./AuthMenu";
 
 const LINKS = [
   { href: "/", label: "Mapa" },
@@ -16,31 +16,14 @@ const isActive = (path: string, href: string) =>
   href === "/" ? path === "/" : path.startsWith(href);
 
 /**
- * Górny pasek. Kto jest zalogowany, dociągamy tu z `/api/sesja` już w przeglądarce, a nie
- * z układu strony: odczyt ciasteczek na serwerze wymuszałby renderowanie każdej podstrony
- * na żądanie. Dopóki odpowiedź nie wróci, w miejscu przycisku stoi placeholder tej samej
- * wielkości, żeby pasek nie podskakiwał.
+ * Górny pasek. Kto jest zalogowany, dociągamy z `/api/sesja` już w przeglądarce (wspólnie
+ * z przyciskami podpalenia i ulubionych), a nie z układu strony: odczyt ciasteczek na serwerze
+ * wymuszałby renderowanie każdej podstrony na żądanie. Dopóki odpowiedź nie wróci, w miejscu
+ * przycisku stoi placeholder tej samej wielkości, żeby pasek nie podskakiwał.
  */
 export function TopNav() {
   const path = usePathname();
-  const [user, setUser] = useState<AuthUser | null | undefined>(undefined);
-
-  useEffect(() => {
-    let aktualne = true;
-
-    fetch("/api/sesja", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : { user: null }))
-      .then((d: { user?: AuthUser | null }) => {
-        if (aktualne) setUser(d.user ?? null);
-      })
-      .catch(() => {
-        if (aktualne) setUser(null);
-      });
-
-    return () => {
-      aktualne = false;
-    };
-  }, []);
+  const sesja = useSesja();
 
   return (
     <div className="pointer-events-none fixed inset-x-0 top-0 z-40 flex items-center justify-between gap-2 p-3 sm:p-5">
@@ -74,10 +57,10 @@ export function TopNav() {
         </Link>
 
         <span className="mx-0.5 h-5 w-px bg-white/12 sm:mx-1 sm:h-6" />
-        {user === undefined ? (
+        {sesja === undefined ? (
           <span className="h-9 w-9 rounded-full bg-white/6 sm:w-[104px]" aria-hidden />
         ) : (
-          <AuthMenu user={user} />
+          <AuthMenu user={sesja.user} />
         )}
       </nav>
     </div>

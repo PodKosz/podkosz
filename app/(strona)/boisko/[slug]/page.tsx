@@ -1,11 +1,23 @@
 import type { Metadata } from "next";
-import { getCourtBySlug, getUserReactions, listNearby } from "@/lib/repo";
-import { getSessionUser } from "@/lib/supabase/server";
+import { getCourtBySlug, listCourts, listNearby } from "@/lib/repo";
 import { SITE_NAME } from "@/lib/site";
 import { fetchWeather } from "@/lib/pogoda";
 import { CourtDetail } from "@/components/CourtDetail";
 import { CourtStructuredData } from "@/components/StructuredData";
 import { LocalCourtDetail } from "@/components/LocalCourtDetail";
+
+/*
+  Karta boiska nie zawiera już nic zależnego od użytkownika (podpalenia, ulubione i skrót
+  administratora dociąga przeglądarka), więc może być zbudowana z góry i serwowana z cache.
+  Pół godziny to kompromis z prognozą pogody, która i tak jest godzinowa; publikacja lub
+  edycja boiska unieważnia znacznik i strona przebudowuje się od razu.
+*/
+export const revalidate = 1800;
+
+export async function generateStaticParams() {
+  const courts = await listCourts();
+  return courts.map((c) => ({ slug: c.slug }));
+}
 
 export async function generateMetadata({
   params,
@@ -43,26 +55,18 @@ export async function generateMetadata({
   };
 }
 
-export default async function CourtPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ slug: string }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const [{ slug }, query] = await Promise.all([params, searchParams]);
+export default async function CourtPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const court = await getCourtBySlug(slug);
 
   // Bez podpiętej bazy boiska zatwierdzone lokalnie żyją w localStorage.
   if (!court) return <LocalCourtDetail slug={slug} />;
 
   // pogodę pytamy tylko dla boisk odkrytych - pod dachem nie ma znaczenia
-  const [nearby, user, weather] = await Promise.all([
+  const [nearby, weather] = await Promise.all([
     listNearby(court),
-    getSessionUser(),
     court.type === "kryty" ? Promise.resolve([]) : fetchWeather(court.lat, court.lng),
   ]);
-  const { likes, favorites } = await getUserReactions(user?.id ?? null);
 
   // godzina w Polsce liczona na serwerze, żeby prognoza zaczynała się od właściwej
   const nowHour = Number(
@@ -76,17 +80,7 @@ export default async function CourtPage({
   return (
     <>
       <CourtStructuredData court={court} />
-      <CourtDetail
-        court={court}
-        nearby={nearby}
-        liked={likes.has(court.id)}
-        favorite={favorites.has(court.id)}
-        signedIn={!!user}
-        isAdmin={!!user?.isAdmin}
-        random={query.losowe === "1" ? { onlyFunny: query.dziwne === "1" } : undefined}
-        weather={weather}
-        nowHour={nowHour}
-      />
+      <CourtDetail court={court} nearby={nearby} weather={weather} nowHour={nowHour} />
     </>
   );
 }

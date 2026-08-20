@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { MapCourt, toMapCourt } from "@/lib/types";
 import { toApprovedCourts, useSubmissions } from "@/lib/submissions";
 import { prefetchCourtPhotos } from "@/lib/galeria";
+import { useSesja } from "@/lib/sesja";
 import { supabaseEnabled } from "@/lib/supabase/config";
 import { Filters, applyFilters, countByType } from "@/lib/filters";
 import {
@@ -43,7 +44,11 @@ const MapView = dynamic(() => import("./MapView").then((m) => m.MapView), {
 import { Sidebar } from "./Sidebar";
 import { CourtOutline } from "./CourtOutline";
 
-export function Explorer({ courts, isAdmin = false }: { courts: MapCourt[]; isAdmin?: boolean }) {
+export function Explorer({ courts }: { courts: MapCourt[] }) {
+  /* uprawnienia dociągamy w przeglądarce - inaczej cała mapa musiałaby powstawać na żądanie */
+  const sesja = useSesja();
+  const isAdmin = Boolean(sesja?.user?.isAdmin);
+
   const router = useRouter();
   // filtry startowe czytamy z adresu, żeby link „mapa Krakowa, tylko oświetlone" działał
   const [filters, setFilters] = useState<Filters>(filtryStartowe);
