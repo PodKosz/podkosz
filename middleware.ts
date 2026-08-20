@@ -4,11 +4,11 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL, supabaseEnabled } from "@/lib/supabase
 import { CIASTKO_WEJSCIA, KLUCZ_WEJSCIA, SCIEZKA_ZASLONY, ZASLONA } from "@/lib/zaslona";
 
 /**
- * Adresy działające także pod zasłoną: sama zasłona, powrót z logowania Google i robots.txt
- * (roboty muszą go przeczytać, żeby dostać zakaz indeksowania - podstawiona strona HTML
- * zamiast pliku nic by im nie powiedziała).
+ * Adresy działające także pod zasłoną: sama zasłona, powrót z logowania Google, robots.txt
+ * (roboty muszą go przeczytać, żeby dostać zakaz indeksowania - podstawiona strona HTML nic
+ * by im nie powiedziała) i obrazek podglądu linków, żeby wysłany link wyglądał jak należy.
  */
-const ZAWSZE_DOSTEPNE = [SCIEZKA_ZASLONY, "/auth", "/robots.txt"];
+const ZAWSZE_DOSTEPNE = [SCIEZKA_ZASLONY, "/auth", "/robots.txt", "/opengraph-image"];
 
 /**
  * Odświeża sesję Supabase w ciasteczkach, a przed premierą trzyma zasłonę: wszystko poza
@@ -17,18 +17,7 @@ const ZAWSZE_DOSTEPNE = [SCIEZKA_ZASLONY, "/auth", "/robots.txt"];
 export async function middleware(request: NextRequest) {
   const sciezka = request.nextUrl.pathname;
 
-  /*
-    Ścieżkę przekazujemy dalej nagłówkiem, bo układ strony (komponent serwerowy) nie ma do niej
-    dostępu, a musi wiedzieć, kiedy pominąć nawigację i stopkę. Snapshot bierzemy za każdym
-    razem od nowa, żeby zabrać też ciasteczka odświeżone przez Supabase.
-  */
-  const zNaglowkiem = (docelowa: string) => {
-    const naglowki = new Headers(request.headers);
-    naglowki.set("x-sciezka", docelowa);
-    return naglowki;
-  };
-
-  let response = NextResponse.next({ request: { headers: zNaglowkiem(sciezka) } });
+  let response = NextResponse.next({ request });
   let zalogowany = false;
 
   if (supabaseEnabled) {
@@ -37,7 +26,7 @@ export async function middleware(request: NextRequest) {
         getAll: () => request.cookies.getAll(),
         setAll: (list) => {
           list.forEach(({ name, value }) => request.cookies.set(name, value));
-          response = NextResponse.next({ request: { headers: zNaglowkiem(sciezka) } });
+          response = NextResponse.next({ request });
           list.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
         },
       },
@@ -80,9 +69,7 @@ export async function middleware(request: NextRequest) {
     cel.pathname = SCIEZKA_ZASLONY;
     cel.search = "";
 
-    const zaslona = NextResponse.rewrite(cel, {
-      request: { headers: zNaglowkiem(SCIEZKA_ZASLONY) },
-    });
+    const zaslona = NextResponse.rewrite(cel);
     zaslona.headers.set("X-Robots-Tag", "noindex, nofollow");
     return zaslona;
   }

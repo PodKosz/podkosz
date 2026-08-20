@@ -8,7 +8,8 @@ export const metadata: Metadata = {
     "Najpopularniejsze boiska do koszykówki w Polsce według liczby lajków oraz ranking osób, które dodały ich najwięcej.",
 };
 
-export const revalidate = 0;
+/* Kolejność zmienia podpalanie, a to unieważnia znacznik boisk - pięć minut wystarczy. */
+export const revalidate = 300;
 
 export default async function RankingPage() {
   const [courts, authors] = await Promise.all([listCourts(), listContributors()]);

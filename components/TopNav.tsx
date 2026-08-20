@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Brand } from "./Brand";
@@ -14,8 +15,32 @@ const LINKS = [
 const isActive = (path: string, href: string) =>
   href === "/" ? path === "/" : path.startsWith(href);
 
-export function TopNav({ user }: { user: AuthUser | null }) {
+/**
+ * Górny pasek. Kto jest zalogowany, dociągamy tu z `/api/sesja` już w przeglądarce, a nie
+ * z układu strony: odczyt ciasteczek na serwerze wymuszałby renderowanie każdej podstrony
+ * na żądanie. Dopóki odpowiedź nie wróci, w miejscu przycisku stoi placeholder tej samej
+ * wielkości, żeby pasek nie podskakiwał.
+ */
+export function TopNav() {
   const path = usePathname();
+  const [user, setUser] = useState<AuthUser | null | undefined>(undefined);
+
+  useEffect(() => {
+    let aktualne = true;
+
+    fetch("/api/sesja", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : { user: null }))
+      .then((d: { user?: AuthUser | null }) => {
+        if (aktualne) setUser(d.user ?? null);
+      })
+      .catch(() => {
+        if (aktualne) setUser(null);
+      });
+
+    return () => {
+      aktualne = false;
+    };
+  }, []);
 
   return (
     <div className="pointer-events-none fixed inset-x-0 top-0 z-40 flex items-center justify-between gap-2 p-3 sm:p-5">
@@ -49,7 +74,11 @@ export function TopNav({ user }: { user: AuthUser | null }) {
         </Link>
 
         <span className="mx-0.5 h-5 w-px bg-white/12 sm:mx-1 sm:h-6" />
-        <AuthMenu user={user} />
+        {user === undefined ? (
+          <span className="h-9 w-9 rounded-full bg-white/6 sm:w-[104px]" aria-hidden />
+        ) : (
+          <AuthMenu user={user} />
+        )}
       </nav>
     </div>
   );

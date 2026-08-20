@@ -13,7 +13,12 @@ export const metadata: Metadata = {
     "Największa mapa boisk do koszykówki w Polsce: zdjęcia z kilku ujęć, nawierzchnia, kosze, oświetlenie i godziny. Bazę buduje społeczność - każdy może dodać boisko.",
 };
 
-export const revalidate = 0;
+/*
+  Liczba boisk zmienia się rzadko, a przy publikacji nowego boiska i tak unieważniamy jej
+  znacznik - godzinny odświeżacz jest więc tylko siatką bezpieczeństwa. Dzięki temu strona
+  leci z cache, zamiast być składana przy każdym wejściu.
+*/
+export const revalidate = 3600;
 
 export default async function AboutPage() {
   const total = await countCourts();

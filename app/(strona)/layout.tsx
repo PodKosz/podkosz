@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
-import "./globals.css";
+import "../globals.css";
 import { TopNav } from "@/components/TopNav";
 import { VisitPing } from "@/components/VisitPing";
 import { SiteFooter } from "@/components/SiteFooter";
-import { getSessionUser } from "@/lib/supabase/server";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
-import { SCIEZKA_ZASLONY, ZASLONA } from "@/lib/zaslona";
+import { ZASLONA } from "@/lib/zaslona";
 
 const TITLE = "PodKosz - baza boisk do koszykówki w Polsce";
 
@@ -31,31 +29,22 @@ export const metadata: Metadata = {
   ...(ZASLONA ? { robots: { index: false, follow: false } } : {}),
 };
 
-export default async function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
-  /*
-    Na stronie zasłony („Już niedługo") nie pokazujemy nawigacji ani stopki - nic nie ma
-    prowadzić dalej. Ścieżkę podaje middleware nagłówkiem, bo układ jej sam nie widzi.
-  */
-  const naZaslonie = (await headers()).get("x-sciezka") === SCIEZKA_ZASLONY;
-  const user = naZaslonie ? null : await getSessionUser();
-
+/**
+ * Układ serwisu.
+ *
+ * Świadomie nie czyta tu nic z ciasteczek ani nagłówków: gdyby czytał, każda podstrona
+ * musiałaby być renderowana na żądanie. Kto jest zalogowany, dociąga sobie sam pasek
+ * nawigacji (po stronie przeglądarki, z `/api/sesja`), dzięki czemu strony bez treści
+ * zależnej od użytkownika mogą się cache'ować.
+ */
+export default function StronaLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="pl">
       <body className="ambient antialiased">
-        {!naZaslonie && (
-          <TopNav
-            user={user ? { name: user.name, avatar: user.avatar, isAdmin: user.isAdmin } : null}
-          />
-        )}
+        <TopNav />
         <div className="relative z-10">{children}</div>
-        {!naZaslonie && (
-          <>
-            <SiteFooter />
-            <VisitPing />
-          </>
-        )}
+        <SiteFooter />
+        <VisitPing />
       </body>
     </html>
   );
