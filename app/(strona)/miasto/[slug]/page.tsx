@@ -7,6 +7,15 @@ import { SITE_NAME } from "@/lib/site";
 /** Podstrony miejscowości odświeżamy raz na godzinę - treść zmienia się z nowymi boiskami. */
 export const revalidate = 3600;
 
+/*
+  Miejscowości, które są w bazie w chwili budowania, powstają od razu i leżą w cache; nowe
+  dorobią się strony przy pierwszym wejściu i też zostaną zapamiętane.
+*/
+export async function generateStaticParams() {
+  const { cities } = await listPlaces();
+  return cities.map((c) => ({ slug: c.slug }));
+}
+
 export async function generateMetadata({
   params,
 }: {

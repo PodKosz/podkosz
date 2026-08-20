@@ -106,8 +106,7 @@ export default function Wkrotce() {
         </h1>
 
         <p className="mt-6 max-w-md text-[15px] leading-relaxed text-muted sm:text-[16px]">
-          Budujemy największą mapę boisk do koszykówki w Polsce - ze zdjęciami z kilku stron,
-          nawierzchnią, liczbą koszy i godzinami. Otwieramy wkrótce.
+          Chcemy zbudować największą mapę boisk do koszykówki w Polsce. Otwieramy wkrótce!
         </p>
 
         {/* delikatna kreska w kolorach marki zamiast pustki pod tekstem */}

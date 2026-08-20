@@ -2,9 +2,19 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { listCourtsForPlace, listPlaces } from "@/lib/repo";
 import { PlaceListing } from "@/components/PlaceListing";
-import { SITE_NAME } from "@/lib/site";
+import { SITE_NAME, slugifyPlace } from "@/lib/site";
+import { VOIVODESHIPS } from "@/lib/types";
 
 export const revalidate = 3600;
+
+/*
+  Wypisujemy wszystkie województwa z góry, żeby ich podstrony powstały przy budowaniu i leciały
+  z cache. Bez tego Next renderował je przy każdym wejściu - a to są strony pod wyszukiwarki,
+  czyli dokładnie te, które muszą odpowiadać natychmiast.
+*/
+export function generateStaticParams() {
+  return VOIVODESHIPS.map((name) => ({ slug: slugifyPlace(name) }));
+}
 
 export async function generateMetadata({
   params,

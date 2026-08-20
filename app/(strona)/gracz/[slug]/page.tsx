@@ -1,13 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getAuthor } from "@/lib/repo";
+import { getAuthor, listContributors } from "@/lib/repo";
 import { CourtCard } from "@/components/CourtCard";
 import { badgesFor, nextBadge } from "@/lib/odznaki";
-import { SITE_NAME, plural } from "@/lib/site";
+import { SITE_NAME, plural, slugifyPlace } from "@/lib/site";
 import { ArrowLeftIcon, FireBallIcon } from "@/components/icons";
 
 export const revalidate = 3600;
+
+/* Profile osób, które już coś dodały, budujemy z góry - reszta dorobi się przy wejściu. */
+export async function generateStaticParams() {
+  const authors = await listContributors();
+  return authors.map((a) => ({ slug: slugifyPlace(a.name) }));
+}
 
 export async function generateMetadata({
   params,
