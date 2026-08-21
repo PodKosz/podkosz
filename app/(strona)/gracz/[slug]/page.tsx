@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getAuthor, listContributors } from "@/lib/repo";
-import { nickZeSlugu, statystykiGracza } from "@/lib/profil";
+import { getAuthor, listContributors, listCourts } from "@/lib/repo";
+import { historiaGracza, nickZeSlugu, statystykiGracza, ulubioneGracza } from "@/lib/profil";
 import { CourtCard } from "@/components/CourtCard";
-import { Odznaczenia } from "@/components/Odznaczenia";
+import { PlakietkiZaslug } from "@/components/PlakietkiZaslug";
 import { TloPilki } from "@/components/TloPilki";
 import { NaglowekSekcji } from "@/components/NaglowekSekcji";
 import { czyAutorAnonimowy, dataOpisowa, SITE_NAME, plural, slugifyPlace } from "@/lib/site";
-import { ArrowLeftIcon, FireBallIcon } from "@/components/icons";
+import { ArrowLeftIcon, PinIcon } from "@/components/icons";
 
 export const revalidate = 3600;
 
@@ -62,13 +62,35 @@ export async function generateMetadata({
   };
 }
 
+/**
+ * Publiczny profil gracza - wizytówka, nie pulpit.
+ *
+ * Układ jest wyśrodkowany i czytany z góry na dół: twarz, nick, plakietki za zasługi,
+ * liczby, dodane boiska, ulubione i miejsca ostatnich gier. Pełną siatkę odznaczeń z
+ * paskami postępu widzi tylko właściciel na swojej stronie „Moje konto" - tam jest to lista
+ * celów, tu byłaby listą cudzych zadań.
+ */
 export default async function GraczPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const nick = await nickProfilu(slug);
   if (!nick) notFound();
 
-  const [autor, statystyki] = await Promise.all([getAuthor(slug), statystykiGracza(nick)]);
+  const [autor, statystyki, ulubioneId, historia, wszystkie] = await Promise.all([
+    getAuthor(slug),
+    statystykiGracza(nick),
+    ulubioneGracza(nick),
+    historiaGracza(nick),
+    listCourts(),
+  ]);
+
   const boiska = autor?.courts ?? [];
+
+  /* nazwy i zdjęcia dokładamy z listy boisk, którą i tak mamy w pamięci podręcznej */
+  const poId = new Map(wszystkie.map((c) => [c.id, c]));
+  const ulubione = ulubioneId.map((id) => poId.get(id)).filter((c) => c !== undefined);
+  const wizyty = historia
+    .map((w) => ({ day: w.day, court: poId.get(w.courtId) }))
+    .filter((w) => w.court !== undefined);
 
   const kafelki: [string, number][] = [
     ["Boiska w bazie", statystyki.boiska],
@@ -88,65 +110,50 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
         <ArrowLeftIcon className="h-4 w-4" /> ranking graczy
       </Link>
 
-      {/*
-        Wizytówka gracza: avatar w gradientowym pierścieniu, nick i data dołączenia na
-        jednej szklanej płycie. Liczby siedzą w tej samej karcie, więc profil otwiera się
-        jednym spójnym kadrem, a nie serią osobnych pudełek.
-      */}
-      <header className="szklo-pro mt-6 rounded-[32px] p-6 sm:p-8">
-        <div className="flex flex-wrap items-center gap-5">
-          <span className="awatar-ramka shrink-0">
-            <span className="grid h-[86px] w-[86px] place-items-center overflow-hidden text-[28px] font-bold">
-              {statystyki.avatar ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={statystyki.avatar}
-                  alt=""
-                  className="h-full w-full rounded-full object-cover"
-                />
-              ) : (
-                <span className="flame-text">{nick.slice(0, 1).toUpperCase()}</span>
-              )}
-            </span>
-          </span>
-
-          <div className="min-w-0">
-            <p className="text-[12px] uppercase tracking-[0.2em] text-flame">Profil gracza</p>
-            <h1 className="mt-1 truncate text-[clamp(28px,5vw,48px)] font-semibold tracking-[-0.02em]">
-              @{nick}
-            </h1>
-            {statystyki.dolaczyl && (
-              <p className="mt-1 text-[13px] text-muted">
-                w PodKoszu od {dataOpisowa(statystyki.dolaczyl)}
-              </p>
+      {/* ---------- wizytówka ---------- */}
+      <header className="mt-10 flex flex-col items-center text-center">
+        <span className="awatar-ramka">
+          <span className="grid h-[132px] w-[132px] place-items-center overflow-hidden text-[40px] font-bold">
+            {statystyki.avatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={statystyki.avatar}
+                alt=""
+                className="h-full w-full rounded-full object-cover"
+              />
+            ) : (
+              <span className="flame-text">{nick.slice(0, 1).toUpperCase()}</span>
             )}
-          </div>
+          </span>
+        </span>
 
-          {boiska.length > 0 && (
-            <p className="ml-auto hidden items-center gap-2 rounded-full border border-flame/35 bg-flame/10 px-4 py-2 text-[14px] font-semibold text-glow sm:flex">
-              <FireBallIcon className="h-4 w-4" /> {statystyki.podpaleniaZebrane}
-              <span className="text-[12px] font-normal uppercase tracking-[0.12em] text-muted">
-                {plural(statystyki.podpaleniaZebrane, ["podpalenie", "podpalenia", "podpaleń"])}
-              </span>
-            </p>
-          )}
-        </div>
+        <h1 className="mt-6 flame-text pb-1 text-[clamp(32px,6vw,58px)] font-semibold tracking-[-0.03em]">
+          @{nick}
+        </h1>
 
-        <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {kafelki.map(([label, wartosc]) => (
-            <div key={label} className="kafel p-4">
-              <p className="flame-text pb-1 text-[30px] font-bold leading-none tabular-nums">
-                {wartosc}
-              </p>
-              <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-faint">{label}</p>
-            </div>
-          ))}
-        </div>
+        <p className="text-[13px] text-muted">
+          {statystyki.dolaczyl
+            ? `w PodKoszu od ${dataOpisowa(statystyki.dolaczyl)}`
+            : "autor boisk w bazie"}
+        </p>
+
+        <PlakietkiZaslug statystyki={statystyki} />
       </header>
 
-      <Odznaczenia statystyki={statystyki} />
+      {/* ---------- liczby ---------- */}
+      <section className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {kafelki.map(([label, wartosc]) => (
+          <div key={label} className="kafel p-5 text-center">
+            <p className="flame-text pb-1 text-[34px] font-bold leading-none tabular-nums">
+              {wartosc}
+            </p>
+            <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-faint">{label}</p>
+          </div>
+        ))}
+      </section>
 
-      <section className="mt-12">
+      {/* ---------- dodane boiska ---------- */}
+      <section className="mt-14">
         <NaglowekSekcji tytul={`Dodane boiska (${boiska.length})`} />
 
         {boiska.length ? (
@@ -170,6 +177,52 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
           </div>
         )}
       </section>
+
+      {/* ---------- ulubione ---------- */}
+      {ulubione.length > 0 && (
+        <section className="mt-14">
+          <NaglowekSekcji tytul={`Ulubione boiska (${ulubione.length})`} />
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {ulubione.map((court) => (
+              <CourtCard key={court.id} court={court} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ---------- gdzie ostatnio grał ---------- */}
+      {wizyty.length > 0 && (
+        <section className="mt-14">
+          <NaglowekSekcji tytul="Gdzie ostatnio grał" />
+          <ul className="mt-4 space-y-2">
+            {wizyty.map((w, i) => (
+              <li
+                key={`${w.day}-${w.court?.slug ?? i}`}
+                className="kafel flex items-center gap-4 px-5 py-4"
+              >
+                <span className="w-24 shrink-0 text-[13px] tabular-nums text-muted">
+                  {new Date(w.day).toLocaleDateString("pl-PL", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "2-digit",
+                  })}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <Link
+                    href={`/boisko/${w.court!.slug}`}
+                    className="block truncate text-[15px] font-medium transition hover:text-flame"
+                  >
+                    {w.court!.name}
+                  </Link>
+                  <span className="flex items-center gap-1.5 text-[12px] text-faint">
+                    <PinIcon className="h-3 w-3 text-flame" /> {w.court!.city}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </main>
   );
 }

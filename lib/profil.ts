@@ -92,3 +92,35 @@ export async function nickZeSlugu(slug: string): Promise<string | null> {
 
   return nicki.find((p) => p.display_name && slugifyPlace(p.display_name) === slug)?.display_name ?? null;
 }
+
+/**
+ * Ulubione boiska gracza (identyfikatory) i historia jego gier.
+ *
+ * Obie tabele są zamknięte politykami, więc czytamy je funkcjami `security definer`, które
+ * zwracają tylko identyfikatory i daty. Nazwy, miasta i zdjęcia dokłada strona z publicznej
+ * listy boisk - dzięki temu profil nie robi ani jednego dodatkowego zapytania o treści,
+ * które i tak są w pamięci podręcznej.
+ */
+export async function ulubioneGracza(nick: string): Promise<string[]> {
+  const supabase = supabasePublic();
+  if (!supabase) return [];
+
+  const { data } = await supabase.rpc("ulubione_gracza", { p_nick: nick });
+  return ((data ?? []) as { court_id: string }[]).map((r) => r.court_id);
+}
+
+export interface WizytaGracza {
+  day: string;
+  courtId: string;
+}
+
+export async function historiaGracza(nick: string): Promise<WizytaGracza[]> {
+  const supabase = supabasePublic();
+  if (!supabase) return [];
+
+  const { data } = await supabase.rpc("historia_gracza", { p_nick: nick });
+  return ((data ?? []) as { day: string; court_id: string }[]).map((r) => ({
+    day: r.day,
+    courtId: r.court_id,
+  }));
+}
