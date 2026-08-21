@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { OdkrywcaRanking } from "@/lib/repo";
 import { plural } from "@/lib/site";
 import { CourtPhoto } from "../CourtPhoto";
+import { Plomyk } from "../Plomyk";
 import { FireBallIcon } from "../icons";
 
 /**
@@ -130,7 +131,7 @@ function Gwiazda({
           ))}
         </div>
 
-        {/* avatar w środku */}
+        {/* avatar w środku - z numerem miejsca wprost na zdjęciu */}
         <Link
           href={`/gracz/${odkrywca.slug}`}
           className="orbita-avatar absolute left-1/2 top-1/2 z-[2] grid h-[var(--avatar)] w-[var(--avatar)] -translate-x-1/2 -translate-y-1/2 place-items-center overflow-hidden rounded-full"
@@ -143,29 +144,42 @@ function Gwiazda({
               {odkrywca.name.slice(0, 1).toUpperCase()}
             </span>
           )}
+
+          {/*
+            Przyciemnienie zdjęcia po stronie cyfry: lewa krawędź zostaje jasna, prawa gaśnie,
+            więc numer miejsca ma na czym stanąć niezależnie od tego, co jest na avatarze
+            (jasne niebo za głową zjadało białą cyfrę bez tego cienia).
+          */}
+          <span className="orbita-cien" />
+          <span className="orbita-cyfra">{miejsce}</span>
         </Link>
       </div>
 
-      <div className="max-w-[200px] text-center">
+      <div className="max-w-[220px] text-center">
+        <Link
+          href={`/gracz/${odkrywca.slug}`}
+          className="block truncate text-[19px] font-semibold tracking-[-0.01em] transition hover:text-flame sm:text-[23px]"
+        >
+          @{odkrywca.name}
+        </Link>
+
         {/*
-          Numer miejsca stoi przy nicku, a nie na avatarze: zdjęcia krążą po całym obwodzie,
-          więc każde miejsce na kole raz na jakiś czas zasłaniałaby okrągła miniatura.
+          Plakietki najwyższych odznaczeń - trzy, bo więcej rozpycha kolumnę pod avatarem
+          i zaczyna zasłaniać sąsiednie miejsca w konstelacji.
         */}
-        <span className="flex items-center justify-center gap-2">
-          <span
-            className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[12px] font-bold tabular-nums ${
-              miejsce === 1 ? "flame-gradient text-black" : "glass-dim text-glow"
-            }`}
-          >
-            {miejsce}
+        {odkrywca.plakietki.length > 0 && (
+          <span className="mt-1.5 flex flex-wrap items-center justify-center gap-1">
+            {odkrywca.plakietki.map((p) => (
+              <span
+                key={p.id}
+                title={p.nazwa}
+                className={`medal medal-${p.poziom} h-7 w-7`}
+              >
+                <Plomyk poziom={p.poziom} uid={`${odkrywca.slug}-${p.id}`} />
+              </span>
+            ))}
           </span>
-          <Link
-            href={`/gracz/${odkrywca.slug}`}
-            className="min-w-0 truncate text-[15px] font-semibold transition hover:text-flame sm:text-[17px]"
-          >
-            @{odkrywca.name}
-          </Link>
-        </span>
+        )}
         <p className="mt-1 flame-text pb-0.5 text-[22px] font-bold leading-none tabular-nums sm:text-[26px]">
           {odkrywca.courts}
         </p>

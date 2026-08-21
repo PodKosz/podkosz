@@ -6,6 +6,8 @@ import { supabaseServer } from "./supabase/server";
 import { supabasePublic } from "./supabase/publiczny";
 import { unstable_cache } from "next/cache";
 import { czyAutorAnonimowy, slugifyPlace } from "./site";
+import { odznaczenia, type IdPoziomu } from "./odznaczenia";
+import { statystykiGracza } from "./profil";
 import type { CourtRow } from "./supabase/types";
 
 export const COURT_SELECT =
@@ -324,6 +326,15 @@ export interface OdkrywcaRanking {
   avatar: string | null;
   /** zdjęcia tytułowe własnych boisk, od najczęściej podpalanych */
   kadry: KadrOdkrywcy[];
+  /** najwyższe zdobyte odznaczenia - tylko dla czołówki, którą rysuje konstelacja */
+  plakietki: Plakietka[];
+}
+
+export interface Plakietka {
+  id: string;
+  nazwa: string;
+  poziom: IdPoziomu;
+  stopien: number;
 }
 
 /** Avatary z profili, żeby ranking pokazywał twarze, a nie same nicki. */
@@ -350,6 +361,9 @@ const fetchAvatary = unstable_cache(
  *
  * Do każdej osoby dokładamy zdjęcia tytułowe jej boisk, bo ranking rysuje je wokół avatara.
  */
+/** Ile pierwszych miejsc dostaje plakietki odznaczeń - tyle, ile rysuje konstelacja. */
+const ZE_PLAKIETKAMI = 5;
+
 export async function listRankingOdkrywcow(ile = 25): Promise<OdkrywcaRanking[]> {
   const [odkrywcy, courts, avatary] = await Promise.all([
     listContributors(),
@@ -357,7 +371,7 @@ export async function listRankingOdkrywcow(ile = 25): Promise<OdkrywcaRanking[]>
     fetchAvatary(),
   ]);
 
-  return odkrywcy
+  const lista = odkrywcy
     .filter((o) => !czyAutorAnonimowy(o.name))
     .slice(0, ile)
     .map((o) => {
@@ -378,8 +392,31 @@ export async function listRankingOdkrywcow(ile = 25): Promise<OdkrywcaRanking[]>
           photo: c.photos[0],
           seed: c.seed,
         })),
+        plakietki: [] as Plakietka[],
       };
     });
+
+  /*
+    Odznaczenia dociągamy tylko dla czołówki, którą rysuje konstelacja: każdy wiersz to
+    osobne pytanie do bazy, a na liście miejsc 6-25 plakietki i tak się nie pokazują.
+  */
+  const czolowka = lista.slice(0, ZE_PLAKIETKAMI);
+  const statystyki = await Promise.all(czolowka.map((o) => statystykiGracza(o.name)));
+
+  czolowka.forEach((o, i) => {
+    o.plakietki = odznaczenia(statystyki[i])
+      .filter((od) => od.poziom !== null)
+      .sort((a, b) => b.stopien - a.stopien)
+      .slice(0, 3)
+      .map((od) => ({
+        id: od.id,
+        nazwa: `${od.nazwa} - ${od.poziom!.nazwa}`,
+        poziom: od.poziom!.id,
+        stopien: od.stopien,
+      }));
+  });
+
+  return lista;
 }
 
 export async function getUserReactions(

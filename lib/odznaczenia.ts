@@ -158,8 +158,10 @@ export interface Odznaczenie {
   poziom: Poziom | null;
   /** cel następnego stopnia (null, gdy zdobyte wszystko) */
   nastepny: { poziom: Poziom; prog: number; brakuje: number } | null;
-  /** wypełnienie paska: droga od poprzedniego progu do następnego (0-1) */
+  /** droga od poprzedniego progu do następnego (0-1) - do opisu, ile brakuje */
   postep: number;
+  /** wypełnienie paska: cała droga do najwyższego stopnia (0-1) */
+  postepPelny: number;
 }
 
 /** Odznaczenie bez progów - albo je masz, albo nie. */
@@ -186,6 +188,13 @@ export function odznaczenia(s: StatystykiGracza): Odznaczenie[] {
         ? 1
         : Math.min(1, Math.max(0, (wartosc - poprzedniProg) / (nastepnyProg - poprzedniProg)));
 
+    /*
+      Pasek pokazuje CAŁĄ drogę do szczytu, nie postęp w obrębie jednego stopnia: dzięki
+      temu jego kolor - brąz, pomarańcz, na końcu błękit - mówi, jak wysoko już jest.
+      Ile brakuje do najbliższego progu, pisze podpis pod paskiem.
+    */
+    const postepPelny = (stopien + (nastepnyProg === undefined ? 0 : postep)) / POZIOMY.length;
+
     return {
       id: d.id,
       nazwa: d.nazwa,
@@ -203,6 +212,7 @@ export function odznaczenia(s: StatystykiGracza): Odznaczenie[] {
               brakuje: nastepnyProg - wartosc,
             },
       postep,
+      postepPelny,
     };
   });
 }

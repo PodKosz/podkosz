@@ -199,23 +199,56 @@ body {
 }
 
 /*
-  Biały żar dostaje chłodny rdzeń: rozgrzany do bieli metal wpada w błękit, a przy okazji
-  odcina się od trzech pomarańczowych stopni pod nim.
+  Biały żar świeci na zimno: w wysokiej temperaturze płomień przechodzi w błękit, więc
+  szczyt jest niebiesko-biały i od pierwszego spojrzenia nie należy do pomarańczowej
+  trójki pod nim.
 */
 .medal-bialy-zar {
   background:
-    radial-gradient(120% 120% at 30% 12%, rgba(255, 255, 255, 0.6), rgba(255, 214, 170, 0.24) 46%,
-      rgba(20, 18, 24, 0.92) 100%);
-  border-color: rgba(255, 255, 255, 0.72);
+    radial-gradient(120% 120% at 30% 12%, rgba(255, 255, 255, 0.62), rgba(140, 190, 255, 0.32) 44%,
+      rgba(12, 18, 32, 0.94) 100%);
+  border-color: rgba(214, 232, 255, 0.8);
   box-shadow:
-    0 0 0 1px rgba(190, 214, 255, 0.3),
-    0 12px 30px -8px rgba(255, 226, 190, 0.6);
+    0 0 0 1px rgba(120, 170, 255, 0.42),
+    0 12px 34px -8px rgba(90, 150, 255, 0.7);
 }
 
 .medal-brak {
   background: rgba(255, 255, 255, 0.03);
   border-color: var(--color-hairline);
   box-shadow: none;
+}
+
+/*
+  Pasek postępu pokazuje całą drogę do szczytu, a kolor mówi, gdzie jesteś: brąz iskry,
+  pomarańcz żaru i płomienia, na końcu błękit najwyższego stopnia.
+
+  `background-size` jest odwrotnością wypełnienia (`--p`), więc gradient rozkłada się na
+  szerokość CAŁEGO toru, a nie na widoczny kawałek - bez tego przy 20 % postępu widać by
+  było cały przebieg kolorów wciśnięty w krótki pasek.
+*/
+.pasek-tor {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.pasek-wypelnienie {
+  height: 100%;
+  border-radius: 999px;
+  background-image: linear-gradient(
+    90deg,
+    #8a4a1c 0%,
+    #c2703a 20%,
+    #ff6a12 46%,
+    #ffa94d 70%,
+    #cfe4ff 90%,
+    #7fb2ff 100%
+  );
+  background-size: calc(100% / var(--p)) 100%;
+  background-repeat: no-repeat;
 }
 
 /* kropki stopni pod paskiem postępu */
@@ -229,8 +262,8 @@ body {
   background: #ffa94d;
 }
 .pip-bialy-zar {
-  background: #fff3e0;
-  box-shadow: 0 0 6px rgba(255, 226, 190, 0.9);
+  background: #dcebff;
+  box-shadow: 0 0 6px rgba(130, 175, 255, 0.95);
 }
 
 /* ---------- Controls ---------- */
@@ -587,6 +620,39 @@ select option {
 }
 
 /* wolne miejsce w rankingu - przerywany krąg, który kiedyś wypełni czyjś avatar */
+/*
+  Cień pod numerem miejsca. Kąt jest ten sam co w gradientach marki, a przezroczysty
+  początek zostawia lewą krawędź zdjęcia nietkniętą - twarz ma zostać widoczna.
+*/
+.orbita-cien {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0.14) 0%,
+    rgba(255, 255, 255, 0) 26%,
+    rgba(0, 0, 0, 0.18) 52%,
+    rgba(0, 0, 0, 0.62) 100%
+  );
+}
+
+.orbita-cyfra {
+  position: absolute;
+  right: 6%;
+  top: 50%;
+  translate: 0 -50%;
+  pointer-events: none;
+  font-size: calc(var(--avatar) * 0.46);
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.55);
+}
+
 .orbita-wolne {
   border: 2px dashed rgba(255, 122, 24, 0.28);
   background: rgba(255, 255, 255, 0.02);
