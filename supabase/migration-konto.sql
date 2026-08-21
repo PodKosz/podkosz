@@ -41,7 +41,14 @@ insert into blocked_nicks (word) values
   ('kurwa'), ('kurw'), ('chuj'), ('huj'), ('cipa'), ('pizda'), ('jeb'), ('pierdol'),
   ('skurwy'), ('dziwka'), ('szmata'), ('debil'), ('idiota'), ('pedal'), ('pedał'),
   ('ciota'), ('murzyn'), ('nigger'), ('faggot'), ('hitler'), ('nazi'), ('swastyka'),
-  ('fuck'), ('shit'), ('cunt'), ('bitch'), ('rape'), ('gwalt'), ('gwałt')
+  ('fuck'), ('shit'), ('cunt'), ('bitch'), ('rape'), ('gwalt'), ('gwałt'),
+  /*
+    Podpisy zgłoszeń bez konta. Ranking odkrywców pomija te nazwy (patrz
+    `AUTORZY_ANONIMOWI` w lib/repo.ts), więc nikt nie może ich zająć jako nicku - inaczej
+    jego boiska wypadłyby z rankingu, a na kartach boisk nie dałoby się odróżnić konta
+    od anonimowego zgłoszenia.
+  */
+  ('gosc'), ('gość'), ('anonim')
 on conflict do nothing;
 
 /* ---------- 3. strażnik profilu ---------- */
