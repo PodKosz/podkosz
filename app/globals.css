@@ -291,6 +291,151 @@ body {
 }
 
 /*
+  Kontur boiska „rysuje się" przy przewijaniu strony.
+
+  Każdy kształt ma `pathLength=1`, więc jedna reguła obsługuje i prostą kreskę, i łuk za
+  trzy punkty: `stroke-dasharray: 1` daje kreskę długą jak cała ścieżka, a `stroke-dashoffset`
+  odsuwa ją poza widok. Na górze strony linie są dociągnięte tylko częściowo (różne wartości
+  startowe dla kolejnych elementów, więc kończą w różnych momentach), a na dole rysunek jest
+  kompletny.
+
+  Postępem sterują same piksele przewijania (`animation-timeline`), więc nie ma tu nasłuchu
+  w JS - a gdzie tej funkcji nie ma, kontur od początku jest pełny. Dlatego `dasharray`
+  siedzi w środku `@supports`: bez animacji zostałby sam przerywany, niedokończony rysunek.
+*/
+@supports (animation-timeline: scroll()) {
+  .kontur-rysowany svg :is(path, rect, circle) {
+    stroke-dasharray: 1;
+    animation: rysuj-kontur linear both;
+    animation-timeline: scroll(root block);
+    animation-range: 0 92%;
+  }
+
+  /* różne stopnie „niedokończenia" na starcie - rysunek ma wyglądać jak w trakcie kreślenia */
+  .kontur-rysowany svg :is(path, rect, circle):nth-child(3n) {
+    --start: 0.78;
+  }
+  .kontur-rysowany svg :is(path, rect, circle):nth-child(3n + 1) {
+    --start: 0.52;
+  }
+  .kontur-rysowany svg :is(path, rect, circle):nth-child(3n + 2) {
+    --start: 0.66;
+  }
+
+  @keyframes rysuj-kontur {
+    from {
+      stroke-dashoffset: var(--start, 0.6);
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kontur-rysowany svg :is(path, rect, circle) {
+    stroke-dasharray: none;
+    animation: none;
+  }
+}
+
+/*
+  Piłka kręci się przy przewijaniu - jak model 3D, choć rysunek jest płaski.
+
+  Sztuczka jest w geometrii: południk kuli w rzucie prostokątnym to elipsa o szerokości
+  R·cos(kąt), a przy 90° zwija się w prostą kreskę. Wystarczy więc ściskać każdy szew po
+  osi X - każdy z inną fazą (0°, +60°, -60°) - i oko widzi obracającą się piłkę, a nie
+  spłaszczaną naklejkę. Obwód i szew poziomy zostają nieruchome, bo obrót jest wokół osi
+  pionowej.
+
+  Skalujemy względem środka rysunku (`transform-origin` w układzie viewBox), a nie własnego
+  pudełka szwu - inaczej boczne szwy ściskałyby się „u siebie" i stałyby w miejscu.
+*/
+.pilka-szew {
+  transform-box: view-box;
+  transform-origin: 200px 200px;
+}
+
+@supports (animation-timeline: scroll()) {
+  .pilka-szew {
+    animation: pilka-szew-a linear both;
+    animation-timeline: scroll(root block);
+    animation-range: 0 100%;
+  }
+
+  .pilka-szew-b {
+    animation-name: pilka-szew-b;
+  }
+
+  .pilka-szew-c {
+    animation-name: pilka-szew-c;
+  }
+
+  /* faza 0° - szew, który na starcie stoi na środku */
+  @keyframes pilka-szew-a {
+    0% {
+      transform: scaleX(1);
+    }
+    25% {
+      transform: scaleX(0.02);
+    }
+    50% {
+      transform: scaleX(-1);
+    }
+    75% {
+      transform: scaleX(-0.02);
+    }
+    100% {
+      transform: scaleX(1);
+    }
+  }
+
+  /* faza +60° */
+  @keyframes pilka-szew-b {
+    0% {
+      transform: scaleX(0.5);
+    }
+    25% {
+      transform: scaleX(-0.5);
+    }
+    50% {
+      transform: scaleX(-1);
+    }
+    75% {
+      transform: scaleX(0.5);
+    }
+    100% {
+      transform: scaleX(0.5);
+    }
+  }
+
+  /* faza -60° */
+  @keyframes pilka-szew-c {
+    0% {
+      transform: scaleX(0.5);
+    }
+    25% {
+      transform: scaleX(1);
+    }
+    50% {
+      transform: scaleX(0.5);
+    }
+    75% {
+      transform: scaleX(-0.5);
+    }
+    100% {
+      transform: scaleX(0.5);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pilka-szew {
+    animation: none;
+  }
+}
+
+/*
   Piłka w tle profilu stoi w narożniku, a nie pod treścią, więc może być trochę wyraźniejsza
   niż wtedy, gdy szwy przechodziły przez tekst.
 */
@@ -342,46 +487,70 @@ body {
 .medal svg {
   width: 56%;
   height: 56%;
+  /* na jasnej płytce cienka kreska ginie - dokładamy jej pół piksela */
+  stroke-width: 1.9;
 }
 
+/*
+  Zdobyty stopień wypełnia całą płytkę swoim kolorem, a ikona jest ciemna. Sama obwódka i
+  przyciemniona ikona nie mówiły, na jakim stopniu jest odznaczenie - wszystkie cztery
+  wyglądały niemal tak samo. Teraz kolor widać z drugiego końca strony, a górne rozjaśnienie
+  i włosowa obwódka trzymają wrażenie metalu, nie płaskiej naklejki.
+*/
 .medal-iskra {
-  --medal-ring: rgba(206, 146, 96, 0.44);
-  --medal-tint: rgba(206, 146, 96, 0.16);
-  --medal-ikona: #e8c6a8;
+  --medal-ring: rgba(255, 236, 220, 0.34);
+  --medal-ikona: #2b1a0c;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0) 54%),
+    linear-gradient(160deg, #d9ae87 0%, #a9713d 48%, #7c4a20 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    0 4px 12px -6px rgba(160, 100, 50, 0.6);
 }
 
 .medal-zar {
-  --medal-ring: rgba(255, 142, 62, 0.5);
-  --medal-tint: rgba(255, 122, 24, 0.2);
-  --medal-ikona: #ffc79a;
+  --medal-ring: rgba(255, 224, 196, 0.4);
+  --medal-ikona: #2c1004;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0) 54%),
+    linear-gradient(160deg, #f2a65c 0%, #ec6b12 46%, #bf3d06 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.46),
+    0 4px 14px -6px rgba(236, 107, 18, 0.55);
 }
 
 .medal-plomien {
-  --medal-ring: rgba(255, 186, 110, 0.62);
-  --medal-tint: rgba(255, 150, 60, 0.26);
-  --medal-ikona: #ffdcb4;
+  --medal-ring: rgba(255, 240, 214, 0.5);
+  --medal-ikona: #2a1403;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0) 52%),
+    linear-gradient(160deg, #ffd6a0 0%, #ff9330 46%, #f2670a 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 4px 14px -6px rgba(255, 122, 24, 0.4);
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 5px 16px -6px rgba(255, 122, 24, 0.6);
 }
 
 /*
   Szczyt idzie na zimno: w wysokiej temperaturze płomień przechodzi w błękit, więc
-  „Biały żar" ma stalową obwódkę i chłodną ikonę - inna liga niż pomarańczowa trójka.
+  „Biały żar" ma stalową płytkę i granatową ikonę - inna liga niż pomarańczowa trójka.
 */
 .medal-bialy-zar {
-  --medal-ring: rgba(198, 220, 255, 0.72);
-  --medal-tint: rgba(120, 170, 255, 0.24);
-  --medal-ikona: #eaf1ff;
+  --medal-ring: rgba(255, 255, 255, 0.62);
+  --medal-ikona: #10203a;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0) 52%),
+    linear-gradient(160deg, #f4f9ff 0%, #b7d4ff 44%, #7aacff 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    0 4px 16px -6px rgba(120, 170, 255, 0.45);
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 5px 18px -6px rgba(122, 172, 255, 0.6);
 }
 
 .medal-brak {
   --medal-ring: rgba(255, 255, 255, 0.07);
-  --medal-tint: transparent;
   --medal-ikona: #62626c;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 60%),
+    linear-gradient(180deg, #191820 0%, #0d0d11 100%);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
@@ -796,25 +965,58 @@ select option {
   animation: kadr-plum var(--puls, 5s) ease-in-out var(--opoz, 0s) infinite alternate;
 }
 
-/* zdjęcie pod kursorem: delikatnie rośnie i dostaje cieplejszą obwódkę */
+/*
+  Kadr boiska: bez grubej pomarańczowej obwódki. Zamiast niej włosowa krawędź z gradientu -
+  światło od góry po lewej, ciepły odblask od dołu po prawej, jak na szkiełku obiektywu.
+  Dwie pełne obwódki (czarna + pomarańczowa) wyglądały jak naklejka wycięta z innego obrazka.
+*/
 .orbita-kadr {
   position: relative;
   box-shadow:
-    0 0 0 2px rgba(7, 7, 10, 0.9),
-    0 0 0 3px rgba(255, 122, 24, 0.35),
-    0 12px 30px -12px rgba(0, 0, 0, 0.9);
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 8px 22px -10px rgba(0, 0, 0, 0.9);
   transition:
     scale 280ms cubic-bezier(0.32, 0.72, 0, 1),
     box-shadow 260ms ease;
 }
 
+/*
+  Obwódka jako gradient, a nie kolor: `mask-composite: exclude` wycina środek z pomalowanego
+  kółka, więc zostaje sam pierścień o grubości `padding`. Zwykły `border` przyjmuje jeden
+  kolor i nie da się w nim przejścia od bieli do pomarańczu.
+*/
+.orbita-kadr::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, var(--kadr-krawedz, 0.55)) 0%,
+    rgba(255, 255, 255, 0.07) 42%,
+    rgba(255, 150, 60, var(--kadr-cieplo, 0.4)) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  transition: background 260ms ease;
+}
+
 .orbita-kadr:hover,
 .orbita-kadr:focus-visible {
   scale: 1.16;
+  --kadr-krawedz: 0.9;
+  --kadr-cieplo: 0.95;
   box-shadow:
-    0 0 0 2px rgba(7, 7, 10, 0.9),
-    0 0 0 4px rgba(255, 160, 60, 0.95),
-    0 16px 40px -10px rgba(255, 77, 10, 0.8);
+    inset 0 1px 0 rgba(255, 255, 255, 0.26),
+    0 16px 34px -12px rgba(255, 77, 10, 0.5);
 }
 
 /* podniesienie robi gniazdo - to ono jest sąsiadem innych kadrów w układzie */

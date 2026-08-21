@@ -52,15 +52,29 @@ export function BallOutline({
       {/* szew poziomy - przez środek */}
       <path d="M24 200h352" stroke={poziom} strokeWidth="1.8" />
 
-      {/* szew pionowy - w gradiencie pionowym, inaczej by go nie było */}
-      <path d="M200 24v352" stroke={pion} strokeWidth="1.8" />
-
       {/*
-        Dwa szwy boczne: łuki wygięte tak, jak wyglądają na piłce widzianej od przodu -
-        wychodzą z góry i dołu obwodu, a w połowie wysokości są najbliżej środka.
+        Trzy szwy „pionowe" to południki piłki. Każdy dostaje własną klasę, bo przy obrocie
+        kuli ich szerokość zmienia się z innym przesunięciem fazy: gdy jeden jest najszerszy,
+        drugi stoi już bokiem do nas i wygląda jak prosta kreska. Resztę roboty robi CSS.
       */}
-      <path d="M200 24c-58 44-88 106-88 176s30 132 88 176" stroke={pion} strokeWidth="1.6" />
-      <path d="M200 24c58 44 88 106 88 176s-30 132-88 176" stroke={pion} strokeWidth="1.6" />
+      <path
+        className="pilka-szew pilka-szew-a"
+        d="M200 24v352"
+        stroke={pion}
+        strokeWidth="1.8"
+      />
+      <path
+        className="pilka-szew pilka-szew-b"
+        d="M200 24c-58 44-88 106-88 176s30 132 88 176"
+        stroke={pion}
+        strokeWidth="1.6"
+      />
+      <path
+        className="pilka-szew pilka-szew-c"
+        d="M200 24c58 44 88 106 88 176s-30 132-88 176"
+        stroke={pion}
+        strokeWidth="1.6"
+      />
     </svg>
   );
 }

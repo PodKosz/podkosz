@@ -33,7 +33,7 @@ export default async function AboutPage() {
         leżał na nich jeden napis, tu cała kolumna tekstu.
       */}
       <div
-        className="pointer-events-none fixed left-1/2 top-1/2 -z-10 aspect-[108/58] w-[190vw] opacity-[0.3] sm:w-[108vw]"
+        className="kontur-rysowany pointer-events-none fixed left-1/2 top-1/2 -z-10 aspect-[108/58] w-[190vw] opacity-[0.3] sm:w-[108vw]"
         style={{ translate: "calc(-50% + 8vw) calc(-50% - 2vh)", rotate: "-11deg" }}
         aria-hidden
       >
