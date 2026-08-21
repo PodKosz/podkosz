@@ -3,9 +3,9 @@ import { BallOutline } from "./BallOutline";
 /**
  * Tło profilu i konta: zarys piłki w prawym narożniku plus ciepłe plamy światła.
  *
- * Piłka stoi z boku i wychodzi poza ekran - wyśrodkowana zbierała się dokładnie pod
- * kolumną kart i szwy przebijały przez tekst. Z narożnika daje ten sam sygnał („to jest
- * o koszykówce"), a treść zostaje na czystym tle.
+ * Piłka leży w prawym dolnym narożniku i wychodzi poza ekran obiema krawędziami -
+ * wyśrodkowana zbierała się dokładnie pod kolumną kart i szwy przebijały przez tekst.
+ * Z narożnika daje ten sam sygnał („to jest o koszykówce"), a treść zostaje na czystym tle.
  *
  * Obie warstwy są przyklejone do okna (`fixed`): rysunek trzyma wtedy proporcje niezależnie
  * od długości strony, a plamy szersze od ekranu nie dorzucają poziomego przewijania -
@@ -15,7 +15,7 @@ export function TloPilki({ uid = "profil" }: { uid?: string }) {
   return (
     <>
       <div
-        className="pilka-tlo pointer-events-none fixed right-[-30vw] top-[6vh] -z-10 aspect-square w-[min(1180px,150vw)] sm:right-[-13vw] sm:top-[2vh] sm:w-[min(1120px,74vw)]"
+        className="pilka-tlo pointer-events-none fixed bottom-[-26vh] right-[-32vw] -z-10 aspect-square w-[min(1300px,165vw)] sm:bottom-[-24vh] sm:right-[-16vw] sm:w-[min(1560px,104vw)]"
         aria-hidden
       >
         <BallOutline uid={uid} />

@@ -1,3 +1,6 @@
+"use client";
+
+import { useCallback, useRef } from "react";
 import Link from "next/link";
 import type { OdkrywcaRanking } from "@/lib/repo";
 import { plural } from "@/lib/site";
@@ -114,6 +117,89 @@ function Gwiazda({
   const skalaKadru = (likes: number) =>
     maksLikes === 0 ? 1 : 0.76 + 0.34 * (likes / maksLikes);
 
+  /*
+    Magnes: kursor jest przeciwnym biegunem i odpycha kadry. Przesunięcie rozkładamy na dwie
+    składowe pierścienia - wzdłuż okręgu (`--pt`) i na zewnątrz (`--pr`) - więc zdjęcia
+    zjeżdżają po swojej orbicie, a nie w losowym kierunku.
+
+    Pozycje kadrów liczę ze wzoru (kąt + promień), a nie z `getBoundingClientRect` każdego
+    z nich: przy czternastu zdjęciach i ruchu myszy to czternaście wymuszonych przeliczeń
+    układu na każdą klatkę. Ramkę pierścienia mierzę raz, na wejściu kursora.
+
+    Siła jest ograniczona do kilkunastu pikseli - kadr ma się usunąć, ale nie uciekać przed
+    kliknięciem.
+  */
+  const pierscien = useRef<HTMLDivElement>(null);
+  const ramka = useRef<{ cx: number; cy: number; promien: number } | null>(null);
+  const klatka = useRef(0);
+
+  const zmierz = useCallback(() => {
+    const el = pierscien.current;
+    if (!el) return;
+    const box = el.getBoundingClientRect();
+    const promien = parseFloat(getComputedStyle(el).getPropertyValue("--promien")) || 0;
+    ramka.current = { cx: box.left + box.width / 2, cy: box.top + box.height / 2, promien };
+  }, []);
+
+  const magnes = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const el = pierscien.current;
+    if (!el) return;
+    if (!ramka.current) zmierz();
+    const dane = ramka.current;
+    if (!dane) return;
+
+    const mx = e.clientX;
+    const my = e.clientY;
+
+    cancelAnimationFrame(klatka.current);
+    klatka.current = requestAnimationFrame(() => {
+      const gniazda = Array.from(el.children) as HTMLElement[];
+
+      gniazda.forEach((gniazdo, i) => {
+        const kat = ((-90 + i * krok) * Math.PI) / 180;
+        /* pozycja kadru: obrót o `kat`, potem przesunięcie o promień w górę */
+        const x = dane.cx + dane.promien * Math.sin(kat);
+        const y = dane.cy - dane.promien * Math.cos(kat);
+
+        const dx = x - mx;
+        const dy = y - my;
+        const dystans = Math.hypot(dx, dy) || 1;
+        const sila = Math.max(0, 1 - dystans / 170);
+
+        if (sila === 0) {
+          gniazdo.style.setProperty("--pt", "0px");
+          gniazdo.style.setProperty("--pr", "0px");
+          return;
+        }
+
+        /* rozkład wektora „od kursora" na styczną i promień pierścienia */
+        const nx = dx / dystans;
+        const ny = dy / dystans;
+        const stycznaX = Math.cos(kat);
+        const stycznaY = Math.sin(kat);
+        const promienX = Math.sin(kat);
+        const promienY = -Math.cos(kat);
+
+        const wzdluz = nx * stycznaX + ny * stycznaY;
+        const nazewnatrz = nx * promienX + ny * promienY;
+
+        gniazdo.style.setProperty("--pt", `${(wzdluz * sila * 20).toFixed(1)}px`);
+        gniazdo.style.setProperty("--pr", `${(Math.max(nazewnatrz, 0.25) * sila * 12).toFixed(1)}px`);
+      });
+    });
+  }, [krok, zmierz]);
+
+  const puscMagnes = useCallback(() => {
+    cancelAnimationFrame(klatka.current);
+    const el = pierscien.current;
+    if (!el) return;
+    ramka.current = null;
+    (Array.from(el.children) as HTMLElement[]).forEach((gniazdo) => {
+      gniazdo.style.setProperty("--pt", "0px");
+      gniazdo.style.setProperty("--pr", "0px");
+    });
+  }, []);
+
   return (
     <div
       className={`orbita group relative flex shrink-0 flex-col items-center ${klasa}`}
@@ -136,7 +222,13 @@ function Gwiazda({
         />
 
         {/* pierścień ze zdjęciami boisk - kręci się, pod kursorem staje */}
-        <div className="orbita-pierscien absolute inset-0">
+        <div
+          ref={pierscien}
+          onPointerEnter={zmierz}
+          onPointerMove={magnes}
+          onPointerLeave={puscMagnes}
+          className="orbita-pierscien absolute inset-0"
+        >
           {kadry.map((k, i) => (
             /*
               Pozycję na okręgu i „plumkanie" trzyma gniazdo, a nie samo zdjęcie: gdyby oba

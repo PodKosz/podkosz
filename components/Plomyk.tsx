@@ -9,16 +9,16 @@ import type { IdPoziomu } from "@/lib/odznaczenia";
  * jak dziura w układzie.
  */
 export const PLOMYK: Record<IdPoziomu, [string, string, string]> = {
-  iskra: ["#7a3f16", "#c2703a", "#e8b184"],
-  zar: ["#a12c05", "#ff6a12", "#ffb066"],
-  plomien: ["#ff3d00", "#ff7a18", "#ffd08a"],
+  iskra: ["#6d3612", "#b06a38", "#dda877"],
+  zar: ["#a81c03", "#f0400e", "#ff8a5c"],
+  plomien: ["#e07f05", "#ffbe2a", "#fff0b8"],
   /*
     Najwyższy stopień idzie w niebieskie: przy naprawdę wysokiej temperaturze płomień
     przestaje być pomarańczowy i przechodzi w błękit, a rozgrzany do bieli metal świeci
     chłodnym światłem. Dzięki temu szczyt nie jest „jeszcze jaśniejszym pomarańczem",
     ale wyraźnie inną ligą.
   */
-  "bialy-zar": ["#1e5cff", "#8fc0ff", "#ffffff"],
+  "bialy-zar": ["#2f6bff", "#9dc3ff", "#ffffff"],
 };
 
 export function Plomyk({ poziom, uid }: { poziom: IdPoziomu | null; uid: string }) {
