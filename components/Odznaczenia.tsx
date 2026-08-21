@@ -5,7 +5,6 @@ import {
   wyroznienia,
   type StatystykiGracza,
 } from "@/lib/odznaczenia";
-import { Plomyk } from "./Plomyk";
 import { IkonaOdznaczenia } from "./IkonaOdznaczenia";
 import { TloStopnia } from "./TloStopnia";
 
@@ -39,9 +38,9 @@ export function Odznaczenia({ statystyki }: { statystyki: StatystykiGracza }) {
         {POZIOMY.map((p, i) => (
           <span key={p.id} className="flex items-center gap-2">
             {i > 0 && <span className="text-white/20">→</span>}
-            <span className={`medal medal-${p.id} h-6 w-6`}>
+            {/* w legendzie liczy się sam stopień, więc medal pokazuje tylko jego motyw */}
+            <span className={`medal medal-${p.id} h-7 w-7`}>
               <TloStopnia poziom={p.id} />
-              <Plomyk poziom={p.id} uid={`legenda-${p.id}`} />
             </span>
             {p.nazwa}
           </span>

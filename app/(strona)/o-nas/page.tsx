@@ -84,8 +84,13 @@ export default async function AboutPage() {
       </div>
 
       <p className="text-[12px] uppercase tracking-[0.2em] text-flame">O projekcie</p>
-      <h1 className="mt-2 text-[clamp(32px,5.5vw,56px)] font-semibold leading-[1.05] tracking-[-0.02em]">
-        Chcemy zbudować największą mapę boisk do koszykówki w Polsce
+      {/*
+        `text-balance` rozdziela wiersze tak, żeby były podobnej długości - bez tego ostatnia
+        linia zostawała z jednym słowem („Polsce"), co przy tej wielkości pisma wyglądało jak
+        błąd. Twarda spacja po „w" pilnuje reguły, że jednoliterowe słowo nie kończy wiersza.
+      */}
+      <h1 className="mt-2 max-w-[20ch] text-balance text-[clamp(32px,5.5vw,56px)] font-semibold leading-[1.06] tracking-[-0.025em]">
+        Chcemy zbudować największą mapę boisk do koszykówki w&nbsp;Polsce
       </h1>
       <div className="mt-5 max-w-2xl space-y-4 text-[17px] leading-relaxed text-muted">
         <p>

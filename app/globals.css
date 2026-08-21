@@ -430,8 +430,9 @@ body {
       rgba(255, 255, 255, 0.08) 34%,
       rgba(255, 255, 255, 0) 52%
     ),
-    radial-gradient(120% 100% at 50% 122%, var(--szklo-dol, transparent) 0%, transparent 72%),
-    linear-gradient(158deg, var(--szklo-a, #1a1920) 0%, var(--szklo-b, #0d0d11) 100%);
+    radial-gradient(130% 110% at 50% 118%, var(--szklo-dol, transparent) 0%, transparent 62%),
+    linear-gradient(155deg, var(--szklo-a, #1a1920) 0%, var(--szklo-b, #0d0d11) 78%,
+      var(--szklo-dol, #0d0d11) 100%);
   backdrop-filter: blur(8px) saturate(150%);
   -webkit-backdrop-filter: blur(8px) saturate(150%);
   box-shadow:
@@ -493,33 +494,39 @@ body {
   miedź iskry, czerwień żaru, złoto płomienia i lodowy błękit szczytu. Wartości są podane
   z przezroczystością, bo korpus medalu jest szkłem - dzięki temu tło prześwituje.
 */
+/*
+  Cztery stopnie to cztery temperatury, więc gradient na płytce jest mocny, nie dekoracyjny:
+  rozżarzony grzbiet u góry, nasycone jądro w środku, przygaszony spód. Poprzednia wersja
+  była tak stonowana, że stopnie zlewały się przy 24 pikselach - teraz różnicę widać przez
+  pół ekranu.
+*/
 .medal-iskra {
-  --szklo-a: rgba(214, 152, 104, 0.72);
-  --szklo-b: rgba(120, 62, 22, 0.78);
-  --szklo-dol: rgba(255, 190, 140, 0.38);
-  --medal-ring: rgba(255, 230, 205, 0.44);
-  --medal-poswiata: rgba(150, 90, 40, 0.55);
-  --medal-motyw: rgba(74, 34, 6, 0.3);
+  --szklo-a: rgba(255, 214, 168, 0.92);
+  --szklo-b: rgba(163, 84, 32, 0.9);
+  --szklo-dol: rgba(96, 42, 8, 0.85);
+  --medal-ring: rgba(255, 232, 208, 0.5);
+  --medal-poswiata: rgba(170, 96, 36, 0.6);
+  --medal-motyw: rgba(70, 30, 4, 0.4);
   --medal-ikona: #2a1508;
 }
 
 .medal-zar {
-  --szklo-a: rgba(255, 133, 86, 0.72);
-  --szklo-b: rgba(176, 28, 4, 0.8);
-  --szklo-dol: rgba(255, 140, 90, 0.42);
-  --medal-ring: rgba(255, 216, 198, 0.5);
-  --medal-poswiata: rgba(239, 60, 12, 0.55);
-  --medal-motyw: rgba(88, 18, 0, 0.32);
+  --szklo-a: rgba(255, 176, 122, 0.94);
+  --szklo-b: rgba(214, 42, 6, 0.94);
+  --szklo-dol: rgba(126, 16, 2, 0.9);
+  --medal-ring: rgba(255, 220, 200, 0.56);
+  --medal-poswiata: rgba(239, 60, 12, 0.62);
+  --medal-motyw: rgba(96, 14, 0, 0.42);
   --medal-ikona: #2d0b02;
 }
 
 .medal-plomien {
-  --szklo-a: rgba(255, 240, 186, 0.76);
-  --szklo-b: rgba(243, 152, 8, 0.8);
-  --szklo-dol: rgba(255, 214, 120, 0.45);
-  --medal-ring: rgba(255, 247, 220, 0.6);
-  --medal-poswiata: rgba(255, 186, 40, 0.55);
-  --medal-motyw: rgba(120, 60, 0, 0.26);
+  --szklo-a: rgba(255, 246, 200, 0.96);
+  --szklo-b: rgba(255, 160, 16, 0.95);
+  --szklo-dol: rgba(214, 92, 4, 0.9);
+  --medal-ring: rgba(255, 250, 226, 0.66);
+  --medal-poswiata: rgba(255, 178, 32, 0.62);
+  --medal-motyw: rgba(132, 62, 0, 0.36);
   --medal-ikona: #3a2405;
 }
 
@@ -528,12 +535,12 @@ body {
   „Biały żar" to lodowa kropla z granatową ikoną - inna liga niż ciepła trójka pod nim.
 */
 .medal-bialy-zar {
-  --szklo-a: rgba(250, 253, 255, 0.78);
-  --szklo-b: rgba(105, 152, 255, 0.78);
-  --szklo-dol: rgba(150, 190, 255, 0.5);
-  --medal-ring: rgba(255, 255, 255, 0.7);
-  --medal-poswiata: rgba(111, 157, 255, 0.6);
-  --medal-motyw: rgba(24, 72, 190, 0.34);
+  --szklo-a: rgba(255, 255, 255, 0.96);
+  --szklo-b: rgba(88, 138, 255, 0.94);
+  --szklo-dol: rgba(30, 74, 190, 0.9);
+  --medal-ring: rgba(255, 255, 255, 0.78);
+  --medal-poswiata: rgba(96, 146, 255, 0.66);
+  --medal-motyw: rgba(14, 48, 150, 0.42);
   --medal-ikona: #0f1c3a;
 }
 
