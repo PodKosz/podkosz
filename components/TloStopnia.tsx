@@ -48,7 +48,7 @@ const MOTYWY: Record<IdPoziomu, React.ReactNode> = {
   iskra: ISKRA,
   zar: ZAR,
   plomien: PLOMIEN,
-  "bialy-zar": BIALY_ZAR,
+  niebieski: BIALY_ZAR,
 };
 
 export function TloStopnia({ poziom }: { poziom: IdPoziomu | null }) {

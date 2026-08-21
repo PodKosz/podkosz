@@ -10,7 +10,7 @@
  * Kilka odznaczeń jest bez progów - dostaje się je raz, za konkretny wyczyn.
  */
 
-export type IdPoziomu = "iskra" | "zar" | "plomien" | "bialy-zar";
+export type IdPoziomu = "iskra" | "zar" | "plomien" | "niebieski";
 
 export interface Poziom {
   id: IdPoziomu;
@@ -22,7 +22,7 @@ export const POZIOMY: Poziom[] = [
   { id: "iskra", nazwa: "Iskra" },
   { id: "zar", nazwa: "Żar" },
   { id: "plomien", nazwa: "Płomień" },
-  { id: "bialy-zar", nazwa: "Niebieski żar" },
+  { id: "niebieski", nazwa: "Niebieski żar" },
 ];
 
 /** Liczby z profilu, na których stoją wszystkie odznaczenia. */

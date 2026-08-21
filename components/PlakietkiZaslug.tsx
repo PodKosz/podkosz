@@ -65,7 +65,7 @@ function Plakietka({
   dalej,
 }: {
   id: string;
-  poziom: "iskra" | "zar" | "plomien" | "bialy-zar" | null;
+  poziom: "iskra" | "zar" | "plomien" | "niebieski" | null;
   tytul: string;
   stopien: string;
   opis: string;
