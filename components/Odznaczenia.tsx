@@ -73,34 +73,33 @@ export function Odznaczenia({ statystyki }: { statystyki: StatystykiGracza }) {
 
             <p className="mt-2.5 text-[12px] leading-snug text-muted">{o.opis}</p>
 
-            <div className="pasek-tor mt-3">
-              <span
-                className="pasek-wypelnienie block"
-                style={{
-                  width: `${Math.round(o.postepPelny * 100)}%`,
-                  ["--p" as string]: Math.max(o.postepPelny, 0.01).toFixed(3),
-                }}
-              />
+            {/*
+              Skala z czterech odcinków - po jednym na stopień. Wypełnienie liczymy globalnie:
+              odcinek `i` zapełnia się, gdy postęp minie `i/4` całej drogi. Wcześniej był jeden
+              pasek z gradientem i nie dawało się z niego odczytać, ile stopni już za nami.
+            */}
+            <div className="mt-3 flex gap-1">
+              {POZIOMY.map((p, i) => {
+                const wypelnienie = Math.min(
+                  1,
+                  Math.max(0, o.postepPelny * POZIOMY.length - i)
+                );
+                return (
+                  <span key={p.id} title={p.nazwa} className="pasek-tor flex-1">
+                    <span
+                      className={`pasek-segment pasek-${p.id}`}
+                      style={{ width: `${Math.round(wypelnienie * 100)}%` }}
+                    />
+                  </span>
+                );
+              })}
             </div>
 
-            <div className="mt-2 flex items-center justify-between gap-2">
-              <p className="text-[11px] text-faint">
-                {o.nastepny
-                  ? `jeszcze ${o.nastepny.brakuje} do stopnia „${o.nastepny.poziom.nazwa}”`
-                  : "wszystkie stopnie zdobyte"}
-              </p>
-              <span className="flex shrink-0 gap-1">
-                {POZIOMY.map((p, i) => (
-                  <span
-                    key={p.id}
-                    title={p.nazwa}
-                    className={`h-1.5 w-1.5 rounded-full ${
-                      i < o.stopien ? `pip pip-${p.id}` : "bg-white/14"
-                    }`}
-                  />
-                ))}
-              </span>
-            </div>
+            <p className="mt-2 text-center text-[11px] text-faint">
+              {o.nastepny
+                ? `jeszcze ${o.nastepny.brakuje} do stopnia „${o.nastepny.poziom.nazwa}”`
+                : "wszystkie stopnie zdobyte"}
+            </p>
           </article>
         ))}
       </div>

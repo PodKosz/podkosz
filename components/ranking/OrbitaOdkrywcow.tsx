@@ -10,8 +10,11 @@ import { FireBallIcon } from "../icons";
  *
  * Każda osoba to okrągły avatar, a wokół niego - dotykając jego krawędzi - okrągłe zdjęcia
  * tytułowe boisk, które dodała. Wielkość układu wynika z liczby boisk, więc pierwsze miejsce
- * jest największe. Pierścień obraca się leniwie i staje pod kursorem, a zdjęcia obracają się
- * w drugą stronę, żeby stały prosto.
+ * jest największe, a wielkość pojedynczego zdjęcia - z podpaleń tego boiska.
+ *
+ * Zdjęcia nie krążą wokół avatara: pięć wirujących pierścieni naraz to karuzela, na którą
+ * nie da się patrzeć. Zamiast tego każde oddycha na miejscu - własnym tempem i z własnym
+ * opóźnieniem, więc całość delikatnie „plumka", zamiast maszerować w rytm.
  *
  * Miejsca bez właściciela zostają jako przerywane kręgi - od razu widać, ile jest jeszcze
  * do wzięcia.
@@ -143,6 +146,15 @@ function Gwiazda({
               style={{
                 ["--kat" as string]: `${-90 + i * krok}deg`,
                 ["--s" as string]: skalaKadru(k.likes).toFixed(3),
+                /*
+                  Każde zdjęcie oddycha własnym tempem i z własnym opóźnieniem. Wartości
+                  wyliczam z indeksu, a nie losuję: losowanie przy renderowaniu dawałoby
+                  inny wynik na serwerze i w przeglądarce, a React zgłasza to jako błąd
+                  niezgodności. Liczby pierwsze w mnożnikach sprawiają, że rytm długo się
+                  nie powtarza i wygląda przypadkowo.
+                */
+                ["--puls" as string]: `${(4.6 + ((i * 7) % 5) * 0.7).toFixed(2)}s`,
+                ["--opoz" as string]: `-${((i * 1.37) % 4).toFixed(2)}s`,
               }}
             >
               <span className="orbita-kadr-obraz block h-full w-full overflow-hidden rounded-full">
@@ -201,15 +213,34 @@ function Gwiazda({
             ))}
           </span>
         )}
-        <p className="mt-1 flame-text pb-0.5 text-[22px] font-bold leading-none tabular-nums sm:text-[26px]">
-          {odkrywca.courts}
-        </p>
-        <p className="text-[11px] uppercase tracking-[0.14em] text-faint">
-          {plural(odkrywca.courts, ["boisko", "boiska", "boisk"])}
-        </p>
-        <p className="mt-2 inline-flex items-center gap-1.5 text-[13px] font-semibold text-glow">
-          <FireBallIcon className="h-4 w-4" /> {odkrywca.likes}
-        </p>
+        {/*
+          Dwie liczby obok siebie, nie jedna pod drugą: kolumna pod avatarem rosła w pionie
+          i rozpychała całą konstelację. Po prawej podpalenia ZEBRANE przez dodane boiska
+          (tak liczy je widok `contributors`), a nie te, które ktoś sam rozdał - w rankingu
+          odkrywców liczy się to, jak przyjęły się jego boiska.
+        */}
+        <span className="mt-2 flex items-center justify-center gap-3">
+          <span className="flex items-baseline gap-1.5">
+            <b className="flame-text pb-0.5 text-[22px] font-bold leading-none tabular-nums sm:text-[26px]">
+              {odkrywca.courts}
+            </b>
+            <span className="text-[11px] uppercase tracking-[0.12em] text-faint">
+              {plural(odkrywca.courts, ["boisko", "boiska", "boisk"])}
+            </span>
+          </span>
+
+          <span className="h-5 w-px shrink-0 bg-white/12" />
+
+          <span
+            className="flex items-baseline gap-1.5"
+            title="podpalenia zebrane przez dodane boiska"
+          >
+            <FireBallIcon className="h-4 w-4 self-center" />
+            <b className="text-[18px] font-bold leading-none tabular-nums text-glow sm:text-[20px]">
+              {odkrywca.likes}
+            </b>
+          </span>
+        </span>
       </div>
     </div>
   );
