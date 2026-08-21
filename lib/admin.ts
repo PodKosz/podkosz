@@ -48,6 +48,38 @@ async function client() {
   return supabase;
 }
 
+/**
+ * Konto, na które zapisujemy autorstwo boiska dodanego z panelu.
+ *
+ * Zwykłe zgłoszenia dostają `added_by` z konta zgłaszającego, a wpisy redakcyjne szły dotąd
+ * tylko z podpisem w `added_by_name` - bez identyfikatora. Przez to trzeba było wszędzie
+ * łączyć wpisy „po nazwie", a nick administratora był tym samym jedyną nitką między nim
+ * i jego boiskami. Dlatego przy dodawaniu z panelu wpisujemy identyfikator zalogowanego
+ * administratora - ale tylko wtedy, gdy podpis jest jego własny. Jeśli publikuje coś pod
+ * czyimś nickiem, boisko zostaje bez właściciela, bo to nie jego wpis.
+ */
+async function autorPanelu(podpis: string): Promise<string | null> {
+  const supabase = await client();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const mojNick = (data as { display_name: string | null } | null)?.display_name ?? null;
+  const wpisany = podpis.trim();
+
+  /* brak podpisu = domyślnie „moje", tak samo jak dotychczasowe „Basket" w formularzu */
+  if (!wpisany) return user.id;
+  return mojNick && wpisany.toLowerCase() === mojNick.toLowerCase() ? user.id : null;
+}
+
 async function uniqueSlug(base: string, ignoreId?: string) {
   const supabase = await client();
   let slug = base || "boisko";
@@ -108,10 +140,19 @@ export async function saveCourt(
 
   let id = courtId;
   if (id) {
+    /*
+      Przy edycji nie ruszamy autorstwa: boisko mogło przyjść ze zgłoszenia kogoś innego,
+      a panel służy tu tylko do poprawiania danych.
+    */
     const { error } = await supabase.from("courts").update(payload).eq("id", id);
     if (error) throw new Error(`Zapis boiska nie przeszedł: ${error.message}`);
   } else {
-    const { data, error } = await supabase.from("courts").insert(payload).select("id").single();
+    const added_by = await autorPanelu(values.addedByName);
+    const { data, error } = await supabase
+      .from("courts")
+      .insert({ ...payload, added_by })
+      .select("id")
+      .single();
     if (error) throw new Error(`Zapis boiska nie przeszedł: ${error.message}`);
     id = (data as { id: string }).id;
   }
