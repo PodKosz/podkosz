@@ -7,6 +7,9 @@
  * wysokości, liczba splotów) trzyma rysunek w proporcji, a przy zmianie gęstości nie trzeba
  * przeliczać dwudziestu krzywych ręcznie.
  *
+ * Każdy kształt ma `pathLength={1}`, więc jedna reguła CSS („rysowanie" strokiem) domyka
+ * linie w miarę przewijania strony - tak samo jak kontur boiska na „O nas".
+ *
  * `uid` musi być inny dla każdego wystąpienia na stronie - identyfikatory gradientów w SVG
  * są globalne i przy powtórzeniu przeglądarka bierze pierwszy z dokumentu.
  */
@@ -104,20 +107,20 @@ export function HoopOutline({
           przezroczystych końcach gradientu i po prostu się nie rysują - dokładnie ten sam
           haczyk, na którym potknęły się tablice w konturze boiska.
         */}
-        <path d="M86 26h308M86 222h308" strokeWidth="2.4" />
-        <path d="M86 26v196M394 26v196" strokeWidth="2.4" stroke={bok} />
-        <path d="M192 112h96M192 188h96" strokeWidth="1.6" />
-        <path d="M192 112v76M288 112v76" strokeWidth="1.6" stroke={bok} />
+        <path pathLength={1} d="M86 26h308M86 222h308" strokeWidth="2.4" />
+        <path pathLength={1} d="M86 26v196M394 26v196" strokeWidth="2.4" stroke={bok} />
+        <path pathLength={1} d="M192 112h96M192 188h96" strokeWidth="1.6" />
+        <path pathLength={1} d="M192 112v76M288 112v76" strokeWidth="1.6" stroke={bok} />
 
         {/* mocowanie obręczy do tablicy */}
-        <path d="M228 222v14h24v-14" strokeWidth="1.8" />
+        <path pathLength={1} d="M228 222v14h24v-14" strokeWidth="1.8" />
 
         {/* obręcz */}
-        <ellipse cx={OBRECZ.cx} cy={OBRECZ.cy} rx={OBRECZ.rx} ry={OBRECZ.ry} strokeWidth="2.8" />
+        <ellipse pathLength={1} cx={OBRECZ.cx} cy={OBRECZ.cy} rx={OBRECZ.rx} ry={OBRECZ.ry} strokeWidth="2.8" />
 
         {/* pierścienie siatki */}
         {PIERSCIENIE.map((p) => (
-          <ellipse
+          <ellipse pathLength={1}
             key={p.cy}
             cx={OBRECZ.cx}
             cy={p.cy}
@@ -126,18 +129,18 @@ export function HoopOutline({
             strokeWidth="1.3"
           />
         ))}
-        <ellipse cx={OBRECZ.cx} cy={DOL.cy} rx={DOL.rx} ry={DOL.ry} strokeWidth="1.3" />
+        <ellipse pathLength={1} cx={OBRECZ.cx} cy={DOL.cy} rx={DOL.rx} ry={DOL.ry} strokeWidth="1.3" />
       </g>
 
       {/* sploty siatki - pionowy gradient, żeby gasły ku dołowi */}
       <g stroke={pion} strokeWidth="1.2" strokeLinecap="round">
         {sploty().map((d) => (
-          <path key={d} d={d} />
+          <path pathLength={1} key={d} d={d} />
         ))}
       </g>
 
       {/* słupek za tablicą - ledwo widoczny, tylko żeby kosz nie wisiał w powietrzu */}
-      <path
+      <path pathLength={1}
         d="M240 26v-20"
         stroke="rgba(255,150,60,0.22)"
         strokeWidth="2.4"

@@ -48,7 +48,7 @@ export default async function RankingPage() {
         kosz od razu wygląda jak błąd.
       */}
       <div
-        className="kosz-tlo pointer-events-none fixed left-1/2 top-[-14vh] -z-10 aspect-[480/440] w-[min(1600px,210vw)] sm:w-[min(1720px,132vw)]"
+        className="kosz-tlo kontur-rysowany pointer-events-none fixed left-1/2 top-[-14vh] -z-10 aspect-[480/440] w-[min(1600px,210vw)] sm:w-[min(1720px,132vw)]"
         aria-hidden
       >
         <HoopOutline uid="ranking" />

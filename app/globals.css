@@ -304,7 +304,7 @@ body {
   siedzi w środku `@supports`: bez animacji zostałby sam przerywany, niedokończony rysunek.
 */
 @supports (animation-timeline: scroll()) {
-  .kontur-rysowany svg :is(path, rect, circle) {
+  .kontur-rysowany svg :is(path, rect, circle, ellipse) {
     stroke-dasharray: 1;
     animation: rysuj-kontur linear both;
     animation-timeline: scroll(root block);
@@ -312,13 +312,13 @@ body {
   }
 
   /* różne stopnie „niedokończenia" na starcie - rysunek ma wyglądać jak w trakcie kreślenia */
-  .kontur-rysowany svg :is(path, rect, circle):nth-child(3n) {
+  .kontur-rysowany svg :is(path, rect, circle, ellipse):nth-child(3n) {
     --start: 0.78;
   }
-  .kontur-rysowany svg :is(path, rect, circle):nth-child(3n + 1) {
+  .kontur-rysowany svg :is(path, rect, circle, ellipse):nth-child(3n + 1) {
     --start: 0.52;
   }
-  .kontur-rysowany svg :is(path, rect, circle):nth-child(3n + 2) {
+  .kontur-rysowany svg :is(path, rect, circle, ellipse):nth-child(3n + 2) {
     --start: 0.66;
   }
 
@@ -333,7 +333,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .kontur-rysowany svg :is(path, rect, circle) {
+  .kontur-rysowany svg :is(path, rect, circle, ellipse) {
     stroke-dasharray: none;
     animation: none;
   }
@@ -534,13 +534,40 @@ body {
   flex: none;
   border-radius: 999px;
   color: var(--medal-ikona, #6f6f7a);
+  /*
+    Medal jako kropla szkła: półprzezroczysty korpus w barwie stopnia, jasne światło
+    zebrane u góry, barwa gęstniejąca u dołu i rozmycie tego, co jest pod spodem. Płaskie
+    wypełnienie wyglądało jak wyklejka - tu widać grubość i to, że przez szkło coś przechodzi.
+  */
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.075) 0%, rgba(255, 255, 255, 0) 46%),
-    radial-gradient(120% 90% at 50% 118%, var(--medal-tint, transparent) 0%, transparent 70%),
-    linear-gradient(180deg, #191820 0%, #0d0d11 100%);
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.4) 0%,
+      rgba(255, 255, 255, 0.08) 34%,
+      rgba(255, 255, 255, 0) 52%
+    ),
+    radial-gradient(120% 100% at 50% 122%, var(--szklo-dol, transparent) 0%, transparent 72%),
+    linear-gradient(158deg, var(--szklo-a, #1a1920) 0%, var(--szklo-b, #0d0d11) 100%);
+  backdrop-filter: blur(8px) saturate(150%);
+  -webkit-backdrop-filter: blur(8px) saturate(150%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.09),
-    0 4px 12px -6px rgba(0, 0, 0, 0.9);
+    inset 0 1px 1px rgba(255, 255, 255, 0.62),
+    inset 0 -7px 12px -7px rgba(0, 0, 0, 0.6),
+    0 6px 16px -8px var(--medal-poswiata, rgba(0, 0, 0, 0.8));
+}
+
+/* refleks - jasna plamka pod górną krawędzią, jak na kropli wody */
+.medal::before {
+  content: "";
+  position: absolute;
+  left: 15%;
+  top: 7%;
+  width: 54%;
+  height: 32%;
+  border-radius: 999px;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0));
+  filter: blur(1.5px);
 }
 
 /*
@@ -557,6 +584,7 @@ body {
 }
 
 .medal svg {
+  position: relative;
   width: 56%;
   height: 56%;
   /* na jasnej płytce cienka kreska ginie - dokładamy jej pół piksela */
@@ -564,72 +592,61 @@ body {
 }
 
 /*
-  Zdobyty stopień wypełnia całą płytkę swoim kolorem, a ikona jest ciemna. Sama obwódka i
-  przyciemniona ikona nie mówiły, na jakim stopniu jest odznaczenie - wszystkie cztery
-  wyglądały niemal tak samo. Teraz kolor widać z drugiego końca strony, a górne rozjaśnienie
-  i włosowa obwódka trzymają wrażenie metalu, nie płaskiej naklejki.
-*/
-/*
-  Cztery stopnie = cztery wyraźnie różne barwy, a nie cztery odcienie pomarańczu. Idziemy
-  temperaturą płomienia: przygaszona miedź iskry, czerwień żaru, złoto płomienia i lodowy
-  błękit szczytu. Przy poprzedniej palecie żar i płomień były praktycznie nieodróżnialne na
-  mini-plakietkach w rankingu.
+  Cztery stopnie = cztery wyraźnie różne barwy, prowadzone temperaturą płomienia: przygaszona
+  miedź iskry, czerwień żaru, złoto płomienia i lodowy błękit szczytu. Wartości są podane
+  z przezroczystością, bo korpus medalu jest szkłem - dzięki temu tło prześwituje.
 */
 .medal-iskra {
-  --medal-ring: rgba(255, 226, 200, 0.32);
+  --szklo-a: rgba(214, 152, 104, 0.72);
+  --szklo-b: rgba(120, 62, 22, 0.78);
+  --szklo-dol: rgba(255, 190, 140, 0.38);
+  --medal-ring: rgba(255, 230, 205, 0.44);
+  --medal-poswiata: rgba(150, 90, 40, 0.55);
   --medal-ikona: #2a1508;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0) 54%),
-    linear-gradient(160deg, #cf9264 0%, #a35e2c 46%, #7b3f16 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.36),
-    0 4px 12px -6px rgba(150, 90, 40, 0.6);
 }
 
 .medal-zar {
-  --medal-ring: rgba(255, 214, 196, 0.42);
+  --szklo-a: rgba(255, 133, 86, 0.72);
+  --szklo-b: rgba(176, 28, 4, 0.8);
+  --szklo-dol: rgba(255, 140, 90, 0.42);
+  --medal-ring: rgba(255, 216, 198, 0.5);
+  --medal-poswiata: rgba(239, 60, 12, 0.55);
   --medal-ikona: #2d0b02;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0) 54%),
-    linear-gradient(160deg, #ff7d4d 0%, #ef3c0c 48%, #b81f04 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.44),
-    0 4px 14px -6px rgba(239, 60, 12, 0.6);
 }
 
 .medal-plomien {
-  --medal-ring: rgba(255, 246, 214, 0.55);
+  --szklo-a: rgba(255, 240, 186, 0.76);
+  --szklo-b: rgba(243, 152, 8, 0.8);
+  --szklo-dol: rgba(255, 214, 120, 0.45);
+  --medal-ring: rgba(255, 247, 220, 0.6);
+  --medal-poswiata: rgba(255, 186, 40, 0.55);
   --medal-ikona: #3a2405;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.36) 0%, rgba(255, 255, 255, 0) 52%),
-    linear-gradient(160deg, #ffeeb0 0%, #ffc233 46%, #f59a08 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.6),
-    0 5px 16px -6px rgba(255, 186, 40, 0.6);
 }
 
 /*
   Szczyt idzie na zimno: w wysokiej temperaturze płomień przechodzi w błękit, więc
-  „Biały żar" ma lodową płytkę i granatową ikonę - inna liga niż ciepła trójka pod nim.
+  „Biały żar" to lodowa kropla z granatową ikoną - inna liga niż ciepła trójka pod nim.
 */
 .medal-bialy-zar {
-  --medal-ring: rgba(255, 255, 255, 0.66);
+  --szklo-a: rgba(250, 253, 255, 0.78);
+  --szklo-b: rgba(105, 152, 255, 0.78);
+  --szklo-dol: rgba(150, 190, 255, 0.5);
+  --medal-ring: rgba(255, 255, 255, 0.7);
+  --medal-poswiata: rgba(111, 157, 255, 0.6);
   --medal-ikona: #0f1c3a;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.44) 0%, rgba(255, 255, 255, 0) 52%),
-    linear-gradient(160deg, #f7fbff 0%, #aecdff 44%, #6f9dff 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.72),
-    0 5px 18px -6px rgba(111, 157, 255, 0.62);
 }
 
 .medal-brak {
-  --medal-ring: rgba(255, 255, 255, 0.07);
-  --medal-ikona: #62626c;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 60%),
-    linear-gradient(180deg, #191820 0%, #0d0d11 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --szklo-a: rgba(255, 255, 255, 0.055);
+  --szklo-b: rgba(255, 255, 255, 0.02);
+  --szklo-dol: transparent;
+  --medal-ring: rgba(255, 255, 255, 0.09);
+  --medal-poswiata: rgba(0, 0, 0, 0.8);
+  --medal-ikona: #6f6f7a;
+}
+
+.medal-brak::before {
+  opacity: 0.35;
 }
 
 /* pastylka wyróżnienia - ta sama powierzchnia co medal, tylko rozciągnięta */
