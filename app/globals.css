@@ -290,9 +290,12 @@ body {
   }
 }
 
-/* piłka w tle profilu - stoi spokojnie, ma tylko oddychać razem z plamami światła */
+/*
+  Piłka w tle profilu stoi w narożniku, a nie pod treścią, więc może być trochę wyraźniejsza
+  niż wtedy, gdy szwy przechodziły przez tekst.
+*/
 .pilka-tlo {
-  opacity: 0.16;
+  opacity: 0.22;
 }
 
 /* ---------- Odznaczenia ---------- */

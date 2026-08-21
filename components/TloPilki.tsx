@@ -1,17 +1,55 @@
 import { BallOutline } from "./BallOutline";
 
 /**
- * Piłka do koszykówki w tle profilu i konta - ten sam rysunek co kontur boiska na „O nas"
- * i kosz w rankingu, tylko mocno przygaszony. Warstwa jest przyklejona do okna, więc rysunek
- * trzyma proporcje niezależnie od długości strony i nie rozciąga się na całą jej wysokość.
+ * Tło profilu i konta: zarys piłki w prawym narożniku plus ciepłe plamy światła.
+ *
+ * Piłka stoi z boku i wychodzi poza ekran - wyśrodkowana zbierała się dokładnie pod
+ * kolumną kart i szwy przebijały przez tekst. Z narożnika daje ten sam sygnał („to jest
+ * o koszykówce"), a treść zostaje na czystym tle.
+ *
+ * Obie warstwy są przyklejone do okna (`fixed`): rysunek trzyma wtedy proporcje niezależnie
+ * od długości strony, a plamy szersze od ekranu nie dorzucają poziomego przewijania -
+ * `absolute` z takimi rozmiarami zrobiłby pasek na telefonie.
  */
 export function TloPilki({ uid = "profil" }: { uid?: string }) {
   return (
-    <div
-      className="pilka-tlo pointer-events-none fixed left-1/2 top-1/2 -z-10 aspect-square w-[min(1200px,150vw)] -translate-x-1/2 -translate-y-1/2 sm:w-[min(1020px,88vw)]"
-      aria-hidden
-    >
-      <BallOutline uid={uid} />
-    </div>
+    <>
+      <div
+        className="pilka-tlo pointer-events-none fixed right-[-30vw] top-[6vh] -z-10 aspect-square w-[min(1180px,150vw)] sm:right-[-13vw] sm:top-[2vh] sm:w-[min(1120px,74vw)]"
+        aria-hidden
+      >
+        <BallOutline uid={uid} />
+      </div>
+
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden>
+        <span
+          className="liquid-blob -left-32 -top-24 h-[540px] w-[700px]"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(255,122,24,.28) 0%, rgba(255,77,10,.1) 52%, transparent 74%)",
+          }}
+        />
+        <span
+          className="liquid-blob right-[-16vw] top-[18vh] h-[620px] w-[720px]"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(255,77,10,.24) 0%, rgba(255,122,24,.08) 54%, transparent 76%)",
+          }}
+        />
+        <span
+          className="liquid-blob left-[6vw] bottom-[-12rem] h-[520px] w-[680px]"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(255,178,92,.2) 0%, rgba(255,122,24,.06) 52%, transparent 74%)",
+          }}
+        />
+        <span
+          className="liquid-blob right-[8vw] bottom-[-16rem] h-[460px] w-[560px]"
+          style={{
+            background: "radial-gradient(circle, rgba(255,122,24,.18) 0%, transparent 72%)",
+          }}
+        />
+      </div>
+    </>
   );
 }
