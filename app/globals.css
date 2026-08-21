@@ -824,9 +824,8 @@ select option {
 .court-marker:hover .marker-core,
 .court-marker[data-active="true"] .marker-core {
   transform: scale(1.22);
-  box-shadow:
-    0 0 0 2px rgba(255, 255, 255, 0.45) inset,
-    0 10px 26px -4px rgba(255, 77, 10, 1) !important;
+  /* podświetlenie idzie cieniem zewnętrznym - obwód piłki rysuje już samo SVG */
+  box-shadow: 0 10px 26px -4px rgba(255, 77, 10, 1) !important;
 }
 
 .court-marker[data-active="true"] {
