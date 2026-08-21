@@ -425,9 +425,10 @@ select option {
 .orbita {
   --baza: clamp(148px, 30vw, 236px);
   --avatar: calc(var(--baza) * var(--f));
-  --kadr: calc(var(--avatar) * 0.37);
-  --pole: calc(var(--avatar) + var(--kadr) * 1.5);
-  --promien: calc(var(--avatar) / 2 + var(--kadr) * 0.3);
+  --kadr: calc(var(--avatar) * 0.33);
+  --pole: calc(var(--avatar) + var(--kadr) * 2.1);
+  /* zdjęcia siedzą tuż za krawędzią avatara - stykają się z nią, ale go nie zasłaniają */
+  --promien: calc(var(--avatar) / 2 + var(--kadr) * 0.46);
   --numer: calc(var(--avatar) * 0.24);
 }
 
@@ -436,24 +437,39 @@ select option {
     0 0 0 2px rgba(255, 122, 24, 0.5),
     0 0 0 8px rgba(255, 77, 10, 0.09),
     0 26px 70px -24px rgba(255, 77, 10, 0.7);
+  /*
+    Powiększamy właściwością `scale`, a nie `transform`: wyśrodkowanie avatara robi Tailwind
+    przez `translate`, więc własny `transform` nadpisywałby je i kółko odskakiwało w lewy
+    górny róg.
+  */
   transition:
     box-shadow 320ms ease,
-    transform 320ms cubic-bezier(0.32, 0.72, 0, 1);
+    scale 320ms cubic-bezier(0.32, 0.72, 0, 1);
 }
-.orbita:hover .orbita-avatar {
-  transform: translate(-50%, -50%) scale(1.04);
+.orbita:hover .orbita-avatar,
+.orbita-avatar:hover {
+  scale: 1.05;
   box-shadow:
     0 0 0 2px rgba(255, 160, 60, 0.9),
     0 0 0 10px rgba(255, 77, 10, 0.16),
-    0 30px 90px -20px rgba(255, 77, 10, 0.9);
+    0 34px 90px -18px rgba(255, 77, 10, 0.95);
+}
+
+/* poświata pod avatarem, mocniejsza pod kursorem */
+.orbita-blask {
+  transition: opacity 320ms ease;
+  opacity: 0.75;
+}
+.orbita:hover .orbita-blask {
+  opacity: 1;
 }
 
 /*
-  Pierścień kręci się leniwie i zatrzymuje pod kursorem. Leży nad avatarem, żeby zdjęcia
-  wyglądały na przyklejone do jego krawędzi, a nie schowane za głową.
+  Pierścień kręci się leniwie i zatrzymuje pod kursorem. Leży pod avatarem: zdjęcia dotykają
+  jego krawędzi, a gdyby gdzieś na nią zaszły, schowają się za twarzą, a nie na niej.
 */
 .orbita-pierscien {
-  z-index: 5;
+  z-index: 1;
   animation: orbita-obrot 46s linear infinite;
 }
 .orbita:hover .orbita-pierscien,
@@ -481,6 +497,12 @@ select option {
     0 0 0 4px rgba(255, 160, 60, 0.95),
     0 16px 40px -10px rgba(255, 77, 10, 0.8);
   z-index: 20;
+}
+
+/* wolne miejsce w rankingu - przerywany krąg, który kiedyś wypełni czyjś avatar */
+.orbita-wolne {
+  border: 2px dashed rgba(255, 122, 24, 0.28);
+  background: rgba(255, 255, 255, 0.02);
 }
 .orbita-kadr-obraz {
   transform: rotate(calc(var(--kat) * -1));

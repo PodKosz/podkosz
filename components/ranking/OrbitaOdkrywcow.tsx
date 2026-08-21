@@ -7,36 +7,45 @@ import { FireBallIcon } from "../icons";
 /**
  * Top 5 odkrywców jako konstelacja.
  *
- * Każda osoba to okrągły avatar, a wokół niego - „przyklejone" magnetycznie do krawędzi -
- * zdjęcia tytułowe boisk, które dodała. Wielkość całego układu wynika z liczby boisk: kto ma
- * najwięcej, ma największy krąg. Pierścień obraca się leniwie i zatrzymuje pod kursorem,
- * a zdjęcia obracają się w drugą stronę, żeby stały prosto.
+ * Każda osoba to okrągły avatar, a wokół niego - dotykając jego krawędzi - okrągłe zdjęcia
+ * tytułowe boisk, które dodała. Wielkość układu wynika z liczby boisk, więc pierwsze miejsce
+ * jest największe. Pierścień obraca się leniwie i staje pod kursorem, a zdjęcia obracają się
+ * w drugą stronę, żeby stały prosto.
+ *
+ * Miejsca bez właściciela zostają jako przerywane kręgi - od razu widać, ile jest jeszcze
+ * do wzięcia.
  */
 
-/** Największy i najmniejszy udział w rozmiarze - nawet jedno boisko ma być widoczne. */
+/** Ile miejsc pokazuje konstelacja. */
+export const MIEJSC_W_KONSTELACJI = 5;
+
+/** Najmniejszy udział w rozmiarze - nawet jedno boisko ma być widoczne. */
 const MIN_SKALA = 0.52;
 
 /** Kolejność na dużym ekranie: największy w środku, dalsze coraz bardziej na zewnątrz. */
 const KOLEJNOSC = ["lg:order-3", "lg:order-2", "lg:order-4", "lg:order-1", "lg:order-5"];
 
 export function OrbitaOdkrywcow({ odkrywcy }: { odkrywcy: OdkrywcaRanking[] }) {
-  if (!odkrywcy.length) return null;
-
   const maks = Math.max(...odkrywcy.map((o) => o.courts), 1);
+  const miejsca = Array.from({ length: MIEJSC_W_KONSTELACJI }, (_, i) => odkrywcy[i] ?? null);
 
   return (
-    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-10 sm:gap-x-8 lg:flex-nowrap lg:gap-x-2">
-      {odkrywcy.map((o, i) => (
-        <Gwiazda
-          key={o.slug}
-          odkrywca={o}
-          miejsce={i + 1}
-          skala={MIN_SKALA + (1 - MIN_SKALA) * (o.courts / maks)}
-          klasa={KOLEJNOSC[i] ?? ""}
-          /* kadry pierwszego miejsca wczytujemy od razu - to one witają na stronie */
-          odRazu={i === 0}
-        />
-      ))}
+    <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-12 sm:gap-x-10 lg:flex-nowrap lg:gap-x-4">
+      {miejsca.map((o, i) =>
+        o ? (
+          <Gwiazda
+            key={o.slug}
+            odkrywca={o}
+            miejsce={i + 1}
+            skala={MIN_SKALA + (1 - MIN_SKALA) * (o.courts / maks)}
+            klasa={KOLEJNOSC[i] ?? ""}
+            /* kadry pierwszego miejsca wczytujemy od razu - to one witają na stronie */
+            odRazu={i === 0}
+          />
+        ) : (
+          <WolneMiejsce key={`wolne-${i}`} miejsce={i + 1} klasa={KOLEJNOSC[i] ?? ""} />
+        )
+      )}
     </div>
   );
 }
@@ -60,18 +69,15 @@ function Gwiazda({
   return (
     <div
       className={`orbita group relative flex shrink-0 flex-col items-center ${klasa}`}
-      style={{
-        // bok całego układu: avatar plus dwa zdjęcia po bokach
-        ["--f" as string]: skala.toFixed(3),
-      }}
+      style={{ ["--f" as string]: skala.toFixed(3) }}
     >
       <div className="relative h-[var(--pole)] w-[var(--pole)]">
-        {/* poświata pod całą konstelacją */}
+        {/* poświata pod avatarem - rozjaśnia się pod kursorem */}
         <span
-          className="pointer-events-none absolute inset-[12%] rounded-full blur-[34px]"
+          className="orbita-blask pointer-events-none absolute left-1/2 top-1/2 h-[var(--avatar)] w-[var(--avatar)] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[30px]"
           style={{
             background:
-              "radial-gradient(closest-side, rgba(255,77,10,.34) 0%, rgba(255,122,24,.12) 55%, transparent 100%)",
+              "radial-gradient(closest-side, rgba(255,77,10,.5) 0%, rgba(255,122,24,.16) 58%, transparent 100%)",
           }}
         />
 
@@ -95,25 +101,20 @@ function Gwiazda({
         {/* avatar w środku */}
         <Link
           href={`/gracz/${odkrywca.slug}`}
-          className="orbita-avatar absolute left-1/2 top-1/2 grid h-[var(--avatar)] w-[var(--avatar)] -translate-x-1/2 -translate-y-1/2 place-items-center overflow-hidden rounded-full"
+          className="orbita-avatar absolute left-1/2 top-1/2 z-[2] grid h-[var(--avatar)] w-[var(--avatar)] -translate-x-1/2 -translate-y-1/2 place-items-center overflow-hidden rounded-full"
         >
           {odkrywca.avatar ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={odkrywca.avatar}
-              alt={odkrywca.name}
-              className="h-full w-full object-cover"
-            />
+            <img src={odkrywca.avatar} alt={odkrywca.name} className="h-full w-full object-cover" />
           ) : (
             <span className="flame-gradient grid h-full w-full place-items-center text-[calc(var(--avatar)*0.34)] font-bold text-black">
               {odkrywca.name.slice(0, 1).toUpperCase()}
             </span>
           )}
         </Link>
-
       </div>
 
-      <div className="mt-4 max-w-[200px] text-center">
+      <div className="max-w-[200px] text-center">
         {/*
           Numer miejsca stoi przy nicku, a nie na avatarze: zdjęcia krążą po całym obwodzie,
           więc każde miejsce na kole raz na jakiś czas zasłaniałaby okrągła miniatura.
@@ -142,6 +143,32 @@ function Gwiazda({
         <p className="mt-2 inline-flex items-center gap-1.5 text-[13px] font-semibold text-glow">
           <FireBallIcon className="h-4 w-4" /> {odkrywca.likes}
         </p>
+      </div>
+    </div>
+  );
+}
+
+/** Miejsce, które jeszcze czeka na właściciela. */
+function WolneMiejsce({ miejsce, klasa }: { miejsce: number; klasa: string }) {
+  return (
+    <div
+      className={`orbita relative flex shrink-0 flex-col items-center ${klasa}`}
+      style={{ ["--f" as string]: (MIN_SKALA + 0.06).toFixed(3) }}
+    >
+      <div className="relative h-[var(--pole)] w-[var(--pole)]">
+        <span className="orbita-wolne absolute left-1/2 top-1/2 grid h-[var(--avatar)] w-[var(--avatar)] -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full text-[calc(var(--avatar)*0.3)] font-bold text-faint">
+          {miejsce}
+        </span>
+      </div>
+
+      <div className="text-center">
+        <p className="text-[13px] text-faint">wolne miejsce</p>
+        <Link
+          href="/dodaj"
+          className="mt-1 inline-block text-[13px] font-medium text-muted transition hover:text-flame"
+        >
+          dodaj boisko
+        </Link>
       </div>
     </div>
   );

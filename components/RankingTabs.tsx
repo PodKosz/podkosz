@@ -6,7 +6,7 @@ import { Court, TYPE_LABEL } from "@/lib/types";
 import type { OdkrywcaRanking } from "@/lib/repo";
 import { plural } from "@/lib/site";
 import { CourtPhoto } from "./CourtPhoto";
-import { OrbitaOdkrywcow } from "./ranking/OrbitaOdkrywcow";
+import { MIEJSC_W_KONSTELACJI, OrbitaOdkrywcow } from "./ranking/OrbitaOdkrywcow";
 import {
   ArrowLeftIcon,
   BasketApprovedBadge,
@@ -36,7 +36,7 @@ export function RankingTabs({
       ? {
           tytul: "Ranking odkrywców",
           opis:
-            "Miejsce zależy od liczby boisk, które ktoś dodał i które przeszły sprawdzenie. Przy równej liczbie wyżej stoi ten, kogo boiska częściej podpalano.",
+            "Miejsce zależy od liczby boisk, które ktoś dodał. Przy równej liczbie wyżej stoi ten, kogo boiska częściej podpalano.",
         }
       : {
           tytul: "Najgorętsze boiska w Polsce",
@@ -337,25 +337,11 @@ function Lista({ courts, od }: { courts: Court[]; od: number }) {
 
 /** Nagłówek i konstelacja pięciu pierwszych miejsc. */
 function Konstelacja({ odkrywcy }: { odkrywcy: OdkrywcaRanking[] }) {
-  if (!odkrywcy.length) {
-    return (
-      <p className="glass rounded-[24px] p-10 text-center text-[15px] text-muted">
-        Nikt jeszcze nie dodał boiska. Bądź pierwszy.
-      </p>
-    );
-  }
-
   return (
     <section>
-      <div className="mb-8 text-center">
-        <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">
-          Top {odkrywcy.length}
-        </h2>
-        <p className="mx-auto mt-1 max-w-lg text-[14px] leading-relaxed text-muted">
-          Wielkość kręgu to liczba opublikowanych boisk. Wokół avatara krążą ich zdjęcia
-          tytułowe - kliknij, żeby wejść na kartę boiska.
-        </p>
-      </div>
+      <h2 className="mb-8 text-center text-[13px] uppercase tracking-[0.18em] text-faint">
+        Top {MIEJSC_W_KONSTELACJI}
+      </h2>
 
       <div className="py-4 sm:py-8">
         <OrbitaOdkrywcow odkrywcy={odkrywcy} />
@@ -366,15 +352,20 @@ function Konstelacja({ odkrywcy }: { odkrywcy: OdkrywcaRanking[] }) {
 
 /**
  * Miejsca 6-25: szklane wiersze z avatarem, liczbą boisk i podglądem trzech kadrów.
- * Ta sama faktura co lista boisk w drugiej zakładce.
+ *
+ * Miejsca bez właściciela zostają w liście jako przerywane wiersze - od razu widać, ile
+ * jest do wzięcia i jak ranking będzie wyglądał, gdy się wypełni.
  */
 function ListaGraczy({ odkrywcy, od }: { odkrywcy: OdkrywcaRanking[]; od: number }) {
-  if (!odkrywcy.length) return null;
+  const miejsca = Array.from(
+    { length: LISTA_DO - od + 1 },
+    (_, i) => odkrywcy[i] ?? null
+  );
 
   return (
     <section className="relative mt-16">
       <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">
-        Miejsca {od}-{od + odkrywcy.length - 1}
+        Miejsca {od}-{LISTA_DO}
       </h2>
 
       {/* rozmyta pomarańczowa poświata pod wierszami - zamyka sekcję i wtapia ją w tło */}
@@ -388,55 +379,83 @@ function ListaGraczy({ odkrywcy, od }: { odkrywcy: OdkrywcaRanking[]; od: number
       />
 
       <ol className="relative mt-4 space-y-2">
-        {odkrywcy.map((o, i) => (
-          <li key={o.slug}>
-            <Link
-              href={`/gracz/${o.slug}`}
-              className="glass row-glow flex items-center gap-4 rounded-[20px] p-3"
-            >
-              <span className="h-12 w-[3px] shrink-0 rounded-full flame-gradient opacity-70" />
+        {miejsca.map((o, i) =>
+          o ? (
+            <li key={o.slug}>
+              <Link
+                href={`/gracz/${o.slug}`}
+                className="glass row-glow flex items-center gap-4 rounded-[20px] p-3"
+              >
+                <span className="h-12 w-[3px] shrink-0 rounded-full flame-gradient opacity-70" />
 
-              <span className="w-7 shrink-0 text-center text-[15px] font-semibold tabular-nums text-faint">
-                {od + i}
-              </span>
-
-              <span className="relative grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full ring-1 ring-flame/40">
-                {o.avatar ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={o.avatar} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <span className="flame-gradient grid h-full w-full place-items-center text-[15px] font-bold text-black">
-                    {o.name.slice(0, 1).toUpperCase()}
-                  </span>
-                )}
-              </span>
-
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[15px] font-semibold">@{o.name}</span>
-                <span className="block truncate text-[13px] text-muted">
-                  {o.courts} {plural(o.courts, ["boisko", "boiska", "boisk"])} w bazie
+                <span className="w-7 shrink-0 text-center text-[15px] font-semibold tabular-nums text-faint">
+                  {od + i}
                 </span>
-              </span>
 
-              {/* trzy kadry na zakładkę - zapowiedź tego, co widać w konstelacji wyżej */}
-              <span className="hidden shrink-0 items-center sm:flex">
-                {o.kadry.slice(0, 3).map((k, j) => (
-                  <span
-                    key={k.slug}
-                    className="relative h-10 w-10 overflow-hidden rounded-full ring-2 ring-void"
-                    style={{ marginLeft: j ? -12 : 0, zIndex: 3 - j }}
-                  >
-                    <CourtPhoto photo={k.photo} seed={k.seed} sizes="80px" />
+                <span className="relative grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full ring-1 ring-flame/40">
+                  {o.avatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={o.avatar} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="flame-gradient grid h-full w-full place-items-center text-[15px] font-bold text-black">
+                      {o.name.slice(0, 1).toUpperCase()}
+                    </span>
+                  )}
+                </span>
+
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[15px] font-semibold">@{o.name}</span>
+                  <span className="block truncate text-[13px] text-muted">
+                    {o.courts} {plural(o.courts, ["boisko", "boiska", "boisk"])} w bazie
                   </span>
-                ))}
-              </span>
+                </span>
 
-              <span className="flex w-16 shrink-0 items-center justify-end gap-1.5 text-[15px] font-bold text-glow">
-                <FireBallIcon className="h-4 w-4" /> {o.likes}
-              </span>
-            </Link>
-          </li>
-        ))}
+                {/* trzy kadry na zakładkę - zapowiedź tego, co widać w konstelacji wyżej */}
+                <span className="hidden shrink-0 items-center sm:flex">
+                  {o.kadry.slice(0, 3).map((k, j) => (
+                    <span
+                      key={k.slug}
+                      className="relative h-10 w-10 overflow-hidden rounded-full ring-2 ring-void"
+                      style={{ marginLeft: j ? -12 : 0, zIndex: 3 - j }}
+                    >
+                      <CourtPhoto photo={k.photo} seed={k.seed} sizes="80px" />
+                    </span>
+                  ))}
+                </span>
+
+                <span className="flex w-16 shrink-0 items-center justify-end gap-1.5 text-[15px] font-bold text-glow">
+                  <FireBallIcon className="h-4 w-4" /> {o.likes}
+                </span>
+              </Link>
+            </li>
+          ) : (
+            <li key={`wolne-${od + i}`}>
+              <div className="flex items-center gap-4 rounded-[20px] border border-dashed border-flame/20 bg-white/[0.015] p-3">
+                <span className="h-12 w-[3px] shrink-0 rounded-full bg-white/10" />
+
+                <span className="w-7 shrink-0 text-center text-[15px] font-semibold tabular-nums text-faint/70">
+                  {od + i}
+                </span>
+
+                <span className="h-12 w-12 shrink-0 rounded-full border border-dashed border-flame/25" />
+
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[15px] font-medium text-faint">wolne miejsce</span>
+                  <span className="block text-[13px] text-faint/70">
+                    dodaj boisko, żeby tu wejść
+                  </span>
+                </span>
+
+                <Link
+                  href="/dodaj"
+                  className="shrink-0 rounded-full border border-hairline px-4 py-2 text-[12px] font-medium text-muted transition hover:border-flame/50 hover:text-flame"
+                >
+                  Dodaj boisko
+                </Link>
+              </div>
+            </li>
+          )
+        )}
       </ol>
     </section>
   );
