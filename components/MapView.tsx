@@ -829,11 +829,12 @@ function markerHtml(court: MapCourt) {
 
         <circle cx="20" cy="20" r="19" fill="url(#${id}-skora)"/>
 
-        <g fill="none" stroke="${szew}" stroke-width="1" stroke-linecap="round">
+        <g fill="none" stroke="${szew}" stroke-width=".95" stroke-linecap="round">
           <circle cx="20" cy="20" r="18.5"/>
-          <path d="M20 1.5v37M1.5 20h37"/>
-          <path d="M20 1.5C11.6 7.6 7.2 13.3 7.2 20s4.4 12.4 12.8 18.5"/>
-          <path d="M20 1.5C28.4 7.6 32.8 13.3 32.8 20s-4.4 12.4-12.8 18.5"/>
+          <path d="M5.6 8.4C12.6 12.4 22.4 18.6 34.6 29.8"/>
+          <path d="M1.4 19.2C9.4 23.4 18.6 26.6 26.6 27.2c3.4.3 5.6 3.2 6.8 7.2"/>
+          <path d="M26.4 2.2C33.2 8.4 36.4 15.8 34.6 29.8"/>
+          <path d="M5 31.4C11.8 36.4 22.4 37.8 30.6 34.8"/>
         </g>
       </svg>
     </span>
