@@ -24,7 +24,7 @@ export interface CourtValues {
   description: string;
   basketApproved: boolean;
   basketNote: string;
-  /** limonkowa plakietka „Kuriozum" - boisko dziwne albo śmieszne */
+  /** limonkowa plakietka „Śmieszne boisko” */
   funny: boolean;
   /** link do filmiku YouTube Shorts */
   shortsUrl: string;

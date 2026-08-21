@@ -109,7 +109,7 @@ export function StatsAdmin() {
         <Tile value={data.visits_today} label="Wejść dzisiaj" />
 
         <Tile value={data.courts_approved} label="Basket Approved" />
-        <Tile value={data.courts_funny} label="Kuriozów" lime />
+        <Tile value={data.courts_funny} label="Śmiesznych boisk" lime />
         <Tile value={data.courts_shorts} label="Boisk z filmikiem" />
         <Tile value={data.leads_new} label="Kandydatów OSM do sprawdzenia" />
       </section>

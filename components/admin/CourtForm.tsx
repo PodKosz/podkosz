@@ -556,7 +556,7 @@ export function CourtForm({
           >
             <FunnyBadge />
             <span className="text-[13px] text-muted">
-              Kuriozum - dziwne albo śmieszne boisko: limonkowa plakietka i osobne losowanie
+              Śmieszne boisko - limonkowa plakietka i osobne losowanie
             </span>
             <span className="switch ml-auto" data-on={v.funny} />
           </button>
