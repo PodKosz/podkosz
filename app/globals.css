@@ -161,69 +161,106 @@ body {
 /* ---------- Odznaczenia ---------- */
 
 /*
-  Medal odznaczenia: okrągła płytka z płomykiem w środku. Stopnie idą temperaturą, nie
-  metalem - od przygaszonej iskry, przez żar i płomień, do bieli rozgrzanego metalu.
-  Poświata rośnie razem ze stopniem, więc „Biały żar" widać na liście od razu.
+  Medal odznaczenia.
+
+  Pierwsza wersja świeciła kolorowymi poświatami i wyglądała jak generyczna „odznaka z
+  gry". Teraz płytka jest ciemna i matowa jak anodowany metal: pionowy rozjaśniacz u góry
+  (światło pada z góry), włosowa obwódka w barwie stopnia, jedna wąska poświata pod
+  spodem i tyle. Stopień poznaje się po kolorze obwódki i ikony, nie po jarzeniu.
+
+  Kolory trzyma po jednej zmiennej na stopień, więc dodanie kolejnego to trzy linijki.
 */
 .medal {
+  position: relative;
   display: grid;
   place-items: center;
   flex: none;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.medal svg {
-  width: 58%;
-  height: 58%;
-}
-
-/* kolor ikony w środku medalu - rysunek jest w `currentColor` */
-.medal-iskra {
-  color: #f0c39c;
-  background: radial-gradient(120% 120% at 30% 15%, rgba(194, 112, 58, 0.3), rgba(20, 14, 10, 0.9));
-  border-color: rgba(194, 112, 58, 0.45);
-  box-shadow: 0 6px 18px -8px rgba(194, 112, 58, 0.5);
-}
-
-.medal-zar {
-  color: #ffc48c;
-  background: radial-gradient(120% 120% at 30% 15%, rgba(255, 106, 18, 0.34), rgba(24, 12, 6, 0.9));
-  border-color: rgba(255, 106, 18, 0.5);
-  box-shadow: 0 8px 22px -8px rgba(255, 106, 18, 0.55);
-}
-
-.medal-plomien {
-  color: #ffdcae;
-  background: radial-gradient(120% 120% at 30% 15%, rgba(255, 160, 60, 0.42), rgba(28, 12, 4, 0.9));
-  border-color: rgba(255, 168, 80, 0.66);
+  color: var(--medal-ikona, #6f6f7a);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.075) 0%, rgba(255, 255, 255, 0) 46%),
+    radial-gradient(120% 90% at 50% 118%, var(--medal-tint, transparent) 0%, transparent 70%),
+    linear-gradient(180deg, #191820 0%, #0d0d11 100%);
   box-shadow:
-    0 0 0 1px rgba(255, 168, 80, 0.16),
-    0 10px 26px -8px rgba(255, 122, 24, 0.62);
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    0 4px 12px -6px rgba(0, 0, 0, 0.9);
 }
 
 /*
-  Biały żar świeci na zimno: w wysokiej temperaturze płomień przechodzi w błękit, więc
-  szczyt jest niebiesko-biały i od pierwszego spojrzenia nie należy do pomarańczowej
-  trójki pod nim.
+  Obwódka jako osobna warstwa, nie `border`: przy 1 px obramowania na okręgu przeglądarka
+  gubi kolor po zaokrągleniu, a `inset` w box-shadow trzyma równą grubość na każdej średnicy.
+*/
+.medal::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px var(--medal-ring, rgba(255, 255, 255, 0.07));
+  pointer-events: none;
+}
+
+.medal svg {
+  width: 56%;
+  height: 56%;
+}
+
+.medal-iskra {
+  --medal-ring: rgba(206, 146, 96, 0.44);
+  --medal-tint: rgba(206, 146, 96, 0.16);
+  --medal-ikona: #e8c6a8;
+}
+
+.medal-zar {
+  --medal-ring: rgba(255, 142, 62, 0.5);
+  --medal-tint: rgba(255, 122, 24, 0.2);
+  --medal-ikona: #ffc79a;
+}
+
+.medal-plomien {
+  --medal-ring: rgba(255, 186, 110, 0.62);
+  --medal-tint: rgba(255, 150, 60, 0.26);
+  --medal-ikona: #ffdcb4;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 4px 14px -6px rgba(255, 122, 24, 0.4);
+}
+
+/*
+  Szczyt idzie na zimno: w wysokiej temperaturze płomień przechodzi w błękit, więc
+  „Biały żar" ma stalową obwódkę i chłodną ikonę - inna liga niż pomarańczowa trójka.
 */
 .medal-bialy-zar {
-  color: #eef4ff;
-  background:
-    radial-gradient(120% 120% at 30% 12%, rgba(255, 255, 255, 0.62), rgba(140, 190, 255, 0.32) 44%,
-      rgba(12, 18, 32, 0.94) 100%);
-  border-color: rgba(214, 232, 255, 0.8);
+  --medal-ring: rgba(198, 220, 255, 0.72);
+  --medal-tint: rgba(120, 170, 255, 0.24);
+  --medal-ikona: #eaf1ff;
   box-shadow:
-    0 0 0 1px rgba(120, 170, 255, 0.42),
-    0 12px 34px -8px rgba(90, 150, 255, 0.7);
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 4px 16px -6px rgba(120, 170, 255, 0.45);
 }
 
 .medal-brak {
-  color: #6f6f7a;
-  background: rgba(255, 255, 255, 0.03);
-  border-color: var(--color-hairline);
-  box-shadow: none;
+  --medal-ring: rgba(255, 255, 255, 0.07);
+  --medal-tint: transparent;
+  --medal-ikona: #62626c;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
+
+/* pastylka wyróżnienia - ta sama powierzchnia co medal, tylko rozciągnięta */
+.wyroznienie {
+  border-radius: 999px;
+  color: var(--color-ink);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 186, 110, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 4px 14px -8px rgba(255, 122, 24, 0.35);
+}
+
+.wyroznienie svg {
+  color: #ffd2a6;
+}
+
 
 /*
   Pasek postępu pokazuje całą drogę do szczytu, a kolor mówi, gdzie jesteś: brąz iskry,

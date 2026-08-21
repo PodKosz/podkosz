@@ -168,14 +168,14 @@ function Gwiazda({
           i zaczyna zasłaniać sąsiednie miejsca w konstelacji.
         */}
         {odkrywca.plakietki.length > 0 && (
-          <span className="mt-1.5 flex flex-wrap items-center justify-center gap-1">
+          <span className="mt-2 flex flex-wrap items-center justify-center gap-1.5">
             {odkrywca.plakietki.map((p) => (
               <span
                 key={p.id}
                 title={p.nazwa}
-                className={`medal medal-${p.poziom} h-7 w-7`}
+                className={`medal medal-${p.poziom} h-8 w-8`}
               >
-                <IkonaOdznaczenia id={p.id} className="h-[15px] w-[15px]" />
+                <IkonaOdznaczenia id={p.id} className="h-[17px] w-[17px]" />
               </span>
             ))}
           </span>

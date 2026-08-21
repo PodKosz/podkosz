@@ -48,7 +48,7 @@ export default async function RankingPage() {
         kosz od razu wygląda jak błąd.
       */}
       <div
-        className="pointer-events-none fixed left-1/2 top-[-6vh] -z-10 aspect-[480/440] w-[min(1150px,160vw)] opacity-[0.42] sm:w-[min(1040px,94vw)]"
+        className="pointer-events-none fixed left-1/2 top-[-14vh] -z-10 aspect-[480/440] w-[min(1600px,210vw)] opacity-[0.2] sm:w-[min(1720px,132vw)]"
         style={{ translate: "-50% 0", rotate: "-3deg" }}
         aria-hidden
       >

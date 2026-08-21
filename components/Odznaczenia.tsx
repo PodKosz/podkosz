@@ -113,10 +113,8 @@ export function Odznaczenia({ statystyki }: { statystyki: StatystykiGracza }) {
           <span
             key={w.id}
             title={w.opis}
-            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold ${
-              w.zdobyte
-                ? "medal-plomien text-ink"
-                : "border border-hairline bg-white/[0.025] text-faint"
+            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium ${
+              w.zdobyte ? "wyroznienie" : "border border-hairline bg-white/[0.025] text-faint"
             }`}
           >
             <IkonaOdznaczenia id={w.id} className="h-[18px] w-[18px]" />
