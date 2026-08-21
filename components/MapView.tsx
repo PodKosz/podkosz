@@ -778,12 +778,11 @@ export function MapView({
 }
 
 /**
- * Pinezka boiska: cały krążek to piłka do koszykówki.
+ * Pinezka boiska: krążek w gradiencie, a na nim włosowy rysunek piłki.
  *
- * Wcześniej piłka była małą ikonką w środku kolorowego kółka - teraz szwy dochodzą do
- * samej krawędzi, więc pinezka jest piłką, a nie kółkiem z naklejką. Bryłę robią trzy
- * rzeczy: promieniowy gradient (światło pada z góry po lewej), jasny refleks nad światłem
- * i ciemny łuk przy dolnej krawędzi. To ten sam zestaw, którym rysuje się kroplę wody.
+ * Kontur jest płaski i cienki - jedna kreska na obwodzie i cztery szwy - ale rozłożony na
+ * całym kółku, nie wciśnięty w środek jako mała ikonka. Głębię daje wyłącznie gradient pod
+ * spodem: rozjaśniony grzbiet u góry po lewej, nasycona pomarańcz w środku, przygaszony spód.
  *
  * Identyfikatory gradientów muszą być unikalne dla każdej pinezki - w SVG są globalne dla
  * dokumentu i przy powtórzeniu wszystkie kule brałyby gradient pierwszej.
@@ -803,11 +802,12 @@ function markerHtml(court: MapCourt) {
   const stem = heat ? "#a855f7" : "#ff7a18";
   const dot = heat ? "rgba(168,85,247,.85)" : "rgba(255,122,24,.85)";
 
-  /* skóra piłki: od rozświetlonego grzbietu do przygaszonego spodu */
+  /* gradient krążka: od rozświetlonego grzbietu do przygaszonego spodu */
   const skora = heat
-    ? ["#efdcff", "#bd77f2", "#7d24c8", "#4a1088"]
-    : ["#ffcf94", "#f8871f", "#d84a06", "#8f2c02"];
-  const szew = heat ? "rgba(26,3,48,.72)" : "rgba(48,14,0,.7)";
+    ? ["#f0dcff", "#c084fc", "#8b2fd6", "#5b1a9e"]
+    : ["#ffdaa6", "#ffa03d", "#ef6710", "#c03c04"];
+  /* kontur: ciemny, ale cienki i półprzezroczysty - ma rysować, nie dzielić kółka na części */
+  const szew = heat ? "rgba(30,6,56,.5)" : "rgba(58,18,0,.5)";
 
   return `
   <div class="relative flex flex-col items-center transition-transform duration-200 ease-out"
@@ -819,39 +819,22 @@ function markerHtml(court: MapCourt) {
           style="width:${size}px;height:${size}px;box-shadow:0 6px 18px -4px ${shadow}">
       <svg viewBox="0 0 40 40" style="width:100%;height:100%;display:block">
         <defs>
-          <radialGradient id="${id}-skora" cx="33%" cy="26%" r="82%">
+          <radialGradient id="${id}-skora" cx="33%" cy="26%" r="84%">
             <stop offset="0" stop-color="${skora[0]}"/>
-            <stop offset=".38" stop-color="${skora[1]}"/>
-            <stop offset=".74" stop-color="${skora[2]}"/>
+            <stop offset=".4" stop-color="${skora[1]}"/>
+            <stop offset=".76" stop-color="${skora[2]}"/>
             <stop offset="1" stop-color="${skora[3]}"/>
-          </radialGradient>
-          <radialGradient id="${id}-refleks" cx="50%" cy="50%" r="50%">
-            <stop offset="0" stop-color="rgba(255,255,255,.45)"/>
-            <stop offset="1" stop-color="rgba(255,255,255,0)"/>
-          </radialGradient>
-          <linearGradient id="${id}-obwod" x1="0" y1="0" x2=".3" y2="1">
-            <stop offset="0" stop-color="rgba(255,255,255,.6)"/>
-            <stop offset=".55" stop-color="rgba(255,255,255,.12)"/>
-            <stop offset="1" stop-color="rgba(0,0,0,.32)"/>
-          </linearGradient>
-          <radialGradient id="${id}-spod" cx="50%" cy="88%" r="62%">
-            <stop offset=".55" stop-color="rgba(0,0,0,0)"/>
-            <stop offset="1" stop-color="rgba(0,0,0,.26)"/>
           </radialGradient>
         </defs>
 
         <circle cx="20" cy="20" r="19" fill="url(#${id}-skora)"/>
 
-        <g fill="none" stroke="${szew}" stroke-width="1.55" stroke-linecap="round">
-          <path d="M20 1.2v37.6M1.2 20h37.6"/>
-          <path d="M20 1.2C11.4 7.4 7 13.2 7 20s4.4 12.6 13 18.8"/>
-          <path d="M20 1.2C28.6 7.4 33 13.2 33 20s-4.4 12.6-13 18.8"/>
+        <g fill="none" stroke="${szew}" stroke-width="1" stroke-linecap="round">
+          <circle cx="20" cy="20" r="18.5"/>
+          <path d="M20 1.5v37M1.5 20h37"/>
+          <path d="M20 1.5C11.6 7.6 7.2 13.3 7.2 20s4.4 12.4 12.8 18.5"/>
+          <path d="M20 1.5C28.4 7.6 32.8 13.3 32.8 20s-4.4 12.4-12.8 18.5"/>
         </g>
-
-        <ellipse cx="14.5" cy="12" rx="5.6" ry="3.6" fill="url(#${id}-refleks)"
-                 transform="rotate(-24 13.5 11)"/>
-        <circle cx="20" cy="20" r="19" fill="url(#${id}-spod)"/>
-        <circle cx="20" cy="20" r="18.5" fill="none" stroke="url(#${id}-obwod)" stroke-width="1.1"/>
       </svg>
     </span>
 
