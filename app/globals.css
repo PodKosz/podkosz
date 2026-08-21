@@ -741,8 +741,12 @@ select option {
     box-shadow 320ms ease,
     scale 320ms cubic-bezier(0.32, 0.72, 0, 1);
 }
-.orbita:hover .orbita-avatar,
-.orbita-avatar:hover {
+/*
+  Powiększenie odpala tylko sam avatar. Wcześniej reagował na kursor gdziekolwiek w orbicie,
+  więc najechanie na małe kółko boiska ruszało też twarz w środku.
+*/
+.orbita-avatar:hover,
+.orbita-avatar:focus-visible {
   scale: 1.05;
   box-shadow:
     0 0 0 2px rgba(255, 160, 60, 0.9),
@@ -755,7 +759,8 @@ select option {
   transition: opacity 320ms ease;
   opacity: 0.75;
 }
-.orbita:hover .orbita-blask {
+.orbita-avatar:hover ~ .orbita-blask,
+.orbita:has(.orbita-avatar:hover) .orbita-blask {
   opacity: 1;
 }
 
@@ -771,32 +776,49 @@ select option {
   Kadr ustawiamy obrotem wokół środka pola, a samo zdjęcie obracamy w drugą stronę - inaczej
   kręciłoby się razem z pierścieniem i stało do góry nogami.
 */
-.orbita-kadr {
+/*
+  Gniazdo kadru: ustawia zdjęcie na okręgu (obrót wokół środka pola) i „plumka" - unosi się
+  o 5% i rośnie o 5%, własnym tempem i z własnym opóźnieniem, więc pierścień pulsuje bez
+  wspólnego rytmu. Animuję osobne właściwości `translate`/`scale`, bo `transform` trzyma tu
+  pozycję na okręgu i nadpisanie go wyrzuciłoby kadr na środek.
+*/
+.orbita-kadr-slot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
   /* `--s` to udział podpaleń tego boiska; odstęp liczymy od pełnego kadru, więc nawet
      największe zdjęcie nie wchodzi na sąsiednie */
   width: calc(var(--kadr) * var(--s, 1));
   height: calc(var(--kadr) * var(--s, 1));
   margin-left: calc(var(--kadr) * var(--s, 1) / -2);
   margin-top: calc(var(--kadr) * var(--s, 1) / -2);
-  /*
-    „Plumkanie": każde zdjęcie unosi się i rośnie o włos, własnym tempem (`--puls`) i z
-    własnym, ujemnym opóźnieniem (`--opoz`), żeby od pierwszej sekundy były w różnych
-    fazach. Animuję osobne właściwości `translate`/`scale`, bo `transform` trzyma tu
-    pozycję na okręgu i nadpisanie go wyrzuciłoby kadr na środek.
-  */
-  animation: kadr-plum var(--puls, 5s) ease-in-out var(--opoz, 0s) infinite alternate;
   transform: rotate(var(--kat)) translateY(calc(var(--promien) * -1));
+  animation: kadr-plum var(--puls, 5s) ease-in-out var(--opoz, 0s) infinite alternate;
+}
+
+/* zdjęcie pod kursorem: delikatnie rośnie i dostaje cieplejszą obwódkę */
+.orbita-kadr {
+  position: relative;
   box-shadow:
     0 0 0 2px rgba(7, 7, 10, 0.9),
     0 0 0 3px rgba(255, 122, 24, 0.35),
     0 12px 30px -12px rgba(0, 0, 0, 0.9);
-  transition: box-shadow 260ms ease;
+  transition:
+    scale 280ms cubic-bezier(0.32, 0.72, 0, 1),
+    box-shadow 260ms ease;
 }
-.orbita-kadr:hover {
+
+.orbita-kadr:hover,
+.orbita-kadr:focus-visible {
+  scale: 1.16;
   box-shadow:
     0 0 0 2px rgba(7, 7, 10, 0.9),
     0 0 0 4px rgba(255, 160, 60, 0.95),
     0 16px 40px -10px rgba(255, 77, 10, 0.8);
+}
+
+/* podniesienie robi gniazdo - to ono jest sąsiadem innych kadrów w układzie */
+.orbita-kadr-slot:hover {
   z-index: 20;
 }
 
@@ -842,17 +864,22 @@ select option {
   top: 50%;
   translate: 0 -50%;
   pointer-events: none;
-  padding-right: 0.06em;
-  font-size: calc(var(--avatar) * 0.48);
-  font-weight: 800;
-  line-height: 0.92;
-  letter-spacing: -0.045em;
+  padding-right: 0.04em;
+  font-size: calc(var(--avatar) * 0.52);
+  /*
+    Cienka kreska zamiast grubego bloku: przy `font-weight: 800` cyfra wyglądała jak naklejka
+    na zdjęciu. Lekki krój i minimalny gradient (biel z ciepłym spodem) siedzą na avatarze
+    jak nadruk, a nie jak wklejka.
+  */
+  font-weight: 300;
+  line-height: 0.9;
+  letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
-  background: linear-gradient(168deg, #ffffff 0%, #ffe3bd 34%, #ff9a3c 74%, #ff5f12 100%);
+  background: linear-gradient(170deg, #ffffff 0%, #fff3e4 46%, #ffcf9e 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 3px 14px rgba(0, 0, 0, 0.6));
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.45));
 }
 
 .orbita-wolne {
@@ -876,14 +903,14 @@ select option {
 }
 
 /* pod kursorem cała orbita zamiera - łatwiej wtedy trafić w konkretne boisko */
-.orbita:hover .orbita-kadr,
-.orbita:focus-within .orbita-kadr {
+.orbita:hover .orbita-kadr-slot,
+.orbita:focus-within .orbita-kadr-slot {
   animation-play-state: paused;
 }
 
 /* kto nie chce ruchu, ma spokój */
 @media (prefers-reduced-motion: reduce) {
-  .orbita-kadr {
+  .orbita-kadr-slot {
     animation: none;
   }
 }

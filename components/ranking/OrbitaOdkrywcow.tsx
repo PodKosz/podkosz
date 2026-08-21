@@ -138,11 +138,15 @@ function Gwiazda({
         {/* pierścień ze zdjęciami boisk - kręci się, pod kursorem staje */}
         <div className="orbita-pierscien absolute inset-0">
           {kadry.map((k, i) => (
-            <Link
+            /*
+              Pozycję na okręgu i „plumkanie" trzyma gniazdo, a nie samo zdjęcie: gdyby oba
+              siedziały na jednym elemencie, animacja skali blokowałaby powiększenie pod
+              kursorem (animacja wygrywa z regułą :hover). Rozdzielone - gniazdo oddycha,
+              zdjęcie rośnie.
+            */
+            <span
               key={k.slug}
-              href={`/boisko/${k.slug}`}
-              title={k.name}
-              className="orbita-kadr absolute left-1/2 top-1/2 block overflow-hidden rounded-full"
+              className="orbita-kadr-slot"
               style={{
                 ["--kat" as string]: `${-90 + i * krok}deg`,
                 ["--s" as string]: skalaKadru(k.likes).toFixed(3),
@@ -157,10 +161,16 @@ function Gwiazda({
                 ["--opoz" as string]: `-${((i * 1.37) % 4).toFixed(2)}s`,
               }}
             >
-              <span className="orbita-kadr-obraz block h-full w-full overflow-hidden rounded-full">
-                <CourtPhoto photo={k.photo} seed={k.seed} sizes="120px" priority={odRazu} />
-              </span>
-            </Link>
+              <Link
+                href={`/boisko/${k.slug}`}
+                title={k.name}
+                className="orbita-kadr block h-full w-full overflow-hidden rounded-full"
+              >
+                <span className="orbita-kadr-obraz block h-full w-full overflow-hidden rounded-full">
+                  <CourtPhoto photo={k.photo} seed={k.seed} sizes="120px" priority={odRazu} />
+                </span>
+              </Link>
+            </span>
           ))}
         </div>
 
