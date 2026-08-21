@@ -326,6 +326,19 @@ export interface OdkrywcaRanking {
   kadry: KadrOdkrywcy[];
 }
 
+/*
+  Podpisy, pod którymi kryje się „ktokolwiek bez konta". Zgłoszenia od gości dostają w bazie
+  wspólną nazwę autora, więc w rankingu zbierałyby się w jedną pozycję - i po kilkudziesięciu
+  anonimowych boiskach ta jedna pozycja na zawsze zajmowałaby pierwsze miejsce, mimo że stoi
+  za nią wiele różnych osób. Dlatego w rankingu graczy takich wpisów nie liczymy; boiska
+  zostają na mapie i mają podpis autora, tylko nie tworzą „gracza".
+*/
+const AUTORZY_ANONIMOWI = new Set(["gosc", "gość", "gość anonimowy", "anonim", "użytkownik"]);
+
+export function czyAutorAnonimowy(nazwa: string): boolean {
+  return AUTORZY_ANONIMOWI.has(nazwa.trim().toLowerCase());
+}
+
 /** Avatary z profili, żeby ranking pokazywał twarze, a nie same nicki. */
 const fetchAvatary = unstable_cache(
   async (): Promise<Record<string, string>> => {
@@ -357,26 +370,29 @@ export async function listRankingOdkrywcow(ile = 25): Promise<OdkrywcaRanking[]>
     fetchAvatary(),
   ]);
 
-  return odkrywcy.slice(0, ile).map((o) => {
-    const moje = courts
-      .filter((c) => c.addedBy === o.name)
-      .sort((a, b) => b.likes - a.likes)
-      .slice(0, 10);
+  return odkrywcy
+    .filter((o) => !czyAutorAnonimowy(o.name))
+    .slice(0, ile)
+    .map((o) => {
+      const moje = courts
+        .filter((c) => c.addedBy === o.name)
+        .sort((a, b) => b.likes - a.likes)
+        .slice(0, 10);
 
-    return {
-      name: o.name,
-      slug: slugifyPlace(o.name),
-      courts: o.courts,
-      likes: o.likes,
-      avatar: avatary[o.name] ?? null,
-      kadry: moje.map((c) => ({
-        slug: c.slug,
-        name: c.name,
-        photo: c.photos[0],
-        seed: c.seed,
-      })),
-    };
-  });
+      return {
+        name: o.name,
+        slug: slugifyPlace(o.name),
+        courts: o.courts,
+        likes: o.likes,
+        avatar: avatary[o.name] ?? null,
+        kadry: moje.map((c) => ({
+          slug: c.slug,
+          name: c.name,
+          photo: c.photos[0],
+          seed: c.seed,
+        })),
+      };
+    });
 }
 
 export async function getUserReactions(
