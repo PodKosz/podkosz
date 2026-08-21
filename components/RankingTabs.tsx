@@ -36,7 +36,7 @@ export function RankingTabs({
       ? {
           tytul: "Ranking odkrywców",
           opis:
-            "Miejsce zależy od liczby boisk, które ktoś dodał. Przy równej liczbie wyżej stoi ten, kogo boiska częściej podpalano.",
+            "W rankingu liczą się tylko zalogowani użytkownicy. Miejsce zależy od liczby boisk, które ktoś dodał - przy równej liczbie wyżej stoi ten, kogo boiska częściej podpalano.",
         }
       : {
           tytul: "Najgorętsze boiska w Polsce",
