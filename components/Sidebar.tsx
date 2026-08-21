@@ -382,7 +382,7 @@ function CourtCard({
           </span>
           {court.funny && (
             <span
-              title="Dziwne boisko"
+              title="Kuriozum - dziwne albo śmieszne boisko"
               className="h-2 w-2 shrink-0 rounded-full lime-gradient"
             />
           )}

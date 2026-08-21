@@ -66,7 +66,7 @@ export interface Court {
   likes: number;
   /** wyróżnienie od administratora */
   basketApproved: boolean;
-  /** limonkowa plakietka: dziwne albo śmieszne boisko */
+  /** limonkowa plakietka „Kuriozum": boisko dziwne albo śmieszne */
   funny?: boolean;
   /** link do filmiku YouTube Shorts z boiska */
   shortsUrl?: string;

@@ -168,10 +168,16 @@ export function BasketApprovedBadge({ className = "" }: { className?: string }) 
   );
 }
 
-/** Limonkowa plakietka dla boisk dziwnych i śmiesznych. */
+/**
+ * Limonkowa plakietka „Kuriozum" - boiska dziwne, śmieszne, warte nagrania.
+ *
+ * Nazwa zamiast opisowego „dziwne boisko": jedno słowo mieści się na plakietce przy kadrze,
+ * brzmi jak wyróżnienie, a nie jak zarzut, i obejmuje wszystko od kosza na drzewie do
+ * boiska na dachu.
+ */
 export function FunnyBadge({
   className = "",
-  label = "Dziwne boisko",
+  label = "Kuriozum",
 }: {
   className?: string;
   label?: string;
