@@ -82,8 +82,14 @@ function Plakietka({
         <IkonaOdznaczenia id={id} className="h-[23px] w-[23px]" />
       </button>
 
-      {/* dymek: wychodzi w górę, wyśrodkowany na plakietce, nieklikalny */}
-      <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 w-max max-w-[220px] -translate-x-1/2 scale-95 rounded-2xl px-3.5 py-2.5 text-left opacity-0 transition duration-200 group-hover:scale-100 group-hover:opacity-100 group-focus-within:scale-100 group-focus-within:opacity-100 szklo-pro">
+      {/*
+        Dymek ma własną klasę `dymek`, a nie `szklo-pro`: tamta ustawia `position: relative`
+        i `overflow: hidden` oraz dokłada skośną smugę w `::after` - w dymku wypychało to
+        tekst poza kartę i pokazywało smugę jako dziwny kleks.
+
+        Wychodzi w dół, nie w górę: nad plakietkami stoi nick, a dymek go zasłaniał.
+      */}
+      <span className="dymek pointer-events-none top-full left-1/2 z-20 mt-3 w-max max-w-[230px] -translate-x-1/2 scale-95 px-4 py-3 text-left opacity-0 transition duration-200 group-hover:scale-100 group-hover:opacity-100 group-focus-within:scale-100 group-focus-within:opacity-100">
         <span className="block text-[13px] font-semibold leading-tight">{tytul}</span>
         <span className="mt-0.5 block text-[11px] uppercase tracking-[0.12em] text-flame">
           {stopien}
