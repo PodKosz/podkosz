@@ -7,10 +7,17 @@ export interface CheckinSlot {
   people: number;
 }
 
+/** Najdłuższy zakres, jaki wolno zadeklarować - tyle samo pilnuje wyzwalacz w bazie. */
+export const MAX_GODZIN = 12;
+
 /**
- * Deklaracje gry na dziś: „idę o 18:00".
+ * Deklaracje gry na dziś: „idę od 18:00 do 21:00".
  *
- * Czytamy je funkcją zbiorczą w bazie, więc na zewnątrz nie wychodzi lista osób -
+ * Zakres trzymamy jako osobny wiersz na każdą godzinę. Wygląda to na rozrzutność, ale
+ * dzięki temu pytanie „ile osób jest o 19:00" zostaje zwykłym zliczeniem, bez rozwijania
+ * przedziałów, a godziny z przeszłości od razu robią historię gry pod odznaczenia.
+ *
+ * Czytamy funkcjami zbiorczymi w bazie, więc na zewnątrz nie wychodzi lista osób -
  * tylko godziny i liczby. Własną deklarację widzi wyłącznie jej autor (RLS).
  */
 export async function fetchCheckins(courtId: string): Promise<CheckinSlot[]> {
@@ -26,10 +33,24 @@ export async function fetchCheckins(courtId: string): Promise<CheckinSlot[]> {
   }));
 }
 
-/** Godzina, na którą zalogowany użytkownik zapisał się dziś na to boisko (albo null). */
-export async function fetchMySlot(courtId: string): Promise<number | null> {
+/**
+ * Ile różnych osób wybiera się dziś na to boisko.
+ *
+ * Osobne pytanie, bo sumy z `fetchCheckins` nie wolno dodać: ktoś zapisany na cztery
+ * godziny siedzi w czterech wierszach i policzyłby się cztery razy.
+ */
+export async function fetchOsoby(courtId: string): Promise<number> {
   const supabase = await supabaseBrowser();
-  if (!supabase) return null;
+  if (!supabase) return 0;
+
+  const { data } = await supabase.rpc("checkins_osoby", { in_court: courtId });
+  return typeof data === "number" ? data : 0;
+}
+
+/** Godziny, na które zalogowany użytkownik zapisał się dziś na to boisko. */
+export async function fetchMyHours(courtId: string): Promise<number[]> {
+  const supabase = await supabaseBrowser();
+  if (!supabase) return [];
 
   const today = new Date().toISOString().slice(0, 10);
   const { data } = await supabase
@@ -37,13 +58,16 @@ export async function fetchMySlot(courtId: string): Promise<number | null> {
     .select("hour")
     .eq("court_id", courtId)
     .eq("day", today)
-    .maybeSingle();
+    .order("hour");
 
-  return (data as { hour: number } | null)?.hour ?? null;
+  return ((data ?? []) as { hour: number }[]).map((r) => r.hour);
 }
 
-/** Zapisuje deklarację na dziś. Druga deklaracja na tym boisku nadpisuje pierwszą. */
-export async function declareToday(courtId: string, hour: number): Promise<void> {
+/**
+ * Zapisuje deklarację na dziś dla zakresu godzin (włącznie z końcem).
+ * Nowa deklaracja zastępuje poprzednią na tym boisku.
+ */
+export async function declareToday(courtId: string, od: number, doGodziny = od): Promise<void> {
   const supabase = await supabaseBrowser();
   if (!supabase) throw new Error("Brak połączenia z bazą.");
 
@@ -52,23 +76,40 @@ export async function declareToday(courtId: string, hour: number): Promise<void>
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Trzeba być zalogowanym.");
 
+  const start = Math.min(od, doGodziny);
+  const koniec = Math.max(od, doGodziny);
+  if (koniec - start + 1 > MAX_GODZIN) {
+    throw new Error(`Najwyżej ${MAX_GODZIN} godzin na jednym boisku w ciągu dnia.`);
+  }
+
   const today = new Date().toISOString().slice(0, 10);
 
-  // ograniczenie unikalności (boisko, osoba, dzień) pilnuje, że jest jedna deklaracja;
-  // zmiana godziny to usunięcie starej i wstawienie nowej
+  /* zmiana godzin to skasowanie starych wierszy i wstawienie nowych - bez łatania różnic */
   await supabase.from("checkins").delete().eq("court_id", courtId).eq("day", today);
 
-  const { error } = await supabase
-    .from("checkins")
-    .insert({ court_id: courtId, user_id: user.id, day: today, hour });
+  const wiersze = [];
+  for (let h = start; h <= koniec; h++) {
+    wiersze.push({ court_id: courtId, user_id: user.id, day: today, hour: h });
+  }
 
+  const { error } = await supabase.from("checkins").insert(wiersze);
   if (error) throw new Error(error.message);
 }
 
-/** Odwołuje własną deklarację na dziś. */
+/** Odwołuje własną deklarację na dziś - wszystkie godziny na tym boisku. */
 export async function cancelToday(courtId: string): Promise<void> {
   const supabase = await supabaseBrowser();
   if (!supabase) return;
   const today = new Date().toISOString().slice(0, 10);
   await supabase.from("checkins").delete().eq("court_id", courtId).eq("day", today);
+}
+
+/** „18:00-21:00" albo „18:00" - do napisu o własnej deklaracji. */
+export function opisGodzin(hours: number[]): string {
+  if (!hours.length) return "";
+  const g = (h: number) => `${String(h).padStart(2, "0")}:00`;
+  const od = hours[0];
+  const doG = hours[hours.length - 1];
+  /* +1, bo deklaracja „18-20" znaczy trzy godziny gry, czyli do 21:00 */
+  return od === doG ? g(od) : `${g(od)}-${g(doG + 1)}`;
 }

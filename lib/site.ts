@@ -48,3 +48,16 @@ export function plural(n: number, forms: [string, string, string]) {
   if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
   return many;
 }
+
+/*
+  Podpisy, pod którymi kryje się „ktokolwiek bez konta". Zgłoszenia od gości dostają w bazie
+  wspólną nazwę autora, więc w rankingu zbierałyby się w jedną pozycję - i po kilkudziesięciu
+  anonimowych boiskach ta jedna pozycja na zawsze zajmowałaby pierwsze miejsce, mimo że stoi
+  za nią wiele różnych osób. Dlatego w rankingu graczy takich wpisów nie liczymy; boiska
+  zostają na mapie i mają podpis autora, tylko nie tworzą „gracza".
+*/
+const AUTORZY_ANONIMOWI = new Set(["gosc", "gość", "gość anonimowy", "anonim", "użytkownik"]);
+
+export function czyAutorAnonimowy(nazwa: string): boolean {
+  return AUTORZY_ANONIMOWI.has(nazwa.trim().toLowerCase());
+}

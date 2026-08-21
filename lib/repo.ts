@@ -5,7 +5,7 @@ import { orderPhotos } from "./photos";
 import { supabaseServer } from "./supabase/server";
 import { supabasePublic } from "./supabase/publiczny";
 import { unstable_cache } from "next/cache";
-import { slugifyPlace } from "./site";
+import { czyAutorAnonimowy, slugifyPlace } from "./site";
 import type { CourtRow } from "./supabase/types";
 
 export const COURT_SELECT =
@@ -324,19 +324,6 @@ export interface OdkrywcaRanking {
   avatar: string | null;
   /** zdjęcia tytułowe własnych boisk, od najczęściej podpalanych */
   kadry: KadrOdkrywcy[];
-}
-
-/*
-  Podpisy, pod którymi kryje się „ktokolwiek bez konta". Zgłoszenia od gości dostają w bazie
-  wspólną nazwę autora, więc w rankingu zbierałyby się w jedną pozycję - i po kilkudziesięciu
-  anonimowych boiskach ta jedna pozycja na zawsze zajmowałaby pierwsze miejsce, mimo że stoi
-  za nią wiele różnych osób. Dlatego w rankingu graczy takich wpisów nie liczymy; boiska
-  zostają na mapie i mają podpis autora, tylko nie tworzą „gracza".
-*/
-const AUTORZY_ANONIMOWI = new Set(["gosc", "gość", "gość anonimowy", "anonim", "użytkownik"]);
-
-export function czyAutorAnonimowy(nazwa: string): boolean {
-  return AUTORZY_ANONIMOWI.has(nazwa.trim().toLowerCase());
 }
 
 /** Avatary z profili, żeby ranking pokazywał twarze, a nie same nicki. */

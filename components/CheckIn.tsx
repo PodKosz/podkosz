@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { CheckinSlot, cancelToday, declareToday, fetchCheckins, fetchMySlot } from "@/lib/checkins";
+import {
+  CheckinSlot,
+  cancelToday,
+  declareToday,
+  fetchCheckins,
+  fetchMyHours,
+  fetchOsoby,
+  opisGodzin,
+} from "@/lib/checkins";
 import { supabaseEnabled } from "@/lib/supabase/config";
 import { signInWithGoogle } from "@/lib/auth";
 import { plural } from "@/lib/site";
@@ -17,18 +25,26 @@ const HOURS = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
  * Odpowiada na pytanie, którego nie rozwiązuje żadna mapa: nie „gdzie jest boisko",
  * ale „gdzie ktoś dziś gra". Deklaracja żyje jeden dzień, więc informacja nigdy nie
  * jest stara. Wymaga konta - inaczej jedna osoba z telefonu zrobiłaby sztuczny tłum.
+ *
+ * Godziny wybiera się zakresem: pierwsze kliknięcie to początek, drugie koniec. Nikt nie
+ * gra dokładnie jednej godziny, a bez zakresu tłum na boisku rozsypywał się po slotach -
+ * trzy osoby grające razem od 18:00 do 21:00 wyglądały jak trzy osobne pojedynki.
  */
 export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: boolean }) {
   const path = usePathname();
   const [slots, setSlots] = useState<CheckinSlot[]>([]);
-  const [mine, setMine] = useState<number | null>(null);
+  const [osoby, setOsoby] = useState(0);
+  const [mine, setMine] = useState<number[]>([]);
   const [picking, setPicking] = useState(false);
+  /** pierwsza kliknięta godzina - czekamy na drugą, żeby zamknąć zakres */
+  const [od, setOd] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
 
   const reload = () => {
     void fetchCheckins(courtId).then(setSlots);
-    if (signedIn) void fetchMySlot(courtId).then(setMine);
+    void fetchOsoby(courtId).then(setOsoby);
+    if (signedIn) void fetchMyHours(courtId).then(setMine);
   };
 
   useEffect(() => {
@@ -40,10 +56,15 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
         if (alive) setSlots(list);
       })
       .catch(() => undefined);
+    fetchOsoby(courtId)
+      .then((n) => {
+        if (alive) setOsoby(n);
+      })
+      .catch(() => undefined);
     if (signedIn) {
-      fetchMySlot(courtId)
-        .then((hour) => {
-          if (alive) setMine(hour);
+      fetchMyHours(courtId)
+        .then((hours) => {
+          if (alive) setMine(hours);
         })
         .catch(() => undefined);
     }
@@ -52,9 +73,7 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
     };
   }, [courtId, signedIn]);
 
-  const razem = slots.reduce((sum, s) => sum + s.people, 0);
-
-  const zapisz = async (hour: number) => {
+  const zapisz = async (start: number, koniec = start) => {
     if (!signedIn) {
       if (supabaseEnabled) {
         signInWithGoogle(path).catch((e: Error) => setHint(e.message));
@@ -66,8 +85,9 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
     setBusy(true);
     setHint(null);
     try {
-      await declareToday(courtId, hour);
+      await declareToday(courtId, start, koniec);
       setPicking(false);
+      setOd(null);
       reload();
     } catch (e) {
       setHint((e as Error).message);
@@ -76,11 +96,20 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
     }
   };
 
+  /* pierwsze kliknięcie zaznacza początek, drugie zamyka zakres i zapisuje */
+  const klik = (h: number) => {
+    if (od === null) {
+      setOd(h);
+      return;
+    }
+    void zapisz(od, h);
+  };
+
   const odwolaj = async () => {
     setBusy(true);
     try {
       await cancelToday(courtId);
-      setMine(null);
+      setMine([]);
       reload();
     } finally {
       setBusy(false);
@@ -99,12 +128,12 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
       </h2>
 
       <p className="mt-2 text-[15px] font-semibold leading-snug 2xl:text-[16px]">
-        {razem === 0
+        {osoby === 0
           ? "Nikt się jeszcze nie zapisał"
-          : `${razem} ${plural(razem, ["osoba idzie", "osoby idą", "osób idzie"])} dziś na to boisko`}
+          : `${osoby} ${plural(osoby, ["osoba idzie", "osoby idą", "osób idzie"])} dziś na to boisko`}
       </p>
 
-      {razem > 0 ? (
+      {slots.length > 0 ? (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {slots.map((s) => (
             <span
@@ -117,11 +146,11 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
         </div>
       ) : (
         <p className="mt-1 text-[12px] leading-snug text-muted">
-          Bądź pierwszy - napisz, o której idziesz, i daj innym szansę dołączyć.
+          Bądź pierwszy - napisz, od której do której grasz, i daj innym szansę dołączyć.
         </p>
       )}
 
-      {picking && mine === null && (
+      {picking && mine.length === 0 && (
         /*
           Siatka godzin jako nakładka nad treścią pod spodem, a nie element w środku panelu:
           wszystkie godziny widać naraz, a rząd z parametrami boiska nie zmienia wysokości
@@ -130,30 +159,56 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
         /* tło nieprzezroczyste, nie „glass": nakładka wisi nad galerią, a na jasnym zdjęciu
            półprzejrzysta szyba gubiła kontrast i dolne godziny stawały się nieczytelne */
         <div
-          className="absolute left-0 right-0 top-full z-30 mt-2 grid grid-cols-4 gap-1.5 rounded-[20px] border border-hairline bg-deep p-3 rise"
+          className="absolute left-0 right-0 top-full z-30 mt-2 rounded-[20px] border border-hairline bg-deep p-3 rise"
           style={{ boxShadow: "0 24px 60px -12px rgba(0,0,0,.85)" }}
         >
-          {HOURS.map((h) => (
+          <p className="mb-2 text-[11px] leading-snug text-muted">
+            {od === null
+              ? "Kliknij godzinę, od której grasz."
+              : `Od ${String(od).padStart(2, "0")}:00 - kliknij godzinę, o której kończysz.`}
+          </p>
+
+          <div className="grid grid-cols-4 gap-1.5">
+            {HOURS.map((h) => {
+              const wybrana = od === h;
+              const wZakresie = od !== null && h > od;
+              return (
+                <button
+                  key={h}
+                  onClick={() => klik(h)}
+                  disabled={busy}
+                  className={`rounded-xl border py-2 text-[12px] font-semibold tabular-nums transition ${
+                    wybrana
+                      ? "border-transparent flame-gradient text-black"
+                      : wZakresie
+                        ? "border-flame/40 bg-flame/12 text-glow hover:border-flame/70"
+                        : "border-hairline bg-white/6 hover:border-flame/50 hover:text-glow"
+                  }`}
+                >
+                  {h}:00
+                </button>
+              );
+            })}
+          </div>
+
+          {od !== null && (
             <button
-              key={h}
-              onClick={() => void zapisz(h)}
+              onClick={() => void zapisz(od)}
               disabled={busy}
-              className="rounded-xl border border-hairline bg-white/6 py-2 text-[12px] font-semibold tabular-nums transition hover:border-flame/50 hover:text-glow"
+              className="mt-2 w-full rounded-xl border border-hairline bg-white/6 py-2 text-[12px] font-medium text-muted transition hover:text-ink"
             >
-              {h}:00
+              tylko ta jedna godzina
             </button>
-          ))}
+          )}
         </div>
       )}
 
       {hint && <p className="mt-2 text-[12px] leading-snug text-muted">{hint}</p>}
 
       <div className="mt-auto pt-4">
-        {mine !== null ? (
+        {mine.length > 0 ? (
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-[14px] font-semibold text-glow">
-              Idziesz o {String(mine).padStart(2, "0")}:00
-            </p>
+            <p className="text-[14px] font-semibold text-glow">Idziesz {opisGodzin(mine)}</p>
             <button
               onClick={() => void odwolaj()}
               disabled={busy}
@@ -164,10 +219,17 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
           </div>
         ) : (
           <button
-            onClick={() => (signedIn ? setPicking((v) => !v) : void zapisz(18))}
+            onClick={() => {
+              if (!signedIn) {
+                void zapisz(18, 20);
+                return;
+              }
+              setPicking((v) => !v);
+              setOd(null);
+            }}
             className="w-full rounded-2xl flame-gradient px-4 py-3 text-[13px] font-bold text-black transition hover:brightness-110"
           >
-            {picking ? "wybierz godzinę" : "Idę dziś zagrać"}
+            {picking ? "wybierz godziny" : "Idę dziś zagrać"}
           </button>
         )}
       </div>

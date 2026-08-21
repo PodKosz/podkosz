@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getSessionUser } from "@/lib/supabase/server";
 import { pobierzKonto } from "@/lib/konto";
-import { badgesFor, nextBadge } from "@/lib/odznaki";
+import { statystykiGracza } from "@/lib/profil";
+import { Odznaczenia } from "@/components/Odznaczenia";
 import { plural, slugifyPlace } from "@/lib/site";
 import { CourtCard } from "@/components/CourtCard";
 import { ZmianaNicku } from "@/components/konto/ZmianaNicku";
@@ -19,6 +20,14 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 const GODZINA = (h: number) => `${String(h).padStart(2, "0")}:00`;
+
+/* „18:00-21:00" dla zakresu, „18:00" dla jednej godziny (koniec +1, bo grało się tę godzinę) */
+const ZAKRES = (hours: number[]) => {
+  if (!hours.length) return "-";
+  const od = hours[0];
+  const doG = hours[hours.length - 1];
+  return od === doG ? GODZINA(od) : `${GODZINA(od)}-${GODZINA(doG + 1)}`;
+};
 
 export default async function KontoPage() {
   const user = await getSessionUser();
@@ -38,9 +47,10 @@ export default async function KontoPage() {
     );
   }
 
-  const dane = await pobierzKonto(user.id, user.name);
-  const odznaki = badgesFor(dane.dodane.length, dane.zebranePodpalenia);
-  const nastepna = nextBadge(dane.dodane.length);
+  const [dane, statystyki] = await Promise.all([
+    pobierzKonto(user.id, user.name),
+    statystykiGracza(user.name),
+  ]);
 
   const kafelki: [string, string | number][] = [
     ["Boiska w bazie", dane.dodane.length],
@@ -105,31 +115,8 @@ export default async function KontoPage() {
         </div>
       </section>
 
-      {/* ---------- odznaki ---------- */}
-      <section className="mt-10">
-        <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">Odznaki</h2>
-        <div className="mt-4 flex flex-wrap gap-2">
-          {odznaki.map((o) => (
-            <span
-              key={o.name}
-              title={o.desc}
-              className={`rounded-full px-4 py-2 text-[13px] font-medium ${
-                o.earned
-                  ? "flame-gradient text-black"
-                  : "border border-hairline text-faint"
-              }`}
-            >
-              {o.name}
-            </span>
-          ))}
-        </div>
-        {nastepna && (
-          <p className="mt-3 text-[13px] text-muted">
-            Do odznaki <span className="text-ink">{nastepna.name}</span> brakuje{" "}
-            {nastepna.brakuje} {plural(nastepna.brakuje, ["boiska", "boisk", "boisk"])}.
-          </p>
-        )}
-      </section>
+      {/* ---------- odznaczenia ---------- */}
+      <Odznaczenia statystyki={statystyki} />
 
       {/* ---------- nick ---------- */}
       <section className="mt-10">
@@ -222,8 +209,8 @@ export default async function KontoPage() {
                     year: "2-digit",
                   })}
                 </span>
-                <span className="w-16 shrink-0 text-[14px] font-semibold tabular-nums text-glow">
-                  {GODZINA(w.hour)}
+                <span className="w-28 shrink-0 text-[14px] font-semibold tabular-nums text-glow">
+                  {ZAKRES(w.hours)}
                 </span>
                 <span className="min-w-0 flex-1">
                   {w.court ? (

@@ -12,7 +12,8 @@ import type { CourtRow } from "./supabase/types";
  */
 export interface WizytaWHistorii {
   day: string;
-  hour: number;
+  /** godziny jednej wizyty, po kolei - zapis na zakres to kilka wierszy w bazie */
+  hours: number[];
   court: { name: string; slug: string; city: string } | null;
 }
 
@@ -85,11 +86,37 @@ export async function pobierzKonto(userId: string, nick: string): Promise<DaneKo
       .map((r) => r.courts)
       .filter(Boolean)
       .map(rowToCourt),
-    historia: ((historia.data ?? []) as unknown as {
-      day: string;
-      hour: number;
-      courts: { name: string; slug: string; city: string } | null;
-    }[]).map((w) => ({ day: w.day, hour: w.hour, court: w.courts })),
+    historia: zwinHistorie(
+      (historia.data ?? []) as unknown as {
+        day: string;
+        hour: number;
+        courts: { name: string; slug: string; city: string } | null;
+      }[]
+    ),
     nickZmieniony: (profil.data as { nick_changed_at: string | null } | null)?.nick_changed_at ?? null,
   };
+}
+
+/**
+ * Jedna wizyta zamiast wiersza na każdą godzinę.
+ *
+ * Zapis „idę od 18:00 do 21:00" to w bazie cztery wiersze - w historii ma być jedną
+ * linią. Grupujemy po dniu i boisku, kolejność wejściowa (dzień malejąco) zostaje.
+ */
+function zwinHistorie(
+  wiersze: { day: string; hour: number; courts: { name: string; slug: string; city: string } | null }[]
+): WizytaWHistorii[] {
+  const mapa = new Map<string, WizytaWHistorii>();
+
+  for (const w of wiersze) {
+    const klucz = `${w.day}|${w.courts?.slug ?? "-"}`;
+    const wpis = mapa.get(klucz);
+    if (wpis) {
+      wpis.hours.push(w.hour);
+    } else {
+      mapa.set(klucz, { day: w.day, hours: [w.hour], court: w.courts });
+    }
+  }
+
+  return [...mapa.values()].map((w) => ({ ...w, hours: [...w.hours].sort((a, b) => a - b) }));
 }

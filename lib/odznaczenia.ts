@@ -1,0 +1,247 @@
+/**
+ * Odznaczenia w konwencji ognia.
+ *
+ * Zamiast brązu, srebra, złota i diamentu mamy cztery stany ognia: Iskra, Żar, Płomień
+ * i Biały żar. Ten ostatni jest odpowiednikiem diamentu - w metalurgii biały żar to
+ * najwyższa temperatura, jaką widać okiem, więc pasuje na szczyt lepiej niż kamień.
+ *
+ * Każde odznaczenie to jedna liczba z profilu i cztery progi. Nie ma tu punktów ani
+ * mnożników: patrzysz na kafelek i od razu wiesz, ile brakuje do kolejnego stopnia.
+ * Kilka odznaczeń jest bez progów - dostaje się je raz, za konkretny wyczyn.
+ */
+
+export type IdPoziomu = "iskra" | "zar" | "plomien" | "bialy-zar";
+
+export interface Poziom {
+  id: IdPoziomu;
+  nazwa: string;
+}
+
+/** Kolejność ma znaczenie: indeks + 1 to numer stopnia. */
+export const POZIOMY: Poziom[] = [
+  { id: "iskra", nazwa: "Iskra" },
+  { id: "zar", nazwa: "Żar" },
+  { id: "plomien", nazwa: "Płomień" },
+  { id: "bialy-zar", nazwa: "Biały żar" },
+];
+
+/** Liczby z profilu, na których stoją wszystkie odznaczenia. */
+export interface StatystykiGracza {
+  boiska: number;
+  podpaleniaZebrane: number;
+  podpaleniaDane: number;
+  ulubione: number;
+  godziny: number;
+  dni: number;
+  miasta: number;
+  wojewodztwa: number;
+  zdjecia: number;
+  nocne: boolean;
+  ranne: boolean;
+  pionier: boolean;
+}
+
+export const PUSTE_STATYSTYKI: StatystykiGracza = {
+  boiska: 0,
+  podpaleniaZebrane: 0,
+  podpaleniaDane: 0,
+  ulubione: 0,
+  godziny: 0,
+  dni: 0,
+  miasta: 0,
+  wojewodztwa: 0,
+  zdjecia: 0,
+  nocne: false,
+  ranne: false,
+  pionier: false,
+};
+
+interface DefinicjaProgowa {
+  id: string;
+  nazwa: string;
+  /** co się liczy - pod nazwą odznaczenia */
+  licznik: string;
+  /** krótkie wyjaśnienie, skąd bierze się liczba */
+  opis: string;
+  progi: [number, number, number, number];
+  wartosc: (s: StatystykiGracza) => number;
+}
+
+/*
+  Progi są niesymetryczne z rozmysłem: pierwszy stopień ma być w zasięgu jednego wieczoru,
+  a ostatni ma zostać rzadki także wtedy, gdy baza urośnie dziesięciokrotnie.
+*/
+const PROGOWE: DefinicjaProgowa[] = [
+  {
+    id: "odkrywca",
+    nazwa: "Odkrywca",
+    licznik: "dodane boiska",
+    opis: "Zgłoszone boiska, które przeszły weryfikację.",
+    progi: [1, 5, 15, 40],
+    wartosc: (s) => s.boiska,
+  },
+  {
+    id: "podpalacz",
+    nazwa: "Podpalacz",
+    licznik: "podpalone boiska",
+    opis: "Podpalone boiska - po jednej płonącej piłce na boisko.",
+    progi: [5, 25, 75, 200],
+    wartosc: (s) => s.podpaleniaDane,
+  },
+  {
+    id: "kolekcjoner",
+    nazwa: "Kolekcjoner",
+    licznik: "ulubione boiska",
+    opis: "Boiska zapisane na własnej liście ulubionych.",
+    progi: [3, 10, 30, 75],
+    wartosc: (s) => s.ulubione,
+  },
+  {
+    id: "bywalec",
+    nazwa: "Bywalec",
+    licznik: "godziny na boisku",
+    opis: "Godziny z zapisów na grę, które już minęły.",
+    progi: [5, 25, 100, 300],
+    wartosc: (s) => s.godziny,
+  },
+  {
+    id: "regularny",
+    nazwa: "Regularny",
+    licznik: "dni z grą",
+    opis: "Różne dni z zapisem na grę.",
+    progi: [3, 10, 30, 100],
+    wartosc: (s) => s.dni,
+  },
+  {
+    id: "gospodarz",
+    nazwa: "Gospodarz",
+    licznik: "zebrane podpalenia",
+    opis: "Płonące piłki zebrane przez własne boiska.",
+    progi: [10, 50, 200, 600],
+    wartosc: (s) => s.podpaleniaZebrane,
+  },
+  {
+    id: "podroznik",
+    nazwa: "Podróżnik",
+    licznik: "miejscowości",
+    opis: "Miejscowości, z których pochodzą dodane boiska.",
+    progi: [2, 5, 12, 25],
+    wartosc: (s) => s.miasta,
+  },
+  {
+    id: "kartograf",
+    nazwa: "Kartograf",
+    licznik: "województwa",
+    opis: "Województwa z co najmniej jednym dodanym boiskiem.",
+    progi: [2, 5, 10, 16],
+    wartosc: (s) => s.wojewodztwa,
+  },
+  {
+    id: "fotograf",
+    nazwa: "Fotograf",
+    licznik: "zdjęcia w bazie",
+    opis: "Kadry na kartach dodanych boisk.",
+    progi: [10, 50, 150, 400],
+    wartosc: (s) => s.zdjecia,
+  },
+];
+
+/** Odznaczenie z policzonym stopniem i drogą do następnego. */
+export interface Odznaczenie {
+  id: string;
+  nazwa: string;
+  licznik: string;
+  opis: string;
+  wartosc: number;
+  /** 0 = jeszcze nic, 1-4 = numer stopnia */
+  stopien: number;
+  poziom: Poziom | null;
+  /** cel następnego stopnia (null, gdy zdobyte wszystko) */
+  nastepny: { poziom: Poziom; prog: number; brakuje: number } | null;
+  /** wypełnienie paska: droga od poprzedniego progu do następnego (0-1) */
+  postep: number;
+}
+
+/** Odznaczenie bez progów - albo je masz, albo nie. */
+export interface Wyroznienie {
+  id: string;
+  nazwa: string;
+  opis: string;
+  zdobyte: boolean;
+}
+
+export function odznaczenia(s: StatystykiGracza): Odznaczenie[] {
+  return PROGOWE.map((d) => {
+    const wartosc = d.wartosc(s);
+    const stopien = d.progi.filter((p) => wartosc >= p).length;
+    const nastepnyProg = d.progi[stopien];
+
+    /*
+      Pasek pokazuje drogę między progami, a nie od zera - inaczej przy skoku z 15 na 40
+      wyglądałby, jakby nic się nie działo przez pierwsze dwadzieścia boisk.
+    */
+    const poprzedniProg = stopien > 0 ? d.progi[stopien - 1] : 0;
+    const postep =
+      nastepnyProg === undefined
+        ? 1
+        : Math.min(1, Math.max(0, (wartosc - poprzedniProg) / (nastepnyProg - poprzedniProg)));
+
+    return {
+      id: d.id,
+      nazwa: d.nazwa,
+      licznik: d.licznik,
+      opis: d.opis,
+      wartosc,
+      stopien,
+      poziom: stopien > 0 ? POZIOMY[stopien - 1] : null,
+      nastepny:
+        nastepnyProg === undefined
+          ? null
+          : {
+              poziom: POZIOMY[stopien],
+              prog: nastepnyProg,
+              brakuje: nastepnyProg - wartosc,
+            },
+      postep,
+    };
+  });
+}
+
+export function wyroznienia(s: StatystykiGracza): Wyroznienie[] {
+  return [
+    {
+      id: "pionier",
+      nazwa: "Pionier",
+      opis: "Konto w pierwszej setce w serwisie.",
+      zdobyte: s.pionier,
+    },
+    {
+      id: "nocny-marek",
+      nazwa: "Nocny marek",
+      opis: "Zapis na grę o 21:00 albo później.",
+      zdobyte: s.nocne,
+    },
+    {
+      id: "ranny-ptaszek",
+      nazwa: "Ranny ptaszek",
+      opis: "Zapis na grę o 8:00 albo wcześniej.",
+      zdobyte: s.ranne,
+    },
+    {
+      id: "pelna-mapa",
+      nazwa: "Pełna mapa",
+      opis: "Boisko w każdym z 16 województw.",
+      zdobyte: s.wojewodztwa >= 16,
+    },
+  ];
+}
+
+/** Ile odznaczeń zdobyte - do podsumowania nad siatką. */
+export function podsumowanie(s: StatystykiGracza): { zdobyte: number; wszystkie: number } {
+  const lista = odznaczenia(s);
+  const extra = wyroznienia(s);
+  return {
+    zdobyte: lista.filter((o) => o.stopien > 0).length + extra.filter((w) => w.zdobyte).length,
+    wszystkie: lista.length + extra.length,
+  };
+}

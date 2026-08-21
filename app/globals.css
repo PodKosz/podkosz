@@ -158,6 +158,81 @@ body {
     radial-gradient(1000px 700px at 88% 92%, rgba(255, 77, 10, 0.09), transparent 60%);
 }
 
+/* ---------- Odznaczenia ---------- */
+
+/*
+  Medal odznaczenia: okrągła płytka z płomykiem w środku. Stopnie idą temperaturą, nie
+  metalem - od przygaszonej iskry, przez żar i płomień, do bieli rozgrzanego metalu.
+  Poświata rośnie razem ze stopniem, więc „Biały żar" widać na liście od razu.
+*/
+.medal {
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.medal svg {
+  width: 58%;
+  height: 58%;
+}
+
+.medal-iskra {
+  background: radial-gradient(120% 120% at 30% 15%, rgba(194, 112, 58, 0.3), rgba(20, 14, 10, 0.9));
+  border-color: rgba(194, 112, 58, 0.45);
+  box-shadow: 0 6px 18px -8px rgba(194, 112, 58, 0.5);
+}
+
+.medal-zar {
+  background: radial-gradient(120% 120% at 30% 15%, rgba(255, 106, 18, 0.34), rgba(24, 12, 6, 0.9));
+  border-color: rgba(255, 106, 18, 0.5);
+  box-shadow: 0 8px 22px -8px rgba(255, 106, 18, 0.55);
+}
+
+.medal-plomien {
+  background: radial-gradient(120% 120% at 30% 15%, rgba(255, 160, 60, 0.42), rgba(28, 12, 4, 0.9));
+  border-color: rgba(255, 168, 80, 0.66);
+  box-shadow:
+    0 0 0 1px rgba(255, 168, 80, 0.16),
+    0 10px 26px -8px rgba(255, 122, 24, 0.62);
+}
+
+/*
+  Biały żar dostaje chłodny rdzeń: rozgrzany do bieli metal wpada w błękit, a przy okazji
+  odcina się od trzech pomarańczowych stopni pod nim.
+*/
+.medal-bialy-zar {
+  background:
+    radial-gradient(120% 120% at 30% 12%, rgba(255, 255, 255, 0.6), rgba(255, 214, 170, 0.24) 46%,
+      rgba(20, 18, 24, 0.92) 100%);
+  border-color: rgba(255, 255, 255, 0.72);
+  box-shadow:
+    0 0 0 1px rgba(190, 214, 255, 0.3),
+    0 12px 30px -8px rgba(255, 226, 190, 0.6);
+}
+
+.medal-brak {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--color-hairline);
+  box-shadow: none;
+}
+
+/* kropki stopni pod paskiem postępu */
+.pip-iskra {
+  background: #c2703a;
+}
+.pip-zar {
+  background: #ff6a12;
+}
+.pip-plomien {
+  background: #ffa94d;
+}
+.pip-bialy-zar {
+  background: #fff3e0;
+  box-shadow: 0 0 6px rgba(255, 226, 190, 0.9);
+}
+
 /* ---------- Controls ---------- */
 
 .switch {

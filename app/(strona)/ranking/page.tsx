@@ -1,6 +1,7 @@
 ﻿import type { Metadata } from "next";
 import { listCourts, listRankingOdkrywcow } from "@/lib/repo";
 import { RankingTabs } from "@/components/RankingTabs";
+import { HoopOutline } from "@/components/HoopOutline";
 
 export const metadata: Metadata = {
   title: "Ranking - PodKosz",
@@ -38,6 +39,20 @@ export default async function RankingPage() {
               "radial-gradient(circle, rgba(255,178,92,.13) 0%, rgba(255,178,92,.04) 48%, transparent 78%)",
           }}
         />
+      </div>
+
+      {/*
+        Zarys kosza od przodu pod całą stroną - ta sama kreska co kontur boiska na „O nas",
+        tylko widok z drugiej strony: tablica, obręcz i siatka. Warstwa jest przyklejona do
+        okna i nieklikalna, a rysunek trzyma własne proporcje (`meet` w SVG), bo rozciągnięty
+        kosz od razu wygląda jak błąd.
+      */}
+      <div
+        className="pointer-events-none fixed left-1/2 top-[-6vh] -z-10 aspect-[480/440] w-[min(1150px,160vw)] opacity-[0.42] sm:w-[min(1040px,94vw)]"
+        style={{ translate: "-50% 0", rotate: "-3deg" }}
+        aria-hidden
+      >
+        <HoopOutline uid="ranking" />
       </div>
 
       {odkrywcy.length || sorted.length ? (

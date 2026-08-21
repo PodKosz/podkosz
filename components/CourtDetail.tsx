@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ACCESS_LABEL, Court, TYPE_LABEL, surfaceLabel } from "@/lib/types";
-import { formatDistance, slugifyPlace } from "@/lib/site";
+import { czyAutorAnonimowy, formatDistance, slugifyPlace } from "@/lib/site";
 import type { NearbyCourt } from "@/lib/repo";
 import type { WeatherHour } from "@/lib/pogoda";
 import { CourtPhoto } from "./CourtPhoto";
@@ -128,12 +128,20 @@ export function CourtDetail({
               <span className="block text-[11px] uppercase tracking-[0.16em] text-faint">
                 Zgłoszone przez
               </span>
-              <Link
-                href={`/gracz/${slugifyPlace(court.addedBy)}`}
-                className="font-semibold text-ink transition hover:text-flame"
-              >
-                @{court.addedBy}
-              </Link>
+              {/*
+                Zgłoszenia bez konta nie mają profilu (i nie wchodzą do rankingu graczy),
+                więc podpis „gość" zostaje zwykłym tekstem - link prowadziłby na 404.
+              */}
+              {czyAutorAnonimowy(court.addedBy) ? (
+                <span className="font-semibold text-ink">@{court.addedBy}</span>
+              ) : (
+                <Link
+                  href={`/gracz/${slugifyPlace(court.addedBy)}`}
+                  className="font-semibold text-ink transition hover:text-flame"
+                >
+                  @{court.addedBy}
+                </Link>
+              )}
               <span className="text-faint">
                 {" "}
                 · {new Date(court.addedAt).toLocaleDateString("pl-PL")}
