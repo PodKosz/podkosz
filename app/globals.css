@@ -340,163 +340,47 @@ body {
 }
 
 /*
-  Piłka kręci się przy przewijaniu - jak model 3D, choć rysunek jest płaski.
+  Piłka kręci się w lewo przy przewijaniu.
 
-  Sztuczka jest w geometrii: południk kuli w rzucie prostokątnym to elipsa o szerokości
-  R·cos(kąt), a przy 90° zwija się w prostą kreskę. Wystarczy więc ściskać każdy szew po
-  osi X - każdy z inną fazą (0°, +60°, -60°) - i oko widzi obracającą się piłkę, a nie
-  spłaszczaną naklejkę. Obwód i szew poziomy zostają nieruchome, bo obrót jest wokół osi
-  pionowej.
+  Południk kuli w rzucie prostokątnym to łuk o szerokości R·cos(kąt), więc obrót w lewo to
+  po prostu grzbiet łuku jadący od prawej krawędzi, przez środek (gdzie łuk zwija się w
+  kreskę), do lewej. Dlatego animuję `scaleX` od 1 do -1 liniowo, a nie po cosinusie: łuk
+  ma jechać jednostajnie w jedną stronę.
 
-  Skalujemy względem środka rysunku (`transform-origin` w układzie viewBox), a nie własnego
-  pudełka szwu - inaczej boczne szwy ściskałyby się „u siebie" i stałyby w miejscu.
+  Powrót na prawą stronę odbywa się przy zerowym kryciu - to on wcześniej wyglądał jak
+  „wariowanie" linii. Każdy południk startuje z innym opóźnieniem (`animation-range`
+  przesunięty o `--k`), więc na kuli zawsze widać kilka linii w różnych fazach.
 */
 .pilka-szew {
   transform-box: view-box;
   transform-origin: 200px 200px;
+  /* bez wsparcia dla animacji przewijania zostaje statyczny szkielet kuli */
+  transform: scaleX(calc(1 - var(--k, 0) * 0.4));
 }
 
 @supports (animation-timeline: scroll()) {
   .pilka-szew {
-    animation: pilka-szew-a linear both;
+    animation: pilka-obrot linear both;
     animation-timeline: scroll(root block);
-    animation-range: 0 100%;
+    animation-range: calc(var(--k, 0) * 15%) calc(var(--k, 0) * 15% + 46%);
   }
 
-  .pilka-szew-b {
-    animation-name: pilka-szew-b;
-  }
-
-  .pilka-szew-c {
-    animation-name: pilka-szew-c;
-  }
-
-  .pilka-szew-d {
-    animation-name: pilka-szew-d;
-  }
-
-  /*
-    Klatki co 45° obrotu, a wartość to `cos(kąt + faza)` - dokładnie tyle, ile w rzucie
-    prostokątnym mierzy szerokość południka. Ujemna skala odbija łuk na drugą stronę kuli,
-    więc szew nie wraca po własnych śladach, ale płynnie przechodzi na tył piłki.
-  */
-  @keyframes pilka-szew-a {
+  @keyframes pilka-obrot {
     0% {
-      transform: scaleX(1.0);
+      transform: scaleX(1);
+      opacity: 0;
     }
-    12.5% {
-      transform: scaleX(0.707);
+    6% {
+      transform: scaleX(0.88);
+      opacity: 1;
     }
-    25% {
-      transform: scaleX(0.02);
-    }
-    37.5% {
-      transform: scaleX(-0.707);
-    }
-    50% {
-      transform: scaleX(-1.0);
-    }
-    62.5% {
-      transform: scaleX(-0.707);
-    }
-    75% {
-      transform: scaleX(0.02);
-    }
-    87.5% {
-      transform: scaleX(0.707);
+    94% {
+      transform: scaleX(-0.88);
+      opacity: 1;
     }
     100% {
-      transform: scaleX(1.0);
-    }
-  }
-
-  @keyframes pilka-szew-b {
-    0% {
-      transform: scaleX(0.707);
-    }
-    12.5% {
-      transform: scaleX(0.02);
-    }
-    25% {
-      transform: scaleX(-0.707);
-    }
-    37.5% {
-      transform: scaleX(-1.0);
-    }
-    50% {
-      transform: scaleX(-0.707);
-    }
-    62.5% {
-      transform: scaleX(0.02);
-    }
-    75% {
-      transform: scaleX(0.707);
-    }
-    87.5% {
-      transform: scaleX(1.0);
-    }
-    100% {
-      transform: scaleX(0.707);
-    }
-  }
-
-  @keyframes pilka-szew-c {
-    0% {
-      transform: scaleX(0.02);
-    }
-    12.5% {
-      transform: scaleX(-0.707);
-    }
-    25% {
-      transform: scaleX(-1.0);
-    }
-    37.5% {
-      transform: scaleX(-0.707);
-    }
-    50% {
-      transform: scaleX(0.02);
-    }
-    62.5% {
-      transform: scaleX(0.707);
-    }
-    75% {
-      transform: scaleX(1.0);
-    }
-    87.5% {
-      transform: scaleX(0.707);
-    }
-    100% {
-      transform: scaleX(0.02);
-    }
-  }
-
-  @keyframes pilka-szew-d {
-    0% {
-      transform: scaleX(-0.707);
-    }
-    12.5% {
-      transform: scaleX(-1.0);
-    }
-    25% {
-      transform: scaleX(-0.707);
-    }
-    37.5% {
-      transform: scaleX(0.02);
-    }
-    50% {
-      transform: scaleX(0.707);
-    }
-    62.5% {
-      transform: scaleX(1.0);
-    }
-    75% {
-      transform: scaleX(0.707);
-    }
-    87.5% {
-      transform: scaleX(0.02);
-    }
-    100% {
-      transform: scaleX(-0.707);
+      transform: scaleX(-1);
+      opacity: 0;
     }
   }
 }
@@ -583,6 +467,19 @@ body {
   pointer-events: none;
 }
 
+/*
+  Motyw stopnia leży pod ikoną i wypełnia całą płytkę. Selektor musi być mocniejszy niż
+  `.medal svg` poniżej, inaczej dostałby rozmiar ikony (56%) i skulił się do środka.
+*/
+.medal svg.medal-tlo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: var(--medal-motyw, rgba(0, 0, 0, 0.22));
+  pointer-events: none;
+}
+
 .medal svg {
   position: relative;
   width: 56%;
@@ -602,6 +499,7 @@ body {
   --szklo-dol: rgba(255, 190, 140, 0.38);
   --medal-ring: rgba(255, 230, 205, 0.44);
   --medal-poswiata: rgba(150, 90, 40, 0.55);
+  --medal-motyw: rgba(74, 34, 6, 0.3);
   --medal-ikona: #2a1508;
 }
 
@@ -611,6 +509,7 @@ body {
   --szklo-dol: rgba(255, 140, 90, 0.42);
   --medal-ring: rgba(255, 216, 198, 0.5);
   --medal-poswiata: rgba(239, 60, 12, 0.55);
+  --medal-motyw: rgba(88, 18, 0, 0.32);
   --medal-ikona: #2d0b02;
 }
 
@@ -620,6 +519,7 @@ body {
   --szklo-dol: rgba(255, 214, 120, 0.45);
   --medal-ring: rgba(255, 247, 220, 0.6);
   --medal-poswiata: rgba(255, 186, 40, 0.55);
+  --medal-motyw: rgba(120, 60, 0, 0.26);
   --medal-ikona: #3a2405;
 }
 
@@ -633,6 +533,7 @@ body {
   --szklo-dol: rgba(150, 190, 255, 0.5);
   --medal-ring: rgba(255, 255, 255, 0.7);
   --medal-poswiata: rgba(111, 157, 255, 0.6);
+  --medal-motyw: rgba(24, 72, 190, 0.34);
   --medal-ikona: #0f1c3a;
 }
 
@@ -824,8 +725,9 @@ select option {
 .court-marker:hover .marker-core,
 .court-marker[data-active="true"] .marker-core {
   transform: scale(1.22);
-  /* podświetlenie idzie cieniem zewnętrznym - obwód piłki rysuje już samo SVG */
-  box-shadow: 0 10px 26px -4px rgba(255, 77, 10, 1) !important;
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.45) inset,
+    0 10px 26px -4px rgba(255, 77, 10, 1) !important;
 }
 
 .court-marker[data-active="true"] {

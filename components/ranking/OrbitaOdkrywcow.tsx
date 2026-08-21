@@ -6,6 +6,7 @@ import type { OdkrywcaRanking } from "@/lib/repo";
 import { plural } from "@/lib/site";
 import { CourtPhoto } from "../CourtPhoto";
 import { IkonaOdznaczenia } from "../IkonaOdznaczenia";
+import { TloStopnia } from "../TloStopnia";
 import { FireBallIcon } from "../icons";
 
 /**
@@ -310,6 +311,7 @@ function Gwiazda({
                 title={p.nazwa}
                 className={`medal medal-${p.poziom} h-8 w-8`}
               >
+                <TloStopnia poziom={p.poziom} />
                 <IkonaOdznaczenia id={p.id} className="h-[17px] w-[17px]" />
               </span>
             ))}

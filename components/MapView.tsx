@@ -778,67 +778,40 @@ export function MapView({
 }
 
 /**
- * Pinezka boiska: krążek w gradiencie, a na nim włosowy rysunek piłki.
+ * Pinezka boiska: krążek w gradiencie z włosową ikoną piłki w środku.
  *
- * Kontur jest płaski i cienki - jedna kreska na obwodzie i cztery szwy - ale rozłożony na
- * całym kółku, nie wciśnięty w środek jako mała ikonka. Głębię daje wyłącznie gradient pod
- * spodem: rozjaśniony grzbiet u góry po lewej, nasycona pomarańcz w środku, przygaszony spód.
- *
- * Identyfikatory gradientów muszą być unikalne dla każdej pinezki - w SVG są globalne dla
- * dokumentu i przy powtórzeniu wszystkie kule brałyby gradient pierwszej.
+ * Kontur piłki jest cienki (0,95 przy 24 jednostkach), bo przy 38 pikselach grubsza kreska
+ * zamieniała rysunek w czarną plamę. Sam krążek dostaje gradient marki i wewnętrzny błysk
+ * na krawędzi - to on daje wrażenie wypukłości, nie ikona.
  */
 function markerHtml(court: MapCourt) {
   const big = court.likes >= 200;
   const size = big ? 46 : 38;
-  const id = `pin-${court.id}`;
 
   // Boiska z wyróżnieniem Heat świecą na fioletowo - mają odróżniać się na pierwszy rzut oka.
-  const heat = court.basketApproved;
-
-  const glow = heat
+  const glow = court.basketApproved
     ? "rgba(168,85,247,.6) 0%, rgba(109,40,217,.2) 45%, transparent 70%"
     : "rgba(255,122,24,.55) 0%, rgba(255,77,10,.18) 45%, transparent 70%";
-  const shadow = heat ? "rgba(109,40,217,.9)" : "rgba(255,77,10,.9)";
-  const stem = heat ? "#a855f7" : "#ff7a18";
-  const dot = heat ? "rgba(168,85,247,.85)" : "rgba(255,122,24,.85)";
-
-  /* gradient krążka: od rozświetlonego grzbietu do przygaszonego spodu */
-  const skora = heat
-    ? ["#f0dcff", "#c084fc", "#8b2fd6", "#5b1a9e"]
-    : ["#ffdaa6", "#ffa03d", "#ef6710", "#c03c04"];
-  /* kontur: ciemny, ale cienki i półprzezroczysty - ma rysować, nie dzielić kółka na części */
-  const szew = heat ? "rgba(30,6,56,.5)" : "rgba(58,18,0,.5)";
+  const core = court.basketApproved
+    ? "linear-gradient(135deg,#e9d5ff,#a855f7 55%,#6d28d9)"
+    : "linear-gradient(135deg,#ffc27a,#ff7a18 55%,#ff4106)";
+  const shadow = court.basketApproved ? "rgba(109,40,217,.9)" : "rgba(255,77,10,.9)";
+  const seam = court.basketApproved ? "rgba(35,5,60,.7)" : "rgba(40,10,0,.72)";
+  const stem = court.basketApproved ? "#a855f7" : "#ff7a18";
+  const dot = court.basketApproved ? "rgba(168,85,247,.85)" : "rgba(255,122,24,.85)";
 
   return `
   <div class="relative flex flex-col items-center transition-transform duration-200 ease-out"
        style="filter: drop-shadow(0 6px 14px rgba(0,0,0,.6))">
     <span class="pulse-glow absolute -top-2 left-1/2 -translate-x-1/2 rounded-full"
           style="width:${size * 1.8}px;height:${size * 1.8}px;background:radial-gradient(circle, ${glow})"></span>
-
-    <span class="marker-core relative block rounded-full transition-all duration-200"
-          style="width:${size}px;height:${size}px;box-shadow:0 6px 18px -4px ${shadow}">
-      <svg viewBox="0 0 40 40" style="width:100%;height:100%;display:block">
-        <defs>
-          <radialGradient id="${id}-skora" cx="33%" cy="26%" r="84%">
-            <stop offset="0" stop-color="${skora[0]}"/>
-            <stop offset=".4" stop-color="${skora[1]}"/>
-            <stop offset=".76" stop-color="${skora[2]}"/>
-            <stop offset="1" stop-color="${skora[3]}"/>
-          </radialGradient>
-        </defs>
-
-        <circle cx="20" cy="20" r="19" fill="url(#${id}-skora)"/>
-
-        <g fill="none" stroke="${szew}" stroke-width=".95" stroke-linecap="round">
-          <circle cx="20" cy="20" r="18.5"/>
-          <path d="M5.6 8.4C12.6 12.4 22.4 18.6 34.6 29.8"/>
-          <path d="M1.4 19.2C9.4 23.4 18.6 26.6 26.6 27.2c3.4.3 5.6 3.2 6.8 7.2"/>
-          <path d="M26.4 2.2C33.2 8.4 36.4 15.8 34.6 29.8"/>
-          <path d="M5 31.4C11.8 36.4 22.4 37.8 30.6 34.8"/>
-        </g>
+    <span class="marker-core relative grid place-items-center rounded-full transition-all duration-200"
+          style="width:${size}px;height:${size}px;background:${core};box-shadow:0 0 0 1.5px rgba(255,255,255,.28) inset, 0 6px 18px -4px ${shadow}">
+      <svg viewBox="0 0 24 24" style="width:${size * 0.62}px;height:${size * 0.62}px" fill="none" stroke="${seam}" stroke-width=".95" stroke-linecap="round">
+        <circle cx="12" cy="12" r="9.2"/><path d="M12 2.8v18.4M2.8 12h18.4"/>
+        <path d="M5.4 5.4c3.9 3.9 3.9 9.3 0 13.2M18.6 5.4c-3.9 3.9-3.9 9.3 0 13.2"/>
       </svg>
     </span>
-
     <span style="width:2px;height:10px;background:linear-gradient(180deg,${stem},transparent)"></span>
     <span style="width:7px;height:3px;border-radius:99px;background:${dot}"></span>
   </div>`;
