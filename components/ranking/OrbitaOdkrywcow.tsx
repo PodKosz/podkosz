@@ -25,6 +25,19 @@ const MIN_SKALA = 0.52;
 /** Kolejność na dużym ekranie: największy w środku, dalsze coraz bardziej na zewnątrz. */
 const KOLEJNOSC = ["lg:order-3", "lg:order-2", "lg:order-4", "lg:order-1", "lg:order-5"];
 
+/*
+  Nieregularność układu. Każde miejsce ma własne przesunięcie w pionie, tempo obrotu pierścienia
+  i kierunek - dzięki temu piątka wygląda jak konstelacja, a nie jak rządek. Wartości są
+  wpisane ręcznie, bo losowe rozsypanie zmieniałoby się przy każdym renderowaniu strony.
+*/
+const UKLAD = [
+  { dy: "10px", obrot: "52s", kierunek: "normal" },
+  { dy: "-38px", obrot: "44s", kierunek: "reverse" },
+  { dy: "-16px", obrot: "61s", kierunek: "normal" },
+  { dy: "46px", obrot: "48s", kierunek: "reverse" },
+  { dy: "58px", obrot: "56s", kierunek: "normal" },
+] as const;
+
 export function OrbitaOdkrywcow({ odkrywcy }: { odkrywcy: OdkrywcaRanking[] }) {
   const maks = Math.max(...odkrywcy.map((o) => o.courts), 1);
   const miejsca = Array.from({ length: MIEJSC_W_KONSTELACJI }, (_, i) => odkrywcy[i] ?? null);
@@ -39,15 +52,27 @@ export function OrbitaOdkrywcow({ odkrywcy }: { odkrywcy: OdkrywcaRanking[] }) {
             miejsce={i + 1}
             skala={MIN_SKALA + (1 - MIN_SKALA) * (o.courts / maks)}
             klasa={KOLEJNOSC[i] ?? ""}
+            uklad={UKLAD[i] ?? UKLAD[0]}
             /* kadry pierwszego miejsca wczytujemy od razu - to one witają na stronie */
             odRazu={i === 0}
           />
         ) : (
-          <WolneMiejsce key={`wolne-${i}`} miejsce={i + 1} klasa={KOLEJNOSC[i] ?? ""} />
+          <WolneMiejsce
+            key={`wolne-${i}`}
+            miejsce={i + 1}
+            klasa={KOLEJNOSC[i] ?? ""}
+            uklad={UKLAD[i] ?? UKLAD[0]}
+          />
         )
       )}
     </div>
   );
+}
+
+interface Uklad {
+  dy: string;
+  obrot: string;
+  kierunek: string;
 }
 
 function Gwiazda({
@@ -55,12 +80,14 @@ function Gwiazda({
   miejsce,
   skala,
   klasa,
+  uklad,
   odRazu = false,
 }: {
   odkrywca: OdkrywcaRanking;
   miejsce: number;
   skala: number;
   klasa: string;
+  uklad: Uklad;
   odRazu?: boolean;
 }) {
   const kadry = odkrywca.kadry.slice(0, 8);
@@ -69,7 +96,12 @@ function Gwiazda({
   return (
     <div
       className={`orbita group relative flex shrink-0 flex-col items-center ${klasa}`}
-      style={{ ["--f" as string]: skala.toFixed(3) }}
+      style={{
+        ["--f" as string]: skala.toFixed(3),
+        ["--dy" as string]: uklad.dy,
+        ["--obrot" as string]: uklad.obrot,
+        ["--kierunek" as string]: uklad.kierunek,
+      }}
     >
       <div className="relative h-[var(--pole)] w-[var(--pole)]">
         {/* poświata pod avatarem - rozjaśnia się pod kursorem */}
@@ -149,11 +181,22 @@ function Gwiazda({
 }
 
 /** Miejsce, które jeszcze czeka na właściciela. */
-function WolneMiejsce({ miejsce, klasa }: { miejsce: number; klasa: string }) {
+function WolneMiejsce({
+  miejsce,
+  klasa,
+  uklad,
+}: {
+  miejsce: number;
+  klasa: string;
+  uklad: Uklad;
+}) {
   return (
     <div
       className={`orbita relative flex shrink-0 flex-col items-center ${klasa}`}
-      style={{ ["--f" as string]: (MIN_SKALA + 0.06).toFixed(3) }}
+      style={{
+        ["--f" as string]: (MIN_SKALA + 0.06).toFixed(3),
+        ["--dy" as string]: uklad.dy,
+      }}
     >
       <div className="relative h-[var(--pole)] w-[var(--pole)]">
         <span className="orbita-wolne absolute left-1/2 top-1/2 grid h-[var(--avatar)] w-[var(--avatar)] -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full text-[calc(var(--avatar)*0.3)] font-bold text-faint">

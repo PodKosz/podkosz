@@ -470,7 +470,8 @@ select option {
 */
 .orbita-pierscien {
   z-index: 1;
-  animation: orbita-obrot 46s linear infinite;
+  animation: orbita-obrot var(--obrot, 46s) linear infinite;
+  animation-direction: var(--kierunek, normal);
 }
 .orbita:hover .orbita-pierscien,
 .orbita:focus-within .orbita-pierscien {
@@ -499,6 +500,17 @@ select option {
   z-index: 20;
 }
 
+/*
+  Rozsypanie konstelacji: na dużym ekranie każde miejsce dostaje własne przesunięcie w pionie,
+  żeby piątka nie stała w jednej linii jak na zdjęciu klasowym. Na telefonie układ zwija się
+  w kolumnę, więc przesunięcia byłyby tylko dziurami - dlatego są za progiem lg.
+*/
+@media (min-width: 1024px) {
+  .orbita {
+    translate: 0 var(--dy, 0px);
+  }
+}
+
 /* wolne miejsce w rankingu - przerywany krąg, który kiedyś wypełni czyjś avatar */
 .orbita-wolne {
   border: 2px dashed rgba(255, 122, 24, 0.28);
@@ -506,7 +518,8 @@ select option {
 }
 .orbita-kadr-obraz {
   transform: rotate(calc(var(--kat) * -1));
-  animation: orbita-obrot-wstecz 46s linear infinite;
+  animation: orbita-obrot-wstecz var(--obrot, 46s) linear infinite;
+  animation-direction: var(--kierunek, normal);
 }
 .orbita:hover .orbita-kadr-obraz,
 .orbita:focus-within .orbita-kadr-obraz {
