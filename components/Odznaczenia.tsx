@@ -6,6 +6,7 @@ import {
   type StatystykiGracza,
 } from "@/lib/odznaczenia";
 import { Plomyk } from "./Plomyk";
+import { IkonaOdznaczenia } from "./IkonaOdznaczenia";
 
 /**
  * Siatka odznaczeń na profilu.
@@ -57,7 +58,7 @@ export function Odznaczenia({ statystyki }: { statystyki: StatystykiGracza }) {
               <span
                 className={`medal ${o.poziom ? `medal-${o.poziom.id}` : "medal-brak"} h-11 w-11`}
               >
-                <Plomyk poziom={o.poziom?.id ?? null} uid={o.id} />
+                <IkonaOdznaczenia id={o.id} className="h-[22px] w-[22px]" />
               </span>
 
               <div className="min-w-0">
@@ -118,7 +119,7 @@ export function Odznaczenia({ statystyki }: { statystyki: StatystykiGracza }) {
                 : "border border-hairline bg-white/[0.025] text-faint"
             }`}
           >
-            <Plomyk poziom={w.zdobyte ? "plomien" : null} uid={`w-${w.id}`} />
+            <IkonaOdznaczenia id={w.id} className="h-[18px] w-[18px]" />
             {w.nazwa}
           </span>
         ))}

@@ -1,0 +1,131 @@
+/**
+ * Ikony odznaczeń - jedna na każdą czynność.
+ *
+ * Wszystkie odznaczenia miały wcześniej ten sam płomyk, więc mini-plakietka pod avatarem
+ * w rankingu nie mówiła nic poza „coś tam zdobył". Teraz kształt mówi, ZA CO jest odznaka,
+ * a kolor medalu (tło i obwódka) - na jakim jest stopniu.
+ *
+ * Rysunek jest zawsze w `currentColor`, więc barwę nadaje klasa medalu. Kreski są włosowe
+ * i bez wypełnień - to ta sama kreska co w konturze boiska i koszu w tle.
+ */
+
+const WSPOLNE = {
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.7,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+  "aria-hidden": true,
+};
+
+/** Ścieżki ikon: klucz to identyfikator odznaczenia z lib/odznaczenia. */
+const IKONY: Record<string, React.ReactNode> = {
+  /* pinezka - dodane boiska */
+  odkrywca: (
+    <>
+      <path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z" />
+      <circle cx="12" cy="10" r="2.6" />
+    </>
+  ),
+
+  /* płomień - podpalone boiska */
+  podpalacz: (
+    <path d="M12 3c.6 2.2-.5 3.5-1.8 4.7-1.7 1.6-2.6 2.9-2.4 4.6.1.9.6 1.6.6 1.6s-1.5-.3-2.2-1.6C4.8 14 4.4 15.6 4.4 17c0 2.8 3.4 4.9 7.6 4.9s7.6-2.1 7.6-4.9c0-4.6-3.4-6.6-4.7-9.1C14.2 6.4 13.9 4.7 12 3Z" />
+  ),
+
+  /* serce - ulubione */
+  kolekcjoner: (
+    <path d="M12 20s-7.5-4.4-7.5-9.4A4.1 4.1 0 0 1 12 8a4.1 4.1 0 0 1 7.5 2.6c0 5-7.5 9.4-7.5 9.4Z" />
+  ),
+
+  /* zegar - godziny na boisku */
+  bywalec: (
+    <>
+      <circle cx="12" cy="12" r="8.4" />
+      <path d="M12 7.4V12l3.4 2" />
+    </>
+  ),
+
+  /* kalendarz - różne dni z grą */
+  regularny: (
+    <>
+      <rect x="3.6" y="5.4" width="16.8" height="15" rx="2.4" />
+      <path d="M3.6 10.2h16.8M8.4 3.6v3.4M15.6 3.6v3.4" />
+      <path d="M8 14h.01M12 14h.01M16 14h.01M8 17.4h.01M12 17.4h.01" />
+    </>
+  ),
+
+  /* gwiazda - uznanie innych, czyli zebrane podpalenia */
+  gospodarz: (
+    <path d="M12 3.4l2.6 5.4 5.9.8-4.3 4.1 1.1 5.9-5.3-2.9-5.3 2.9 1.1-5.9-4.3-4.1 5.9-.8L12 3.4Z" />
+  ),
+
+  /* kompas - miejscowości */
+  podroznik: (
+    <>
+      <circle cx="12" cy="12" r="8.4" />
+      <path d="M15.4 8.6l-2 4.8-4.8 2 2-4.8 4.8-2Z" />
+    </>
+  ),
+
+  /* złożona mapa - województwa */
+  kartograf: (
+    <>
+      <path d="M3.4 6.6l5.6-2 6 2 5.6-2v13l-5.6 2-6-2-5.6 2v-13Z" />
+      <path d="M9 4.6v13M15 6.6v13" />
+    </>
+  ),
+
+  /* aparat - zdjęcia w bazie */
+  fotograf: (
+    <>
+      <path d="M3.6 8.6h3.2l1.6-2.4h7.2l1.6 2.4h3.2v10.2H3.6V8.6Z" />
+      <circle cx="12" cy="13.6" r="3.2" />
+    </>
+  ),
+
+  /* flaga - pionier */
+  pionier: (
+    <>
+      <path d="M6.4 21V3.6" />
+      <path d="M6.4 4.4c4-1.6 7.6 1.6 11.2 0v7.4c-3.6 1.6-7.2-1.6-11.2 0V4.4Z" />
+    </>
+  ),
+
+  /* księżyc - nocny marek */
+  "nocny-marek": (
+    <path d="M19.4 14.6A8 8 0 0 1 9.4 4.6a8.4 8.4 0 1 0 10 10Z" />
+  ),
+
+  /* wschód słońca - ranny ptaszek */
+  "ranny-ptaszek": (
+    <>
+      <path d="M3.4 17.4h17.2" />
+      <path d="M6.6 17.4a5.4 5.4 0 0 1 10.8 0" />
+      <path d="M12 4.4v2.4M4.8 8l1.7 1.7M19.2 8l-1.7 1.7" />
+    </>
+  ),
+
+  /* szesnaście kropek - jedna na województwo */
+  "pelna-mapa": (
+    <>
+      {[6.6, 10.4, 14.2, 18].map((y) =>
+        [6.6, 10.4, 14.2, 18].map((x) => (
+          <circle key={`${x}-${y}`} cx={x} cy={y} r="1.05" fill="currentColor" stroke="none" />
+        ))
+      )}
+    </>
+  ),
+};
+
+export function IkonaOdznaczenia({ id, className = "" }: { id: string; className?: string }) {
+  const rysunek = IKONY[id];
+
+  /* nieznany identyfikator nie może wywalić strony - zostaje neutralne kółko */
+  return (
+    <svg {...WSPOLNE} className={className || "h-6 w-6"}>
+      {rysunek ?? <circle cx="12" cy="12" r="7.6" />}
+    </svg>
+  );
+}

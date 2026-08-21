@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { OdkrywcaRanking } from "@/lib/repo";
 import { plural } from "@/lib/site";
 import { CourtPhoto } from "../CourtPhoto";
-import { Plomyk } from "../Plomyk";
+import { IkonaOdznaczenia } from "../IkonaOdznaczenia";
 import { FireBallIcon } from "../icons";
 
 /**
@@ -175,7 +175,7 @@ function Gwiazda({
                 title={p.nazwa}
                 className={`medal medal-${p.poziom} h-7 w-7`}
               >
-                <Plomyk poziom={p.poziom} uid={`${odkrywca.slug}-${p.id}`} />
+                <IkonaOdznaczenia id={p.id} className="h-[15px] w-[15px]" />
               </span>
             ))}
           </span>
