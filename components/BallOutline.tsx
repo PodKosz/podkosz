@@ -9,6 +9,9 @@
  * `uid` musi być inny dla każdego wystąpienia na stronie - identyfikatory gradientów w SVG
  * są globalne i przy powtórzeniu przeglądarka bierze pierwszy z dokumentu.
  */
+/** Południk piłki: łuk od bieguna do bieguna, wybrzuszony w prawo o 88 jednostek. */
+const POLUDNIK = "M200 24C247 62 288 124 288 200C288 276 247 338 200 376";
+
 export function BallOutline({
   uid = "ball-outline",
   className = "",
@@ -53,28 +56,19 @@ export function BallOutline({
       <path d="M24 200h352" stroke={poziom} strokeWidth="1.8" />
 
       {/*
-        Trzy szwy „pionowe" to południki piłki. Każdy dostaje własną klasę, bo przy obrocie
-        kuli ich szerokość zmienia się z innym przesunięciem fazy: gdy jeden jest najszerszy,
-        drugi stoi już bokiem do nas i wygląda jak prosta kreska. Resztę roboty robi CSS.
+        Cztery południki - wszystkie tym samym łukiem, wybrzuszonym w prawo. To ważne: gdy
+        każdy szew miał własny kierunek wygięcia, przy obrocie leciały raz w jedną, raz w
+        drugą stronę i nachodziły na siebie. Z jednym kształtem znak skali (`scaleX`) sam
+        odbija łuk na drugą stronę, więc cały wzór przesuwa się zgodnie w jedną stronę - tak
+        jak szwy na kręcącej się piłce.
+
+        Fazy są rozłożone co 45°, dzięki czemu zawsze widać kilka łuków w różnych etapach
+        obrotu i nigdzie nie robi się pusto.
       */}
-      <path
-        className="pilka-szew pilka-szew-a"
-        d="M200 24v352"
-        stroke={pion}
-        strokeWidth="1.8"
-      />
-      <path
-        className="pilka-szew pilka-szew-b"
-        d="M200 24c-58 44-88 106-88 176s30 132 88 176"
-        stroke={pion}
-        strokeWidth="1.6"
-      />
-      <path
-        className="pilka-szew pilka-szew-c"
-        d="M200 24c58 44 88 106 88 176s-30 132-88 176"
-        stroke={pion}
-        strokeWidth="1.6"
-      />
+      <path className="pilka-szew pilka-szew-a" d={POLUDNIK} stroke={pion} strokeWidth="1.7" />
+      <path className="pilka-szew pilka-szew-b" d={POLUDNIK} stroke={pion} strokeWidth="1.7" />
+      <path className="pilka-szew pilka-szew-c" d={POLUDNIK} stroke={pion} strokeWidth="1.7" />
+      <path className="pilka-szew pilka-szew-d" d={POLUDNIK} stroke={pion} strokeWidth="1.7" />
     </svg>
   );
 }
