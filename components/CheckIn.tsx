@@ -38,6 +38,8 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
   const [picking, setPicking] = useState(false);
   /** pierwsza kliknięta godzina - czekamy na drugą, żeby zamknąć zakres */
   const [od, setOd] = useState<number | null>(null);
+  /** godzina pod kursorem - z niej rysujemy zakres, zanim ktoś go zatwierdzi */
+  const [podKursorem, setPodKursorem] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
 
@@ -88,6 +90,7 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
       await declareToday(courtId, start, koniec);
       setPicking(false);
       setOd(null);
+      setPodKursorem(null);
       reload();
     } catch (e) {
       setHint((e as Error).message);
@@ -165,17 +168,34 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
           <p className="mb-2 text-[11px] leading-snug text-muted">
             {od === null
               ? "Kliknij godzinę, od której grasz."
-              : `Od ${String(od).padStart(2, "0")}:00 - kliknij godzinę, o której kończysz.`}
+              : podKursorem !== null && podKursorem !== od
+                ? `${String(Math.min(od, podKursorem)).padStart(2, "0")}:00-${String(
+                    Math.max(od, podKursorem) + 1
+                  ).padStart(2, "0")}:00 - kliknij, żeby zapisać.`
+                : `Od ${String(od).padStart(2, "0")}:00 - przesuń kursor i kliknij godzinę końca.`}
           </p>
 
-          <div className="grid grid-cols-4 gap-1.5">
+          {/*
+            Zakres podświetlamy tylko do godziny pod kursorem - wcześniej po pierwszym
+            kliknięciu zapalały się wszystkie późniejsze, więc nie było widać, co właściwie
+            się zapisze. Działa w obie strony: kliknięcie wcześniejszej godziny też domyka
+            przedział (kolejność i tak porządkuje `declareToday`).
+          */}
+          <div className="grid grid-cols-4 gap-1.5" onPointerLeave={() => setPodKursorem(null)}>
             {HOURS.map((h) => {
               const wybrana = od === h;
-              const wZakresie = od !== null && h > od;
+              const wZakresie =
+                od !== null &&
+                podKursorem !== null &&
+                h !== od &&
+                h >= Math.min(od, podKursorem) &&
+                h <= Math.max(od, podKursorem);
               return (
                 <button
                   key={h}
                   onClick={() => klik(h)}
+                  onPointerEnter={() => setPodKursorem(h)}
+                  onFocus={() => setPodKursorem(h)}
                   disabled={busy}
                   className={`rounded-xl border py-2 text-[12px] font-semibold tabular-nums transition ${
                     wybrana
@@ -226,6 +246,7 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
               }
               setPicking((v) => !v);
               setOd(null);
+              setPodKursorem(null);
             }}
             className="w-full rounded-2xl flame-gradient px-4 py-3 text-[13px] font-bold text-black transition hover:brightness-110"
           >

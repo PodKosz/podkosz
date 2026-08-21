@@ -1,9 +1,9 @@
 /**
  * Odznaczenia w konwencji ognia.
  *
- * Zamiast brązu, srebra, złota i diamentu mamy cztery stany ognia: Iskra, Żar, Płomień
- * i Biały żar. Ten ostatni jest odpowiednikiem diamentu - w metalurgii biały żar to
- * najwyższa temperatura, jaką widać okiem, więc pasuje na szczyt lepiej niż kamień.
+ * Zamiast brązu, srebra, złota i diamentu mamy cztery stopnie ognia: Iskra (jaskrawa żółć),
+ * Żar (pomarańcz), Płomień (czerwień) i Niebieski żar. Ten ostatni jest odpowiednikiem
+ * diamentu - najgorętszy płomień świeci na niebiesko, więc szczyt jako jedyny jest chłodny.
  *
  * Każde odznaczenie to jedna liczba z profilu i cztery progi. Nie ma tu punktów ani
  * mnożników: patrzysz na kafelek i od razu wiesz, ile brakuje do kolejnego stopnia.
@@ -22,7 +22,7 @@ export const POZIOMY: Poziom[] = [
   { id: "iskra", nazwa: "Iskra" },
   { id: "zar", nazwa: "Żar" },
   { id: "plomien", nazwa: "Płomień" },
-  { id: "bialy-zar", nazwa: "Biały żar" },
+  { id: "bialy-zar", nazwa: "Niebieski żar" },
 ];
 
 /** Liczby z profilu, na których stoją wszystkie odznaczenia. */

@@ -544,51 +544,51 @@ body {
   pół ekranu.
 */
 .medal-iskra {
-  --szklo-a: rgba(255, 228, 188, 0.96);
-  --szklo-b: rgba(216, 143, 78, 0.96);
-  --szklo-c: rgba(138, 66, 20, 0.97);
-  --szklo-dol: rgba(54, 22, 4, 0.97);
-  --medal-ring: rgba(255, 232, 208, 0.5);
-  --medal-poswiata: rgba(170, 96, 36, 0.6);
-  --medal-motyw: rgba(48, 18, 0, 0.42);
-  --medal-ikona: #2a1508;
+  --szklo-a: rgba(255, 252, 196, 0.98);
+  --szklo-b: rgba(255, 226, 58, 0.97);
+  --szklo-c: rgba(226, 168, 8, 0.97);
+  --szklo-dol: rgba(112, 74, 0, 0.97);
+  --medal-ring: rgba(255, 250, 200, 0.6);
+  --medal-poswiata: rgba(255, 214, 40, 0.6);
+  --medal-motyw: rgba(104, 68, 0, 0.42);
+  --medal-ikona: #2e2200;
 }
 
 .medal-zar {
-  --szklo-a: rgba(255, 198, 152, 0.97);
-  --szklo-b: rgba(247, 96, 28, 0.97);
-  --szklo-c: rgba(176, 26, 4, 0.97);
-  --szklo-dol: rgba(66, 8, 0, 0.97);
-  --medal-ring: rgba(255, 220, 200, 0.56);
-  --medal-poswiata: rgba(239, 60, 12, 0.62);
-  --medal-motyw: rgba(64, 6, 0, 0.44);
-  --medal-ikona: #2d0b02;
+  --szklo-a: rgba(255, 216, 152, 0.97);
+  --szklo-b: rgba(255, 138, 18, 0.97);
+  --szklo-c: rgba(224, 84, 0, 0.97);
+  --szklo-dol: rgba(98, 34, 0, 0.97);
+  --medal-ring: rgba(255, 228, 194, 0.58);
+  --medal-poswiata: rgba(255, 120, 10, 0.62);
+  --medal-motyw: rgba(92, 30, 0, 0.44);
+  --medal-ikona: #331200;
 }
 
 .medal-plomien {
-  --szklo-a: rgba(255, 251, 218, 0.98);
-  --szklo-b: rgba(255, 188, 42, 0.97);
-  --szklo-c: rgba(232, 112, 6, 0.97);
-  --szklo-dol: rgba(98, 36, 0, 0.97);
-  --medal-ring: rgba(255, 250, 226, 0.66);
-  --medal-poswiata: rgba(255, 178, 32, 0.62);
-  --medal-motyw: rgba(92, 34, 0, 0.4);
-  --medal-ikona: #3a2405;
+  --szklo-a: rgba(255, 184, 172, 0.97);
+  --szklo-b: rgba(240, 42, 28, 0.97);
+  --szklo-c: rgba(182, 6, 10, 0.97);
+  --szklo-dol: rgba(74, 0, 4, 0.97);
+  --medal-ring: rgba(255, 208, 202, 0.6);
+  --medal-poswiata: rgba(236, 30, 20, 0.62);
+  --medal-motyw: rgba(76, 0, 0, 0.46);
+  --medal-ikona: #2c0405;
 }
 
 /*
-  Szczyt idzie na zimno: w wysokiej temperaturze płomień przechodzi w błękit, więc
-  „Biały żar" to lodowa kropla z granatową ikoną - inna liga niż ciepła trójka pod nim.
+  Szczyt świeci na neonowy błękit: powyżej czerwieni ogień przestaje być ciepły w odbiorze,
+  a chłodny neon od pierwszego spojrzenia mówi „inna liga" niż żółć, pomarańcz i czerwień.
 */
 .medal-bialy-zar {
-  --szklo-a: rgba(255, 255, 255, 0.98);
-  --szklo-b: rgba(172, 208, 255, 0.97);
-  --szklo-c: rgba(66, 114, 242, 0.97);
-  --szklo-dol: rgba(8, 28, 106, 0.97);
-  --medal-ring: rgba(255, 255, 255, 0.78);
-  --medal-poswiata: rgba(96, 146, 255, 0.66);
-  --medal-motyw: rgba(6, 24, 108, 0.44);
-  --medal-ikona: #0f1c3a;
+  --szklo-a: rgba(216, 246, 255, 0.98);
+  --szklo-b: rgba(56, 184, 255, 0.98);
+  --szklo-c: rgba(18, 92, 255, 0.97);
+  --szklo-dol: rgba(6, 26, 118, 0.97);
+  --medal-ring: rgba(202, 242, 255, 0.8);
+  --medal-poswiata: rgba(40, 160, 255, 0.7);
+  --medal-motyw: rgba(4, 28, 118, 0.46);
+  --medal-ikona: #04162e;
 }
 
 .medal-brak {
@@ -643,17 +643,17 @@ body {
 }
 
 .pasek-iskra {
-  background: linear-gradient(90deg, #7b3f16, #cf9264);
+  background: linear-gradient(90deg, #7a5200, #ffe23a);
 }
 .pasek-zar {
-  background: linear-gradient(90deg, #b81f04, #ff7d4d);
+  background: linear-gradient(90deg, #8a2e00, #ff8a12);
 }
 .pasek-plomien {
-  background: linear-gradient(90deg, #f59a08, #ffeeb0);
+  background: linear-gradient(90deg, #74020a, #f02a1c);
 }
 .pasek-bialy-zar {
-  background: linear-gradient(90deg, #6f9dff, #f7fbff);
-  box-shadow: 0 0 10px rgba(130, 175, 255, 0.55);
+  background: linear-gradient(90deg, #0a37c8, #4fd0ff);
+  box-shadow: 0 0 10px rgba(80, 190, 255, 0.65);
 }
 
 /* kropki stopni pod paskiem postępu */
