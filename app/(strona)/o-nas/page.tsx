@@ -53,14 +53,10 @@ export default async function AboutPage() {
 
       {/*
         Licznik bazy: bez fotografii, bo zdjęcie pod dużą liczbą zawsze z nią walczyło.
-        Zostaje ciemna karta w kolorach serwisu, dwie dryfujące plamy gradientu i kontur
-        boiska widzianego z góry, który wygasza się przy dolnej krawędzi. Liczba leci
-        prosto z Supabase przy każdym wejściu.
+        Zostaje ciemna karta w kolorach serwisu, dwie dryfujące plamy gradientu i wycinek
+        konturu boiska widzianego z góry. Liczba leci prosto z Supabase przy każdym wejściu.
       */}
-      {/*
-        Proporcje karty trzymamy blisko proporcji boiska (1,83), a na telefonie 16:9 - inaczej
-        kontur rozciągnięty na blok byłby zauważalnie zdeformowany.
-      */}
+      {/* Proporcje karty trzymamy blisko proporcji boiska (1,83), a na telefonie 16:9. */}
       <section className="relative mt-12 aspect-[16/9] overflow-hidden rounded-[32px] border border-hairline bg-deep sm:aspect-[840/460]">
         <span
           className="liquid-blob -left-28 -top-32 h-[380px] w-[520px]"
@@ -76,8 +72,16 @@ export default async function AboutPage() {
           }}
         />
 
-        {/* kontur boiska wypełnia całą kartę - liczba i podpis siedzą dokładnie w jego środku */}
-        <div className="pointer-events-none absolute inset-0">
+        {/*
+          Kontur ustawiony tak samo jak na stronie „Już niedługo": szerszy niż karta i
+          przekrzywiony, więc zamiast całego rysunku widać wycinek płyty, a linie wybiegają
+          poza kadr. Wysokość bierzemy z proporcji (aspect), a nie z wysokości karty - inaczej
+          na telefonie 16:9 boisko byłoby rozciągnięte.
+        */}
+        <div
+          className="pointer-events-none absolute left-1/2 top-1/2 aspect-[108/58] w-[108%] opacity-[0.55]"
+          style={{ translate: "calc(-50% + 8.3%) calc(-50% - 1.7%)", rotate: "-11deg" }}
+        >
           <CourtOutline uid="licznik" />
         </div>
 
