@@ -40,6 +40,49 @@ export default async function AboutPage() {
         <CourtOutline uid="tlo" />
       </div>
 
+      {/*
+        Ciepłe plamy światła pod całą stroną. Trzymam je w warstwie przyklejonej do okna:
+        plamy są szersze niż kolumna tekstu i wychodzą poza ekran, a element `fixed` nie
+        rozciąga strony na boki - `absolute` z takimi rozmiarami zrobiłby poziomy pasek
+        przewijania na telefonie. `overflow-hidden` ucina je dokładnie na krawędzi ekranu,
+        więc nigdzie nie widać twardego końca gradientu.
+      */}
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden>
+        <span
+          className="liquid-blob -left-32 -top-28 h-[520px] w-[680px]"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(255,122,24,.32) 0%, rgba(255,77,10,.12) 52%, transparent 72%)",
+          }}
+        />
+        <span
+          className="liquid-blob -right-40 top-[34%] h-[560px] w-[640px]"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(255,77,10,.26) 0%, rgba(255,122,24,.09) 55%, transparent 74%)",
+          }}
+        />
+        <span
+          className="liquid-blob -left-28 bottom-[-9rem] h-[520px] w-[720px]"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(255,178,92,.24) 0%, rgba(255,122,24,.08) 52%, transparent 72%)",
+          }}
+        />
+        <span
+          className="liquid-blob left-1/2 top-[8%] h-[520px] w-[760px] -translate-x-1/2"
+          style={{
+            background: "radial-gradient(circle, rgba(255,122,24,.16) 0%, transparent 72%)",
+          }}
+        />
+        <span
+          className="liquid-blob right-[12%] bottom-[-14rem] h-[420px] w-[520px]"
+          style={{
+            background: "radial-gradient(circle, rgba(255,122,24,.20) 0%, transparent 70%)",
+          }}
+        />
+      </div>
+
       <p className="text-[12px] uppercase tracking-[0.2em] text-flame">O projekcie</p>
       <h1 className="mt-2 text-[clamp(32px,5.5vw,56px)] font-semibold leading-[1.05] tracking-[-0.02em]">
         Największa mapa boisk do koszykówki w Polsce
@@ -67,31 +110,20 @@ export default async function AboutPage() {
       </div>
 
       {/*
-        Licznik bazy: bez fotografii, bo zdjęcie pod dużą liczbą zawsze z nią walczyło.
-        Zostaje półprzezroczysta karta w kolorach serwisu i dwie dryfujące plamy gradientu -
-        rysunek boiska daje jej tło leżące pod całą stroną. Liczba leci prosto z Supabase.
+        Licznik bazy bez ramki i bez karty: liczba stoi wprost na stronie, na rysunku boiska
+        leżącym pod całą treścią. Zostaje tylko ciepła poświata pod cyframi, żeby nie wisiały
+        w pustce. Liczba leci prosto z Supabase przy każdym wejściu.
       */}
-      {/* Proporcje karty trzymamy blisko proporcji boiska (1,83), a na telefonie 16:9. */}
-      <section className="relative mt-12 aspect-[16/9] overflow-hidden rounded-[32px] border border-hairline bg-void/45 sm:aspect-[840/460]">
+      <section className="relative mt-16 py-10 text-center sm:py-16">
         <span
-          className="liquid-blob -left-28 -top-32 h-[380px] w-[520px]"
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[min(70vw,460px)] w-[min(92vw,760px)] -translate-x-1/2 -translate-y-1/2 blur-[90px]"
           style={{
             background:
-              "radial-gradient(circle, rgba(255,122,24,.30) 0%, rgba(255,77,10,.10) 55%, transparent 74%)",
-          }}
-        />
-        <span
-          className="liquid-blob -right-28 top-10 h-[340px] w-[420px]"
-          style={{
-            background: "radial-gradient(circle, rgba(255,178,92,.22) 0%, transparent 70%)",
+              "radial-gradient(closest-side, rgba(255,77,10,.42) 0%, rgba(255,122,24,.16) 50%, transparent 100%)",
           }}
         />
 
-        {/*
-          Karta nie ma własnego konturu: rysunek idzie pod całą stroną, a tło karty jest
-          półprzezroczyste, więc linie przechodzą przez nią bez przeskoku na krawędzi.
-        */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
+        <div className="relative">
           <p className="text-[14px] font-medium uppercase tracking-[0.36em] text-white/70 sm:text-[17px]">
             Boisk w bazie
           </p>
@@ -101,7 +133,7 @@ export default async function AboutPage() {
             zostawały niepomalowane) i wcięcie z prawej, bo ujemny tracking odejmuje odstęp także
             po ostatniej cyfrze - i to jej prawy bok zostawał nieomalowany.
           */}
-          <p className="mt-2 flame-text pb-3 pr-[0.08em] text-[clamp(84px,20vw,236px)] font-bold leading-[1.04] tracking-[-0.05em] tabular-nums sm:mt-3">
+          <p className="mt-2 flame-text pb-3 pr-[0.08em] text-[clamp(96px,22vw,236px)] font-bold leading-[1.04] tracking-[-0.05em] tabular-nums sm:mt-3">
             {total}
           </p>
           {total === 0 && (
