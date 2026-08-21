@@ -85,7 +85,7 @@ export default async function AboutPage() {
 
       <p className="text-[12px] uppercase tracking-[0.2em] text-flame">O projekcie</p>
       <h1 className="mt-2 text-[clamp(32px,5.5vw,56px)] font-semibold leading-[1.05] tracking-[-0.02em]">
-        Największa mapa boisk do koszykówki w Polsce
+        Chcemy zbudować największą mapę boisk do koszykówki w Polsce
       </h1>
       <div className="mt-5 max-w-2xl space-y-4 text-[17px] leading-relaxed text-muted">
         <p>
