@@ -50,9 +50,7 @@ export function Odznaczenia({ statystyki }: { statystyki: StatystykiGracza }) {
         {lista.map((o) => (
           <article
             key={o.id}
-            className={`rounded-[22px] border p-4 ${
-              o.stopien > 0 ? "glass" : "border-hairline bg-white/[0.025]"
-            }`}
+            className={`kafel p-4 ${o.stopien > 0 ? "" : "opacity-[0.82]"}`}
           >
             <div className="flex items-center gap-3">
               <span

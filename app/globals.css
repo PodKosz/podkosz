@@ -158,6 +158,143 @@ body {
     radial-gradient(1000px 700px at 88% 92%, rgba(255, 77, 10, 0.09), transparent 60%);
 }
 
+/* ---------- Szkło premium (profile, konto) ---------- */
+
+/*
+  Powierzchnia „liquid glass": trzy warstwy naraz - pionowe rozjaśnienie od góry (światło
+  pada z góry), ciepła plama w lewym narożniku i rozmycie tła pod spodem. Do tego włosowa
+  obwódka przez `inset` w box-shadow, bo `border` na dużych promieniach gubi równą grubość.
+*/
+.szklo-pro {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.075) 0%,
+      rgba(255, 255, 255, 0.022) 46%,
+      rgba(255, 255, 255, 0.012) 100%
+    ),
+    radial-gradient(130% 150% at 8% -20%, rgba(255, 122, 24, 0.17), transparent 58%);
+  backdrop-filter: blur(30px) saturate(165%);
+  -webkit-backdrop-filter: blur(30px) saturate(165%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.055),
+    0 30px 70px -34px rgba(0, 0, 0, 0.95);
+}
+
+/* smuga światła po skosie - to ona sprzedaje „szkło", a nie samo rozmycie */
+.szklo-pro::after {
+  content: "";
+  position: absolute;
+  left: -12%;
+  right: -12%;
+  top: -46%;
+  height: 78%;
+  rotate: -8deg;
+  pointer-events: none;
+  background: linear-gradient(
+    112deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.03) 34%,
+    rgba(255, 255, 255, 0) 62%
+  );
+}
+
+/* kafelek liczby - to samo szkło, ale reaguje na kursor */
+.kafel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.018) 100%),
+    radial-gradient(120% 130% at 50% -40%, rgba(255, 122, 24, 0.14), transparent 62%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 18px 40px -26px rgba(0, 0, 0, 0.9);
+  transition:
+    translate 260ms cubic-bezier(0.32, 0.72, 0, 1),
+    box-shadow 260ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.kafel:hover {
+  translate: 0 -3px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 0 0 1px rgba(255, 168, 80, 0.22),
+    0 26px 54px -26px rgba(255, 122, 24, 0.34);
+}
+
+/* pierścień wokół avatara - gradient marki, nie zwykła obwódka */
+.awatar-ramka {
+  position: relative;
+  border-radius: 999px;
+  padding: 3px;
+  background: conic-gradient(from 210deg, #ff3d00, #ff7a18 30%, #ffc47d 52%, #ff5f12 78%, #ff3d00);
+  box-shadow: 0 18px 44px -18px rgba(255, 90, 20, 0.6);
+}
+
+.awatar-ramka > * {
+  border-radius: 999px;
+  background: var(--color-void);
+}
+
+/* podkreślenie nagłówka sekcji - krótka kreska gasnąca w prawo */
+.kreska-sekcji {
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 168, 80, 0.55), rgba(255, 168, 80, 0));
+}
+
+/* ---------- Rysunki w tle ---------- */
+
+/*
+  Kosz na stronie rankingu żyje przy przewijaniu: schodzi nieco wolniej niż treść, lekko
+  rośnie i przygasa. Animacja jest sterowana pozycją przewijania (`animation-timeline`),
+  więc nie ma tu ani jednego nasłuchu w JS - przeglądarka liczy to na wątku kompozytora,
+  a strona nie gubi płynności. Gdzie tej funkcji nie ma, rysunek stoi nieruchomo.
+*/
+.kosz-tlo {
+  translate: -50% 0;
+  rotate: -3deg;
+  opacity: 0.2;
+}
+
+@supports (animation-timeline: scroll()) {
+  .kosz-tlo {
+    animation: kosz-parallaksa linear both;
+    animation-timeline: scroll(root block);
+    animation-range: 0 220vh;
+  }
+
+  @keyframes kosz-parallaksa {
+    from {
+      translate: -50% 0;
+      rotate: -3deg;
+      scale: 1;
+      opacity: 0.2;
+    }
+    to {
+      translate: -50% 14vh;
+      rotate: -0.6deg;
+      scale: 1.07;
+      opacity: 0.1;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kosz-tlo {
+    animation: none;
+  }
+}
+
+/* piłka w tle profilu - stoi spokojnie, ma tylko oddychać razem z plamami światła */
+.pilka-tlo {
+  opacity: 0.16;
+}
+
 /* ---------- Odznaczenia ---------- */
 
 /*
@@ -576,7 +713,8 @@ select option {
 .orbita {
   --baza: clamp(148px, 30vw, 236px);
   --avatar: calc(var(--baza) * var(--f));
-  --kadr: calc(var(--avatar) * 0.33);
+  /* rozmiar kadru liczy komponent z ich liczby - tu jest tylko wartość domyślna */
+  --kadr: calc(var(--avatar) * var(--kadr-f, 0.33));
   --pole: calc(var(--avatar) + var(--kadr) * 2.1);
   /* zdjęcia siedzą tuż za krawędzią avatara - stykają się z nią, ale go nie zasłaniają */
   --promien: calc(var(--avatar) / 2 + var(--kadr) * 0.46);
@@ -634,8 +772,12 @@ select option {
   kręciłoby się razem z pierścieniem i stało do góry nogami.
 */
 .orbita-kadr {
-  margin-left: calc(var(--kadr) / -2);
-  margin-top: calc(var(--kadr) / -2);
+  /* `--s` to udział podpaleń tego boiska; odstęp liczymy od pełnego kadru, więc nawet
+     największe zdjęcie nie wchodzi na sąsiednie */
+  width: calc(var(--kadr) * var(--s, 1));
+  height: calc(var(--kadr) * var(--s, 1));
+  margin-left: calc(var(--kadr) * var(--s, 1) / -2);
+  margin-top: calc(var(--kadr) * var(--s, 1) / -2);
   transform: rotate(var(--kat)) translateY(calc(var(--promien) * -1));
   box-shadow:
     0 0 0 2px rgba(7, 7, 10, 0.9),
@@ -681,19 +823,29 @@ select option {
   );
 }
 
+/*
+  Numer miejsca w gradiencie marki. `background-clip: text` nie współpracuje z
+  `text-shadow` (cień malowałby się na całym pudełku), więc głębię daje `drop-shadow`
+  w filtrze - ten działa już na gotowych literach. Wcięcie z prawej jest po to, że ujemny
+  tracking odejmuje odstęp także po ostatniej cyfrze i obcinałby jej prawy bok.
+*/
 .orbita-cyfra {
   position: absolute;
-  right: 6%;
+  right: 5%;
   top: 50%;
   translate: 0 -50%;
   pointer-events: none;
-  font-size: calc(var(--avatar) * 0.46);
+  padding-right: 0.06em;
+  font-size: calc(var(--avatar) * 0.48);
   font-weight: 800;
-  line-height: 0.9;
-  letter-spacing: -0.04em;
+  line-height: 0.92;
+  letter-spacing: -0.045em;
   font-variant-numeric: tabular-nums;
-  color: #fff;
-  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.55);
+  background: linear-gradient(168deg, #ffffff 0%, #ffe3bd 34%, #ff9a3c 74%, #ff5f12 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 3px 14px rgba(0, 0, 0, 0.6));
 }
 
 .orbita-wolne {

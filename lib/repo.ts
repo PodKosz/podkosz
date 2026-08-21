@@ -315,6 +315,8 @@ export interface KadrOdkrywcy {
   name: string;
   photo: CourtPhotoRef;
   seed: number;
+  /** podpalenia tego boiska - od nich zależy rozmiar kadru w konstelacji */
+  likes: number;
 }
 
 export interface OdkrywcaRanking {
@@ -375,10 +377,16 @@ export async function listRankingOdkrywcow(ile = 25): Promise<OdkrywcaRanking[]>
     .filter((o) => !czyAutorAnonimowy(o.name))
     .slice(0, ile)
     .map((o) => {
+      /*
+        Kadry w konstelacji: bierzemy do czternastu najczęściej podpalanych boisk. Więcej
+        pierścień nie zniesie - przy każdym kolejnym zdjęciu muszą się zmniejszać, żeby
+        zmieściły się na obwodzie, a poniżej pewnego rozmiaru nie widać już, co jest na
+        zdjęciu.
+      */
       const moje = courts
         .filter((c) => c.addedBy === o.name)
         .sort((a, b) => b.likes - a.likes)
-        .slice(0, 10);
+        .slice(0, 14);
 
       return {
         name: o.name,
@@ -391,6 +399,7 @@ export async function listRankingOdkrywcow(ile = 25): Promise<OdkrywcaRanking[]>
           name: c.name,
           photo: c.photos[0],
           seed: c.seed,
+          likes: c.likes,
         })),
         plakietki: [] as Plakietka[],
       };

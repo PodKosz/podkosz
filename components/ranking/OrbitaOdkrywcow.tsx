@@ -91,14 +91,32 @@ function Gwiazda({
   uklad: Uklad;
   odRazu?: boolean;
 }) {
-  const kadry = odkrywca.kadry.slice(0, 8);
+  const kadry = odkrywca.kadry;
   const krok = kadry.length ? 360 / kadry.length : 0;
+
+  /*
+    Rozmiar kadrów wynika z ich liczby: im więcej boisk, tym mniejsze zdjęcia, bo wszystkie
+    muszą się zmieścić na obwodzie pierścienia. Wzór to po prostu „obwód podzielony na
+    równe kawałki", z zapasem na odstępy - przy trzech boiskach dostajemy górny limit,
+    przy czternastu połowę tego.
+  */
+  const kadrF = Math.min(0.33, 2.6 / Math.max(kadry.length, 1));
+
+  /*
+    A wielkość konkretnego kadru to jego podpalenia: najgoręstsze boisko danej osoby jest
+    największe, najzimniejsze najmniejsze. Gdy nikt nic jeszcze nie podpalił, wszystkie
+    zostają równe - inaczej cała orbita byłaby sztucznie zdrobniona.
+  */
+  const maksLikes = Math.max(...kadry.map((k) => k.likes), 0);
+  const skalaKadru = (likes: number) =>
+    maksLikes === 0 ? 1 : 0.76 + 0.34 * (likes / maksLikes);
 
   return (
     <div
       className={`orbita group relative flex shrink-0 flex-col items-center ${klasa}`}
       style={{
         ["--f" as string]: skala.toFixed(3),
+        ["--kadr-f" as string]: kadrF.toFixed(3),
         ["--dy" as string]: uklad.dy,
         ["--obrot" as string]: uklad.obrot,
         ["--kierunek" as string]: uklad.kierunek,
@@ -121,8 +139,11 @@ function Gwiazda({
               key={k.slug}
               href={`/boisko/${k.slug}`}
               title={k.name}
-              className="orbita-kadr absolute left-1/2 top-1/2 block h-[var(--kadr)] w-[var(--kadr)] overflow-hidden rounded-full"
-              style={{ ["--kat" as string]: `${-90 + i * krok}deg` }}
+              className="orbita-kadr absolute left-1/2 top-1/2 block overflow-hidden rounded-full"
+              style={{
+                ["--kat" as string]: `${-90 + i * krok}deg`,
+                ["--s" as string]: skalaKadru(k.likes).toFixed(3),
+              }}
             >
               <span className="orbita-kadr-obraz block h-full w-full overflow-hidden rounded-full">
                 <CourtPhoto photo={k.photo} seed={k.seed} sizes="120px" priority={odRazu} />

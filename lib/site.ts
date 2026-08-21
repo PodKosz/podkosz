@@ -61,3 +61,29 @@ const AUTORZY_ANONIMOWI = new Set(["gosc", "gość", "gość anonimowy", "anonim
 export function czyAutorAnonimowy(nazwa: string): boolean {
   return AUTORZY_ANONIMOWI.has(nazwa.trim().toLowerCase());
 }
+
+/*
+  Polskie daty opisowe wymagają dopełniacza: „od sierpnia 2026", nie „od sierpień 2026".
+  `toLocaleDateString` z `month: "long"` zwraca mianownik, więc nazwy trzymamy tutaj.
+*/
+const MIESIACE_DOPELNIACZ = [
+  "stycznia",
+  "lutego",
+  "marca",
+  "kwietnia",
+  "maja",
+  "czerwca",
+  "lipca",
+  "sierpnia",
+  "września",
+  "października",
+  "listopada",
+  "grudnia",
+];
+
+/** „sierpnia 2026" albo „14 sierpnia 2026", gdy podamy `zDniem`. */
+export function dataOpisowa(iso: string, zDniem = false): string {
+  const d = new Date(iso);
+  const miesiac = `${MIESIACE_DOPELNIACZ[d.getMonth()]} ${d.getFullYear()}`;
+  return zDniem ? `${d.getDate()} ${miesiac}` : miesiac;
+}

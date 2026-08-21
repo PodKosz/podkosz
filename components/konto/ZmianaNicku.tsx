@@ -83,7 +83,7 @@ export function ZmianaNicku({
   };
 
   return (
-    <div className="glass rounded-[24px] p-6">
+    <div className="szklo-pro rounded-[28px] p-6 sm:p-7">
       <h2 className="text-[17px] font-semibold tracking-tight">Twój nick</h2>
       <p className="mt-2 text-[13px] leading-relaxed text-muted">
         Tym podpisem widnieją boiska, które dodajesz, i Twoje miejsce w rankingu odkrywców.

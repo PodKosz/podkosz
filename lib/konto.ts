@@ -120,3 +120,21 @@ function zwinHistorie(
 
   return [...mapa.values()].map((w) => ({ ...w, hours: [...w.hours].sort((a, b) => a - b) }));
 }
+
+/**
+ * Kiedy ostatnio zmieniano nick - jedyna rzecz, jakiej potrzebuje strona ustawień.
+ * Osobne, tanie zapytanie: `pobierzKonto` ciągnie boiska, ulubione i historię, a tam
+ * nie ma po nich nawet śladu na ekranie.
+ */
+export async function pobierzNickZmieniony(userId: string): Promise<string | null> {
+  const supabase = await supabaseServer();
+  if (!supabase) return null;
+
+  const { data } = await supabase
+    .from("profiles")
+    .select("nick_changed_at")
+    .eq("id", userId)
+    .maybeSingle();
+
+  return (data as { nick_changed_at: string | null } | null)?.nick_changed_at ?? null;
+}

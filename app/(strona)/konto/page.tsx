@@ -6,8 +6,8 @@ import { statystykiGracza } from "@/lib/profil";
 import { Odznaczenia } from "@/components/Odznaczenia";
 import { plural, slugifyPlace } from "@/lib/site";
 import { CourtCard } from "@/components/CourtCard";
-import { ZmianaNicku } from "@/components/konto/ZmianaNicku";
-import { UsunKonto } from "@/components/konto/UsunKonto";
+import { TloPilki } from "@/components/TloPilki";
+import { NaglowekSekcji } from "@/components/NaglowekSekcji";
 import { FireBallIcon, PinIcon } from "@/components/icons";
 
 export const metadata: Metadata = {
@@ -34,12 +34,13 @@ export default async function KontoPage() {
 
   if (!user) {
     return (
-      <main className="mx-auto min-h-dvh max-w-3xl px-6 pb-24 pt-28">
+      <main className="relative mx-auto min-h-dvh max-w-3xl px-6 pb-24 pt-28">
+        <TloPilki uid="konto" />
         <p className="text-[12px] uppercase tracking-[0.2em] text-flame">Moje konto</p>
         <h1 className="mt-2 text-[clamp(30px,5vw,46px)] font-semibold tracking-[-0.02em]">
           Twoje konto
         </h1>
-        <p className="glass mt-8 rounded-[24px] p-8 text-center text-[15px] text-muted">
+        <p className="szklo-pro mt-8 rounded-[28px] p-8 text-center text-[15px] text-muted">
           Zaloguj się przez Google (przycisk w prawym górnym rogu), żeby zobaczyć swoje boiska,
           podpalenia, ulubione i historię gry.
         </p>
@@ -62,15 +63,24 @@ export default async function KontoPage() {
   ];
 
   return (
-    <main className="mx-auto min-h-dvh max-w-6xl px-6 pb-24 pt-28">
-      <header className="flex flex-wrap items-center gap-5">
-        <span className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-full flame-gradient text-[22px] font-bold text-black">
-          {user.avatar ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={user.avatar} alt="" className="h-full w-full object-cover" />
-          ) : (
-            user.name.slice(0, 1).toUpperCase()
-          )}
+    <main className="relative mx-auto min-h-dvh max-w-6xl px-6 pb-24 pt-28">
+      <TloPilki uid="konto" />
+
+      {/*
+        Karta powitalna na szkle: avatar w gradientowym pierścieniu, nick, a po prawej dwa
+        wyjścia - publiczny profil i ustawienia. Wszystko w jednym kadrze, żeby wejście na
+        konto nie zaczynało się od surowego nagłówka na czarnym tle.
+      */}
+      <header className="szklo-pro flex flex-wrap items-center gap-5 rounded-[32px] p-6 sm:p-8">
+        <span className="awatar-ramka shrink-0">
+          <span className="grid h-[74px] w-[74px] place-items-center overflow-hidden text-[24px] font-bold">
+            {user.avatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={user.avatar} alt="" className="h-full w-full rounded-full object-cover" />
+            ) : (
+              <span className="flame-text">{user.name.slice(0, 1).toUpperCase()}</span>
+            )}
+          </span>
         </span>
 
         <div className="min-w-0">
@@ -78,22 +88,34 @@ export default async function KontoPage() {
           <h1 className="mt-1 truncate text-[clamp(28px,4vw,44px)] font-semibold leading-tight tracking-[-0.02em]">
             {user.name}
           </h1>
-          <p className="mt-1 text-[13px] text-muted">
-            {user.email}
-            {user.isAdmin && <span className="ml-2 text-flame">· administrator</span>}
+          <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted">
+            <span className="truncate">{user.email}</span>
+            {user.isAdmin && (
+              <span className="rounded-full border border-flame/40 bg-flame/10 px-2.5 py-0.5 text-[11px] uppercase tracking-[0.12em] text-glow">
+                administrator
+              </span>
+            )}
           </p>
         </div>
 
-        <Link
-          href={`/gracz/${slugifyPlace(user.name)}`}
-          className="glass ml-auto rounded-full px-5 py-2.5 text-[13px] font-medium text-muted transition hover:text-ink"
-        >
-          Twój publiczny profil
-        </Link>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <Link
+            href={`/gracz/${slugifyPlace(user.name)}`}
+            className="rounded-full border border-hairline bg-white/6 px-5 py-2.5 text-[13px] font-medium text-muted transition hover:border-flame/40 hover:text-ink"
+          >
+            Publiczny profil
+          </Link>
+          <Link
+            href="/konto/ustawienia"
+            className="rounded-2xl flame-gradient px-5 py-2.5 text-[13px] font-bold text-black transition hover:brightness-110"
+          >
+            Ustawienia konta
+          </Link>
+        </div>
       </header>
 
       {user.isBanned && (
-        <p className="mt-8 rounded-[24px] border border-ember/40 bg-ember/10 px-6 py-5 text-[14px] leading-relaxed text-ember">
+        <p className="mt-6 rounded-[24px] border border-ember/40 bg-ember/10 px-6 py-5 text-[14px] leading-relaxed text-ember">
           <span className="font-semibold">Konto jest zablokowane.</span> Możesz przeglądać serwis,
           ale dodawanie boisk, podpalanie, ulubione i zapisy na grę są wyłączone. Jeśli to
           pomyłka, napisz do nas przez formularz opinii.
@@ -101,11 +123,11 @@ export default async function KontoPage() {
       )}
 
       {/* ---------- statystyki ---------- */}
-      <section className="mt-10">
-        <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">Twoje liczby</h2>
+      <section className="mt-8">
+        <NaglowekSekcji tytul="Twoje liczby" />
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {kafelki.map(([label, wartosc]) => (
-            <div key={label} className="glass rounded-[20px] p-4">
+            <div key={label} className="kafel p-4">
               <p className="flame-text pb-1 text-[30px] font-bold leading-none tabular-nums">
                 {wartosc}
               </p>
@@ -118,20 +140,9 @@ export default async function KontoPage() {
       {/* ---------- odznaczenia ---------- */}
       <Odznaczenia statystyki={statystyki} />
 
-      {/* ---------- nick ---------- */}
-      <section className="mt-10">
-        <ZmianaNicku
-          nick={user.name}
-          ostatniaZmiana={dane.nickZmieniony}
-          zablokowane={user.isBanned}
-        />
-      </section>
-
       {/* ---------- moje boiska ---------- */}
       <section className="mt-12">
-        <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">
-          Boiska, które dodałeś ({dane.dodane.length})
-        </h2>
+        <NaglowekSekcji tytul={`Boiska, które dodałeś (${dane.dodane.length})`} />
         {dane.dodane.length ? (
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {dane.dodane.map((c) => (
@@ -139,7 +150,7 @@ export default async function KontoPage() {
             ))}
           </div>
         ) : (
-          <p className="glass mt-4 rounded-[24px] p-8 text-center text-[15px] text-muted">
+          <p className="szklo-pro mt-4 rounded-[28px] p-8 text-center text-[15px] text-muted">
             Jeszcze nic nie dodałeś.{" "}
             <Link href="/dodaj" className="text-flame transition hover:brightness-110">
               Dodaj pierwsze boisko
@@ -162,13 +173,11 @@ export default async function KontoPage() {
 
       {/* ---------- ulubione ---------- */}
       <section className="mt-12">
-        <div className="flex items-end justify-between gap-4">
-          <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">
-            Ulubione ({dane.ulubione.length})
-          </h2>
+        <div className="flex items-center justify-between gap-4">
+          <NaglowekSekcji tytul={`Ulubione (${dane.ulubione.length})`} />
           <Link
             href="/ulubione"
-            className="text-[13px] text-muted transition hover:text-flame"
+            className="shrink-0 text-[13px] text-muted transition hover:text-flame"
           >
             cała lista
           </Link>
@@ -180,7 +189,7 @@ export default async function KontoPage() {
             ))}
           </div>
         ) : (
-          <p className="glass mt-4 rounded-[24px] p-8 text-center text-[15px] text-muted">
+          <p className="szklo-pro mt-4 rounded-[28px] p-8 text-center text-[15px] text-muted">
             Nic tu jeszcze nie ma. Na karcie boiska kliknij „Do ulubionych”.
           </p>
         )}
@@ -188,10 +197,8 @@ export default async function KontoPage() {
 
       {/* ---------- historia gry ---------- */}
       <section className="mt-12">
-        <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">
-          Gdzie grałeś ({dane.historia.length})
-        </h2>
-        <p className="mt-1 text-[13px] text-muted">
+        <NaglowekSekcji tytul={`Gdzie grałeś (${dane.historia.length})`} />
+        <p className="mt-2 text-[13px] text-muted">
           Lista powstaje z zapisów „idę dziś zagrać” - najnowsze na górze.
         </p>
 
@@ -200,7 +207,7 @@ export default async function KontoPage() {
             {dane.historia.map((w, i) => (
               <li
                 key={`${w.day}-${w.court?.slug ?? i}`}
-                className="glass flex items-center gap-4 rounded-[20px] px-4 py-3.5"
+                className="kafel flex items-center gap-4 px-4 py-3.5"
               >
                 <span className="w-24 shrink-0 text-[13px] tabular-nums text-muted">
                   {new Date(w.day).toLocaleDateString("pl-PL", {
@@ -235,7 +242,7 @@ export default async function KontoPage() {
             ))}
           </ul>
         ) : (
-          <p className="glass mt-4 rounded-[24px] p-8 text-center text-[15px] text-muted">
+          <p className="szklo-pro mt-4 rounded-[28px] p-8 text-center text-[15px] text-muted">
             Jeszcze nigdzie się nie zapisałeś. Na karcie boiska kliknij{" "}
             <span className="inline-flex items-center gap-1 text-ink">
               <FireBallIcon className="h-4 w-4" /> „Idę dziś zagrać”
@@ -243,11 +250,6 @@ export default async function KontoPage() {
             .
           </p>
         )}
-      </section>
-
-      {/* ---------- usunięcie konta ---------- */}
-      <section className="mt-14">
-        <UsunKonto />
       </section>
     </main>
   );

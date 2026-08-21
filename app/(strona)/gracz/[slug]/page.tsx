@@ -5,7 +5,9 @@ import { getAuthor, listContributors } from "@/lib/repo";
 import { nickZeSlugu, statystykiGracza } from "@/lib/profil";
 import { CourtCard } from "@/components/CourtCard";
 import { Odznaczenia } from "@/components/Odznaczenia";
-import { czyAutorAnonimowy, SITE_NAME, plural, slugifyPlace } from "@/lib/site";
+import { TloPilki } from "@/components/TloPilki";
+import { NaglowekSekcji } from "@/components/NaglowekSekcji";
+import { czyAutorAnonimowy, dataOpisowa, SITE_NAME, plural, slugifyPlace } from "@/lib/site";
 import { ArrowLeftIcon, FireBallIcon } from "@/components/icons";
 
 export const revalidate = 3600;
@@ -76,64 +78,76 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
   ];
 
   return (
-    <main className="mx-auto min-h-dvh max-w-6xl px-6 pb-24 pt-28">
+    <main className="relative mx-auto min-h-dvh max-w-6xl px-6 pb-24 pt-28">
+      <TloPilki uid="gracz" />
+
       <Link
         href="/ranking"
-        className="glass inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12px] uppercase tracking-[0.14em] text-muted transition hover:text-ink"
+        className="szklo-pro inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12px] uppercase tracking-[0.14em] text-muted transition hover:text-ink"
       >
         <ArrowLeftIcon className="h-4 w-4" /> ranking graczy
       </Link>
 
-      <header className="mt-6 flex flex-wrap items-center gap-5">
-        <span className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-full flame-gradient text-[26px] font-bold text-black">
-          {statystyki.avatar ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={statystyki.avatar} alt="" className="h-full w-full object-cover" />
-          ) : (
-            nick.slice(0, 1).toUpperCase()
-          )}
-        </span>
+      {/*
+        Wizytówka gracza: avatar w gradientowym pierścieniu, nick i data dołączenia na
+        jednej szklanej płycie. Liczby siedzą w tej samej karcie, więc profil otwiera się
+        jednym spójnym kadrem, a nie serią osobnych pudełek.
+      */}
+      <header className="szklo-pro mt-6 rounded-[32px] p-6 sm:p-8">
+        <div className="flex flex-wrap items-center gap-5">
+          <span className="awatar-ramka shrink-0">
+            <span className="grid h-[86px] w-[86px] place-items-center overflow-hidden text-[28px] font-bold">
+              {statystyki.avatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={statystyki.avatar}
+                  alt=""
+                  className="h-full w-full rounded-full object-cover"
+                />
+              ) : (
+                <span className="flame-text">{nick.slice(0, 1).toUpperCase()}</span>
+              )}
+            </span>
+          </span>
 
-        <div className="min-w-0">
-          <p className="text-[12px] uppercase tracking-[0.2em] text-flame">Profil gracza</p>
-          <h1 className="mt-1 truncate text-[clamp(28px,5vw,48px)] font-semibold tracking-[-0.02em]">
-            @{nick}
-          </h1>
-          {statystyki.dolaczyl && (
-            <p className="mt-1 text-[13px] text-muted">
-              w PodKoszu od{" "}
-              {new Date(statystyki.dolaczyl).toLocaleDateString("pl-PL", {
-                month: "long",
-                year: "numeric",
-              })}
+          <div className="min-w-0">
+            <p className="text-[12px] uppercase tracking-[0.2em] text-flame">Profil gracza</p>
+            <h1 className="mt-1 truncate text-[clamp(28px,5vw,48px)] font-semibold tracking-[-0.02em]">
+              @{nick}
+            </h1>
+            {statystyki.dolaczyl && (
+              <p className="mt-1 text-[13px] text-muted">
+                w PodKoszu od {dataOpisowa(statystyki.dolaczyl)}
+              </p>
+            )}
+          </div>
+
+          {boiska.length > 0 && (
+            <p className="ml-auto hidden items-center gap-2 rounded-full border border-flame/35 bg-flame/10 px-4 py-2 text-[14px] font-semibold text-glow sm:flex">
+              <FireBallIcon className="h-4 w-4" /> {statystyki.podpaleniaZebrane}
+              <span className="text-[12px] font-normal uppercase tracking-[0.12em] text-muted">
+                {plural(statystyki.podpaleniaZebrane, ["podpalenie", "podpalenia", "podpaleń"])}
+              </span>
             </p>
           )}
         </div>
-      </header>
 
-      <section className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {kafelki.map(([label, wartosc]) => (
-          <div key={label} className="glass rounded-[20px] p-4">
-            <p className="flame-text pb-1 text-[30px] font-bold leading-none tabular-nums">
-              {wartosc}
-            </p>
-            <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-faint">{label}</p>
-          </div>
-        ))}
-      </section>
+        <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {kafelki.map(([label, wartosc]) => (
+            <div key={label} className="kafel p-4">
+              <p className="flame-text pb-1 text-[30px] font-bold leading-none tabular-nums">
+                {wartosc}
+              </p>
+              <p className="mt-1 text-[11px] uppercase tracking-[0.12em] text-faint">{label}</p>
+            </div>
+          ))}
+        </div>
+      </header>
 
       <Odznaczenia statystyki={statystyki} />
 
       <section className="mt-12">
-        <h2 className="text-[13px] uppercase tracking-[0.16em] text-faint">
-          Dodane boiska
-          {boiska.length > 0 && (
-            <span className="ml-2 text-glow">
-              <FireBallIcon className="mr-1 inline h-3.5 w-3.5 align-[-2px]" />
-              {statystyki.podpaleniaZebrane}
-            </span>
-          )}
-        </h2>
+        <NaglowekSekcji tytul={`Dodane boiska (${boiska.length})`} />
 
         {boiska.length ? (
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -142,7 +156,7 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
             ))}
           </div>
         ) : (
-          <div className="glass mt-4 rounded-[24px] p-8 text-center">
+          <div className="szklo-pro mt-4 rounded-[28px] p-8 text-center">
             <p className="text-[15px] text-muted">
               Tu jeszcze nic nie ma. Pierwsze boisko zamienia pusty profil w pierwszy stopień
               odznaczenia „Odkrywca”.
