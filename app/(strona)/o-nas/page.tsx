@@ -89,11 +89,21 @@ export default async function AboutPage() {
       </h1>
       <div className="mt-5 max-w-2xl space-y-4 text-[17px] leading-relaxed text-muted">
         <p>
-          Szukanie miejsca do gry w obcym mieście kończy się zwykle na jednym rozmytym zdjęciu
-          sprzed ośmiu lat. U nas każde boisko ma komplet kadrów z różnych stron: całe boisko
-          z narożnika, osobno każdy kosz, zbliżenie na obręcz i siatkę oraz detal nawierzchni.
-          Widzisz, czy obręcz jest prosta i czy beton nie jest spękany, zanim pojedziesz na
-          boisko.
+          Szukanie boiska w obcym mieście wygląda zwykle tak samo: mapa pokazuje pinezkę bez
+          zdjęcia, forum pamięta stan sprzed ośmiu lat, a na miejscu okazuje się, że obręcz
+          jest wygięta, brama zamknięta albo płyta rozbita. Dojeżdżasz z piłką i wracasz
+          z niczym.
+        </p>
+        <p className="text-ink/90">
+          Chcemy to zmienić. PodKosz to jedna wielka baza i mapa boisk z całej Polski, którą
+          piszą jej użytkownicy: zdjęcia, opis, godziny, dodatkowe uwagi o miejscu - wszystko
+          przychodzi od ludzi, którzy tam grają. Zgłoszenie robisz telefonem, stojąc na boisku,
+          w trzy minuty i bez zakładania konta.
+        </p>
+        <p>
+          Każde boisko ma komplet kadrów z różnych stron: całe boisko z narożnika, osobno każdy
+          kosz, zbliżenie na obręcz i siatkę oraz detal nawierzchni. Widzisz, czy obręcz jest
+          prosta i czy beton nie jest spękany, zanim pojedziesz na boisko.
         </p>
         <p>
           Do zdjęć dokładamy to, co decyduje o tym, czy warto tam jechać: rodzaj nawierzchni,
@@ -102,10 +112,16 @@ export default async function AboutPage() {
           sprawdzisz prognozę na dziś dla boisk odkrytych, zobaczysz, kto wybiera się tam zagrać
           i o której, podpalisz swoje ulubione miejsca i zapiszesz je na własną listę.
         </p>
+        <p>
+          Są też dwa rankingi. W rankingu boisk kolejność ustala społeczność - im więcej
+          płonących piłek, tym wyżej stoi miejsce, na którym naprawdę dobrze się gra. W rankingu
+          graczy liczy się to, ile boisk ktoś dodał i opublikował. Tu potrzebne jest konto:
+          zgłoszenia bez logowania trafiają na mapę, ale nie mają właściciela, więc nie wchodzą
+          do rankingu.
+        </p>
         <p className="text-ink/90">
-          Najważniejsze: tej bazy nie tworzy żadna instytucja. Buduje ją społeczność - każdy może
-          dodać boisko, które zna, w trzy minuty i bez zakładania konta. Zgłoszenie sprawdzamy i
-          publikujemy, a Ty trafiasz do rankingu odkrywców.
+          Najważniejsze: tej bazy nie tworzy żadna instytucja. Buduje ją społeczność, boisko po
+          boisku. Każde zgłoszenie sprawdzamy i publikujemy, a Ty trafiasz do rankingu odkrywców.
         </p>
       </div>
 
