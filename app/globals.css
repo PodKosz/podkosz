@@ -580,60 +580,6 @@ body {
   opacity: 0.3;
 }
 
-/* ---------- drabinka stopni ---------- */
-
-/*
-  Legenda jako jedna szklana listwa: cztery medale połączone kreską, która przechodzi przez
-  barwy stopni. Wcześniej były to cztery osobne kółka ze strzałkami - to samo powiedziane
-  trzy razy.
-*/
-.drabina {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 12px 20px;
-  border-radius: 999px;
-  overflow: hidden;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.015));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.09),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
-    0 18px 40px -28px rgba(0, 0, 0, 0.9);
-  backdrop-filter: blur(22px) saturate(150%);
-  -webkit-backdrop-filter: blur(22px) saturate(150%);
-}
-
-/* kreska temperatury pod medalami - łączy stopnie w jedną skalę */
-.drabina::before {
-  content: "";
-  position: absolute;
-  left: 36px;
-  right: 36px;
-  top: 50%;
-  height: 2px;
-  translate: 0 -50%;
-  border-radius: 999px;
-  background: linear-gradient(
-    90deg,
-    var(--iskra-b) 0%,
-    var(--zar-b) 34%,
-    var(--plomien-b) 67%,
-    var(--niebieski-b) 100%
-  );
-  opacity: 0.32;
-}
-
-.drabina-stopien {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  font-size: 13px;
-  color: var(--color-muted);
-}
-
 /* ---------- pasek postępu ---------- */
 
 /*
@@ -727,6 +673,25 @@ body {
     box-shadow 280ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 
+/*
+  Pod kursorem karta rozświetla się w środku barwą swojego stopnia - dokładnie tą, którą ma
+  głowa paska postępu. Wypełnienie siedzi w osobnej warstwie (`::before`), bo tło karty musi
+  zostać nietknięte: to na nim trzyma się szkło i smuga światła.
+*/
+.karta-odznaki::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 320ms cubic-bezier(0.32, 0.72, 0, 1);
+  background: var(--karta-fill, none);
+}
+
+.karta-odznaki:hover::before {
+  opacity: 1;
+}
+
 .karta-odznaki:hover {
   translate: 0 -3px;
   box-shadow:
@@ -756,18 +721,52 @@ body {
 .karta-iskra {
   --karta-tint: rgba(240, 181, 60, 0.16);
   --karta-ring: rgba(240, 181, 60, 0.2);
+  --karta-fill: linear-gradient(
+    152deg,
+    rgba(240, 181, 60, 0.3) 0%,
+    rgba(180, 118, 20, 0.16) 46%,
+    rgba(107, 66, 4, 0.1) 100%
+  );
 }
 .karta-zar {
   --karta-tint: rgba(255, 122, 46, 0.16);
   --karta-ring: rgba(255, 122, 46, 0.2);
+  --karta-fill: linear-gradient(
+    152deg,
+    rgba(255, 122, 46, 0.3) 0%,
+    rgba(196, 70, 12, 0.17) 46%,
+    rgba(110, 36, 5, 0.1) 100%
+  );
 }
 .karta-plomien {
   --karta-tint: rgba(236, 47, 42, 0.16);
   --karta-ring: rgba(236, 47, 42, 0.22);
+  --karta-fill: linear-gradient(
+    152deg,
+    rgba(236, 47, 42, 0.3) 0%,
+    rgba(168, 22, 26, 0.17) 46%,
+    rgba(92, 6, 12, 0.1) 100%
+  );
 }
 .karta-niebieski {
   --karta-tint: rgba(63, 155, 255, 0.16);
   --karta-ring: rgba(63, 155, 255, 0.24);
+  --karta-fill: linear-gradient(
+    152deg,
+    rgba(63, 155, 255, 0.32) 0%,
+    rgba(28, 96, 220, 0.18) 46%,
+    rgba(11, 33, 112, 0.12) 100%
+  );
+}
+
+/* karta bez stopnia rozjaśnia się neutralnie - kolor należy do zdobytych */
+.karta-bez {
+  --karta-fill: linear-gradient(
+    152deg,
+    rgba(255, 255, 255, 0.07) 0%,
+    rgba(255, 255, 255, 0.02) 60%,
+    transparent 100%
+  );
 }
 
 /* pastylka wyróżnienia - to samo szkło, tylko rozciągnięte */
@@ -1252,7 +1251,7 @@ select option {
   line-height: 0.9;
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
-  background: linear-gradient(170deg, #ffffff 0%, #fff3e4 46%, #ffcf9e 100%);
+  background: linear-gradient(168deg, #ffe6c4 0%, #ffab4a 44%, #ff6a12 78%, #e14a02 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

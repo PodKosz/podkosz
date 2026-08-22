@@ -32,7 +32,11 @@ export function PlakietkiZaslug({ statystyki }: { statystyki: StatystykiGracza }
           id={o.id}
           poziom={o.poziom?.id ?? null}
           tytul={o.nazwa}
-          stopien={o.poziom?.nazwa ?? ""}
+          stopien={
+            o.poziom
+              ? `${o.poziom.nazwa} - stopień ${o.stopien} z 4`
+              : ""
+          }
           opis={`${o.wartosc} ${o.licznik}`}
           dalej={
             o.nastepny

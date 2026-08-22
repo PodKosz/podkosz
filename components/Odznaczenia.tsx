@@ -3,6 +3,7 @@ import {
   podsumowanie,
   POZIOMY,
   wyroznienia,
+  type IdPoziomu,
   type StatystykiGracza,
 } from "@/lib/odznaczenia";
 import { IkonaOdznaczenia } from "./IkonaOdznaczenia";
@@ -12,15 +13,15 @@ import { TloStopnia } from "./TloStopnia";
  * Siatka odznaczeń na koncie właściciela.
  *
  * Trzy warstwy informacji, każda na swoim poziomie hałasu:
- *  - drabinka stopni na górze mówi, jaka jest skala (raz, nie na każdym kafelku),
- *  - karta pokazuje jedną liczbę i barwę zdobytego stopnia,
- *  - pasek pod nią - całą drogę do szczytu, z nacięciami w miejscach progów.
+ *  - mała skala stopni przy nagłówku (cztery kropki, nazwy pod kursorem),
+ *  - karta z jedną liczbą i barwą zdobytego stopnia,
+ *  - pasek pod nią - cała droga do szczytu, z nacięciami w miejscach progów.
  *
- * Kolor pojawia się tylko tam, gdzie coś znaczy: w medalu, w narożniku karty i na pasku.
+ * Kolor pojawia się tylko tam, gdzie coś znaczy: w medalu, w obwódce karty i na pasku.
  * Reszta jest szkłem, żeby dziewięć kafelków nie zamieniło się w witraż.
  *
- * Komponent jest serwerowy i bezstanowy: liczby przychodzą z `statystyki_gracza`,
- * a stopnie wylicza `lib/odznaczenia`.
+ * Komponent jest serwerowy i bezstanowy: liczby przychodzą z `statystyki_gracza`, stopnie
+ * wylicza `lib/odznaczenia`, a dymki są czystym CSS-em (`group-hover`).
  */
 export function Odznaczenia({ statystyki }: { statystyki: StatystykiGracza }) {
   const lista = odznaczenia(statystyki);
@@ -29,33 +30,32 @@ export function Odznaczenia({ statystyki }: { statystyki: StatystykiGracza }) {
 
   return (
     <section className="mt-14">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
         <h2 className="text-[13px] uppercase tracking-[0.16em] text-faint">Odznaczenia</h2>
-        <p className="rounded-full bg-white/5 px-3.5 py-1.5 text-[12px] text-muted shadow-[inset_0_0_0_1px_rgba(255,255,255,.06)]">
+
+        {/*
+          Skala stopni siedzi przy nagłówku, a nie w osobnej listwie nad siatką: to legenda,
+          czyli przypis, więc ma zajmować tyle miejsca co przypis. Nazwę pokazuje dymek.
+        */}
+        <span className="flex items-center gap-1.5">
+          {POZIOMY.map((p, i) => (
+            <SkalaStopnia key={p.id} id={p.id} nazwa={p.nazwa} numer={i + 1} />
+          ))}
+        </span>
+
+        <p className="ml-auto rounded-full bg-white/5 px-3.5 py-1.5 text-[12px] text-muted shadow-[inset_0_0_0_1px_rgba(255,255,255,.06)]">
           zdobyte <b className="text-ink">{zdobyte}</b> z {wszystkie}
         </p>
       </div>
 
-      {/* drabinka stopni - skala wyjaśniona raz, na górze */}
-      <div className="drabina mt-4 overflow-x-auto">
-        {POZIOMY.map((p) => (
-          <span key={p.id} className="drabina-stopien">
-            <span className={`medal medal-${p.id} h-8 w-8`}>
-              <TloStopnia poziom={p.id} />
-            </span>
-            <span className="whitespace-nowrap">{p.nazwa}</span>
-          </span>
-        ))}
-      </div>
-
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {lista.map((o) => {
           const stopien = o.poziom?.id ?? null;
 
           return (
             <article
               key={o.id}
-              className={`karta-odznaki p-5 ${stopien ? `karta-${stopien}` : "opacity-[0.72]"}`}
+              className={`karta-odznaki p-5 ${stopien ? `karta-${stopien}` : "karta-bez opacity-[0.78]"}`}
             >
               <div className="flex items-center gap-3.5">
                 <span className={`medal ${stopien ? `medal-${stopien}` : "medal-brak"} h-12 w-12`}>
@@ -107,21 +107,57 @@ export function Odznaczenia({ statystyki }: { statystyki: StatystykiGracza }) {
         })}
       </div>
 
-      {/* wyróżnienia bez stopni - jednorazowe, więc wystarczy pastylka */}
+      {/* wyróżnienia bez stopni - jednorazowe, więc wystarczy pastylka z dymkiem */}
       <div className="mt-4 flex flex-wrap gap-2">
         {extra.map((w) => (
-          <span
-            key={w.id}
-            title={w.opis}
-            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium ${
-              w.zdobyte ? "wyroznienie" : "border border-hairline bg-white/[0.02] text-faint"
-            }`}
-          >
-            <IkonaOdznaczenia id={w.id} className="h-[18px] w-[18px]" />
-            {w.nazwa}
+          <span key={w.id} className="group relative">
+            <span
+              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium ${
+                w.zdobyte ? "wyroznienie" : "border border-hairline bg-white/[0.02] text-faint"
+              }`}
+            >
+              <IkonaOdznaczenia id={w.id} className="h-[18px] w-[18px]" />
+              {w.nazwa}
+            </span>
+
+            <span className="dymek pointer-events-none left-1/2 top-full z-20 mt-2.5 w-max max-w-[240px] -translate-x-1/2 scale-95 px-4 py-3 text-left opacity-0 transition duration-200 group-hover:scale-100 group-hover:opacity-100 group-focus-within:scale-100 group-focus-within:opacity-100">
+              <span className="block text-[13px] font-semibold leading-tight">{w.nazwa}</span>
+              <span className="mt-1 block text-[12.5px] leading-snug text-muted">{w.opis}</span>
+              <span
+                className={`mt-1.5 block text-[11px] uppercase tracking-[0.12em] ${
+                  w.zdobyte ? "text-flame" : "text-faint"
+                }`}
+              >
+                {w.zdobyte ? "zdobyte" : "jeszcze nie zdobyte"}
+              </span>
+            </span>
           </span>
         ))}
       </div>
     </section>
+  );
+}
+
+/** Kropka skali stopni przy nagłówku - nazwę i numer pokazuje dopiero dymek. */
+function SkalaStopnia({
+  id,
+  nazwa,
+  numer,
+}: {
+  id: IdPoziomu;
+  nazwa: string;
+  numer: number;
+}) {
+  return (
+    <span className="group relative">
+      <span className={`medal medal-${id} block h-[18px] w-[18px]`} />
+
+      <span className="dymek pointer-events-none left-1/2 top-full z-20 mt-2.5 w-max -translate-x-1/2 scale-95 px-3 py-2 text-center opacity-0 transition duration-200 group-hover:scale-100 group-hover:opacity-100">
+        <span className="block text-[12.5px] font-semibold leading-tight">{nazwa}</span>
+        <span className="mt-0.5 block text-[11px] text-faint">
+          stopień {numer} z {POZIOMY.length}
+        </span>
+      </span>
+    </span>
   );
 }
