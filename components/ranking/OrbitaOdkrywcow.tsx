@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import type { OdkrywcaRanking } from "@/lib/repo";
 import { plural } from "@/lib/site";
@@ -142,15 +142,12 @@ function Gwiazda({
     ramka.current = { cx: box.left + box.width / 2, cy: box.top + box.height / 2, promien };
   }, []);
 
-  const magnes = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+  /* rdzeń magnesu - przyjmuje współrzędne, więc obsłuży i mysz, i palec */
+  const ustawMagnes = useCallback((mx: number, my: number) => {
     const el = pierscien.current;
     if (!el) return;
-    if (!ramka.current) zmierz();
     const dane = ramka.current;
     if (!dane) return;
-
-    const mx = e.clientX;
-    const my = e.clientY;
 
     cancelAnimationFrame(klatka.current);
     klatka.current = requestAnimationFrame(() => {
@@ -188,7 +185,63 @@ function Gwiazda({
         gniazdo.style.setProperty("--pr", `${(Math.max(nazewnatrz, 0.25) * sila * 12).toFixed(1)}px`);
       });
     });
-  }, [krok, zmierz]);
+  }, [krok]);
+
+  const magnes = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!ramka.current) zmierz();
+      ustawMagnes(e.clientX, e.clientY);
+    },
+    [ustawMagnes, zmierz]
+  );
+
+  /*
+    Dotyk nie ma najeżdżania: przeglądarka zabiera zdarzenia wskaźnika w chwili, gdy palec
+    zaczyna przewijać stronę, więc na telefonie magnes nie działałby wcale. Dlatego na
+    dotyku słuchamy `touchmove` na oknie - wystarczy przesuwać palcem gdziekolwiek po
+    ekranie, a kadry uciekają spod niego.
+
+    Ramkę pierścienia mierzymy przy każdym ruchu: strona pod palcem się przewija, więc
+    zapamiętany środek okręgu po chwili byłby nieprawdziwy. To jeden `getBoundingClientRect`
+    na orbitę i klatkę - tanio.
+  */
+  useEffect(() => {
+    const el = pierscien.current;
+    if (!el) return;
+    if (!window.matchMedia("(pointer: coarse)").matches) return;
+
+    const ruch = (e: TouchEvent) => {
+      const dotyk = e.touches[0];
+      if (!dotyk) return;
+      const box = el.getBoundingClientRect();
+      const promien = parseFloat(getComputedStyle(el).getPropertyValue("--promien")) || 0;
+      ramka.current = {
+        cx: box.left + box.width / 2,
+        cy: box.top + box.height / 2,
+        promien,
+      };
+      ustawMagnes(dotyk.clientX, dotyk.clientY);
+    };
+
+    const koniec = () => {
+      cancelAnimationFrame(klatka.current);
+      ramka.current = null;
+      (Array.from(el.children) as HTMLElement[]).forEach((gniazdo) => {
+        gniazdo.style.setProperty("--pt", "0px");
+        gniazdo.style.setProperty("--pr", "0px");
+      });
+    };
+
+    window.addEventListener("touchmove", ruch, { passive: true });
+    window.addEventListener("touchend", koniec);
+    window.addEventListener("touchcancel", koniec);
+
+    return () => {
+      window.removeEventListener("touchmove", ruch);
+      window.removeEventListener("touchend", koniec);
+      window.removeEventListener("touchcancel", koniec);
+    };
+  }, [ustawMagnes]);
 
   const puscMagnes = useCallback(() => {
     cancelAnimationFrame(klatka.current);
