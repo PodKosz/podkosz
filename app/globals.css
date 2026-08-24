@@ -170,17 +170,26 @@ body {
   Wizytówka nad pinezką ma nie leżeć na mapie, tylko wyglądać jak kawałek szkła położony
   NA niej: rozmywać to, co pod spodem, i przy krawędziach zaginać.
 
-  Największy problem to ciemne tło. Mapa jest niemal czarna, a rozmycie czerni daje czerń -
-  samo `blur` było na niej niewidoczne i karta czytała się jak zwykły ciemny prostokąt.
-  Dlatego backdrop nie tylko rozmywamy, ale też WYCIĄGAMY: `brightness` podnosi to, co pod
-  szkłem, więc pod kartą widać drogi i granice województw, których obok nie widać wcale.
-  To jest cała różnica między „przyciemnionym pudełkiem" a szybą.
+  Dwa problemy trzeba tu rozwiązać naraz.
 
-  Zaginanie robi filtr SVG (`feTurbulence` + `feDisplacementMap`) podany w `backdrop-filter`
-  i działa w silnikach Chromium - na pececie i na Androidzie. Gdzie go nie ma, przede
-  wszystkim w Safari na iPhonie, zostaje reszta: przy brzegu szkło jest grubsze, więc mocniej
-  rozmywa i rozjaśnia, a po obwodzie biegnie włosowy refleks. Na ciemnym interfejsie to
-  właśnie ten refleks sprzedaje wrażenie szkła, nie samo rozmycie.
+  Pierwszy: mapa jest niemal czarna, a rozmycie czerni daje czerń. Samo `blur` było na niej
+  niewidoczne i karta czytała się jak zwykły ciemny prostokąt. Dlatego backdrop nie tylko
+  rozmywamy, ale i WYCIĄGAMY - `brightness` podnosi to, co pod szkłem, więc pod kartą widać
+  drogi i granice województw, których obok nie widać wcale.
+
+  Drugi: `backdrop-filter` działa w OSTRO OBCIĘTYM prostokącie. Droga wchodząca pod kartę
+  urywała się w pół i po drugiej stronie krawędzi wyskakiwała rozmyta, jaśniejsza i
+  przesunięta - im mocniejszy efekt, tym bardziej rzucało się to w oczy. Prawdziwe szkło
+  tak nie robi, bo światło załamuje się stopniowo. Dlatego rozmycie siedzi w osobnej
+  warstwie z maską, która wygasza je przy samym brzegu: filtr przechodzi w nieruszony obraz
+  zamiast kończyć się cięciem. Przy okazji rąbek robi się ciemniejszy niż środek - dokładnie
+  tak, jak zachowuje się soczewka.
+
+  Zaginanie pikseli robi filtr SVG (`feTurbulence` + `feDisplacementMap`) podany
+  w `backdrop-filter`; działa w silnikach Chromium, czyli na pececie i na Androidzie. Gdzie
+  go nie ma - przede wszystkim w Safari na iPhonie - zostaje rozmycie z wygaszoną krawędzią
+  i włosowy refleks po obwodzie. Na ciemnym interfejsie to właśnie ten refleks sprzedaje
+  wrażenie szkła, nie samo rozmycie.
 */
 .szklo-plynne {
   position: relative;
@@ -188,41 +197,65 @@ body {
     /* skośna smuga światła - jak na szkle trzymanym pod lampą */
     linear-gradient(
       128deg,
-      rgba(255, 255, 255, 0.16) 0%,
-      rgba(255, 255, 255, 0.045) 24%,
+      rgba(255, 255, 255, 0.15) 0%,
+      rgba(255, 255, 255, 0.04) 24%,
       rgba(255, 255, 255, 0) 50%
     ),
     /* ciepły refleks z góry i chłodny od dołu - szkło nigdy nie jest jednobarwne */
-    radial-gradient(125% 120% at 14% -12%, rgba(255, 158, 74, 0.16), transparent 58%),
-    radial-gradient(115% 130% at 88% 112%, rgba(120, 170, 255, 0.11), transparent 62%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.025) 100%);
-  backdrop-filter: blur(30px) saturate(210%) brightness(1.32) contrast(1.04);
-  -webkit-backdrop-filter: blur(30px) saturate(210%) brightness(1.32) contrast(1.04);
+    radial-gradient(125% 120% at 14% -12%, rgba(255, 158, 74, 0.15), transparent 58%),
+    radial-gradient(115% 130% at 88% 112%, rgba(120, 170, 255, 0.1), transparent 62%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
   box-shadow:
-    inset 0 -1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.07),
     0 2px 8px -2px rgba(0, 0, 0, 0.5),
     0 36px 80px -30px rgba(0, 0, 0, 0.95);
 }
 
-/* zagięta krawędź - grubsze szkło przy brzegu */
+/*
+  Warstwa szkła. Maska z dwóch gradientów złożonych na przecięciu wygasza filtr przy
+  wszystkich czterech krawędziach, więc rozmycie nie kończy się linią.
+*/
 .szklo-plynne::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 0;
   border-radius: inherit;
-  padding: 18px;
   pointer-events: none;
-  backdrop-filter: blur(7px) saturate(160%) brightness(1.24);
-  -webkit-backdrop-filter: blur(7px) saturate(160%) brightness(1.24);
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  mask-composite: exclude;
+  backdrop-filter: blur(28px) saturate(205%) brightness(1.34) contrast(1.04);
+  -webkit-backdrop-filter: blur(28px) saturate(205%) brightness(1.34) contrast(1.04);
+  -webkit-mask-image:
+    linear-gradient(
+      to right,
+      transparent 0,
+      #000 16px,
+      #000 calc(100% - 16px),
+      transparent 100%
+    ),
+    linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 16px,
+      #000 calc(100% - 16px),
+      transparent 100%
+    );
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(
+      to right,
+      transparent 0,
+      #000 16px,
+      #000 calc(100% - 16px),
+      transparent 100%
+    ),
+    linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 16px,
+      #000 calc(100% - 16px),
+      transparent 100%
+    );
+  mask-composite: intersect;
 }
 
 /*
@@ -242,11 +275,11 @@ body {
   pointer-events: none;
   background: linear-gradient(
     136deg,
-    rgba(255, 255, 255, 0.62) 0%,
-    rgba(255, 255, 255, 0.14) 22%,
+    rgba(255, 255, 255, 0.6) 0%,
+    rgba(255, 255, 255, 0.13) 22%,
     rgba(255, 255, 255, 0.04) 46%,
-    rgba(255, 196, 140, 0.22) 74%,
-    rgba(255, 255, 255, 0.42) 100%
+    rgba(255, 196, 140, 0.2) 74%,
+    rgba(255, 255, 255, 0.4) 100%
   );
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
@@ -258,7 +291,7 @@ body {
   mask-composite: exclude;
 }
 
-/* treść nad warstwami szkła, pod obwódką */
+/* treść nad warstwą szkła, pod obwódką */
 .szklo-plynne > * {
   position: relative;
   z-index: 1;
@@ -271,17 +304,15 @@ body {
 */
 @supports (backdrop-filter: url("#szklo-zagiecie")) {
   .szklo-plynne::before {
-    backdrop-filter: url("#szklo-zagiecie") blur(5px) saturate(165%) brightness(1.24);
+    backdrop-filter: url("#szklo-zagiecie") blur(24px) saturate(205%) brightness(1.34)
+      contrast(1.04);
   }
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .szklo-plynne {
-    backdrop-filter: blur(16px) saturate(140%) brightness(1.2);
-    -webkit-backdrop-filter: blur(16px) saturate(140%) brightness(1.2);
-  }
   .szklo-plynne::before {
-    display: none;
+    backdrop-filter: blur(16px) saturate(140%) brightness(1.18);
+    -webkit-backdrop-filter: blur(16px) saturate(140%) brightness(1.18);
   }
 }
 
