@@ -459,125 +459,104 @@ body {
   górnej połowie, cień u dołu i włosowa obwódka. Wypełnienie jest celowo nie do końca
   kryjące - przez szkło ma prześwitywać tło karty.
 */
+/* ---------- emblemat stopnia ---------- */
+/*
+  Wcześniej odznaczenie progowe było błyszczącą kulką: biały refleks pod górną krawędzią,
+  gradient od jasnego do ciemnego, poświata dookoła. Wyglądało jak render, a nie jak część
+  tej strony - i zupełnie nie trzymało się kupy z płaskimi stemplami wyróżnień.
+
+  Teraz jest to ten sam krążek co w stemplu: ciemne szkło, włosowa obwódka i kreska ikony
+  w barwie stopnia. Kolor niesie całą informację, więc nie potrzebuje pomocy od świateł.
+  Barwę podaje zmienna `--b`, dokładnie ta sama, której używają wyróżnienia - dzięki temu
+  oba rodzaje odznaczeń są jedną rodziną, mimo że jedne mają stopnie, a drugie nie.
+*/
 .medal {
   position: relative;
   display: grid;
   place-items: center;
   flex: none;
   border-radius: 999px;
-  color: var(--medal-ikona, #6f6f7a);
-  background:
-    linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.34) 0%,
-      rgba(255, 255, 255, 0.06) 30%,
-      rgba(255, 255, 255, 0) 48%
-    ),
-    radial-gradient(120% 96% at 50% 116%, var(--medal-c, transparent) 0%, transparent 70%),
-    linear-gradient(
-      158deg,
-      var(--medal-a, #1a1920) 0%,
-      var(--medal-b, #15141a) 52%,
-      var(--medal-c, #0d0d11) 100%
-    );
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.55),
-    inset 0 -8px 12px -8px rgba(0, 0, 0, 0.7),
-    inset 0 0 0 1px var(--medal-ring, rgba(255, 255, 255, 0.08)),
-    0 8px 20px -10px var(--medal-glow, rgba(0, 0, 0, 0.9));
-}
-
-/* refleks - jasna plamka pod górną krawędzią, jak na kropli wody */
-.medal::before {
-  content: "";
-  position: absolute;
-  left: 16%;
-  top: 8%;
-  width: 52%;
-  height: 30%;
-  border-radius: 999px;
-  pointer-events: none;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0));
-  filter: blur(1.5px);
+  color: rgb(var(--b));
+  background: radial-gradient(
+    circle at 50% 28%,
+    rgb(var(--b) / 0.2) 0%,
+    rgb(var(--b) / 0.05) 68%,
+    transparent 100%
+  );
+  box-shadow: inset 0 0 0 1px rgb(var(--b) / 0.28);
 }
 
 /*
-  Motyw stopnia (iskry, kamyczki, płomień, błękitne płomienie) leży pod ikoną i wypełnia
-  całą płytkę. Selektor musi być mocniejszy niż `.medal svg`, inaczej dostałby rozmiar
-  ikony i skulił się do środka.
+  Motyw stopnia (iskry, kamyczki, płomień, dwa błękitne płomienie) leży pod ikoną. Jest
+  w barwie stopnia i ledwo widoczny - ma dawać fakturę, nie rysunek. Selektor musi być
+  mocniejszy niż `.medal svg`, inaczej dostałby rozmiar ikony i skulił się do środka.
 */
 .medal svg.medal-tlo {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  color: var(--medal-motyw, rgba(0, 0, 0, 0.22));
+  color: rgb(var(--b) / 0.22);
   pointer-events: none;
 }
 
 .medal svg {
   position: relative;
-  width: 54%;
-  height: 54%;
-  /* na jasnym szkle cienka kreska ginie - dokładamy jej pół piksela */
-  stroke-width: 1.9;
-}
-
-.medal-iskra {
-  --medal-a: var(--iskra-a);
-  --medal-b: var(--iskra-b);
-  --medal-c: var(--iskra-c);
-  --medal-ring: rgba(255, 240, 200, 0.5);
-  --medal-glow: rgba(240, 181, 60, 0.55);
-  --medal-motyw: rgba(84, 50, 0, 0.4);
-  --medal-ikona: #3a2503;
-}
-
-.medal-zar {
-  --medal-a: var(--zar-a);
-  --medal-b: var(--zar-b);
-  --medal-c: var(--zar-c);
-  --medal-ring: rgba(255, 226, 196, 0.5);
-  --medal-glow: rgba(255, 122, 46, 0.55);
-  --medal-motyw: rgba(88, 26, 0, 0.42);
-  --medal-ikona: #3a1103;
-}
-
-.medal-plomien {
-  --medal-a: var(--plomien-a);
-  --medal-b: var(--plomien-b);
-  --medal-c: var(--plomien-c);
-  --medal-ring: rgba(255, 214, 206, 0.52);
-  --medal-glow: rgba(236, 47, 42, 0.55);
-  --medal-motyw: rgba(72, 4, 8, 0.44);
-  --medal-ikona: #33060a;
+  width: 50%;
+  height: 50%;
+  stroke-width: 1.7;
+  filter: drop-shadow(0 0 8px rgb(var(--b) / 0.4));
 }
 
 /*
-  Szczyt świeci na zimno: najgorętszy płomień jest niebieski, więc ostatni stopień jako
-  jedyny nie jest ciepły - widać go w rzędzie natychmiast.
+  Barwy stopni. To wciąż ta sama skala ognia - od ciepłego złota po chłodny błękit na
+  szczycie - tylko podana jako jeden kolor kreski zamiast trzech przystanków gradientu.
 */
+.stopien-iskra,
+.medal-iskra {
+  --b: 247 191 76;
+}
+.stopien-zar,
+.medal-zar {
+  --b: 255 138 56;
+}
+.stopien-plomien,
+.medal-plomien {
+  --b: 255 92 76;
+}
+.stopien-niebieski,
 .medal-niebieski {
-  --medal-a: var(--niebieski-a);
-  --medal-b: var(--niebieski-b);
-  --medal-c: var(--niebieski-c);
-  --medal-ring: rgba(226, 246, 255, 0.66);
-  --medal-glow: rgba(63, 155, 255, 0.6);
-  --medal-motyw: rgba(6, 26, 96, 0.44);
-  --medal-ikona: #07203c;
+  --b: 96 176 255;
 }
-
+.stopien-brak,
 .medal-brak {
-  --medal-a: rgba(255, 255, 255, 0.06);
-  --medal-b: rgba(255, 255, 255, 0.025);
-  --medal-c: rgba(255, 255, 255, 0.01);
-  --medal-ring: rgba(255, 255, 255, 0.09);
-  --medal-glow: rgba(0, 0, 0, 0.85);
-  --medal-ikona: #64646e;
+  --b: 245 245 247;
+}
+.medal-brak {
+  color: rgba(245, 245, 247, 0.3);
+  background: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.medal-brak svg {
+  filter: none;
 }
 
-.medal-brak::before {
-  opacity: 0.3;
+/* kropki stopnia - ile z czterech zdobyte; zastępują dawną „wypukłość" medalu */
+.kropki-stopnia {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.kropka-stopnia {
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.13);
+}
+.kropka-stopnia-pelna {
+  background: rgb(var(--b));
+  box-shadow: 0 0 6px rgb(var(--b) / 0.55);
 }
 
 /* ---------- pasek postępu ---------- */
@@ -801,10 +780,10 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  gap: 10px;
-  min-height: 118px;
-  padding: 16px 8px 14px;
-  border-radius: 22px;
+  gap: 8px;
+  min-height: 96px;
+  padding: 13px 6px 11px;
+  border-radius: 18px;
   text-align: center;
   transition:
     translate 260ms cubic-bezier(0.32, 0.72, 0, 1),
@@ -816,8 +795,8 @@ body {
 .stempel-krazek {
   display: grid;
   place-items: center;
-  width: 46px;
-  height: 46px;
+  width: 38px;
+  height: 38px;
   border-radius: 999px;
   flex: none;
 }
@@ -869,6 +848,28 @@ body {
 }
 .stempel-brak:hover .stempel-ikona {
   color: rgba(245, 245, 247, 0.4);
+}
+
+/*
+  Rozwijana lista niezdobytych. Profil ma być wizytówką, więc domyślnie widać tylko to,
+  co ktoś ma; reszta czeka pod przyciskiem. `details`/`summary` robi to bez JavaScriptu,
+  więc sekcja zostaje komponentem serwerowym.
+*/
+.rozwin > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.rozwin > summary::-webkit-details-marker {
+  display: none;
+}
+.rozwin[open] > summary .rozwin-pokaz {
+  display: none;
+}
+.rozwin:not([open]) > summary .rozwin-zwin {
+  display: none;
+}
+.rozwin[open] > summary .rozwin-strzalka {
+  rotate: 180deg;
 }
 
 /*

@@ -123,7 +123,11 @@ function SkalaStopnia({
 }) {
   return (
     <span className="group relative">
-      <span className={`medal medal-${id} block h-[18px] w-[18px]`} />
+      {/*
+        Legenda to pełna kropka w barwie stopnia, nie miniaturka emblematu: przy 18 px
+        krążek z włosową obwódką był ledwo widoczny i cała skala gubiła się w nagłówku.
+      */}
+      <span className={`stopien-${id} kropka-stopnia kropka-stopnia-pelna block h-[9px] w-[9px] cursor-help`} />
 
       <span className="dymek pointer-events-none left-1/2 top-full z-20 mt-2.5 w-max -translate-x-1/2 scale-95 px-3 py-2 text-center opacity-0 transition duration-200 group-hover:scale-100 group-hover:opacity-100">
         <span className="block text-[12.5px] font-semibold leading-tight">{nazwa}</span>
