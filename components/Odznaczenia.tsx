@@ -2,10 +2,10 @@ import {
   odznaczenia,
   podsumowanie,
   POZIOMY,
-  wyroznienia,
   type IdPoziomu,
   type StatystykiGracza,
 } from "@/lib/odznaczenia";
+import { Wyroznienia } from "./Wyroznienia";
 import { IkonaOdznaczenia } from "./IkonaOdznaczenia";
 import { TloStopnia } from "./TloStopnia";
 
@@ -25,7 +25,6 @@ import { TloStopnia } from "./TloStopnia";
  */
 export function Odznaczenia({ statystyki }: { statystyki: StatystykiGracza }) {
   const lista = odznaczenia(statystyki);
-  const extra = wyroznienia(statystyki);
   const { zdobyte, wszystkie } = podsumowanie(statystyki);
 
   return (
@@ -107,33 +106,7 @@ export function Odznaczenia({ statystyki }: { statystyki: StatystykiGracza }) {
         })}
       </div>
 
-      {/* wyróżnienia bez stopni - jednorazowe, więc wystarczy pastylka z dymkiem */}
-      <div className="mt-4 flex flex-wrap gap-2">
-        {extra.map((w) => (
-          <span key={w.id} className="group relative">
-            <span
-              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium ${
-                w.zdobyte ? "wyroznienie" : "border border-hairline bg-white/[0.02] text-faint"
-              }`}
-            >
-              <IkonaOdznaczenia id={w.id} className="h-[18px] w-[18px]" />
-              {w.nazwa}
-            </span>
-
-            <span className="dymek pointer-events-none left-1/2 top-full z-20 mt-2.5 w-max max-w-[240px] -translate-x-1/2 scale-95 px-4 py-3 text-left opacity-0 transition duration-200 group-hover:scale-100 group-hover:opacity-100 group-focus-within:scale-100 group-focus-within:opacity-100">
-              <span className="block text-[13px] font-semibold leading-tight">{w.nazwa}</span>
-              <span className="mt-1 block text-[12.5px] leading-snug text-muted">{w.opis}</span>
-              <span
-                className={`mt-1.5 block text-[11px] uppercase tracking-[0.12em] ${
-                  w.zdobyte ? "text-flame" : "text-faint"
-                }`}
-              >
-                {w.zdobyte ? "zdobyte" : "jeszcze nie zdobyte"}
-              </span>
-            </span>
-          </span>
-        ))}
-      </div>
+      <Wyroznienia statystyki={statystyki} />
     </section>
   );
 }

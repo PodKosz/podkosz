@@ -5,6 +5,7 @@ import { getAuthor, listContributors, listCourts } from "@/lib/repo";
 import { historiaGracza, nickZeSlugu, statystykiGracza, ulubioneGracza } from "@/lib/profil";
 import { CourtCard } from "@/components/CourtCard";
 import { PlakietkiZaslug } from "@/components/PlakietkiZaslug";
+import { Wyroznienia } from "@/components/Wyroznienia";
 import { TloPilki } from "@/components/TloPilki";
 import { NaglowekSekcji } from "@/components/NaglowekSekcji";
 import { czyAutorAnonimowy, dataOpisowa, SITE_NAME, plural, slugifyPlace } from "@/lib/site";
@@ -151,6 +152,14 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
           </div>
         ))}
       </section>
+
+      {/*
+        ---------- wyróżnienia ----------
+        Na publicznym profilu były dotąd tylko plakietki odznaczeń progowych pod nickiem.
+        Wyróżnienia mają własną sekcję, bo to inny rodzaj osiągnięcia: nie da się ich
+        „podnieść o stopień", więc i wyglądają inaczej - stemple, nie kafelki z paskiem.
+      */}
+      <Wyroznienia statystyki={statystyki} />
 
       {/* ---------- dodane boiska ---------- */}
       <section className="mt-14">

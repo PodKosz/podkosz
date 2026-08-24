@@ -35,6 +35,17 @@ interface WierszStatystyk {
   nocne: boolean;
   ranne: boolean;
   pionier: boolean;
+  weekend: boolean;
+  maraton: boolean;
+  seria: number;
+  zima: boolean;
+  oswietlone: boolean;
+  approved: boolean;
+  smieszne: boolean;
+  komplet: boolean;
+  nawierzchnie: number;
+  typy: number;
+  pierwszy_w_miescie: boolean;
 }
 
 export async function statystykiGracza(nick: string): Promise<ProfilGracza> {
@@ -70,6 +81,22 @@ export async function statystykiGracza(nick: string): Promise<ProfilGracza> {
     nocne: w.nocne,
     ranne: w.ranne,
     pionier: w.pionier,
+    /*
+      Nowe pola dochodzą razem z migracją `migration-wyroznienia.sql`. Dopóki jej nie ma,
+      funkcja zwraca undefined - stąd wartości zapasowe, żeby profil nie wywalał się
+      między wgraniem kodu a wgraniem migracji.
+    */
+    weekend: w.weekend ?? false,
+    maraton: w.maraton ?? false,
+    seria: w.seria ?? 0,
+    zima: w.zima ?? false,
+    oswietlone: w.oswietlone ?? false,
+    approved: w.approved ?? false,
+    smieszne: w.smieszne ?? false,
+    komplet: w.komplet ?? false,
+    nawierzchnie: w.nawierzchnie ?? 0,
+    typy: w.typy ?? 0,
+    pierwszyWMiescie: w.pierwszy_w_miescie ?? false,
   };
 }
 

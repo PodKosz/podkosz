@@ -784,6 +784,131 @@ body {
   color: #ffd2a6;
 }
 
+/* ---------- wyróżnienia: stemple ---------- */
+/*
+  Wyróżnienia nie mają stopni, więc nie mogą wyglądać jak kafelki odznaczeń progowych.
+  Tam kolor medalu i pasek mówią „jak wysoko jesteś"; tutaj nie ma czego mierzyć, a paleta
+  ognia sugerowałaby skalę, której nie ma. Stąd inna forma: kwadratowy stempel, jedna barwa
+  przypisana na stałe do odznaki i zero pasków.
+
+  Obwódka jest zwykłym `border`, a nie cieniem wewnętrznym jak w kafelkach - tylko border
+  da się narysować kreskami, a to właśnie kreskowana obwódka odróżnia niezdobyte na pierwszy
+  rzut oka, bez dopisywania tego słowami.
+*/
+.stempel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  min-height: 118px;
+  padding: 16px 8px 14px;
+  border-radius: 22px;
+  text-align: center;
+  transition:
+    translate 260ms cubic-bezier(0.32, 0.72, 0, 1),
+    border-color 260ms cubic-bezier(0.32, 0.72, 0, 1),
+    box-shadow 260ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* krążek pod ikoną - jedyny okrągły element, żeby stempel nie był samym kwadratem */
+.stempel-krazek {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  flex: none;
+}
+
+.stempel-zdobyty {
+  border: 1px solid rgb(var(--b) / 0.32);
+  background:
+    radial-gradient(120% 120% at 50% -12%, rgb(var(--b) / 0.15) 0%, transparent 66%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.012) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 16px 34px -26px rgb(var(--b) / 0.6);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+}
+.stempel-zdobyty .stempel-krazek {
+  background: radial-gradient(
+    circle at 50% 28%,
+    rgb(var(--b) / 0.22) 0%,
+    rgb(var(--b) / 0.05) 68%,
+    transparent 100%
+  );
+  box-shadow: inset 0 0 0 1px rgb(var(--b) / 0.28);
+}
+.stempel-zdobyty .stempel-ikona {
+  color: rgb(var(--b));
+  filter: drop-shadow(0 0 9px rgb(var(--b) / 0.45));
+}
+.stempel-zdobyty:hover {
+  translate: 0 -3px;
+  border-color: rgb(var(--b) / 0.58);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 22px 42px -24px rgb(var(--b) / 0.75);
+}
+
+.stempel-brak {
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.022) 0%, rgba(255, 255, 255, 0.005) 100%);
+}
+.stempel-brak .stempel-krazek {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+}
+.stempel-brak .stempel-ikona {
+  color: rgba(245, 245, 247, 0.24);
+}
+.stempel-brak:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.stempel-brak:hover .stempel-ikona {
+  color: rgba(245, 245, 247, 0.4);
+}
+
+/*
+  Barwy wyróżnień - po jednej na odznakę i na zawsze ta sama. Kolory są rozstrzelone po
+  całym kole barw właśnie dlatego, że nie tworzą skali: gdyby chodziły odcieniami jednego
+  koloru, oko szukałoby w nich porządku, którego tu nie ma.
+*/
+.barwa-zloto {
+  --b: 255 197 106;
+}
+.barwa-limonka {
+  --b: 190 234 96;
+}
+.barwa-fiolet {
+  --b: 178 138 255;
+}
+.barwa-lazur {
+  --b: 108 204 255;
+}
+.barwa-roza {
+  --b: 255 138 178;
+}
+.barwa-mieta {
+  --b: 106 232 190;
+}
+.barwa-blekit {
+  --b: 126 166 255;
+}
+.barwa-miedz {
+  --b: 226 146 96;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stempel,
+  .stempel-zdobyty:hover {
+    transition: none;
+    translate: none;
+  }
+}
+
 /* ---------- Controls ---------- */
 
 .switch {

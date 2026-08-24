@@ -39,6 +39,28 @@ export interface StatystykiGracza {
   nocne: boolean;
   ranne: boolean;
   pionier: boolean;
+  /** gra w sobotę albo niedzielę */
+  weekend: boolean;
+  /** sześć godzin gry w jednym dniu */
+  maraton: boolean;
+  /** najdłuższa seria dni z grą pod rząd */
+  seria: number;
+  /** gra w grudniu, styczniu albo lutym */
+  zima: boolean;
+  /** własne boisko z oświetleniem */
+  oswietlone: boolean;
+  /** własne boisko z plakietką twórcy */
+  approved: boolean;
+  /** własne boisko z plakietką „Śmieszne boisko” */
+  smieszne: boolean;
+  /** własne boisko z pełnym zestawem kadrów */
+  komplet: boolean;
+  /** ile różnych nawierzchni mają dodane boiska */
+  nawierzchnie: number;
+  /** ile różnych typów boisk: otwarte, kryte, streetball */
+  typy: number;
+  /** pierwsze boisko w jakiejś miejscowości */
+  pierwszyWMiescie: boolean;
 }
 
 export const PUSTE_STATYSTYKI: StatystykiGracza = {
@@ -54,6 +76,17 @@ export const PUSTE_STATYSTYKI: StatystykiGracza = {
   nocne: false,
   ranne: false,
   pionier: false,
+  weekend: false,
+  maraton: false,
+  seria: 0,
+  zima: false,
+  oswietlone: false,
+  approved: false,
+  smieszne: false,
+  komplet: false,
+  nawierzchnie: 0,
+  typy: 0,
+  pierwszyWMiescie: false,
 };
 
 interface DefinicjaProgowa {
@@ -164,11 +197,33 @@ export interface Odznaczenie {
   postepPelny: number;
 }
 
+/**
+ * Barwa wyróżnienia.
+ *
+ * Wyróżnienia NIE mają stopni, więc nie mogą korzystać z palety ognia - tam kolor niesie
+ * informację „jak wysoko", a tutaj nie ma czego mierzyć. Każde ma więc własną barwę,
+ * jednakową dla wszystkich, którzy je zdobyli. To także sygnał dla oka: pomarańcz i błękit
+ * to progi, cała reszta to jednorazowe wyczyny.
+ */
+export type BarwaWyroznienia =
+  | "zloto"
+  | "limonka"
+  | "fiolet"
+  | "lazur"
+  | "roza"
+  | "mieta"
+  | "blekit"
+  | "miedz";
+
 /** Odznaczenie bez progów - albo je masz, albo nie. */
 export interface Wyroznienie {
   id: string;
   nazwa: string;
+  /** za co jest - jednym zdaniem */
   opis: string;
+  /** warunek zdobycia, słowami; pokazujemy przy tych jeszcze niezdobytych */
+  warunek: string;
+  barwa: BarwaWyroznienia;
   zdobyte: boolean;
 }
 
@@ -223,25 +278,129 @@ export function wyroznienia(s: StatystykiGracza): Wyroznienie[] {
       id: "pionier",
       nazwa: "Pionier",
       opis: "Konto w pierwszej setce w serwisie.",
+      warunek: "Załóż konto, dopóki jest ich mniej niż sto.",
+      barwa: "zloto",
       zdobyte: s.pionier,
+    },
+    {
+      id: "pierwszy-w-miescie",
+      nazwa: "Pierwszy na miejscu",
+      opis: "Najstarsze boisko w swojej miejscowości.",
+      warunek: "Dodaj boisko w miejscowości, w której nie ma jeszcze żadnego.",
+      barwa: "roza",
+      zdobyte: s.pierwszyWMiescie,
+    },
+    {
+      id: "oswietlone",
+      nazwa: "Pod światłami",
+      opis: "Własne boisko z oświetleniem.",
+      warunek: "Dodaj boisko, na którym da się grać po zmroku.",
+      barwa: "fiolet",
+      zdobyte: s.oswietlone,
+    },
+    {
+      id: "approved",
+      nazwa: "Basket Approved",
+      opis: "Własne boisko z plakietką twórcy serwisu.",
+      warunek: "Dodaj boisko, które dostanie plakietkę Basket Approved.",
+      barwa: "zloto",
+      zdobyte: s.approved,
+    },
+    {
+      id: "smieszne",
+      nazwa: "Kosz z jajem",
+      opis: "Własne boisko z plakietką „Śmieszne boisko”.",
+      warunek: "Znajdź boisko tak dziwne, że dostanie plakietkę „Śmieszne boisko”.",
+      barwa: "limonka",
+      zdobyte: s.smieszne,
+    },
+    {
+      id: "komplet",
+      nazwa: "Komplet kadrów",
+      opis: "Boisko sfotografowane w całości, bez braków.",
+      warunek: "Dodaj boisko z co najmniej sześcioma różnymi kadrami.",
+      barwa: "mieta",
+      zdobyte: s.komplet,
+    },
+    {
+      id: "nawierzchnie",
+      nazwa: "Znawca nawierzchni",
+      opis: "Cztery różne nawierzchnie w dodanych boiskach.",
+      warunek: "Dodaj boiska o czterech różnych nawierzchniach.",
+      barwa: "miedz",
+      zdobyte: s.nawierzchnie >= 4,
+    },
+    {
+      id: "typy",
+      nazwa: "Trzy oblicza gry",
+      opis: "Boisko otwarte, kryte i streetballowe.",
+      warunek: "Dodaj po jednym boisku każdego typu: otwarte, kryte i streetball.",
+      barwa: "blekit",
+      zdobyte: s.typy >= 3,
+    },
+    {
+      id: "pelna-mapa",
+      nazwa: "Pełna mapa",
+      opis: "Boisko w każdym z 16 województw.",
+      warunek: "Dodaj boisko w każdym województwie.",
+      barwa: "mieta",
+      zdobyte: s.wojewodztwa >= 16,
     },
     {
       id: "nocny-marek",
       nazwa: "Nocny marek",
       opis: "Zapis na grę o 21:00 albo później.",
+      warunek: "Zapisz się na grę na 21:00 albo później.",
+      barwa: "fiolet",
       zdobyte: s.nocne,
     },
     {
       id: "ranny-ptaszek",
       nazwa: "Ranny ptaszek",
       opis: "Zapis na grę o 8:00 albo wcześniej.",
+      warunek: "Zapisz się na grę na 8:00 albo wcześniej.",
+      barwa: "lazur",
       zdobyte: s.ranne,
     },
     {
-      id: "pelna-mapa",
-      nazwa: "Pełna mapa",
-      opis: "Boisko w każdym z 16 województw.",
-      zdobyte: s.wojewodztwa >= 16,
+      id: "swit-i-noc",
+      nazwa: "Od świtu do nocy",
+      opis: "Gra i o świcie, i po zmroku.",
+      warunek: "Zdobądź Nocnego marka i Rannego ptaszka.",
+      barwa: "blekit",
+      zdobyte: s.nocne && s.ranne,
+    },
+    {
+      id: "weekend",
+      nazwa: "Weekendowy wojownik",
+      opis: "Gra w sobotę albo w niedzielę.",
+      warunek: "Zapisz się na grę w weekend.",
+      barwa: "roza",
+      zdobyte: s.weekend,
+    },
+    {
+      id: "maraton",
+      nazwa: "Maratończyk",
+      opis: "Sześć godzin gry w jednym dniu.",
+      warunek: "Zaznacz sześciogodzinny zakres gry w jednym dniu.",
+      barwa: "miedz",
+      zdobyte: s.maraton,
+    },
+    {
+      id: "seria-tygodnia",
+      nazwa: "Tydzień pod koszem",
+      opis: "Siedem dni z grą jeden po drugim.",
+      warunek: "Zapisz się na grę w siedmiu kolejnych dniach.",
+      barwa: "limonka",
+      zdobyte: s.seria >= 7,
+    },
+    {
+      id: "zima",
+      nazwa: "Mrozoodporny",
+      opis: "Gra w grudniu, styczniu albo lutym.",
+      warunek: "Zapisz się na grę w miesiącu zimowym.",
+      barwa: "lazur",
+      zdobyte: s.zima,
     },
   ];
 }
