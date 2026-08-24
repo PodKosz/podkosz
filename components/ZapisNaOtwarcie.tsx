@@ -8,10 +8,10 @@ import { plural } from "@/lib/site";
 /**
  * Zapis na otwarcie serwisu ze strony „Już niedługo".
  *
- * Adres leci prosto do bazy z przeglądarki - tabela przyjmuje wpisy od każdego, także
- * niezalogowanego (o to właśnie chodzi), ale nikt poza administratorem jej nie przeczyta.
- * Walidację robi baza, nie tylko formularz: klucz publiczny pozwala każdemu wysłać własne
- * żądanie, więc reguły muszą siedzieć tam, gdzie nie da się ich ominąć.
+ * Zapis idzie przez własny endpoint, bo zaraz po nim ma pójść krótkie potwierdzenie
+ * pocztą, a klucz do wysyłki nie ma prawa wyjść na front. Sam wpis i tak pilnuje baza:
+ * tabela przyjmuje adresy od każdego, także niezalogowanego (o to właśnie chodzi), ale
+ * nikt poza administratorem jej nie przeczyta.
  *
  * Licznik pod przyciskiem idzie osobną funkcją zwracającą samą liczbę - pokazuje, że ktoś
  * już czeka, nie ujawniając listy.
@@ -21,6 +21,8 @@ export function ZapisNaOtwarcie() {
   const [stan, setStan] = useState<"czeka" | "wysyla" | "zapisany">("czeka");
   const [blad, setBlad] = useState<string | null>(null);
   const [ilu, setIlu] = useState<number | null>(null);
+  /* adres był już na liście - wtedy potwierdzenie nie idzie po raz drugi */
+  const [juzByl, setJuzByl] = useState(false);
 
   useEffect(() => {
     let aktualne = true;
@@ -49,31 +51,35 @@ export function ZapisNaOtwarcie() {
     setStan("wysyla");
     setBlad(null);
 
-    const supabase = await supabaseBrowser();
-    if (!supabase) {
-      setStan("czeka");
-      setBlad("Zapisy będą działać za chwilę - spróbuj ponownie.");
-      return;
-    }
-
-    const { error } = await supabase.from("launch_signups").insert({ email: adres });
-
     /*
-      Powtórny zapis tego samego adresu to nie błąd, tylko informacja - człowiek ma
-      wiedzieć, że jest na liście, a nie zobaczyć czerwony komunikat o duplikacie klucza.
+      Zapis idzie przez serwer, a nie wprost do bazy, bo zaraz po nim ma pójść krótkie
+      potwierdzenie pocztą - a klucz do wysyłki nie ma prawa wyjść na front.
     */
-    if (error && !/duplicate key/i.test(error.message)) {
-      setStan("czeka");
-      setBlad(
-        /wygląda na adres/i.test(error.message)
-          ? "To nie wygląda na adres e-mail."
-          : "Nie udało się zapisać. Spróbuj za chwilę."
-      );
-      return;
-    }
+    try {
+      const odp = await fetch("/api/zapis-na-otwarcie", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: adres }),
+      });
+      const dane = (await odp.json()) as { zapisany?: boolean; nowy?: boolean; powod?: string };
 
-    setStan("zapisany");
-    if (!error) setIlu((n) => (n === null ? null : n + 1));
+      if (!dane.zapisany) {
+        setStan("czeka");
+        setBlad(
+          dane.powod === "adres"
+            ? "To nie wygląda na adres e-mail."
+            : "Nie udało się zapisać. Spróbuj za chwilę."
+        );
+        return;
+      }
+
+      setStan("zapisany");
+      setJuzByl(dane.nowy === false);
+      if (dane.nowy) setIlu((n) => (n === null ? null : n + 1));
+    } catch {
+      setStan("czeka");
+      setBlad("Nie udało się połączyć. Spróbuj za chwilę.");
+    }
   };
 
   if (stan === "zapisany") {
@@ -82,7 +88,11 @@ export function ZapisNaOtwarcie() {
         <p className="szklo-pro rounded-full px-6 py-3 text-[14px] text-ink">
           Jesteś na liście. Odezwę się w dniu otwarcia.
         </p>
-        <p className="text-[12px] text-faint">Jeden list, bez newslettera.</p>
+        <p className="text-[12px] text-faint">
+          {juzByl
+            ? "Ten adres był już zapisany - nic więcej nie trzeba."
+            : "Potwierdzenie poszło na maila. Jeden list, bez newslettera."}
+        </p>
       </div>
     );
   }
