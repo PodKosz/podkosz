@@ -41,7 +41,7 @@ export function FiltrSzkla() {
           <feDisplacementMap
             in="SourceGraphic"
             in2="szumMiekki"
-            scale={24}
+            scale={34}
             xChannelSelector="R"
             yChannelSelector="G"
           />

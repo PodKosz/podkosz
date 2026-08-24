@@ -168,36 +168,40 @@ body {
 /* ---------- płynne szkło ---------- */
 /*
   Wizytówka nad pinezką ma nie leżeć na mapie, tylko wyglądać jak kawałek szkła położony
-  NA niej: rozmywać to, co pod spodem, i - przy krawędziach - zaginać.
+  NA niej: rozmywać to, co pod spodem, i przy krawędziach zaginać.
 
-  Zaginanie to jedyna część, której CSS nie umie sam z siebie. Prawdziwe przesunięcie
-  pikseli tła robi filtr SVG (`feTurbulence` + `feDisplacementMap`) podany w
-  `backdrop-filter`; działa w silnikach Chromium, czyli na pececie i na Androidzie.
-  Tam, gdzie tego nie ma - przede wszystkim w Safari na iPhonie - zostaje warstwa, która
-  daje to samo wrażenie bez przesuwania pikseli: przy brzegu szkło jest grubsze, więc
-  mocniej rozmywa i rozjaśnia, a nad wszystkim siedzi jasny refleks. Oko czyta jedno
-  i drugie jako zagiętą krawędź.
+  Największy problem to ciemne tło. Mapa jest niemal czarna, a rozmycie czerni daje czerń -
+  samo `blur` było na niej niewidoczne i karta czytała się jak zwykły ciemny prostokąt.
+  Dlatego backdrop nie tylko rozmywamy, ale też WYCIĄGAMY: `brightness` podnosi to, co pod
+  szkłem, więc pod kartą widać drogi i granice województw, których obok nie widać wcale.
+  To jest cała różnica między „przyciemnionym pudełkiem" a szybą.
 
-  Obwódka jest osobną warstwą (`::before`) z maską pierścienia - `mask-composite: exclude`
-  wycina środek, więc mocniejsze rozmycie zostaje wyłącznie na obrzeżu.
+  Zaginanie robi filtr SVG (`feTurbulence` + `feDisplacementMap`) podany w `backdrop-filter`
+  i działa w silnikach Chromium - na pececie i na Androidzie. Gdzie go nie ma, przede
+  wszystkim w Safari na iPhonie, zostaje reszta: przy brzegu szkło jest grubsze, więc mocniej
+  rozmywa i rozjaśnia, a po obwodzie biegnie włosowy refleks. Na ciemnym interfejsie to
+  właśnie ten refleks sprzedaje wrażenie szkła, nie samo rozmycie.
 */
 .szklo-plynne {
   position: relative;
   background:
+    /* skośna smuga światła - jak na szkle trzymanym pod lampą */
     linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.1) 0%,
-      rgba(255, 255, 255, 0.035) 42%,
-      rgba(255, 255, 255, 0.02) 100%
+      128deg,
+      rgba(255, 255, 255, 0.16) 0%,
+      rgba(255, 255, 255, 0.045) 24%,
+      rgba(255, 255, 255, 0) 50%
     ),
-    radial-gradient(120% 130% at 12% -14%, rgba(255, 150, 60, 0.12), transparent 62%);
-  backdrop-filter: blur(26px) saturate(190%) brightness(1.06);
-  -webkit-backdrop-filter: blur(26px) saturate(190%) brightness(1.06);
+    /* ciepły refleks z góry i chłodny od dołu - szkło nigdy nie jest jednobarwne */
+    radial-gradient(125% 120% at 14% -12%, rgba(255, 158, 74, 0.16), transparent 58%),
+    radial-gradient(115% 130% at 88% 112%, rgba(120, 170, 255, 0.11), transparent 62%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.025) 100%);
+  backdrop-filter: blur(30px) saturate(210%) brightness(1.32) contrast(1.04);
+  -webkit-backdrop-filter: blur(30px) saturate(210%) brightness(1.32) contrast(1.04);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.1),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.14),
-    0 34px 70px -28px rgba(0, 0, 0, 0.95);
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08),
+    0 2px 8px -2px rgba(0, 0, 0, 0.5),
+    0 36px 80px -30px rgba(0, 0, 0, 0.95);
 }
 
 /* zagięta krawędź - grubsze szkło przy brzegu */
@@ -207,10 +211,10 @@ body {
   inset: 0;
   z-index: 0;
   border-radius: inherit;
-  padding: 15px;
+  padding: 18px;
   pointer-events: none;
-  backdrop-filter: blur(6px) saturate(150%) brightness(1.12);
-  -webkit-backdrop-filter: blur(6px) saturate(150%) brightness(1.12);
+  backdrop-filter: blur(7px) saturate(160%) brightness(1.24);
+  -webkit-backdrop-filter: blur(7px) saturate(160%) brightness(1.24);
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);
@@ -221,23 +225,40 @@ body {
   mask-composite: exclude;
 }
 
-/* refleks - jasna smuga schodząca od lewego górnego rogu, jak na szkle pod światło */
+/*
+  Włosowa obwódka w gradiencie - światło obiega krawędź szkła, jasne w lewym górnym rogu
+  i w prawym dolnym, wygaszone po bokach. Zwykła jednolita ramka wygląda przy tym jak
+  obrys pudełka; dopiero nierówne światło czyta się jako grubość szkła.
+
+  Leży nad treścią (`z-index: 2`), bo krawędź szyby jest zawsze na wierzchu.
+*/
 .szklo-plynne::after {
   content: "";
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: 2;
   border-radius: inherit;
+  padding: 1px;
   pointer-events: none;
   background: linear-gradient(
-    128deg,
-    rgba(255, 255, 255, 0.18) 0%,
-    rgba(255, 255, 255, 0.05) 26%,
-    rgba(255, 255, 255, 0) 52%
+    136deg,
+    rgba(255, 255, 255, 0.62) 0%,
+    rgba(255, 255, 255, 0.14) 22%,
+    rgba(255, 255, 255, 0.04) 46%,
+    rgba(255, 196, 140, 0.22) 74%,
+    rgba(255, 255, 255, 0.42) 100%
   );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
 }
 
-/* treść nad obiema warstwami szkła */
+/* treść nad warstwami szkła, pod obwódką */
 .szklo-plynne > * {
   position: relative;
   z-index: 1;
@@ -250,14 +271,14 @@ body {
 */
 @supports (backdrop-filter: url("#szklo-zagiecie")) {
   .szklo-plynne::before {
-    backdrop-filter: url("#szklo-zagiecie") blur(4px) saturate(155%) brightness(1.12);
+    backdrop-filter: url("#szklo-zagiecie") blur(5px) saturate(165%) brightness(1.24);
   }
 }
 
 @media (prefers-reduced-transparency: reduce) {
   .szklo-plynne {
-    backdrop-filter: blur(14px) saturate(130%);
-    -webkit-backdrop-filter: blur(14px) saturate(130%);
+    backdrop-filter: blur(16px) saturate(140%) brightness(1.2);
+    -webkit-backdrop-filter: blur(16px) saturate(140%) brightness(1.2);
   }
   .szklo-plynne::before {
     display: none;
