@@ -10,6 +10,7 @@ import type { LeadPoint } from "@/lib/leads";
 import { HoverCard } from "./HoverCard";
 import { FiltrSzkla } from "./FiltrSzkla";
 import { czytajWidok, zapiszWidok } from "@/lib/adres";
+import { MIEJSCA_GRY } from "@/lib/minigra";
 
 const POLAND_BOUNDS: [number, number, number, number] = [13.9, 48.9, 24.3, 55.0];
 
@@ -308,6 +309,24 @@ export function MapView({
       if (performance.now() - lastPinTapRef.current < 500) return;
       clearCardRef.current();
     });
+    /*
+      Easter egg: dwie niebieskie pinezki poza Polską - Venice Beach i Manhattan. Wieszamy
+      je tu, przy tworzeniu mapy, a nie razem z boiskami, bo nie są boiskami: nie ma ich
+      w bazie, nie liczą się w filtrach i nie mogą wpaść pod czyszczenie pinezek, które
+      usuwa wszystko spoza aktualnej listy.
+    */
+    for (const g of MIEJSCA_GRY) {
+      const el = document.createElement("a");
+      el.className = "court-marker pinezka-gry";
+      el.href = `/gra/${g.slug}`;
+      el.title = `${g.nazwa}, ${g.miasto}`;
+      el.setAttribute("aria-label", `Minigra: ${g.nazwa}`);
+      el.innerHTML = markerGryHtml();
+      el.addEventListener("click", (e) => e.stopPropagation());
+
+      new Marker({ element: el, anchor: "bottom" }).setLngLat([g.lng, g.lat]).addTo(map);
+    }
+
     mapRef.current = map;
 
     // Style w dev-mode dochodzą po hydracji, więc kontener bywa chwilowo zerowy -
@@ -788,6 +807,39 @@ export function MapView({
  * zamieniała rysunek w czarną plamę. Sam krążek dostaje gradient marki i wewnętrzny błysk
  * na krawędzi - to on daje wrażenie wypukłości, nie ikona.
  */
+/**
+ * Pinezka minigry - ta sama forma co zwykła, ale niebieska i z piłką zamiast kosza.
+ *
+ * Kolor jest inny z rozmysłem: pomarańcz to boiska w bazie, fiolet to wyróżnienie Heat,
+ * a błękit nie znaczy na tej mapie nic innego - więc od razu widać, że to coś osobnego,
+ * i nikt nie pomyśli, że w Kalifornii dodano boisko do polskiej bazy.
+ */
+function markerGryHtml() {
+  const size = 38;
+
+  return `<span style="position:relative;display:block;width:${size}px;height:${size + 10}px">
+    <span style="position:absolute;left:50%;top:50%;width:${size * 2.1}px;height:${size * 2.1}px;
+      translate:-50% -52%;border-radius:999px;pointer-events:none;
+      background:radial-gradient(circle,rgba(86,172,255,.55) 0%,rgba(24,92,190,.18) 45%,transparent 70%)"></span>
+
+    <span style="position:absolute;inset:0;border-radius:999px;
+      background:linear-gradient(135deg,#d7ecff,#56acff 55%,#1d5fd0);
+      box-shadow:0 6px 14px -6px rgba(20,80,180,.9), inset 0 1px 0 rgba(255,255,255,.55)">
+      <svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none"
+        stroke="rgba(10,30,70,.72)" stroke-width=".95" stroke-linecap="round">
+        <circle cx="12" cy="12" r="7.2"/>
+        <path d="M4.8 12h14.4M12 4.8v14.4"/>
+        <path d="M7 6.4c2.6 3.2 2.6 8 0 11.2M17 6.4c-2.6 3.2-2.6 8 0 11.2"/>
+      </svg>
+    </span>
+
+    <span style="position:absolute;left:50%;bottom:0;width:3px;height:11px;translate:-50% 0;
+      border-radius:2px;background:#56acff"></span>
+    <span style="position:absolute;left:50%;bottom:-3px;width:7px;height:4px;translate:-50% 0;
+      border-radius:999px;background:rgba(0,0,0,.45);filter:blur(1px)"></span>
+  </span>`;
+}
+
 function markerHtml(court: MapCourt) {
   const big = court.likes >= 200;
   const size = big ? 46 : 38;
