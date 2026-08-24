@@ -8,10 +8,10 @@ import { IkonaOdznaczenia } from "./IkonaOdznaczenia";
  * odhaczenia (tę widzi właściciel na swoim koncie). Wyróżnienia mają niżej własną sekcję,
  * więc nie powtarzamy ich tutaj.
  *
- * Kafelek jest ten sam co w sekcji wyróżnień, bo to ma być jedna rodzina znaków. Różnica
- * jest w tym, co dokładają odznaczenia progowe: ogień podnoszący się od dołu, którego
- * wysokość to droga do najwyższego stopnia, a barwa na jego czubku mówi, jak wysoko już
- * jest - od ciemnej czerwieni po błękit na szczycie.
+ * Stopień pokazuje piłka do koszykówki z płynnego szkła, a to, co się w niej pali, mówi
+ * jak wysoko: złote iskry, ciemny żar, płomień i błękitny ogień na szczycie. Piłka stoi
+ * bez kafelka - szklana kula jest już przedmiotem sama w sobie, a obwódka dookoła tylko
+ * ją zamykała i robiła z rzędu odznaczeń rząd pudełek.
  *
  * Dymek jest czystym CSS-em (`group-hover` i `focus-within`), więc komponent zostaje
  * serwerowy - żadnego JavaScriptu po stronie przeglądarki.
@@ -28,35 +28,35 @@ export function PlakietkiZaslug({ statystyki }: { statystyki: StatystykiGracza }
   }
 
   return (
-    /*
-      Kafelki mają tę samą szerokość co w siatce wyróżnień niżej, ale układ jest flexowy,
-      a nie gridowy: zdobytych stopni bywa mniej niż kolumn, a niepełny rząd w gridzie
-      przykleiłby się do lewej krawędzi pod wyśrodkowaną wizytówką.
-    */
-    <div className="mt-7 flex w-full flex-wrap justify-center gap-2.5">
+    /* układ flexowy, nie gridowy: zdobytych stopni bywa mniej niż kolumn, a niepełny rząd
+       w gridzie przykleiłby się do lewej krawędzi pod wyśrodkowaną wizytówką */
+    <div className="mt-9 flex w-full flex-wrap justify-center gap-x-7 gap-y-7">
       {progowe.map((o) => (
         <div
           key={o.id}
-          className={`group relative w-[calc((100%-1.875rem)/4)] sm:w-[calc((100%-3.125rem)/6)] lg:w-[calc((100%-4.375rem)/8)] stopien-${o.poziom!.id}`}
+          className={`odznaka group relative flex w-[96px] flex-col items-center stopien-${o.poziom!.id}`}
         >
-          <div className="stempel stempel-zdobyty">
-            <span className="medal h-[52px] w-[52px]">
-              <IkonaOdznaczenia id={o.id} />
-            </span>
+          <span className="odznaka-pilka medal h-[76px] w-[76px]">
+            <IkonaOdznaczenia id={o.id} />
+          </span>
 
-            <span className="text-[10.5px] font-medium leading-tight text-ink">{o.nazwa}</span>
+          <span className="mt-3 text-center text-[11px] font-medium leading-tight text-ink">
+            {o.nazwa}
+          </span>
 
-            {/*
-              Postęp w cienkiej linii przy dolnej krawędzi: `postepPelny` to cała droga do
-              najwyższego stopnia razem z kawałkiem przebytym w obrębie obecnego, więc
-              pasek rośnie także wtedy, gdy do kolejnego progu jeszcze daleko.
-            */}
-            <span className="pasek-stopnia">
-              <span style={{ width: `${Math.round(o.postepPelny * 100)}%`,
-                             ["--w" as string]: Math.max(o.postepPelny, 0.04).toFixed(3) }} />
-            </span>
-
-          </div>
+          {/*
+            Postęp w cienkiej linii pod nazwą: `postepPelny` to cała droga do najwyższego
+            stopnia razem z kawałkiem przebytym w obrębie obecnego, więc pasek rośnie także
+            wtedy, gdy do kolejnego progu jeszcze daleko.
+          */}
+          <span className="pasek-stopnia mt-2.5">
+            <span
+              style={{
+                width: `${Math.round(o.postepPelny * 100)}%`,
+                ["--w" as string]: Math.max(o.postepPelny, 0.04).toFixed(3),
+              }}
+            />
+          </span>
 
           {/*
             Dymek ma własną klasę `dymek`, a nie `szklo-pro`: tamta ustawia `position:

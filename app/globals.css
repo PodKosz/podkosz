@@ -941,28 +941,48 @@ body {
   color: rgba(245, 245, 247, 0.4);
 }
 
+/* ---------- odznaczenie progowe: sama piłka ---------- */
 /*
-  Pasek stopnia - cienka linia przy dolnej krawędzi kafelka.
+  Piłka stoi teraz bez kafelka. Szklana kula z ogniem w środku jest już przedmiotem sama
+  w sobie - obwódka i szklane tło dookoła tylko ją zamykały i dublowały refleksy, przez co
+  z rzędu odznaczeń robił się rząd pudełek zamiast rzędu piłek.
 
-  Odkąd stopień pokazuje piłka, ogień wypełniający cały kafelek robił z niego pomarańczową
-  plamę i zabijał sam emblemat: dwa ognie naraz to o jeden za dużo. Postęp niesie więc
-  włosowa linia, a barwa jej końca mówi to samo, co mówił ogień - jak wysoko już jesteśmy.
-  Gradient rozkłada się na całą szerokość kafelka, nie na widoczny kawałek, więc błękit
-  należy się wyłącznie temu, kto doszedł na szczyt.
+  Po najechaniu piłka lekko rośnie i mocniej świeci. Skala idzie osobną własnością
+  `scale`, a nie w `transform`: `.medal` ma już `filter` z poświatą i nic tu na siebie
+  nie nachodzi.
+*/
+.odznaka-pilka {
+  transition:
+    scale 280ms cubic-bezier(0.32, 0.72, 0, 1),
+    filter 280ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.odznaka:hover .odznaka-pilka,
+.odznaka:focus-within .odznaka-pilka {
+  scale: 1.09;
+  filter: drop-shadow(0 6px 22px rgb(var(--b) / 0.65));
+}
+
+/*
+  Pasek stopnia - cienka linia pod nazwą.
+
+  Barwa jej końca mówi, jak wysoko już jesteśmy: od ciemnej czerwieni, przez pomarańcz
+  i żółć, po błękit na szczycie. Gradient rozkłada się na całą szerokość paska, nie na
+  widoczny kawałek - stąd `background-size` będący odwrotnością wypełnienia. Bez tego
+  nawet ledwo zaczęty pasek kończyłby się błękitem, a błękit ma należeć się wyłącznie
+  temu, kto doszedł na sam szczyt.
 */
 .pasek-stopnia {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  position: relative;
+  width: 62px;
   height: 3px;
-  background: rgba(255, 255, 255, 0.05);
+  border-radius: 999px;
   overflow: hidden;
-  border-radius: 0 0 18px 18px;
+  background: rgba(255, 255, 255, 0.07);
 }
 .pasek-stopnia > span {
   display: block;
   height: 100%;
+  border-radius: 999px;
   background-image: linear-gradient(
     90deg,
     #7a1206 0%,
@@ -973,7 +993,14 @@ body {
   );
   background-size: calc(100% / var(--w)) 100%;
   background-repeat: no-repeat;
-  box-shadow: 0 0 12px rgb(var(--b) / 0.65);
+  box-shadow: 0 0 12px rgb(var(--b) / 0.7);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .odznaka:hover .odznaka-pilka,
+  .odznaka:focus-within .odznaka-pilka {
+    scale: none;
+  }
 }
 
 /*
