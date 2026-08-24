@@ -9,20 +9,20 @@ import { IkonaOdznaczenia } from "./IkonaOdznaczenia";
  * stopniu ktoś jest; tutaj nie ma czego mierzyć, więc kropek nie ma, a każda odznaka ma
  * własną barwę przypisaną na stałe - jednakową dla wszystkich, którzy ją zdobyli.
  *
- * Domyślnie widać tylko zdobyte: profil jest wizytówką, a nie listą zadań do odhaczenia.
- * Czego jeszcze nie ma, pokazuje się dopiero po rozwinięciu - wtedy z kreskowaną obwódką
- * i z warunkiem zdobycia w dymku. Rozwijanie robi `details`/`summary`, więc komponent
+ * Sekcja jest wyłącznie na własnym koncie. Na publicznym profilu zdobyte krążą wokół
+ * zdjęcia (patrz WyroznieniaLatajace), a lista „czego jeszcze nie mam" to zadanie do
+ * odhaczenia - sprawa właściciela, nie odwiedzającego.
+ *
+ * Domyślnie widać tylko zdobyte; reszta pokazuje się po rozwinięciu, z kreskowaną obwódką
+ * i warunkiem zdobycia w dymku. Rozwijanie robi `details`/`summary`, więc komponent
  * zostaje serwerowy: żadnego JavaScriptu po stronie przeglądarki.
  */
 export function Wyroznienia({
   statystyki,
   tytul = "Wyróżnienia",
-  pokazZdobyte = true,
 }: {
   statystyki: StatystykiGracza;
   tytul?: string;
-  /** false na publicznym profilu - zdobyte krążą tam wokół zdjęcia, więc byłyby dwa razy */
-  pokazZdobyte?: boolean;
 }) {
   const lista = wyroznienia(statystyki);
   const zdobyte = lista.filter((w) => w.zdobyte);
@@ -38,7 +38,7 @@ export function Wyroznienia({
         </p>
       </div>
 
-      {pokazZdobyte && zdobyte.length > 0 && (
+      {zdobyte.length > 0 && (
         <div className="mt-5 grid grid-cols-4 gap-2.5 sm:grid-cols-6 lg:grid-cols-8">
           {zdobyte.map((w) => (
             <Stempel key={w.id} w={w} />
