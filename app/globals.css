@@ -165,6 +165,105 @@ body {
   pada z góry), ciepła plama w lewym narożniku i rozmycie tła pod spodem. Do tego włosowa
   obwódka przez `inset` w box-shadow, bo `border` na dużych promieniach gubi równą grubość.
 */
+/* ---------- płynne szkło ---------- */
+/*
+  Wizytówka nad pinezką ma nie leżeć na mapie, tylko wyglądać jak kawałek szkła położony
+  NA niej: rozmywać to, co pod spodem, i - przy krawędziach - zaginać.
+
+  Zaginanie to jedyna część, której CSS nie umie sam z siebie. Prawdziwe przesunięcie
+  pikseli tła robi filtr SVG (`feTurbulence` + `feDisplacementMap`) podany w
+  `backdrop-filter`; działa w silnikach Chromium, czyli na pececie i na Androidzie.
+  Tam, gdzie tego nie ma - przede wszystkim w Safari na iPhonie - zostaje warstwa, która
+  daje to samo wrażenie bez przesuwania pikseli: przy brzegu szkło jest grubsze, więc
+  mocniej rozmywa i rozjaśnia, a nad wszystkim siedzi jasny refleks. Oko czyta jedno
+  i drugie jako zagiętą krawędź.
+
+  Obwódka jest osobną warstwą (`::before`) z maską pierścienia - `mask-composite: exclude`
+  wycina środek, więc mocniejsze rozmycie zostaje wyłącznie na obrzeżu.
+*/
+.szklo-plynne {
+  position: relative;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      rgba(255, 255, 255, 0.035) 42%,
+      rgba(255, 255, 255, 0.02) 100%
+    ),
+    radial-gradient(120% 130% at 12% -14%, rgba(255, 150, 60, 0.12), transparent 62%);
+  backdrop-filter: blur(26px) saturate(190%) brightness(1.06);
+  -webkit-backdrop-filter: blur(26px) saturate(190%) brightness(1.06);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14),
+    0 34px 70px -28px rgba(0, 0, 0, 0.95);
+}
+
+/* zagięta krawędź - grubsze szkło przy brzegu */
+.szklo-plynne::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  padding: 15px;
+  pointer-events: none;
+  backdrop-filter: blur(6px) saturate(150%) brightness(1.12);
+  -webkit-backdrop-filter: blur(6px) saturate(150%) brightness(1.12);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+/* refleks - jasna smuga schodząca od lewego górnego rogu, jak na szkle pod światło */
+.szklo-plynne::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    128deg,
+    rgba(255, 255, 255, 0.18) 0%,
+    rgba(255, 255, 255, 0.05) 26%,
+    rgba(255, 255, 255, 0) 52%
+  );
+}
+
+/* treść nad obiema warstwami szkła */
+.szklo-plynne > * {
+  position: relative;
+  z-index: 1;
+}
+
+/*
+  Prawdziwe zaginanie pikseli tła. Deklaracja jest w osobnym bloku, żeby przeglądarka,
+  która nie umie filtra w `backdrop-filter`, po prostu ją pominęła i została przy rozmyciu
+  z reguły wyżej.
+*/
+@supports (backdrop-filter: url("#szklo-zagiecie")) {
+  .szklo-plynne::before {
+    backdrop-filter: url("#szklo-zagiecie") blur(4px) saturate(155%) brightness(1.12);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .szklo-plynne {
+    backdrop-filter: blur(14px) saturate(130%);
+    -webkit-backdrop-filter: blur(14px) saturate(130%);
+  }
+  .szklo-plynne::before {
+    display: none;
+  }
+}
+
 .szklo-pro {
   position: relative;
   overflow: hidden;
@@ -848,6 +947,93 @@ body {
 }
 .stempel-brak:hover .stempel-ikona {
   color: rgba(245, 245, 247, 0.4);
+}
+
+/* ---------- ogień w kafelku odznaczenia progowego ---------- */
+/*
+  Zamiast czterech kropek pod nazwą kafelek po prostu PŁONIE, a wysokość ognia to droga
+  do szczytu. Cztery kropki trzeba było policzyć; ogień widać kątem oka i od razu wiadomo,
+  kto stoi wyżej.
+
+  Barwa jest jedna dla całej skali - od ciemnej czerwieni przy podłodze, przez pomarańcz
+  i żółć, po błękit na samej górze - i zawsze rozłożona na CAŁĄ wysokość kafelka, nie na
+  widoczny kawałek. Dlatego `background-size` jest odwrotnością wypełnienia: bez tego
+  nawet ledwo zaczęty ogień kończyłby się błękitem, a błękit ma należeć się wyłącznie
+  temu, kto doszedł na sam szczyt.
+
+  Górna krawędź nie jest kreską, tylko trzema nachodzącymi na siebie kopułami - to one
+  robią z paska języki ognia. `mask-composite: add` skleja je w jeden kształt.
+*/
+.stempel-ogien {
+  overflow: hidden;
+}
+.stempel-ogien > *:not(.plomien-tla) {
+  position: relative;
+  z-index: 1;
+}
+
+.plomien-tla {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(var(--w) * 100%);
+  pointer-events: none;
+  background-image: linear-gradient(
+    to top,
+    rgba(96, 12, 6, 0.72) 0%,
+    rgba(178, 32, 10, 0.6) 28%,
+    rgba(255, 110, 20, 0.5) 54%,
+    rgba(255, 201, 60, 0.44) 78%,
+    rgba(86, 172, 255, 0.5) 100%
+  );
+  background-size: 100% calc(100% / var(--w));
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+
+  /*
+    Trzy nachodzące kopuły zamiast prostej krawędzi - to one robią z paska języki ognia.
+    Promień pionowy musi być bliski wysokości elementu: przy 200% cała miękka część
+    gradientu wypadała poza kafelek i maska nie robiła nic, bo widoczny był wyłącznie jej
+    nieprzezroczysty środek. Każdy język ma inną wysokość, więc krawędź nie jest równa.
+  */
+  -webkit-mask-image:
+    radial-gradient(118% 96% at 20% 100%, #000 0 52%, rgba(0, 0, 0, 0.34) 80%, transparent 100%),
+    radial-gradient(118% 128% at 57% 100%, #000 0 48%, rgba(0, 0, 0, 0.34) 78%, transparent 100%),
+    radial-gradient(118% 84% at 87% 100%, #000 0 56%, rgba(0, 0, 0, 0.34) 84%, transparent 100%);
+  mask-image:
+    radial-gradient(118% 96% at 20% 100%, #000 0 52%, rgba(0, 0, 0, 0.34) 80%, transparent 100%),
+    radial-gradient(118% 128% at 57% 100%, #000 0 48%, rgba(0, 0, 0, 0.34) 78%, transparent 100%),
+    radial-gradient(118% 84% at 87% 100%, #000 0 56%, rgba(0, 0, 0, 0.34) 84%, transparent 100%);
+}
+
+/* poświata tuż nad ogniem - bez niej płomień kończy się jak wycięty nożyczkami */
+.plomien-tla::after {
+  content: "";
+  position: absolute;
+  left: -12%;
+  right: -12%;
+  top: -16px;
+  height: 34px;
+  background: radial-gradient(58% 100% at 50% 100%, rgb(var(--b) / 0.26) 0%, transparent 74%);
+  filter: blur(5px);
+}
+
+/*
+  Na ogniu biała kreska czyta się lepiej niż barwa stopnia - ta i tak jest już pod spodem,
+  w samym płomieniu. Cień pod napisem trzyma nazwę czytelną także tam, gdzie ogień
+  rozjaśnia się do żółci.
+*/
+.stempel-ogien .medal svg {
+  color: #fff3e6;
+  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.6));
+}
+.stempel-ogien .medal {
+  background: rgba(10, 6, 4, 0.34);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+}
+.stempel-ogien .nazwa-odznaki {
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.75);
 }
 
 /*

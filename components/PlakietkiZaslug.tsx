@@ -10,9 +10,9 @@ import { TloStopnia } from "./TloStopnia";
  * więc nie powtarzamy ich tutaj.
  *
  * Kafelek jest ten sam co w sekcji wyróżnień, bo to ma być jedna rodzina znaków. Różnica
- * jest w tym, co dokładają odznaczenia progowe: cztery kropki mówiące, który to stopień
- * z czterech. Wcześniej rolę „ile zdobyte" grał wygląd medalu - im wyższy stopień, tym
- * jaśniejsza kulka - i trzeba było znać kod, żeby to odczytać.
+ * jest w tym, co dokładają odznaczenia progowe: ogień podnoszący się od dołu, którego
+ * wysokość to droga do najwyższego stopnia, a barwa na jego czubku mówi, jak wysoko już
+ * jest - od ciemnej czerwieni po błękit na szczycie.
  *
  * Dymek jest czystym CSS-em (`group-hover` i `focus-within`), więc komponent zostaje
  * serwerowy - żadnego JavaScriptu po stronie przeglądarki.
@@ -40,22 +40,26 @@ export function PlakietkiZaslug({ statystyki }: { statystyki: StatystykiGracza }
           key={o.id}
           className={`group relative w-[calc((100%-1.875rem)/4)] sm:w-[calc((100%-3.125rem)/6)] lg:w-[calc((100%-4.375rem)/8)] stopien-${o.poziom!.id}`}
         >
-          <div className="stempel stempel-zdobyty">
+          <div className="stempel stempel-zdobyty stempel-ogien">
+            {/*
+              Ogień pod treścią, nie za nią: wysokość to `postepPelny`, czyli cała droga
+              do szczytu razem z kawałkiem przebytym w obrębie obecnego stopnia. Dzięki
+              temu kafelek rośnie także wtedy, gdy do kolejnego progu jeszcze daleko.
+            */}
+            <span
+              className="plomien-tla"
+              style={{ ["--w" as string]: Math.max(o.postepPelny, 0.06).toFixed(3) }}
+            />
+
             <span className="medal h-[38px] w-[38px]">
               <TloStopnia poziom={o.poziom!.id} />
               <IkonaOdznaczenia id={o.id} />
             </span>
 
-            <span className="text-[10.5px] font-medium leading-tight text-ink">{o.nazwa}</span>
-
-            <span className="kropki-stopnia">
-              {POZIOMY.map((_, i) => (
-                <span
-                  key={i}
-                  className={`kropka-stopnia ${i < o.stopien ? "kropka-stopnia-pelna" : ""}`}
-                />
-              ))}
+            <span className="nazwa-odznaki text-[10.5px] font-medium leading-tight text-ink">
+              {o.nazwa}
             </span>
+
           </div>
 
           {/*
