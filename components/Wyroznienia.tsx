@@ -17,9 +17,12 @@ import { IkonaOdznaczenia } from "./IkonaOdznaczenia";
 export function Wyroznienia({
   statystyki,
   tytul = "Wyróżnienia",
+  pokazZdobyte = true,
 }: {
   statystyki: StatystykiGracza;
   tytul?: string;
+  /** false na publicznym profilu - zdobyte krążą tam wokół zdjęcia, więc byłyby dwa razy */
+  pokazZdobyte?: boolean;
 }) {
   const lista = wyroznienia(statystyki);
   const zdobyte = lista.filter((w) => w.zdobyte);
@@ -35,13 +38,15 @@ export function Wyroznienia({
         </p>
       </div>
 
-      {zdobyte.length ? (
+      {pokazZdobyte && zdobyte.length > 0 && (
         <div className="mt-5 grid grid-cols-4 gap-2.5 sm:grid-cols-6 lg:grid-cols-8">
           {zdobyte.map((w) => (
             <Stempel key={w.id} w={w} />
           ))}
         </div>
-      ) : (
+      )}
+
+      {zdobyte.length === 0 && (
         <p className="mt-4 text-[13px] text-faint">
           Jeszcze żadnego wyróżnienia - są za jednorazowe wyczyny, nie za liczby.
         </p>

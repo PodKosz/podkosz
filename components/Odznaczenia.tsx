@@ -1,4 +1,5 @@
 import {
+  POPIOL,
   odznaczenia,
   podsumowanie,
   POZIOMY,
@@ -56,7 +57,7 @@ export function Odznaczenia({ statystyki }: { statystyki: StatystykiGracza }) {
               className={`karta-odznaki p-5 ${stopien ? `karta-${stopien}` : "karta-bez opacity-[0.78]"}`}
             >
               <div className="flex items-center gap-3.5">
-                <span className={`medal ${stopien ? `medal-${stopien}` : "medal-brak"} h-12 w-12`}>
+                <span className={`medal medal-${stopien ?? "popiol"} h-12 w-12`}>
                   <IkonaOdznaczenia id={o.id} className="h-[23px] w-[23px]" />
                 </span>
 
@@ -65,7 +66,7 @@ export function Odznaczenia({ statystyki }: { statystyki: StatystykiGracza }) {
                     {o.nazwa}
                   </p>
                   <p className="text-[11px] uppercase tracking-[0.14em] text-faint">
-                    {o.poziom ? o.poziom.nazwa : "bez stopnia"}
+                    {o.poziom ? o.poziom.nazwa : POPIOL.nazwa}
                   </p>
                 </div>
 

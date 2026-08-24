@@ -4,7 +4,8 @@
 --  Wyróżnienia to odznaczenia bez progów: albo je masz, albo nie. Dotąd były cztery,
 --  teraz jest ich szesnaście, więc `statystyki_gracza` musi policzyć kilka nowych rzeczy:
 --  gra w weekend, długość serii dni, zimowe wyjścia, oświetlenie i plakietki na boiskach,
---  komplet kadrów, różnorodność nawierzchni i typów, pierwsze boisko w miejscowości.
+--  komplet kadrów, przyjęte poprawki, różnorodność nawierzchni i typów, pierwsze boisko
+--  w miejscowości.
 --
 --  Funkcja zyskuje kolumny, więc trzeba ją najpierw skasować - Postgres nie pozwala
 --  zmienić typu zwracanego przez `create or replace`. Stary kod strony czyta ją po
@@ -40,6 +41,7 @@ returns table (
   approved           boolean,
   smieszne           boolean,
   komplet            boolean,
+  poprawki           integer,
   nawierzchnie       integer,
   typy               integer,
   pierwszy_w_miescie boolean
@@ -131,6 +133,10 @@ language sql stable security definer set search_path = public as $$
         where cp.court_id in (select id from moje)
         group by cp.court_id
        having count(distinct cp.kind) >= 6)),
+    /* przyjęte poprawki - zgłoszenia błędów, które administrator zamknął jako naniesione */
+    (select count(*)::integer from reports r
+      where r.reporter_id = (select id from p)
+        and r.status = 'resolved'),
     (select count(distinct m.surface)::integer from moje m),
     (select count(distinct m.type)::integer from moje m),
     /* pierwsze boisko w miejscowości - nikt nie dodał tam wcześniej niczego */
@@ -147,5 +153,5 @@ grant execute on function statystyki_gracza(text) to anon, authenticated;
 
 /* ---------- kontrola ---------- */
 select nick, boiska, seria, weekend, maraton, zima, oswietlone, approved, smieszne,
-       komplet, nawierzchnie, typy, pierwszy_w_miescie
+       komplet, poprawki, nawierzchnie, typy, pierwszy_w_miescie
   from statystyki_gracza('Basket');

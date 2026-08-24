@@ -617,19 +617,21 @@ body {
   --b: 132 196 255;
   --pilka: url("/odznaczenia/niebieski.webp");
 }
-.stopien-brak,
-.medal-brak {
-  --b: 245 245 247;
-  --pilka: none;
+/*
+  Popiół - stopień zerowy. Odznaczenie widać od pierwszego wejścia na profil, tylko piłka
+  jest wystygła: żadnego światła w środku, jedna szara barwa. Dzięki temu profil świeżego
+  konta pokazuje CAŁĄ drogę, a nie pustkę, i od razu widać, co jest do rozpalenia.
+*/
+.stopien-popiol,
+.medal-popiol {
+  --b: 176 180 190;
+  --pilka: url("/odznaczenia/popiol.webp");
 }
-.medal-brak {
-  background-image: none;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+.medal-popiol {
   filter: none;
 }
-.medal-brak svg {
-  color: rgba(245, 245, 247, 0.3);
-  filter: none;
+.medal-popiol svg {
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.9));
 }
 
 /* kropki stopnia - ile z czterech zdobyte; zastępują dawną „wypukłość" medalu */
@@ -939,6 +941,142 @@ body {
 }
 .stempel-brak:hover .stempel-ikona {
   color: rgba(245, 245, 247, 0.4);
+}
+
+/* ---------- latające wyróżnienia ---------- */
+/*
+  Zdobyte wyróżnienia krążą wokół zdjęcia profilowego. Ruch jest celowo powolny i krótki -
+  kilka pikseli w każdą stronę: ma sprawiać wrażenie unoszenia się, a nie latania, bo
+  element, za którym trzeba gonić kursorem, jest wrogiem, nie ozdobą. Dlatego pod kursorem
+  odznaka natychmiast staje.
+
+  Pozycjonowanie i ruch siedzą w dwóch osobnych elementach: zewnętrzny ustawia miejsce na
+  orbicie i cofa sie o połowę własnego rozmiaru, wewnętrzny animuje `translate`. Gdyby
+  robił to jeden, animacja kasowałaby wycentrowanie.
+*/
+.latacz {
+  position: absolute;
+  translate: -50% -50%;
+}
+
+.latacz-ruch {
+  display: block;
+  animation: var(--tor, lot-a) var(--dur, 9s) ease-in-out infinite;
+  animation-delay: var(--opoz, 0s);
+}
+
+.latacz-kula {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  color: rgb(var(--b));
+  background: radial-gradient(
+    circle at 50% 26%,
+    rgb(var(--b) / 0.24) 0%,
+    rgb(var(--b) / 0.06) 66%,
+    transparent 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgb(var(--b) / 0.34),
+    0 10px 26px -12px rgb(var(--b) / 0.6);
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  transition:
+    scale 260ms cubic-bezier(0.32, 0.72, 0, 1),
+    box-shadow 260ms cubic-bezier(0.32, 0.72, 0, 1);
+  /* świeżo zdobyte zapala się przy wejściu na stronę i już zostaje */
+  animation: latacz-wejscie 620ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+.latacz-kula svg {
+  filter: drop-shadow(0 0 8px rgb(var(--b) / 0.5));
+}
+
+/* pod kursorem: staje, rośnie i mocniej świeci */
+.latacz:hover .latacz-ruch,
+.latacz:focus-within .latacz-ruch {
+  animation-play-state: paused;
+}
+.latacz:hover .latacz-kula,
+.latacz:focus-within .latacz-kula {
+  scale: 1.22;
+  box-shadow:
+    inset 0 0 0 1px rgb(var(--b) / 0.6),
+    0 14px 34px -12px rgb(var(--b) / 0.85);
+}
+.latacz:hover .latacz-dymek,
+.latacz:focus-within .latacz-dymek {
+  scale: 1;
+  opacity: 1;
+}
+.latacz-dymek {
+  transition:
+    opacity 200ms ease,
+    scale 200ms ease;
+}
+
+@keyframes latacz-wejscie {
+  from {
+    scale: 0.4;
+    opacity: 0;
+  }
+  to {
+    scale: 1;
+    opacity: 1;
+  }
+}
+
+/* trzy tory, żeby sąsiadujące odznaki nie unosiły się tym samym ruchem */
+@keyframes lot-a {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  33% {
+    translate: 7px -9px;
+  }
+  66% {
+    translate: -6px 6px;
+  }
+}
+@keyframes lot-b {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  30% {
+    translate: -8px -5px;
+  }
+  70% {
+    translate: 5px 8px;
+  }
+}
+@keyframes lot-c {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  40% {
+    translate: 6px 7px;
+  }
+  75% {
+    translate: -7px -6px;
+  }
+}
+
+/* na telefonie orbita jest za szeroka na ekran - zmniejszamy ją w całości */
+@media (max-width: 700px) {
+  .latacze {
+    scale: 0.66;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .latacz-ruch,
+  .latacz-kula {
+    animation: none;
+  }
 }
 
 /* ---------- odznaczenie progowe: sama piłka ---------- */

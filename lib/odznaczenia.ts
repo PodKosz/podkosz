@@ -10,12 +10,21 @@
  * Kilka odznaczeń jest bez progów - dostaje się je raz, za konkretny wyczyn.
  */
 
-export type IdPoziomu = "iskra" | "zar" | "plomien" | "niebieski";
+export type IdPoziomu = "popiol" | "iskra" | "zar" | "plomien" | "niebieski";
 
 export interface Poziom {
   id: IdPoziomu;
   nazwa: string;
 }
+
+/**
+ * Stopień zerowy: odznaczenie jeszcze nierozpalone.
+ *
+ * Nie należy do `POZIOMY`, bo nie ma progu, który trzeba przejść - to stan wyjściowy
+ * każdego konta. Trzymanie go poza tablicą pilnuje też, żeby nie namieszał w arytmetyce:
+ * `postepPelny` dzieli przez liczbę stopni DO ZDOBYCIA, a tych jest cztery.
+ */
+export const POPIOL: Poziom = { id: "popiol", nazwa: "Popiół" };
 
 /** Kolejność ma znaczenie: indeks + 1 to numer stopnia. */
 export const POZIOMY: Poziom[] = [
@@ -55,6 +64,8 @@ export interface StatystykiGracza {
   smieszne: boolean;
   /** własne boisko z pełnym zestawem kadrów */
   komplet: boolean;
+  /** zgłoszone poprawki do boisk, które administrator przyjął */
+  poprawki: number;
   /** ile różnych nawierzchni mają dodane boiska */
   nawierzchnie: number;
   /** ile różnych typów boisk: otwarte, kryte, streetball */
@@ -84,6 +95,7 @@ export const PUSTE_STATYSTYKI: StatystykiGracza = {
   approved: false,
   smieszne: false,
   komplet: false,
+  poprawki: 0,
   nawierzchnie: 0,
   typy: 0,
   pierwszyWMiescie: false,
@@ -321,6 +333,14 @@ export function wyroznienia(s: StatystykiGracza): Wyroznienie[] {
       warunek: "Dodaj boisko z co najmniej sześcioma różnymi kadrami.",
       barwa: "mieta",
       zdobyte: s.komplet,
+    },
+    {
+      id: "korektor",
+      nazwa: "Korektor",
+      opis: "Trzy zgłoszone poprawki, które trafiły na mapę.",
+      warunek: "Zgłoś trzy poprawki do boisk - liczą się te, które zostaną przyjęte.",
+      barwa: "lazur",
+      zdobyte: s.poprawki >= 3,
     },
     {
       id: "nawierzchnie",

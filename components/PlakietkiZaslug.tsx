@@ -1,4 +1,4 @@
-import { odznaczenia, POZIOMY, type StatystykiGracza } from "@/lib/odznaczenia";
+import { odznaczenia, POPIOL, POZIOMY, type StatystykiGracza } from "@/lib/odznaczenia";
 import { IkonaOdznaczenia } from "./IkonaOdznaczenia";
 
 /**
@@ -17,15 +17,12 @@ import { IkonaOdznaczenia } from "./IkonaOdznaczenia";
  * serwerowy - żadnego JavaScriptu po stronie przeglądarki.
  */
 export function PlakietkiZaslug({ statystyki }: { statystyki: StatystykiGracza }) {
-  const progowe = odznaczenia(statystyki).filter((o) => o.poziom !== null);
-
-  if (!progowe.length) {
-    return (
-      <p className="mt-5 text-[13px] text-faint">
-        Jeszcze bez odznaczeń - pierwsze dodane boisko od razu daje stopień „Iskra”.
-      </p>
-    );
-  }
+  /*
+    Pokazujemy wszystkie dziewięć, także te jeszcze nietknięte - te dostają piłkę z popiołu.
+    Wcześniej profil świeżego konta był po prostu pusty i nie mówił nic o tym, że jest tu
+    w ogóle co zdobywać.
+  */
+  const progowe = odznaczenia(statystyki);
 
   return (
     /* układ flexowy, nie gridowy: zdobytych stopni bywa mniej niż kolumn, a niepełny rząd
@@ -34,7 +31,7 @@ export function PlakietkiZaslug({ statystyki }: { statystyki: StatystykiGracza }
       {progowe.map((o) => (
         <div
           key={o.id}
-          className={`odznaka group relative flex w-[96px] flex-col items-center stopien-${o.poziom!.id}`}
+          className={`odznaka group relative flex w-[96px] flex-col items-center stopien-${(o.poziom ?? POPIOL).id}`}
         >
           <span className="odznaka-pilka medal h-[76px] w-[76px]">
             <IkonaOdznaczenia id={o.id} />
@@ -71,7 +68,9 @@ export function PlakietkiZaslug({ statystyki }: { statystyki: StatystykiGracza }
               className="mt-0.5 block text-[11px] uppercase tracking-[0.12em]"
               style={{ color: "rgb(var(--b))" }}
             >
-              {o.poziom!.nazwa} - stopień {o.stopien} z {POZIOMY.length}
+              {o.poziom
+                ? `${o.poziom.nazwa} - stopień ${o.stopien} z ${POZIOMY.length}`
+                : `${POPIOL.nazwa} - jeszcze nierozpalone`}
             </span>
             <span className="mt-1.5 block text-[13px] text-ink">
               {o.wartosc} {o.licznik}

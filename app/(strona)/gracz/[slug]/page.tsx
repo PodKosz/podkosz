@@ -6,6 +6,7 @@ import { historiaGracza, nickZeSlugu, statystykiGracza, ulubioneGracza } from "@
 import { CourtCard } from "@/components/CourtCard";
 import { PlakietkiZaslug } from "@/components/PlakietkiZaslug";
 import { Wyroznienia } from "@/components/Wyroznienia";
+import { WyroznieniaLatajace } from "@/components/WyroznieniaLatajace";
 import { TloPilki } from "@/components/TloPilki";
 import { NaglowekSekcji } from "@/components/NaglowekSekcji";
 import { czyAutorAnonimowy, dataOpisowa, SITE_NAME, plural, slugifyPlace } from "@/lib/site";
@@ -113,6 +114,12 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
 
       {/* ---------- wizytówka ---------- */}
       <header className="mt-10 flex flex-col items-center text-center">
+        {/*
+          Orbita wyróżnień musi być wycentrowana na awatarze, więc opakowujemy go w blok
+          z `position: relative`. Sama orbita jest warstwą absolutną, więc nie zajmuje
+          miejsca - nick i liczby stoją tam, gdzie stały.
+        */}
+        <span className="relative inline-grid">
         <span className="awatar-ramka">
           <span className="grid h-[132px] w-[132px] place-items-center overflow-hidden text-[40px] font-bold">
             {statystyki.avatar ? (
@@ -126,6 +133,9 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
               <span className="flame-text">{nick.slice(0, 1).toUpperCase()}</span>
             )}
           </span>
+        </span>
+
+          <WyroznieniaLatajace statystyki={statystyki} />
         </span>
 
         <h1 className="mt-6 flame-text pb-1 text-[clamp(32px,6vw,58px)] font-semibold tracking-[-0.03em]">
@@ -159,7 +169,7 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
         Wyróżnienia mają własną sekcję, bo to inny rodzaj osiągnięcia: nie da się ich
         „podnieść o stopień", więc i wyglądają inaczej - stemple, nie kafelki z paskiem.
       */}
-      <Wyroznienia statystyki={statystyki} />
+      <Wyroznienia statystyki={statystyki} pokazZdobyte={false} />
 
       {/* ---------- dodane boiska ---------- */}
       <section className="mt-14">

@@ -160,6 +160,15 @@ const IKONY: Record<string, React.ReactNode> = {
     </>
   ),
 
+  /* ołówek z ptaszkiem - przyjęte poprawki */
+  korektor: (
+    <>
+      <path d="M4 20.2l1.1-4 9.8-9.8 2.9 2.9-9.8 9.8-4 1.1Z" />
+      <path d="M14.9 6.4l1.9-1.9a1.6 1.6 0 0 1 2.3 0l.6.6a1.6 1.6 0 0 1 0 2.3l-1.9 1.9" />
+      <path d="M14.6 17.6l1.9 1.9 3.9-4.2" />
+    </>
+  ),
+
   /* warstwy przekroju - różne nawierzchnie */
   nawierzchnie: (
     <>

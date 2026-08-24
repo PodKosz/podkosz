@@ -43,6 +43,7 @@ interface WierszStatystyk {
   approved: boolean;
   smieszne: boolean;
   komplet: boolean;
+  poprawki: number;
   nawierzchnie: number;
   typy: number;
   pierwszy_w_miescie: boolean;
@@ -94,6 +95,7 @@ export async function statystykiGracza(nick: string): Promise<ProfilGracza> {
     approved: w.approved ?? false,
     smieszne: w.smieszne ?? false,
     komplet: w.komplet ?? false,
+    poprawki: w.poprawki ?? 0,
     nawierzchnie: w.nawierzchnie ?? 0,
     typy: w.typy ?? 0,
     pierwszyWMiescie: w.pierwszy_w_miescie ?? false,
