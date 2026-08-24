@@ -29,8 +29,14 @@ export interface DanePowitania {
   pionier: boolean;
 }
 
-const TLO = `${SITE_URL}/mail/tlo.png`;
-const LOGO = `${SITE_URL}/mail/logo.png`;
+/*
+  Numer wersji w adresie nie jest ozdobą: Gmail przepuszcza obrazki przez własny serwer
+  pośredniczący i trzyma je tam pod adresem, więc podmiana pliku o tej samej nazwie nie
+  dotarłaby do nikogo, kto już raz go pobrał. Zmiana numeru po każdej przeróbce grafiki
+  gwarantuje, że nowe listy dostają nową wersję.
+*/
+const TLO = `${SITE_URL}/mail/tlo.png?v=2`;
+const LOGO = `${SITE_URL}/mail/logo.png?v=2`;
 
 /* Kolory z app/globals.css - trzymamy je tu osobno, bo mail nie widzi arkusza strony. */
 const CZERN = "#07070a";
@@ -271,6 +277,26 @@ export function htmlPowitania(dane: DanePowitania) {
 <meta name="supported-color-schemes" content="dark">
 <title>PodKosz</title>
 <!--[if mso]><style>table,td{font-family:Arial,sans-serif !important;}</style><![endif]-->
+<style>
+  /*
+    Klienci poczty same zamieniają adresy, daty i numery w linki i malują je na niebiesko -
+    tak zrobiło się z napisem „podkosz.pl" w nagłówku. Poniższe reguły oddają im kolor
+    z powrotem. Sam napis w nagłówku i tak nie zawiera już domeny, ale w treści adresy
+    padają, więc zabezpieczenie zostaje.
+  */
+  a[x-apple-data-detectors],
+  .x-gmail-data-detectors,
+  .x-gmail-data-detectors *,
+  .aBn {
+    color: inherit !important;
+    text-decoration: none !important;
+    border-bottom: 0 !important;
+    font-size: inherit !important;
+    font-family: inherit !important;
+    font-weight: inherit !important;
+    line-height: inherit !important;
+  }
+</style>
 </head>
 <body style="margin:0;padding:0;background-color:${CZERN};">
 
@@ -297,7 +323,7 @@ export function htmlPowitania(dane: DanePowitania) {
       <div style="position:relative;">
 
         <div style="font-family:${CZCIONKA};font-size:11px;font-weight:700;letter-spacing:3px;
-          text-transform:uppercase;color:${PLOMIEN};padding-bottom:14px;">podkosz.pl</div>
+          text-transform:uppercase;color:${PLOMIEN};padding-bottom:14px;">PodKosz</div>
 
         ${naglowekHtml}
         ${wstep}

@@ -15,6 +15,11 @@ import sharp from "sharp";
 
 const KATALOG = path.dirname(fileURLToPath(import.meta.url));
 const WYJSCIE = path.join(KATALOG, "..", "public", "mail");
+
+/* rozmiar wyświetlany w mailu; plik idzie w dwukrotności */
+const SZEROKOSC = 1200;
+const WYSOKOSC = 3000;
+const CZERN = "#07070a";
 const CZ = "Segoe UI, Arial, sans-serif";
 
 /* ---------- tło: czerń, pomarańczowe światła i kontur boiska ---------- */
@@ -49,7 +54,7 @@ const PILKA = `
     <path d="M282 44c-46 44-46 268 0 312" stroke-width="1.5"/>
   </g>`;
 
-function tlo() {
+function tlo(zTlem = true) {
   /*
     600x1500 to rozmiar wyświetlany w mailu; plik idzie w dwukrotności, żeby na telefonie
     z gęstym ekranem linie nie były rozmyte.
@@ -88,7 +93,7 @@ function tlo() {
     </radialGradient>
   </defs>
 
-  <rect width="600" height="1500" fill="#07070a"/>
+  ${zTlem ? '<rect width="600" height="1500" fill="#07070a"/>' : ""}
 
   <!-- ciepłe światło z lewej góry - dokładnie tam, gdzie w mailu zaczyna się nagłówek -->
   <ellipse cx="70" cy="20" rx="430" ry="360" fill="url(#swiatlo1)"/>
@@ -148,10 +153,56 @@ function logo() {
 </svg>`;
 }
 
+/*
+  Maska wygaszająca dekorację przy krawędziach obrazka.
+
+  Tło ma 600 px szerokości, a okno poczty na komputerze jest szersze - poza kolumną listu
+  zostaje płaska czerń tabeli. Jeżeli światła i kontur dochodzą do samej krawędzi obrazka,
+  widać pionowe cięcie: z jednej strony gradient, z drugiej płaski kolor. Dlatego dekorację
+  wygaszamy do zera na ostatnich kilkudziesięciu pikselach - wtedy brzeg obrazka JEST
+  kolorem tabeli i szwu nie ma.
+
+  Pion i poziom robimy dwoma przejściami `dest-in`, bo alfa mnoży się przez siebie i naroża
+  wygaszają się mocniej niż same boki - dokładnie tak, jak trzeba.
+*/
+function maska(poziomo, dlugosc) {
+  const kierunek = poziomo ? 'x1="0" y1="0" x2="1" y2="0"' : 'x1="0" y1="0" x2="0" y2="1"';
+  const bok = poziomo ? SZEROKOSC : WYSOKOSC;
+  const u = (dlugosc / bok).toFixed(4);
+
+  return Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${SZEROKOSC}" height="${WYSOKOSC}">
+       <defs>
+         <linearGradient id="m" ${kierunek}>
+           <stop offset="0" stop-color="#fff" stop-opacity="0"/>
+           <stop offset="${u}" stop-color="#fff" stop-opacity="1"/>
+           <stop offset="${(1 - Number(u)).toFixed(4)}" stop-color="#fff" stop-opacity="1"/>
+           <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+         </linearGradient>
+       </defs>
+       <rect width="${SZEROKOSC}" height="${WYSOKOSC}" fill="url(#m)"/>
+     </svg>`
+  );
+}
+
 async function main() {
   fs.mkdirSync(WYJSCIE, { recursive: true });
 
-  await sharp(Buffer.from(tlo()), { density: 72 })
+  /* dekoracja bez tła - żeby dało się ją wygasić, zanim położymy ją na czerni */
+  const dekoracja = await sharp(Buffer.from(tlo(false)), { density: 72 }).png().toBuffer();
+
+  const wygaszona = await sharp(
+    await sharp(dekoracja)
+      .composite([{ input: maska(true, 132), blend: "dest-in" }])
+      .toBuffer()
+  )
+    .composite([{ input: maska(false, 96), blend: "dest-in" }])
+    .toBuffer();
+
+  await sharp({
+    create: { width: SZEROKOSC, height: WYSOKOSC, channels: 4, background: CZERN },
+  })
+    .composite([{ input: wygaszona }])
     .png({ compressionLevel: 9, palette: false })
     .toFile(path.join(WYJSCIE, "tlo.png"));
   console.log("tlo.png");
