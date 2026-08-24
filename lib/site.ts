@@ -11,6 +11,19 @@ export const SITE_URL = (
 
 export const SITE_NAME = "PodKosz";
 
+/**
+ * Profile serwisu w innych miejscach sieci.
+ *
+ * Trafiają do danych strukturalnych jako `sameAs` - to nimi wyszukiwarka wiąże nazwę
+ * „PodKosz" z konkretną marką. Przy nowej domenie jest to zwykle pierwszy dowód, że
+ * marka istnieje poza własną stroną, więc pusta lista realnie kosztuje.
+ *
+ * Adres profilu na Instagramie podaje zmienna NEXT_PUBLIC_INSTAGRAM - dzięki temu nie
+ * trzeba wgrywać nowej wersji kodu, gdy zmieni się nazwa konta.
+ */
+export const PROFILE_SPOLECZNOSCIOWE = [process.env.NEXT_PUBLIC_INSTAGRAM]
+  .filter((adres): adres is string => Boolean(adres && adres.startsWith("https://")));
+
 export const SITE_DESCRIPTION =
   "Interaktywna mapa boisk do koszykówki w Polsce. Zdjęcia, nawierzchnia, liczba koszy i godziny dostępności - dodawane przez graczy.";
 

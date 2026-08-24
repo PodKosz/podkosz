@@ -1,5 +1,5 @@
 import { ACCESS_LABEL, Court, TYPE_LABEL, surfaceLabel } from "@/lib/types";
-import { SITE_NAME, SITE_URL, absolute, slugifyPlace } from "@/lib/site";
+import { PROFILE_SPOLECZNOSCIOWE, SITE_DESCRIPTION, SITE_NAME, SITE_URL, absolute, slugifyPlace } from "@/lib/site";
 
 /**
  * Dane strukturalne (JSON-LD) - ten sam opis boiska, ale w formacie, który wyszukiwarki
@@ -81,17 +81,55 @@ export function CourtStructuredData({ court }: { court: Court }) {
   );
 }
 
-/** Opis serwisu na stronie głównej - nazwa, wyszukiwarka, wydawca. */
+/**
+ * Opis serwisu na stronie głównej: kto to jest i pod jaką nazwą.
+ *
+ * To jest miejsce, w którym mówimy wyszukiwarce wprost, że „PodKosz" to nazwa własna
+ * tego serwisu, a nie przypadkowe słowo w tekście. Bez tego Google musi się tego domyślać
+ * z treści, a przy nowej domenie nie ma z czego. `alternateName` łapie pisownię, której
+ * ludzie faktycznie używają w wyszukiwarce, a `sameAs` wiąże stronę z profilami w innych
+ * serwisach - to one są zwykle pierwszym dowodem, że marka istnieje poza własną domeną.
+ *
+ * `Organization` i `WebSite` idą jako dwa powiązane obiekty (`publisher` wskazuje na
+ * organizację), bo tak opisuje to schema.org i tak czyta to Google.
+ */
 export function SiteStructuredData({ courts }: { courts: number }) {
+  const organizacja = {
+    "@type": "Organization",
+    "@id": `${SITE_URL}/#organizacja`,
+    name: SITE_NAME,
+    alternateName: ["PodKosz.pl", "Pod Kosz", "podkosz"],
+    url: SITE_URL,
+    logo: `${SITE_URL}/mail/logo.png`,
+    description: SITE_DESCRIPTION,
+    ...(PROFILE_SPOLECZNOSCIOWE.length ? { sameAs: PROFILE_SPOLECZNOSCIOWE } : {}),
+  };
+
   const dane = {
     "@context": "https://schema.org",
-    "@type": "WebSite",
-    "@id": SITE_URL,
-    url: SITE_URL,
-    name: SITE_NAME,
-    inLanguage: "pl-PL",
-    description: `Mapa i baza ${courts} boisk do koszykówki w Polsce.`,
+    "@graph": [
+      organizacja,
+      {
+        "@type": "WebSite",
+        "@id": `${SITE_URL}/#serwis`,
+        url: SITE_URL,
+        name: SITE_NAME,
+        alternateName: "PodKosz.pl",
+        inLanguage: "pl-PL",
+        description: `Mapa i baza ${courts} boisk do koszykówki w Polsce.`,
+        publisher: { "@id": `${SITE_URL}/#organizacja` },
+        potentialAction: {
+          "@type": "SearchAction",
+          target: {
+            "@type": "EntryPoint",
+            urlTemplate: `${SITE_URL}/?q={search_term_string}`,
+          },
+          "query-input": "required name=search_term_string",
+        },
+      },
+    ],
   };
+
   return <Json data={dane} />;
 }
 

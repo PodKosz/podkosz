@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { listCourtsForPlace, listPlaces } from "@/lib/repo";
 import { PlaceListing } from "@/components/PlaceListing";
 import { SITE_NAME, slugifyPlace } from "@/lib/site";
-import { VOIVODESHIPS } from "@/lib/types";
+import { VOIVODESHIPS, WOJEWODZTWA_SRODKI } from "@/lib/types";
 
 export const revalidate = 3600;
 
@@ -53,7 +53,21 @@ export default async function VoivodeshipPage({
 }) {
   const { slug } = await params;
   const found = await listCourtsForPlace("voivodeship", slug);
-  if (!found) notFound();
+
+  /*
+    Województwo bez ani jednego boiska nie ma czego wypisać, ale nie jest błędem - stopka
+    linkuje do wszystkich szesnastu, więc na pustym regionie użytkownik dostawał 404 za
+    kliknięcie w istniejące miejsce. Zamiast tego odsyłamy na mapę ustawioną na ten region
+    i z włączonym filtrem: człowiek widzi, gdzie jest, i że po prostu nikt jeszcze nic tu
+    nie dodał.
+  */
+  if (!found) {
+    const nazwa = VOIVODESHIPS.find((v) => slugifyPlace(v) === slug);
+    if (!nazwa) notFound();
+
+    const { lat, lng, zoom } = WOJEWODZTWA_SRODKI[nazwa];
+    redirect(`/?m=${lat},${lng},${zoom}&woj=${encodeURIComponent(nazwa)}`);
+  }
 
   const { voivodeships } = await listPlaces();
   const siblings = voivodeships.filter((v) => v.slug !== slug);

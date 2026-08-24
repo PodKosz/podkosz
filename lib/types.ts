@@ -149,6 +149,36 @@ export const VOIVODESHIPS = [
   "zachodniopomorskie",
 ] as const;
 
+/**
+ * Środki województw i przybliżenie, przy którym mieszczą się w kadrze.
+ *
+ * Potrzebne tam, gdzie nie ma czego wypisać: podstrona województwa bez żadnego boiska
+ * nie ma listy, więc zamiast błędu 404 odsyłamy na mapę ustawioną na ten region.
+ * Współrzędne są przybliżone - chodzi o kadr, nie o pomiar; mniejsze województwa dostają
+ * ciaśniejsze przybliżenie, żeby nie tonęły w kadrze pół Polski.
+ */
+export const WOJEWODZTWA_SRODKI: Record<
+  (typeof VOIVODESHIPS)[number],
+  { lat: number; lng: number; zoom: number }
+> = {
+  dolnośląskie: { lat: 51.05, lng: 16.4, zoom: 7.6 },
+  "kujawsko-pomorskie": { lat: 53.1, lng: 18.5, zoom: 7.7 },
+  lubelskie: { lat: 51.25, lng: 22.9, zoom: 7.4 },
+  lubuskie: { lat: 52.25, lng: 15.3, zoom: 7.8 },
+  łódzkie: { lat: 51.65, lng: 19.35, zoom: 7.7 },
+  małopolskie: { lat: 49.85, lng: 20.2, zoom: 7.8 },
+  mazowieckie: { lat: 52.35, lng: 21.0, zoom: 7.2 },
+  opolskie: { lat: 50.65, lng: 17.9, zoom: 8.2 },
+  podkarpackie: { lat: 49.9, lng: 22.2, zoom: 7.6 },
+  podlaskie: { lat: 53.35, lng: 22.9, zoom: 7.4 },
+  pomorskie: { lat: 54.25, lng: 17.9, zoom: 7.5 },
+  śląskie: { lat: 50.3, lng: 19.0, zoom: 8.0 },
+  świętokrzyskie: { lat: 50.75, lng: 20.7, zoom: 8.2 },
+  "warmińsko-mazurskie": { lat: 53.85, lng: 20.7, zoom: 7.4 },
+  wielkopolskie: { lat: 52.4, lng: 17.2, zoom: 7.2 },
+  zachodniopomorskie: { lat: 53.6, lng: 15.5, zoom: 7.4 },
+};
+
 export const SURFACE_LABEL: Record<Surface, string> = {
   beton: "Beton",
   asfalt: "Asfalt",

@@ -28,6 +28,7 @@ import { LeadsAdmin } from "./LeadsAdmin";
 import { BrakiAdmin } from "./BrakiAdmin";
 import { StatsAdmin } from "./StatsAdmin";
 import { BetaAdmin } from "./BetaAdmin";
+import { ZapisyAdmin } from "./ZapisyAdmin";
 import { UsersAdmin } from "./UsersAdmin";
 import { NewFromLead } from "./NewFromLead";
 
@@ -46,6 +47,7 @@ type View =
   | "courts"
   | "leads"
   | "beta"
+  | "zapisy"
   | "users"
   | "new";
 
@@ -58,6 +60,7 @@ const VIEWS: [View, string][] = [
   ["courts", "Boiska na mapie"],
   ["leads", "Kandydaci OSM"],
   ["beta", "Beta testerzy"],
+  ["zapisy", "Zapisy na otwarcie"],
   ["users", "Użytkownicy"],
   ["new", "Dodaj ręcznie"],
 ];
@@ -264,6 +267,8 @@ export function AdminPanel({ isAdmin, signedIn }: { isAdmin: boolean; signedIn: 
           <LeadsAdmin />
         ) : view === "beta" ? (
           <BetaAdmin />
+        ) : view === "zapisy" ? (
+          <ZapisyAdmin />
         ) : view === "users" ? (
           <UsersAdmin />
         ) : newLeadId ? (
@@ -515,6 +520,10 @@ function Header({
     users: [
       "Użytkownicy",
       "Konta w serwisie. Blokada nie usuwa konta - osoba nadal przegląda mapę, ale baza odrzuca jej zgłoszenia, podpalenia, ulubione i zapisy na grę. Niżej lista słów zakazanych w nickach.",
+    ],
+    zapisy: [
+      "Zapisy na otwarcie",
+      "Adresy zostawione na stronie „Już niedługo”. W dniu premiery wysyłasz stąd jedną wiadomość: strona działa, można się logować. Poczta przyjmuje 90 listów naraz, więc przy większej liczbie kliknij kilka razy - licznik pokaże, ile zostało.",
     ],
     beta: [
       "Beta testerzy",

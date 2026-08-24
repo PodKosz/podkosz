@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { WejscieBeta } from "@/components/WejscieBeta";
+import { ZapisNaOtwarcie } from "@/components/ZapisNaOtwarcie";
 import { CourtOutline } from "@/components/CourtOutline";
 
 export const metadata: Metadata = {
@@ -120,6 +121,12 @@ export default function Wkrotce() {
               "linear-gradient(90deg, transparent 0%, rgba(255,122,24,.85) 50%, transparent 100%)",
           }}
         />
+
+        {/*
+          Zapis na otwarcie - dla wszystkich, którzy trafili tu przed premierą. Stoi wyżej
+          niż wejście dla testerów, bo to jedyna rzecz, którą przeciętny gość może tu zrobić.
+        */}
+        <ZapisNaOtwarcie />
 
         {/* wejście dla zaproszonych do testów - reszta świata zostaje na tej stronie */}
         <WejscieBeta />

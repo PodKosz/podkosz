@@ -1,4 +1,5 @@
 import { Explorer } from "@/components/Explorer";
+import { SiteStructuredData } from "@/components/StructuredData";
 import { listMapCourts } from "@/lib/repo";
 
 /*
@@ -11,5 +12,16 @@ export const revalidate = 300;
 
 export default async function Home() {
   const courts = await listMapCourts();
-  return <Explorer courts={courts} />;
+
+  return (
+    <>
+      {/*
+        Opis serwisu dla wyszukiwarek. Mapa to jeden wielki blok JavaScriptu - bez tego
+        robot widzi na stronie głównej niewiele poza paskiem nawigacji i nie ma z czego
+        wywnioskować, czym jest „PodKosz".
+      */}
+      <SiteStructuredData courts={courts.length} />
+      <Explorer courts={courts} />
+    </>
+  );
 }
