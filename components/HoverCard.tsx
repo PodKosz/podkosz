@@ -7,6 +7,10 @@ import { ClockIcon, FireBallIcon, HoopIcon, BasketApprovedBadge, SurfaceIcon } f
 
 /**
  * Podgląd po najechaniu na pinezkę (na dotyku: po jej dotknięciu) - miniaturki i szybkie info.
+ *
+ * Karta jest z „płynnego szkła": rozmywa mapę pod spodem i zagina ją przy krawędziach
+ * (patrz `.szklo-plynne` w globals.css oraz FiltrSzkla). Zwykłe `.glass` tylko rozmywało,
+ * przez co wizytówka leżała na mapie jak naklejka zamiast jak szybka nad nią.
  * `tapHint` dokłada stopkę z zaproszeniem do dotknięcia, bo wtedy cała karta jest linkiem.
  * Wersja dotykowa jest o ~30% mniejsza od tej na kursor: szerokość ogranicza wrapper na mapie,
  * a marginesy i kroje pisma schodzą tutaj, żeby karta nie zajmowała pół ekranu telefonu.
@@ -17,7 +21,7 @@ export function HoverCard({ court, tapHint = false }: { court: MapCourt; tapHint
   const kadry = thumbs.length ? thumbs : [null, null, null];
   return (
     <div
-      className={`glass overflow-hidden rounded-[22px] rise ${
+      className={`szklo-plynne overflow-hidden rounded-[22px] rise ${
         tapHint ? "w-full" : "w-[320px]"
       }`}
     >

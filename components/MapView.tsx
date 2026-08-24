@@ -8,6 +8,7 @@ import { MapCourt } from "@/lib/types";
 import { CITIES_GEOJSON } from "@/lib/cities";
 import type { LeadPoint } from "@/lib/leads";
 import { HoverCard } from "./HoverCard";
+import { FiltrSzkla } from "./FiltrSzkla";
 import { czytajWidok, zapiszWidok } from "@/lib/adres";
 
 const POLAND_BOUNDS: [number, number, number, number] = [13.9, 48.9, 24.3, 55.0];
@@ -695,6 +696,9 @@ export function MapView({
       {/* h-full/w-full, a nie absolute inset-0: maplibre-gl.css wymusza na tym divie
           position:relative, przez co inset-0 nie działa i kontener ma wysokość 0. */}
       <div ref={containerRef} className="h-full w-full" />
+
+      {/* filtr zaginający tło pod wizytówką - musi być w drzewie, sam nic nie rysuje */}
+      <FiltrSzkla />
 
       {hover &&
         !sheetOpen &&
