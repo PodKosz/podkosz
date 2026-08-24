@@ -7,7 +7,6 @@ import {
 } from "@/lib/odznaczenia";
 import { Wyroznienia } from "./Wyroznienia";
 import { IkonaOdznaczenia } from "./IkonaOdznaczenia";
-import { TloStopnia } from "./TloStopnia";
 
 /**
  * Siatka odznaczeń na koncie właściciela.
@@ -58,7 +57,6 @@ export function Odznaczenia({ statystyki }: { statystyki: StatystykiGracza }) {
             >
               <div className="flex items-center gap-3.5">
                 <span className={`medal ${stopien ? `medal-${stopien}` : "medal-brak"} h-12 w-12`}>
-                  <TloStopnia poziom={stopien} />
                   <IkonaOdznaczenia id={o.id} className="h-[23px] w-[23px]" />
                 </span>
 

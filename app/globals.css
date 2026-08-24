@@ -560,14 +560,17 @@ body {
 */
 /* ---------- emblemat stopnia ---------- */
 /*
-  Wcześniej odznaczenie progowe było błyszczącą kulką: biały refleks pod górną krawędzią,
-  gradient od jasnego do ciemnego, poświata dookoła. Wyglądało jak render, a nie jak część
-  tej strony - i zupełnie nie trzymało się kupy z płaskimi stemplami wyróżnień.
+  Stopień pokazuje piłka do koszykówki z płynnego szkła, a to, co się w niej pali, mówi
+  jak wysoko: złote iskry, ciemny żar, płomień i na szczycie błękitny ogień. Wcześniej
+  był tu płaski krążek w barwie stopnia - czytelny, ale nijaki; wcześniej jeszcze
+  błyszcząca kulka, która wyglądała jak render z generatora.
 
-  Teraz jest to ten sam krążek co w stemplu: ciemne szkło, włosowa obwódka i kreska ikony
-  w barwie stopnia. Kolor niesie całą informację, więc nie potrzebuje pomocy od świateł.
-  Barwę podaje zmienna `--b`, dokładnie ta sama, której używają wyróżnienia - dzięki temu
-  oba rodzaje odznaczeń są jedną rodziną, mimo że jedne mają stopnie, a drugie nie.
+  Piłki są obrazkami (`public/odznaczenia/*.webp`), bo takiej głębi - szkła, żaru w środku
+  i refleksów - nie da się uczciwie zrobić gradientami CSS. Kanał alfa mają wycięty
+  okrągłą maską, więc siadają na dowolnym tle bez obwódki.
+
+  Ikona kategorii zostaje na wierzchu, w bieli: piłka mówi JAK WYSOKO, ikona mówi ZA CO.
+  Bez niej rząd odznaczeń byłby rzędem jednakowych piłek.
 */
 .medal {
   position: relative;
@@ -575,68 +578,57 @@ body {
   place-items: center;
   flex: none;
   border-radius: 999px;
-  color: rgb(var(--b));
-  background: radial-gradient(
-    circle at 50% 28%,
-    rgb(var(--b) / 0.2) 0%,
-    rgb(var(--b) / 0.05) 68%,
-    transparent 100%
-  );
-  box-shadow: inset 0 0 0 1px rgb(var(--b) / 0.28);
-}
-
-/*
-  Motyw stopnia (iskry, kamyczki, płomień, dwa błękitne płomienie) leży pod ikoną. Jest
-  w barwie stopnia i ledwo widoczny - ma dawać fakturę, nie rysunek. Selektor musi być
-  mocniejszy niż `.medal svg`, inaczej dostałby rozmiar ikony i skulił się do środka.
-*/
-.medal svg.medal-tlo {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  color: rgb(var(--b) / 0.22);
-  pointer-events: none;
+  background-image: var(--pilka);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 3px 12px rgb(var(--b) / 0.42));
 }
 
 .medal svg {
   position: relative;
-  width: 50%;
-  height: 50%;
-  stroke-width: 1.7;
-  filter: drop-shadow(0 0 8px rgb(var(--b) / 0.4));
+  width: 46%;
+  height: 46%;
+  stroke-width: 1.9;
+  color: #fff;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.85));
 }
 
 /*
-  Barwy stopni. To wciąż ta sama skala ognia - od ciepłego złota po chłodny błękit na
-  szczycie - tylko podana jako jeden kolor kreski zamiast trzech przystanków gradientu.
+  Barwy stopni. Kolor kreski i poświaty nadal bierze się stąd - piłka wnosi obrazek,
+  ale obwódki, dymki i kropki muszą znać jedną barwę wiodącą.
 */
 .stopien-iskra,
 .medal-iskra {
   --b: 247 191 76;
+  --pilka: url("/odznaczenia/iskra.webp");
 }
 .stopien-zar,
 .medal-zar {
-  --b: 255 138 56;
+  --b: 214 62 48;
+  --pilka: url("/odznaczenia/zar.webp");
 }
 .stopien-plomien,
 .medal-plomien {
-  --b: 255 92 76;
+  --b: 255 118 40;
+  --pilka: url("/odznaczenia/plomien.webp");
 }
 .stopien-niebieski,
 .medal-niebieski {
-  --b: 96 176 255;
+  --b: 132 196 255;
+  --pilka: url("/odznaczenia/niebieski.webp");
 }
 .stopien-brak,
 .medal-brak {
   --b: 245 245 247;
+  --pilka: none;
 }
 .medal-brak {
-  color: rgba(245, 245, 247, 0.3);
-  background: none;
+  background-image: none;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  filter: none;
 }
 .medal-brak svg {
+  color: rgba(245, 245, 247, 0.3);
   filter: none;
 }
 
@@ -880,8 +872,8 @@ body {
   align-items: center;
   justify-content: flex-start;
   gap: 8px;
-  min-height: 96px;
-  padding: 13px 6px 11px;
+  min-height: 108px;
+  padding: 14px 6px 14px;
   border-radius: 18px;
   text-align: center;
   transition:
@@ -949,91 +941,39 @@ body {
   color: rgba(245, 245, 247, 0.4);
 }
 
-/* ---------- ogień w kafelku odznaczenia progowego ---------- */
 /*
-  Zamiast czterech kropek pod nazwą kafelek po prostu PŁONIE, a wysokość ognia to droga
-  do szczytu. Cztery kropki trzeba było policzyć; ogień widać kątem oka i od razu wiadomo,
-  kto stoi wyżej.
+  Pasek stopnia - cienka linia przy dolnej krawędzi kafelka.
 
-  Barwa jest jedna dla całej skali - od ciemnej czerwieni przy podłodze, przez pomarańcz
-  i żółć, po błękit na samej górze - i zawsze rozłożona na CAŁĄ wysokość kafelka, nie na
-  widoczny kawałek. Dlatego `background-size` jest odwrotnością wypełnienia: bez tego
-  nawet ledwo zaczęty ogień kończyłby się błękitem, a błękit ma należeć się wyłącznie
-  temu, kto doszedł na sam szczyt.
-
-  Górna krawędź nie jest kreską, tylko trzema nachodzącymi na siebie kopułami - to one
-  robią z paska języki ognia. `mask-composite: add` skleja je w jeden kształt.
+  Odkąd stopień pokazuje piłka, ogień wypełniający cały kafelek robił z niego pomarańczową
+  plamę i zabijał sam emblemat: dwa ognie naraz to o jeden za dużo. Postęp niesie więc
+  włosowa linia, a barwa jej końca mówi to samo, co mówił ogień - jak wysoko już jesteśmy.
+  Gradient rozkłada się na całą szerokość kafelka, nie na widoczny kawałek, więc błękit
+  należy się wyłącznie temu, kto doszedł na szczyt.
 */
-.stempel-ogien {
-  overflow: hidden;
-}
-.stempel-ogien > *:not(.plomien-tla) {
-  position: relative;
-  z-index: 1;
-}
-
-.plomien-tla {
+.pasek-stopnia {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  height: calc(var(--w) * 100%);
-  pointer-events: none;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  border-radius: 0 0 18px 18px;
+}
+.pasek-stopnia > span {
+  display: block;
+  height: 100%;
   background-image: linear-gradient(
-    to top,
-    rgba(96, 12, 6, 0.72) 0%,
-    rgba(178, 32, 10, 0.6) 28%,
-    rgba(255, 110, 20, 0.5) 54%,
-    rgba(255, 201, 60, 0.44) 78%,
-    rgba(86, 172, 255, 0.5) 100%
+    90deg,
+    #7a1206 0%,
+    #d6321c 28%,
+    #ff7a18 56%,
+    #ffc93c 80%,
+    #56acff 100%
   );
-  background-size: 100% calc(100% / var(--w));
-  background-position: 0 100%;
+  background-size: calc(100% / var(--w)) 100%;
   background-repeat: no-repeat;
-
-  /*
-    Trzy nachodzące kopuły zamiast prostej krawędzi - to one robią z paska języki ognia.
-    Promień pionowy musi być bliski wysokości elementu: przy 200% cała miękka część
-    gradientu wypadała poza kafelek i maska nie robiła nic, bo widoczny był wyłącznie jej
-    nieprzezroczysty środek. Każdy język ma inną wysokość, więc krawędź nie jest równa.
-  */
-  -webkit-mask-image:
-    radial-gradient(118% 96% at 20% 100%, #000 0 52%, rgba(0, 0, 0, 0.34) 80%, transparent 100%),
-    radial-gradient(118% 128% at 57% 100%, #000 0 48%, rgba(0, 0, 0, 0.34) 78%, transparent 100%),
-    radial-gradient(118% 84% at 87% 100%, #000 0 56%, rgba(0, 0, 0, 0.34) 84%, transparent 100%);
-  mask-image:
-    radial-gradient(118% 96% at 20% 100%, #000 0 52%, rgba(0, 0, 0, 0.34) 80%, transparent 100%),
-    radial-gradient(118% 128% at 57% 100%, #000 0 48%, rgba(0, 0, 0, 0.34) 78%, transparent 100%),
-    radial-gradient(118% 84% at 87% 100%, #000 0 56%, rgba(0, 0, 0, 0.34) 84%, transparent 100%);
-}
-
-/* poświata tuż nad ogniem - bez niej płomień kończy się jak wycięty nożyczkami */
-.plomien-tla::after {
-  content: "";
-  position: absolute;
-  left: -12%;
-  right: -12%;
-  top: -16px;
-  height: 34px;
-  background: radial-gradient(58% 100% at 50% 100%, rgb(var(--b) / 0.26) 0%, transparent 74%);
-  filter: blur(5px);
-}
-
-/*
-  Na ogniu biała kreska czyta się lepiej niż barwa stopnia - ta i tak jest już pod spodem,
-  w samym płomieniu. Cień pod napisem trzyma nazwę czytelną także tam, gdzie ogień
-  rozjaśnia się do żółci.
-*/
-.stempel-ogien .medal svg {
-  color: #fff3e6;
-  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.6));
-}
-.stempel-ogien .medal {
-  background: rgba(10, 6, 4, 0.34);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
-}
-.stempel-ogien .nazwa-odznaki {
-  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.75);
+  box-shadow: 0 0 12px rgb(var(--b) / 0.65);
 }
 
 /*

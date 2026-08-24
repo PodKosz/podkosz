@@ -1,6 +1,5 @@
 import { odznaczenia, POZIOMY, type StatystykiGracza } from "@/lib/odznaczenia";
 import { IkonaOdznaczenia } from "./IkonaOdznaczenia";
-import { TloStopnia } from "./TloStopnia";
 
 /**
  * Odznaczenia progowe pod nickiem na publicznym profilu.
@@ -40,24 +39,21 @@ export function PlakietkiZaslug({ statystyki }: { statystyki: StatystykiGracza }
           key={o.id}
           className={`group relative w-[calc((100%-1.875rem)/4)] sm:w-[calc((100%-3.125rem)/6)] lg:w-[calc((100%-4.375rem)/8)] stopien-${o.poziom!.id}`}
         >
-          <div className="stempel stempel-zdobyty stempel-ogien">
-            {/*
-              Ogień pod treścią, nie za nią: wysokość to `postepPelny`, czyli cała droga
-              do szczytu razem z kawałkiem przebytym w obrębie obecnego stopnia. Dzięki
-              temu kafelek rośnie także wtedy, gdy do kolejnego progu jeszcze daleko.
-            */}
-            <span
-              className="plomien-tla"
-              style={{ ["--w" as string]: Math.max(o.postepPelny, 0.06).toFixed(3) }}
-            />
-
-            <span className="medal h-[38px] w-[38px]">
-              <TloStopnia poziom={o.poziom!.id} />
+          <div className="stempel stempel-zdobyty">
+            <span className="medal h-[52px] w-[52px]">
               <IkonaOdznaczenia id={o.id} />
             </span>
 
-            <span className="nazwa-odznaki text-[10.5px] font-medium leading-tight text-ink">
-              {o.nazwa}
+            <span className="text-[10.5px] font-medium leading-tight text-ink">{o.nazwa}</span>
+
+            {/*
+              Postęp w cienkiej linii przy dolnej krawędzi: `postepPelny` to cała droga do
+              najwyższego stopnia razem z kawałkiem przebytym w obrębie obecnego, więc
+              pasek rośnie także wtedy, gdy do kolejnego progu jeszcze daleko.
+            */}
+            <span className="pasek-stopnia">
+              <span style={{ width: `${Math.round(o.postepPelny * 100)}%`,
+                             ["--w" as string]: Math.max(o.postepPelny, 0.04).toFixed(3) }} />
             </span>
 
           </div>
