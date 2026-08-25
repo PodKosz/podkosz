@@ -9,9 +9,12 @@ import { TloBoiska } from "./TlaBoisk";
 /**
  * Minigra: rzut do kosza swipem.
  *
- * Zasada jest ta sama, co w starej grze z komunikatora - łapiesz piłkę, przeciągasz
- * w stronę kosza i puszczasz. Kierunek i długość przeciągnięcia to wektor rzutu, resztę
- * robi grawitacja.
+ * Zasada jest ta sama, co w starej grze z komunikatora: machasz piłką w stronę kosza.
+ * O rzucie decyduje PRĘDKOŚĆ ręki w chwili puszczenia, a nie odległość przeciągnięcia -
+ * dlatego powolne przeciągnięcie przez pół ekranu nie wystrzeli piłki, a krótkie, ostre
+ * machnięcie owszem. Kierunek ruchu to kąt wylotu, szybkość to zasięg. Nie ma tu żadnej
+ * linii celowniczej ani wskaźnika siły: całą informację zwrotną daje sama piłka, która
+ * idzie za palcem.
  *
  * Seria kończy się na pierwszym pudle i to ona jest wynikiem - dlatego trudność rośnie
  * razem z nią, a nie z liczbą podejść. Kosz zaczyna uciekać dopiero po dwudziestu
@@ -27,10 +30,31 @@ import { TloBoiska } from "./TlaBoisk";
 const SZER = 1000;
 const WYS = 680;
 
-const GRAWITACJA = 0.5;
+const GRAWITACJA = 0.72;
 const OPOR = 0.9992;
-const SILA = 0.17;
-const MAKS_SILA = 30;
+/*
+  Przelicznik szybkości machnięcia na siłę rzutu i górne ograniczenie tej siły.
+
+  Obie liczby są wyliczone, nie zgadnięte - przelotów nie da się rozegrać automatem
+  (przeglądarka nie daje klatek w niewidocznej karcie), więc lot przeliczyłem osobno,
+  tą samą fizyką, dla kilku profili machnięcia. Przy tym zestawie:
+
+    leciutkie i spokojne machnięcie  - nie sięga obręczy, widać że było za słabe
+    typowe i pewne                   - wpada, piłka cały czas w kadrze
+    mocne i zamaszyste               - ścina je górne ograniczenie, więc nie ucieka z ekranu
+
+  Tolerancja kąta wychodzi około ±40 px odchylenia machnięcia: wybacza drgnięcie ręki,
+  ale nie wybacza rzutu w bok. Limit siły jest po to, żeby piłka nigdy nie wyleciała poza
+  kadr - znikająca piłka nie mówi graczowi nic o tym, co zrobił źle.
+*/
+const SILA = 0.26;
+const MAKS_SILA = 23;
+/* poniżej tej szybkości traktujemy ruch jako przypadkowe dotknięcie, nie rzut */
+const MIN_SZYBKOSC = 6;
+/* ile ostatnich milisekund ruchu liczy się jako zamach */
+const OKNO_ZAMACHU = 100;
+/* wyżej piłki przeciągnąć się nie da */
+const SUFIT_CIAGNIECIA = 400;
 
 const PILKA_R = 38;
 const START_X = 500;
@@ -55,11 +79,13 @@ interface Stan {
   vx: number;
   vy: number;
   obrot: number;
-  /* skąd i dokąd ciągnie palec */
-  odX: number;
-  odY: number;
-  doX: number;
-  doY: number;
+  /*
+    Ostatnie położenia palca razem z czasem. Rzut bierze prędkość z tych próbek, a nie
+    z odległości między początkiem a końcem przeciągnięcia: liczy się to, jak szybko ręka
+    szła w chwili puszczenia, więc powolne przeciągnięcie przez pół ekranu nie wystrzeli
+    piłki, a krótkie, ostre machnięcie owszem.
+  */
+  probki: { x: number; y: number; t: number }[];
   /* czy w tym locie piłka była już nad obręczą - bez tego licząc trafienie z dołu */
   nadObreczka: boolean;
   seria: number;
@@ -85,10 +111,7 @@ export function RzutDoKosza({
     vx: 0,
     vy: 0,
     obrot: 0,
-    odX: 0,
-    odY: 0,
-    doX: 0,
-    doY: 0,
+    probki: [],
     nadObreczka: false,
     seria: 0,
     czas: 0,
@@ -184,16 +207,12 @@ export function RzutDoKosza({
           }
         }
 
-        /* tablica za obręczą - zatrzymuje piłkę wystrzeloną prosto w płytę */
-        if (
-          s.vy < 0 &&
-          s.y - PILKA_R < koszY - 6 &&
-          s.y + PILKA_R > koszY - TABLICA_WYS &&
-          Math.abs(s.x - koszX) < TABLICA_SZER / 2
-        ) {
-          s.vy *= -0.45;
-          s.y = koszY - 6 + PILKA_R;
-        }
+        /*
+          Tablicy nie sprawdzamy. Przy koszu widzianym z przodu płyta wisi ZA obręczą,
+          a piłka leci przed nią - odbicie od niej wymagałoby trzeciego wymiaru, którego
+          tu nie ma. Wcześniejsza wersja traktowała tablicę jak ścianę w płaszczyźnie gry
+          i zawracała każdy rzut jeszcze przed obręczą, więc trafić nie dało się w ogóle.
+        */
 
         if (s.y < koszY - PILKA_R) s.nadObreczka = true;
 
@@ -225,8 +244,6 @@ export function RzutDoKosza({
       ctx.clearRect(0, 0, SZER, WYS);
 
       rysujKosz(ctx, koszX, koszY);
-
-      if (s.faza === "celowanie") rysujPodpowiedz(ctx, s);
 
       /*
         Poświata pod piłką. Na czarnym tle ciemna piłka „żaru" gubiła się kompletnie -
@@ -288,10 +305,7 @@ export function RzutDoKosza({
 
     const p = naSwiat(e);
     s.faza = "celowanie";
-    s.odX = p.x;
-    s.odY = p.y;
-    s.doX = p.x;
-    s.doY = p.y;
+    s.probki = [{ x: p.x, y: p.y, t: performance.now() }];
     setZagrane(true);
     e.currentTarget.setPointerCapture(e.pointerId);
   };
@@ -299,31 +313,60 @@ export function RzutDoKosza({
   const ciagnij = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const s = stanRef.current;
     if (s.faza !== "celowanie") return;
+
     const p = naSwiat(e);
-    s.doX = p.x;
-    s.doY = p.y;
+    s.probki.push({ x: p.x, y: p.y, t: performance.now() });
+    if (s.probki.length > 8) s.probki.shift();
+
+    /*
+      Piłka idzie za palcem, ale tylko w dolnej części planszy - inaczej dałoby się ją
+      po prostu podnieść pod obręcz i wrzucić z ręki.
+    */
+    s.x = Math.max(PILKA_R, Math.min(SZER - PILKA_R, p.x));
+    s.y = Math.max(SUFIT_CIAGNIECIA, Math.min(WYS - PILKA_R, p.y));
   };
 
   const puszczaj = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const s = stanRef.current;
     if (s.faza !== "celowanie") return;
 
-    const dx = s.doX - s.odX;
-    const dy = s.doY - s.odY;
-    const dlugosc = Math.hypot(dx, dy);
+    e.currentTarget.releasePointerCapture(e.pointerId);
 
-    /* zbyt krótkie machnięcie to najczęściej przypadkowe dotknięcie - nie strzelamy */
-    if (dlugosc < 26) {
+    /*
+      Prędkość liczymy z ostatnich stu milisekund ruchu. Krótsze okno łapie drgnięcia
+      palca tuż przed oderwaniem, dłuższe rozmywa zamach - sto milisekund to mniej więcej
+      tyle, ile trwa samo machnięcie nadgarstkiem.
+    */
+    const teraz = performance.now();
+    const ostatnia = s.probki[s.probki.length - 1];
+    const pierwsza = [...s.probki].reverse().find((p) => teraz - p.t > OKNO_ZAMACHU) ?? s.probki[0];
+
+    s.probki = [];
+
+    if (!ostatnia || !pierwsza || ostatnia === pierwsza) {
       s.faza = "gotowa";
+      resetPilki(s);
       return;
     }
 
-    const moc = Math.min(dlugosc * SILA, MAKS_SILA);
-    s.vx = (dx / dlugosc) * moc;
-    s.vy = (dy / dlugosc) * moc;
+    const dt = Math.max(ostatnia.t - pierwsza.t, 8);
+    /* piksele świata na klatkę - stąd mnożnik przez czas jednej klatki */
+    const vx = ((ostatnia.x - pierwsza.x) / dt) * 16.7;
+    const vy = ((ostatnia.y - pierwsza.y) / dt) * 16.7;
+    const szybkosc = Math.hypot(vx, vy);
+
+    /* machnięcie w dół albo ledwo zauważalne to nie rzut - piłka wraca na miejsce */
+    if (szybkosc < MIN_SZYBKOSC || vy > -1) {
+      s.faza = "gotowa";
+      resetPilki(s);
+      return;
+    }
+
+    const moc = Math.min(szybkosc * SILA, MAKS_SILA);
+    s.vx = (vx / szybkosc) * moc;
+    s.vy = (vy / szybkosc) * moc;
     s.faza = "lot";
     s.nadObreczka = false;
-    e.currentTarget.releasePointerCapture(e.pointerId);
   };
 
   const poziom = poziomDlaSerii(seria);
@@ -361,7 +404,7 @@ export function RzutDoKosza({
         {!zagrane && (
           <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center">
             <span className="szklo-pro rounded-full px-5 py-2.5 text-[13px] text-ink">
-              Przeciągnij od piłki w stronę kosza i puść
+              Machnij palcem albo myszką w stronę kosza
             </span>
           </div>
         )}
@@ -477,42 +520,4 @@ function zaokraglony(
   ctx.closePath();
 }
 
-/**
- * Podpowiedź toru: kilka punktów po paraboli, którą poleci piłka.
- *
- * Nie rysujemy całej linii do końca - tylko początek. Pełna trajektoria zamieniłaby grę
- * w celowanie po linijce, a chodzi o wyczucie.
- */
-function rysujPodpowiedz(ctx: CanvasRenderingContext2D, s: Stan) {
-  const dx = s.doX - s.odX;
-  const dy = s.doY - s.odY;
-  const dlugosc = Math.hypot(dx, dy);
-  if (dlugosc < 26) return;
 
-  const moc = Math.min(dlugosc * SILA, MAKS_SILA);
-  let vx = (dx / dlugosc) * moc;
-  let vy = (dy / dlugosc) * moc;
-  let x = s.x;
-  let y = s.y;
-
-  ctx.fillStyle = "rgba(255,255,255,.55)";
-  for (let i = 0; i < 26; i++) {
-    x += vx;
-    y += vy;
-    vy += GRAWITACJA;
-    vx *= OPOR;
-    if (i % 3 === 0) {
-      ctx.beginPath();
-      ctx.arc(x, y, Math.max(1.6, 5 - i * 0.14), 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-
-  /* strzałka siły przy piłce */
-  ctx.strokeStyle = "rgba(255,122,24,.8)";
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.moveTo(s.x, s.y);
-  ctx.lineTo(s.x + (dx / dlugosc) * Math.min(dlugosc, 150), s.y + (dy / dlugosc) * Math.min(dlugosc, 150));
-  ctx.stroke();
-}
