@@ -1,25 +1,65 @@
 import type { IdMiejsca } from "@/lib/minigra";
 
 /**
- * Tła minigry - dwie kreskówkowe sceny, płaskie i bez detali.
+ * Tła minigry - obrysy w stylistyce reszty serwisu.
  *
- * Rysunek jest tłem, nie ilustracją: ma powiedzieć „to Venice" albo „to Nowy Jork"
- * jednym rzutem oka i zniknąć z pola uwagi, bo patrzy się na piłkę i na kosz. Stąd płaskie
- * plamy koloru, brak cieni i brak kreski - wszystko, co dodatkowe, zabierałoby czytelność
- * lecącej piłce.
+ * Poprzednia wersja była kolorową kreskówką i odstawała od strony jak wklejka z innej
+ * bajki. Teraz jest tak samo jak wszędzie indziej: czerń, ciepłe światła i włosowe linie
+ * w gradiencie marki - ten sam język, co kontur boiska na stronie głównej i piłka na
+ * profilu.
  *
- * Sceny są w SVG, a nie w obrazkach: ważą tyle co nic, skalują się na dowolny ekran
- * i rysują się razem ze stroną, więc gra nigdy nie zaczyna się na białym tle.
+ * Scena jest wyłącznie tłem. Wszystko, co ma znaczenie w grze - kosz i piłka - rysuje
+ * canvas nad spodem, więc rysunek pod spodem musi być cichy: cienka kreska, żadnych
+ * wypełnień i nic jaśniejszego niż piłka.
  */
 export function TloBoiska({ miejsce }: { miejsce: IdMiejsca }) {
   return (
     <svg
       viewBox="0 0 1000 680"
-      preserveAspectRatio="xMidYMax slice"
+      preserveAspectRatio="xMidYMid slice"
       className="absolute inset-0 h-full w-full"
       aria-hidden
     >
+      <defs>
+        {/*
+          Gradient liczony osobno dla każdego elementu: dzięki temu KAŻDA linia gaśnie
+          na swoich końcach, a nie tylko przy krawędzi kadru. To ta sama sztuczka, co
+          w konturze boiska - bez niej rysunek kończy się w powietrzu.
+        */}
+        <linearGradient id="gra-linia" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="rgba(255,122,24,0)" />
+          <stop offset="0.2" stopColor="rgba(255,150,60,0.5)" />
+          <stop offset="0.5" stopColor="rgba(255,186,110,0.78)" />
+          <stop offset="0.8" stopColor="rgba(255,150,60,0.5)" />
+          <stop offset="1" stopColor="rgba(255,122,24,0)" />
+        </linearGradient>
+        <linearGradient id="gra-linia-pion" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="rgba(255,122,24,0)" />
+          <stop offset="0.28" stopColor="rgba(255,150,60,0.46)" />
+          <stop offset="1" stopColor="rgba(255,186,110,0.62)" />
+        </linearGradient>
+
+        <radialGradient id="gra-swiatlo" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stopColor="rgba(255,122,24,0.3)" />
+          <stop offset="0.5" stopColor="rgba(255,77,10,0.08)" />
+          <stop offset="1" stopColor="rgba(255,77,10,0)" />
+        </radialGradient>
+        <radialGradient id="gra-swiatlo-zimne" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stopColor="rgba(120,170,255,0.16)" />
+          <stop offset="1" stopColor="rgba(120,170,255,0)" />
+        </radialGradient>
+      </defs>
+
+      <rect width="1000" height="680" fill="#07070a" />
+
       {miejsce === "venice" ? <Venice /> : <Manhattan />}
+
+      {/* podłoga - kilka linii zbiegających się w perspektywie, wspólne dla obu miejsc */}
+      <g stroke="url(#gra-linia)" fill="none" strokeLinecap="round">
+        <path d="M0 596h1000" strokeWidth="1.6" opacity=".5" />
+        <path d="M120 680 360 596M880 680 640 596" strokeWidth="1.4" opacity=".38" />
+        <path d="M310 640h380" strokeWidth="1.4" opacity=".32" />
+      </g>
     </svg>
   );
 }
@@ -29,46 +69,26 @@ export function TloBoiska({ miejsce }: { miejsce: IdMiejsca }) {
 function Venice() {
   return (
     <>
-      <defs>
-        <linearGradient id="gra-niebo-v" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#2a4a86" />
-          <stop offset="0.45" stopColor="#e97a4a" />
-          <stop offset="0.75" stopColor="#ffb46a" />
-          <stop offset="1" stopColor="#ffd79a" />
-        </linearGradient>
-        <linearGradient id="gra-ocean" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#1f6f8f" />
-          <stop offset="1" stopColor="#2f9ab0" />
-        </linearGradient>
-        <linearGradient id="gra-piach" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#f0c98a" />
-          <stop offset="1" stopColor="#d8a765" />
-        </linearGradient>
-      </defs>
+      {/* zachód nad oceanem - ciepłe światło nisko po prawej */}
+      <ellipse cx="820" cy="470" rx="460" ry="330" fill="url(#gra-swiatlo)" />
+      <ellipse cx="140" cy="180" rx="320" ry="260" fill="url(#gra-swiatlo)" opacity=".5" />
 
-      <rect width="1000" height="680" fill="url(#gra-niebo-v)" />
+      <g stroke="url(#gra-linia)" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        {/* słońce tuż nad horyzontem */}
+        <circle cx="820" cy="452" r="74" strokeWidth="1.8" opacity=".75" />
 
-      {/* słońce nisko nad wodą */}
-      <circle cx="760" cy="300" r="66" fill="#ffe6a8" opacity=".9" />
+        {/* horyzont i fale - im bliżej brzegu, tym dłuższa kreska */}
+        <path d="M0 452h1000" strokeWidth="1.6" opacity=".55" />
+        <path d="M120 486h160M360 494h120M600 486h150M810 500h120" strokeWidth="1.4" opacity=".4" />
+        <path d="M60 520h200M330 528h180M640 520h190" strokeWidth="1.4" opacity=".34" />
+        <path d="M180 552h230M520 558h260" strokeWidth="1.4" opacity=".28" />
+      </g>
 
-      {/* ocean i linia brzegu */}
-      <rect y="330" width="1000" height="90" fill="url(#gra-ocean)" />
-      <path d="M0 418h1000v14H0z" fill="#ffffff" opacity=".5" />
-
-      {/* piasek */}
-      <rect y="430" width="1000" height="250" fill="url(#gra-piach)" />
-
-      {/* asfalt boiska - to na nim stoi gracz */}
-      <path d="M60 520h880l60 160H0z" fill="#8c8f97" />
-      <path d="M60 520h880l60 160H0z" fill="#000" opacity=".08" />
-      {/* linia rzutów wolnych, mocno skrócona perspektywą */}
-      <path d="M300 566h400" stroke="#fdfdfd" strokeWidth="4" opacity=".55" />
-      <path d="M232 640h536" stroke="#fdfdfd" strokeWidth="5" opacity=".45" />
-
-      {/* palmy - trzy sylwetki, każda z innym pochyleniem */}
-      <Palma x={120} y={520} skala={1} przechyl={-6} />
-      <Palma x={952} y={512} skala={0.86} przechyl={5} />
-      <Palma x={330} y={498} skala={0.6} przechyl={-2} />
+      {/* palmy - sam obrys, bez wypełnień */}
+      <Palma x={112} y={596} skala={1.05} przechyl={-7} />
+      <Palma x={906} y={596} skala={0.92} przechyl={6} />
+      <Palma x={252} y={572} skala={0.62} przechyl={-3} />
+      <Palma x={772} y={568} skala={0.55} przechyl={4} />
     </>
   );
 }
@@ -85,14 +105,29 @@ function Palma({
   przechyl: number;
 }) {
   return (
-    <g transform={`translate(${x} ${y}) scale(${skala}) rotate(${przechyl})`}>
-      <path d="M0 0c6-60 8-120 2-176" stroke="#6b4b2a" strokeWidth="11" fill="none" />
-      <g fill="#2f7d4f">
-        <path d="M2-176c-38-10-72 4-92 30 34-10 62-8 88 6Z" />
-        <path d="M2-176c38-10 72 4 92 30-34-10-62-8-88 6Z" />
-        <path d="M2-176c-16-34-48-52-84-52 26 20 44 42 78 62Z" />
-        <path d="M2-176c16-34 48-52 84-52-26 20-44 42-78 62Z" />
-        <path d="M2-178c0-30 18-58 46-74-12 30-18 54-40 82Z" />
+    <g
+      transform={`translate(${x} ${y}) scale(${skala}) rotate(${przechyl})`}
+      stroke="url(#gra-linia-pion)"
+      fill="none"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+    >
+      {/* pień - dwie linie, żeby miał grubość, i poprzeczki jak łuski */}
+      <path d="M-5 0c6-56 8-112 1-166M5 0c6-56 8-112 3-166" />
+      <path d="M-4 -30h8M-3 -60h8M-2 -90h8M-1 -120h8" opacity=".55" strokeWidth="1.4" />
+
+      {/* liście - każdy jako łuk z ząbkami na końcu */}
+      <g strokeWidth="1.8">
+        <path d="M2-166c-30-6-62 6-84 30" />
+        <path d="M2-166c30-6 62 6 84 30" />
+        <path d="M2-166c-14-30-44-48-76-50" />
+        <path d="M2-166c14-30 44-48 76-50" />
+        <path d="M2-168c2-28 20-52 44-66" />
+      </g>
+      <g strokeWidth="1.2" opacity=".6">
+        <path d="M-40-150l-12 12M-62-142l-10 14M-16-190l-12-8M-46-198l-10-10" />
+        <path d="M44-150l12 12M66-142l10 14M20-190l12-8M50-198l10-10" />
       </g>
     </g>
   );
@@ -102,79 +137,69 @@ function Palma({
 
 function Manhattan() {
   const domy = [
-    { x: 0, w: 130, h: 330, kolor: "#2b3550" },
-    { x: 120, w: 96, h: 250, kolor: "#354063" },
-    { x: 210, w: 140, h: 400, kolor: "#242e46" },
-    { x: 344, w: 110, h: 300, kolor: "#303b5c" },
-    { x: 448, w: 86, h: 380, kolor: "#28324c" },
-    { x: 528, w: 132, h: 268, kolor: "#354063" },
-    { x: 654, w: 104, h: 356, kolor: "#242e46" },
-    { x: 752, w: 128, h: 296, kolor: "#2f3a58" },
-    { x: 874, w: 126, h: 372, kolor: "#28324c" },
+    { x: -10, w: 128, h: 300 },
+    { x: 108, w: 92, h: 220 },
+    { x: 192, w: 132, h: 372 },
+    { x: 316, w: 104, h: 264 },
+    { x: 604, w: 118, h: 300 },
+    { x: 714, w: 96, h: 388 },
+    { x: 802, w: 124, h: 246 },
+    { x: 918, w: 122, h: 336 },
   ];
 
   return (
     <>
-      <defs>
-        <linearGradient id="gra-niebo-m" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#101a33" />
-          <stop offset="0.55" stopColor="#33406b" />
-          <stop offset="1" stopColor="#7c5f8a" />
-        </linearGradient>
-      </defs>
+      <ellipse cx="500" cy="300" rx="480" ry="340" fill="url(#gra-swiatlo)" opacity=".7" />
+      <ellipse cx="160" cy="150" rx="300" ry="240" fill="url(#gra-swiatlo-zimne)" />
 
-      <rect width="1000" height="680" fill="url(#gra-niebo-m)" />
+      {/*
+        Pierzeja: same obrysy. Środek kadru zostaje pusty z rozmysłem - tam wisi kosz
+        i żadna linia nie ma prawa się z nim mieszać.
 
-      {/* księżyc */}
-      <circle cx="180" cy="120" r="34" fill="#e9e6f5" opacity=".85" />
-
-      {/* pierzeja - bloki z oknami */}
-      {domy.map((d, i) => (
-        <g key={i}>
-          <rect x={d.x} y={520 - d.h} width={d.w} height={d.h} fill={d.kolor} />
-          {Array.from({ length: Math.floor(d.h / 46) }, (_, r) =>
-            Array.from({ length: Math.max(1, Math.floor(d.w / 34)) }, (_, c) => {
-              /* światła zapalone deterministycznie - inaczej migotałyby przy każdym renderze */
-              const zapalone = (i * 7 + r * 5 + c * 3) % 4 !== 0;
-              return (
-                <rect
+        Kreska jest tu jednolita, nie gradientowa: gradient pionowy wygaszał linię przy
+        górnej krawędzi, więc z budynków znikały dachy i zostawały same pionowe kreski
+        wiszące w powietrzu.
+      */}
+      <g stroke="rgba(255,150,60,.52)" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        {domy.map((d, i) => (
+          <g key={i}>
+            <path d={`M${d.x} 596V${596 - d.h}h${d.w}V596`} strokeWidth="1.8" opacity=".9" />
+            {/* gzyms - dwie kreski pod dachem, żeby bryła miała wierzch, a nie samą krawędź */}
+            <path
+              d={`M${d.x + 6} ${596 - d.h + 12}h${d.w - 12}`}
+              strokeWidth="1.4"
+              opacity=".5"
+            />
+            {/* okna - krótkie kreski, nie prostokąty: mniej hałasu przy tej skali */}
+            {Array.from({ length: Math.floor(d.h / 54) }, (_, r) =>
+              Array.from({ length: Math.max(1, Math.floor(d.w / 38)) }, (_, c) => (
+                <path
                   key={`${r}-${c}`}
-                  x={d.x + 12 + c * 34}
-                  y={520 - d.h + 20 + r * 46}
-                  width="14"
-                  height="20"
-                  fill={zapalone ? "#ffd98a" : "#1b2338"}
-                  opacity={zapalone ? 0.85 : 0.7}
+                  d={`M${d.x + 16 + c * 38} ${596 - d.h + 34 + r * 54}h16`}
+                  strokeWidth="1.5"
+                  opacity={(i * 5 + r * 3 + c * 7) % 4 === 0 ? 0.24 : 0.55}
                 />
-              );
-            })
-          )}
-        </g>
-      ))}
-
-      {/* most w tle - sam zarys pylonu i lin */}
-      <g stroke="#1b2338" fill="none" strokeWidth="6" opacity=".75">
-        <path d="M640 520V300h56v220" />
-        <path d="M640 330h56M640 366h56" />
-        <path d="M400 470c120-120 240-120 296-140M992 470c-120-120-240-120-296-140" />
+              ))
+            )}
+          </g>
+        ))}
       </g>
 
-      {/* mur z cegły i asfalt */}
-      <rect y="470" width="1000" height="60" fill="#6b3a2e" />
-      {Array.from({ length: 26 }, (_, i) => (
-        <path
-          key={i}
-          d={`M${i * 40} 470v60`}
-          stroke="#000"
-          strokeWidth="2"
-          opacity=".16"
-        />
-      ))}
-      <path d="M0 500h1000" stroke="#000" strokeWidth="2" opacity=".16" />
+      <g stroke="url(#gra-linia)" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        {/* zbiornik na dachu - znak rozpoznawczy nowojorskich kamienic */}
+        <g transform="translate(232 224)">
+          <path d="M0 0h58v58H0z" strokeWidth="1.8" />
+          <path d="M-6 0l35-22 35 22" strokeWidth="1.8" />
+          <path d="M8 58v22M50 58v22" strokeWidth="1.5" opacity=".7" />
+        </g>
 
-      <path d="M0 530h1000l0 150H0z" fill="#3d4250" />
-      <path d="M300 576h400" stroke="#c9ced9" strokeWidth="4" opacity=".4" />
-      <path d="M232 648h536" stroke="#c9ced9" strokeWidth="5" opacity=".32" />
+        {/* most - pylon i liny, daleko w tle */}
+        <g opacity=".55">
+          <path d="M470 596V286h60v310" strokeWidth="1.8" />
+          <path d="M470 322h60M470 360h60" strokeWidth="1.5" />
+          <path d="M250 470c110-96 200-150 220-184M750 470c-110-96-200-150-220-184" strokeWidth="1.5" />
+        </g>
+      </g>
     </>
   );
 }

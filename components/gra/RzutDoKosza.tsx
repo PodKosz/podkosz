@@ -27,18 +27,24 @@ import { TloBoiska } from "./TlaBoisk";
 const SZER = 1000;
 const WYS = 680;
 
-const GRAWITACJA = 0.42;
-const OPOR = 0.999;
-const SILA = 0.155;
-const MAKS_SILA = 27;
+const GRAWITACJA = 0.5;
+const OPOR = 0.9992;
+const SILA = 0.17;
+const MAKS_SILA = 30;
 
-const PILKA_R = 34;
-const START_X = 210;
-const START_Y = 548;
+const PILKA_R = 38;
+const START_X = 500;
+const START_Y = 520;
 
-const KOSZ_X = 748;
-const KOSZ_Y = 332;
-const OBRECZ_R = 52;
+/*
+  Kosz widziany z przodu, u góry kadru - jak w tej starej grze z komunikatora. Piłka leci
+  z dołu w górę i musi wpaść przez obręcz, więc liczy się wyczucie siły, a nie kąt.
+*/
+const KOSZ_X = 500;
+const KOSZ_Y = 236;
+const OBRECZ_R = 78;
+const TABLICA_SZER = 300;
+const TABLICA_WYS = 132;
 
 type Faza = "gotowa" | "celowanie" | "lot" | "koniec";
 
@@ -158,17 +164,35 @@ export function RzutDoKosza({
         s.vx *= OPOR;
         s.obrot += s.vx * 0.02;
 
-        /* tablica: odbicie od pionowej płyty za obręczą */
-        const plytaX = koszX + OBRECZ_R + 10;
+        /*
+          Krawędzie obręczy odbijają piłkę. To one dają w tej grze całą dramaturgię:
+          rzut trochę za mocny nie leci po prostu obok, tylko puka o żelazo i czasem
+          jednak wpada.
+        */
+        for (const kraniec of [koszX - OBRECZ_R, koszX + OBRECZ_R]) {
+          const dx = s.x - kraniec;
+          const dy = s.y - koszY;
+          const d = Math.hypot(dx, dy);
+          if (d < PILKA_R + 6 && d > 0.001) {
+            const nx = dx / d;
+            const ny = dy / d;
+            const rzut = s.vx * nx + s.vy * ny;
+            s.vx = (s.vx - 2 * rzut * nx) * 0.62;
+            s.vy = (s.vy - 2 * rzut * ny) * 0.62;
+            s.x = kraniec + nx * (PILKA_R + 6);
+            s.y = koszY + ny * (PILKA_R + 6);
+          }
+        }
+
+        /* tablica za obręczą - zatrzymuje piłkę wystrzeloną prosto w płytę */
         if (
-          s.vx > 0 &&
-          s.x + PILKA_R > plytaX &&
-          s.x - PILKA_R < plytaX + 14 &&
-          s.y > koszY - 130 &&
-          s.y < koszY + 10
+          s.vy < 0 &&
+          s.y - PILKA_R < koszY - 6 &&
+          s.y + PILKA_R > koszY - TABLICA_WYS &&
+          Math.abs(s.x - koszX) < TABLICA_SZER / 2
         ) {
-          s.x = plytaX - PILKA_R;
-          s.vx *= -0.52;
+          s.vy *= -0.45;
+          s.y = koszY - 6 + PILKA_R;
         }
 
         if (s.y < koszY - PILKA_R) s.nadObreczka = true;
@@ -177,8 +201,8 @@ export function RzutDoKosza({
         const trafiona =
           s.vy > 0 &&
           s.nadObreczka &&
-          Math.abs(s.y - koszY) < 14 &&
-          Math.abs(s.x - koszX) < OBRECZ_R - 10;
+          Math.abs(s.y - koszY) < 16 &&
+          Math.abs(s.x - koszX) < OBRECZ_R - PILKA_R * 0.5;
 
         if (trafiona) {
           s.seria += 1;
@@ -204,7 +228,19 @@ export function RzutDoKosza({
 
       if (s.faza === "celowanie") rysujPodpowiedz(ctx, s);
 
+      /*
+        Poświata pod piłką. Na czarnym tle ciemna piłka „żaru" gubiła się kompletnie -
+        a to jedyny obiekt, który gracz musi widzieć zawsze i natychmiast.
+      */
       const obrazek = pilkiRef.current[poziom.pilka];
+      const swiatlo = ctx.createRadialGradient(s.x, s.y, PILKA_R * 0.5, s.x, s.y, PILKA_R * 1.9);
+      swiatlo.addColorStop(0, "rgba(255,140,50,.34)");
+      swiatlo.addColorStop(1, "rgba(255,140,50,0)");
+      ctx.fillStyle = swiatlo;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, PILKA_R * 1.9, 0, Math.PI * 2);
+      ctx.fill();
+
       ctx.save();
       ctx.translate(s.x, s.y);
       ctx.rotate(s.obrot);
@@ -323,7 +359,7 @@ export function RzutDoKosza({
         </div>
 
         {!zagrane && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center">
+          <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center">
             <span className="szklo-pro rounded-full px-5 py-2.5 text-[13px] text-ink">
               Przeciągnij od piłki w stronę kosza i puść
             </span>
@@ -331,7 +367,7 @@ export function RzutDoKosza({
         )}
 
         {komunikat && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center">
+          <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center">
             <span className="szklo-pro rounded-full px-5 py-2.5 text-[13px] text-ink">
               {komunikat} &middot; dotknij, żeby zacząć od nowa
             </span>
@@ -361,53 +397,84 @@ function resetPilki(s: Stan) {
   s.nadObreczka = false;
 }
 
+/**
+ * Kosz widziany z przodu: tablica, kwadrat celowniczy, obręcz i siatka.
+ *
+ * Rysunek trzyma się języka strony - włosowa kreska, pomarańcz na obręczy, nic
+ * wypełnionego. Obręcz jest jedynym mocnym akcentem w kadrze, bo to jedyny cel.
+ */
 function rysujKosz(ctx: CanvasRenderingContext2D, x: number, y: number) {
-  /*
-    Słup pod tablicą. Bez niego obręcz wisiała w powietrzu i scena wyglądała jak pomyłka -
-    a że kosz na wyższych poziomach się buja, słup buja się razem z nim i to właśnie ten
-    ruch najlepiej widać.
-  */
-  const slupX = x + OBRECZ_R + 16;
-  ctx.fillStyle = "rgba(30,34,44,.9)";
-  ctx.fillRect(slupX - 5, y - 20, 12, 620);
-  ctx.beginPath();
-  ctx.ellipse(slupX + 1, 596, 34, 9, 0, 0, Math.PI * 2);
-  ctx.fillStyle = "rgba(0,0,0,.28)";
-  ctx.fill();
+  const lewa = x - TABLICA_SZER / 2;
+  const gora = y - TABLICA_WYS;
 
   /* tablica */
-  ctx.fillStyle = "rgba(255,255,255,.92)";
-  ctx.fillRect(x + OBRECZ_R + 10, y - 130, 14, 150);
-  ctx.fillStyle = "rgba(0,0,0,.18)";
-  ctx.fillRect(x + OBRECZ_R + 10, y - 92, 14, 62);
+  ctx.strokeStyle = "rgba(226,228,236,.62)";
+  ctx.lineWidth = 5;
+  ctx.lineJoin = "round";
+  zaokraglony(ctx, lewa, gora, TABLICA_SZER, TABLICA_WYS, 10);
+  ctx.stroke();
 
-  /* obręcz - grubsza kreska w barwie marki, bo to jedyny cel na planszy */
+  /* kwadrat celowniczy nad obręczą */
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = "rgba(226,228,236,.5)";
+  const kw = TABLICA_SZER * 0.42;
+  ctx.strokeRect(x - kw / 2, y - 76, kw, 66);
+
+  /* wspornik pod tablicą */
+  ctx.fillStyle = "rgba(226,228,236,.42)";
+  ctx.fillRect(x - 22, y + 14, 44, 9);
+
+  /* obręcz - gruba kreska w barwie marki, z poświatą */
+  ctx.save();
+  ctx.shadowColor = "rgba(255,90,20,.7)";
+  ctx.shadowBlur = 18;
   ctx.strokeStyle = "#ff5a14";
-  ctx.lineWidth = 8;
+  ctx.lineWidth = 9;
+  ctx.lineCap = "round";
   ctx.beginPath();
   ctx.moveTo(x - OBRECZ_R, y);
   ctx.lineTo(x + OBRECZ_R, y);
   ctx.stroke();
+  ctx.restore();
 
-  /* siatka - sześć nitek zbiegających się do dołu */
-  ctx.strokeStyle = "rgba(255,255,255,.75)";
+  /* siatka - nitki schodzące się ku dołowi */
+  ctx.strokeStyle = "rgba(255,255,255,.4)";
   ctx.lineWidth = 2;
-  for (let i = 0; i <= 6; i++) {
-    const gora = x - OBRECZ_R + (i * (OBRECZ_R * 2)) / 6;
-    const dol = x - OBRECZ_R * 0.45 + (i * (OBRECZ_R * 0.9)) / 6;
+  const glebokosc = 62;
+  for (let i = 0; i <= 7; i++) {
+    const t = i / 7;
+    const gx = x - OBRECZ_R + t * OBRECZ_R * 2;
+    const dx = x - OBRECZ_R * 0.42 + t * OBRECZ_R * 0.84;
     ctx.beginPath();
-    ctx.moveTo(gora, y);
-    ctx.lineTo(dol, y + 54);
+    ctx.moveTo(gx, y + 4);
+    ctx.lineTo(dx, y + glebokosc);
     ctx.stroke();
   }
   for (let r = 1; r <= 2; r++) {
     const t = r / 3;
-    const szer = OBRECZ_R * (1 - t * 0.55);
+    const szer = OBRECZ_R * (1 - t * 0.58);
     ctx.beginPath();
-    ctx.moveTo(x - szer, y + 54 * t);
-    ctx.lineTo(x + szer, y + 54 * t);
+    ctx.moveTo(x - szer, y + 4 + glebokosc * t);
+    ctx.lineTo(x + szer, y + 4 + glebokosc * t);
     ctx.stroke();
   }
+}
+
+function zaokraglony(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number
+) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
 }
 
 /**
