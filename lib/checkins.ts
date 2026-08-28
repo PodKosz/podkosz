@@ -113,3 +113,24 @@ export function opisGodzin(hours: number[]): string {
   /* +1, bo deklaracja „18-20" znaczy trzy godziny gry, czyli do 21:00 */
   return od === doG ? g(od) : `${g(od)}-${g(doG + 1)}`;
 }
+
+/**
+ * Ile osób wybiera się dziś na każde boisko - dla całej mapy naraz.
+ *
+ * Jedno zapytanie zamiast jednego na pinezkę: przy kilkuset boiskach pytanie po kolei
+ * byłoby kilkuset uderzeniami po sieci. Baza oddaje tylko te boiska, na które ktoś się
+ * dziś zapisał, więc w typowy dzień to kilka wierszy.
+ */
+export async function fetchCheckinyDzisiaj(): Promise<Record<string, number>> {
+  const supabase = await supabaseBrowser();
+  if (!supabase) return {};
+
+  const { data } = await supabase.rpc("checkiny_dzisiaj");
+  if (!Array.isArray(data)) return {};
+
+  const wynik: Record<string, number> = {};
+  for (const w of data as { court_id: string; osoby: number }[]) {
+    if (w?.court_id) wynik[w.court_id] = w.osoby;
+  }
+  return wynik;
+}

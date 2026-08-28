@@ -29,6 +29,7 @@ import { BrakiAdmin } from "./BrakiAdmin";
 import { StatsAdmin } from "./StatsAdmin";
 import { BetaAdmin } from "./BetaAdmin";
 import { ZapisyAdmin } from "./ZapisyAdmin";
+import { LicznikOnline } from "./LicznikOnline";
 import { UsersAdmin } from "./UsersAdmin";
 import { NewFromLead } from "./NewFromLead";
 
@@ -538,7 +539,13 @@ function Header({
 
   return (
     <header className="mb-8">
-      <p className="text-[12px] uppercase tracking-[0.2em] text-flame">Panel administratora</p>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <p className="text-[12px] uppercase tracking-[0.2em] text-flame">Panel administratora</p>
+        {/* ilu ludzi patrzy na stronę w tej chwili - widzi to wyłącznie administrator */}
+        <span className="ml-auto">
+          <LicznikOnline />
+        </span>
+      </div>
       <h1 className="mt-2 text-[clamp(30px,5vw,46px)] font-semibold tracking-[-0.02em]">
         {title}
       </h1>

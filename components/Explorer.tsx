@@ -90,6 +90,16 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
     [submissions, courts]
   );
   /*
+    Górna granica suwaka podpaleń bierze się z danych, a nie z okrągłej liczby wpisanej
+    na sztywno. Przy stałym maksimum 400 wystarczyło ruszyć suwak, żeby wyczyścić całą
+    mapę - bo takiej liczby podpaleń nie ma jeszcze żadne boisko.
+  */
+  const maksLajki = useMemo(
+    () => all.reduce((n, c) => Math.max(n, c.likes), 0),
+    [all]
+  );
+
+  /*
     Powyżej progu SZUKANIE_W_BAZIE_OD zapytanie tekstowe wykonuje baza (indeks trigramowy,
     bez znaków diakrytycznych, sortowanie po trafności). Poniżej filtrujemy w przeglądarce -
     przy kilkunastu wpisach to szybsze niż uderzenie po sieci.
@@ -218,6 +228,7 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
       <Sidebar
         filters={filters}
         setFilters={setFilters}
+        maksLajki={maksLajki}
         results={results}
         counts={counts}
         activeId={activeId}

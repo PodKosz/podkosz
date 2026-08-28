@@ -125,15 +125,28 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
       nagłówek, stan na dziś, a przycisk przyklejony do dolnej krawędzi (mt-auto), żeby
       równał się z dołem kafelków niezależnie od długości tekstu.
     */
-    <section className="glass relative flex h-full min-h-[150px] flex-col rounded-[20px] p-4">
-      <h2 className="flex items-center gap-2 text-[10px] uppercase tracking-[0.12em] text-faint 2xl:text-[11px]">
+    /*
+      Panel stoi w jednym rzędzie z kafelkami parametrów boiska, więc jest wąski i wysoki.
+      Gdy ktoś się dziś zapisał, panel się rozpala: ciepły gradient i płomień przy liczbie.
+      Póki nikt nie idzie, zostaje zwykłym szkłem - inaczej ogień nic by nie znaczył.
+    */
+    <section
+      className={`glass relative flex h-full min-h-[150px] flex-col overflow-hidden rounded-[20px] p-4 ${
+        osoby > 0 ? "panel-goracy" : ""
+      }`}
+      style={osoby > 0 ? { ["--zar" as string]: Math.min(osoby, 6) } : undefined}
+    >
+      <h2 className="relative flex items-center gap-2 text-[10px] uppercase tracking-[0.12em] text-faint 2xl:text-[11px]">
         <ClockIcon className="h-4 w-4 text-flame" /> Kto dziś gra
       </h2>
 
-      <p className="mt-2 text-[15px] font-semibold leading-snug 2xl:text-[16px]">
-        {osoby === 0
-          ? "Nikt się jeszcze nie zapisał"
-          : `${osoby} ${plural(osoby, ["osoba idzie", "osoby idą", "osób idzie"])} dziś na to boisko`}
+      <p className="relative mt-2 flex items-start gap-2 text-[15px] font-semibold leading-snug 2xl:text-[16px]">
+        {osoby > 0 && <PlomykZapisow />}
+        <span>
+          {osoby === 0
+            ? "Nikt się jeszcze nie zapisał"
+            : `${osoby} ${plural(osoby, ["osoba idzie", "osoby idą", "osób idzie"])} dziś na to boisko`}
+        </span>
       </p>
 
       {slots.length > 0 ? (
@@ -255,5 +268,21 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
         )}
       </div>
     </section>
+  );
+}
+
+/**
+ * Płomyk przy liczbie zapisanych.
+ *
+ * Rysowany, nie wklejony jako gif: gif miałby własne tło i wypaloną rozdzielczość, a tu
+ * potrzeba czegoś, co siedzi na szkle, skaluje się z tekstem i migocze płynnie. Dwa
+ * języki w przeciwfazie wystarczą, żeby ogień wyglądał na żywy.
+ */
+function PlomykZapisow() {
+  return (
+    <span aria-hidden className="plomyk mt-[3px]">
+      <span className="plomyk-jezyk" />
+      <span className="plomyk-jezyk plomyk-jezyk-maly" />
+    </span>
   );
 }

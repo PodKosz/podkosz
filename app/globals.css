@@ -995,6 +995,195 @@ body {
   color: rgba(245, 245, 247, 0.4);
 }
 
+/* ---------- kropka licznika live ---------- */
+.kropka-live {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  flex: none;
+}
+.kropka-live-zywa {
+  background: #4ade80;
+  box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.55);
+  animation: kropka-puls 2s ease-out infinite;
+}
+@keyframes kropka-puls {
+  0% {
+    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 9px rgba(74, 222, 128, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kropka-live-zywa {
+    animation: none;
+  }
+}
+
+/* ---------- rozpalony panel zapisów ---------- */
+/*
+  Panel „Kto dziś gra" rozpala się, gdy ktoś się zapisał. Ciepły gradient wchodzi od dołu,
+  bo stamtąd idzie ogień, i jest tym mocniejszy, im więcej osób (`--zar` od 1 do 6).
+  Przy zerze klasa nie jest w ogóle nakładana - gdyby panel świecił zawsze, świecenie
+  przestałoby cokolwiek znaczyć.
+*/
+.panel-goracy::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      120% 90% at 50% 118%,
+      rgba(255, 122, 24, calc(0.1 + var(--zar, 1) * 0.045)) 0%,
+      rgba(255, 77, 10, calc(0.05 + var(--zar, 1) * 0.02)) 42%,
+      transparent 72%
+    ),
+    linear-gradient(180deg, transparent 40%, rgba(255, 122, 24, 0.06) 100%);
+}
+.panel-goracy {
+  box-shadow:
+    inset 0 -1px 0 rgba(255, 178, 92, 0.18),
+    inset 0 0 0 1px rgba(255, 150, 60, calc(0.08 + var(--zar, 1) * 0.03)),
+    0 22px 50px -34px rgba(255, 90, 20, 0.6);
+}
+
+/* ---------- płomyk przy liczbie ---------- */
+.plomyk {
+  position: relative;
+  display: inline-block;
+  width: 14px;
+  height: 18px;
+  flex: none;
+}
+.plomyk-jezyk {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 12px;
+  height: 17px;
+  translate: -50% 0;
+  border-radius: 50% 50% 46% 54% / 62% 58% 40% 38%;
+  background: radial-gradient(
+    62% 72% at 50% 82%,
+    #fff0c4 0%,
+    #ffa53c 40%,
+    #ff5a14 68%,
+    rgba(255, 61, 0, 0) 84%
+  );
+  filter: blur(0.4px);
+  animation: plomyk-drga 1.5s ease-in-out infinite;
+}
+.plomyk-jezyk-maly {
+  width: 6px;
+  height: 9px;
+  background: radial-gradient(60% 70% at 50% 80%, #fffbe8 0%, #ffd27a 55%, rgba(255, 200, 90, 0) 85%);
+  animation-duration: 1.1s;
+  animation-direction: alternate-reverse;
+}
+
+@keyframes plomyk-drga {
+  0%,
+  100% {
+    scale: 1 1;
+    translate: -50% 0;
+  }
+  35% {
+    scale: 0.88 1.16;
+    translate: -54% -1px;
+  }
+  70% {
+    scale: 1.1 0.92;
+    translate: -46% 1px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plomyk-jezyk {
+    animation: none;
+  }
+}
+
+/* ---------- płomień na pinezce ---------- */
+/*
+  Boisko, na które ktoś się dziś zapisał, zaczyna się palić. Im więcej osób, tym większy
+  i jaśniejszy ogień - liczbę podaje mapa w zmiennej `--zar` (1 do 6), a wszystko poniżej
+  liczy się z niej: rozmiar, jasność i tempo migotania.
+
+  Ogień jest rysowany, nie wklejony jako gif. Gif w tym miejscu byłby kwadratem
+  z wypaloną rozdzielczością i własnym tłem, a tu potrzeba czegoś, co siada na dowolnym
+  kolorze pinezki, skaluje się z nią i nie waży nic - kilka rozmytych plam wystarczy.
+
+  Płomień leży POD pinezką (`z-index: -1`), więc nie zasłania ikony boiska, i nie łapie
+  zdarzeń myszy, żeby nie psuł najeżdżania na pinezkę.
+*/
+.court-marker[data-osoby] {
+  position: relative;
+}
+
+.court-marker[data-osoby]::before,
+.court-marker[data-osoby]::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 50% 50% 46% 54% / 60% 58% 42% 40%;
+  /* im większy zapis, tym szerszy i wyższy płomień */
+  width: calc(20px + var(--zar, 1) * 5px);
+  height: calc(26px + var(--zar, 1) * 9px);
+  translate: -50% 0;
+  filter: blur(4px);
+  opacity: calc(0.24 + var(--zar, 1) * 0.09);
+  background: radial-gradient(
+    60% 74% at 50% 82%,
+    rgba(255, 236, 170, 0.95) 0%,
+    rgba(255, 158, 40, 0.85) 34%,
+    rgba(255, 72, 10, 0.5) 62%,
+    rgba(255, 40, 0, 0) 82%
+  );
+  animation: pinezka-plomien 1.6s ease-in-out infinite;
+}
+
+/* druga warstwa idzie w przeciwfazie i trochę wolniej - stąd wrażenie chybotania */
+.court-marker[data-osoby]::after {
+  width: calc(13px + var(--zar, 1) * 3px);
+  height: calc(18px + var(--zar, 1) * 6px);
+  filter: blur(2px);
+  opacity: calc(0.3 + var(--zar, 1) * 0.1);
+  animation-duration: 2.3s;
+  animation-direction: alternate-reverse;
+}
+
+@keyframes pinezka-plomien {
+  0%,
+  100% {
+    scale: 1 1;
+    translate: -50% 0;
+  }
+  30% {
+    scale: 0.9 1.14;
+    translate: -52% -2px;
+  }
+  65% {
+    scale: 1.08 0.94;
+    translate: -48% 1px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .court-marker[data-osoby]::before,
+  .court-marker[data-osoby]::after {
+    animation: none;
+  }
+}
+
 /* ---------- latające wyróżnienia ---------- */
 /*
   Zdobyte wyróżnienia krążą wokół zdjęcia profilowego. Ruch jest celowo powolny i krótki -

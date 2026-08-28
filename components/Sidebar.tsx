@@ -42,6 +42,7 @@ const TYPE_ICON: Record<CourtType, typeof BallIcon> = {
 export function Sidebar({
   filters,
   setFilters,
+  maksLajki,
   results,
   counts,
   activeId,
@@ -51,6 +52,8 @@ export function Sidebar({
 }: {
   filters: Filters;
   setFilters: (f: Filters) => void;
+  /** najwięcej podpaleń, jakie ma dziś jakiekolwiek boisko - górna granica suwaka */
+  maksLajki: number;
   results: MapCourt[];
   counts: Record<CourtType, number>;
   activeId: string | null;
@@ -232,6 +235,7 @@ export function Sidebar({
               <FiltersAndList
                 filters={filters}
                 patch={patch}
+                maksLajki={maksLajki}
                 toggleSurface={toggleSurface}
                 counts={counts}
                 results={results}
@@ -327,6 +331,7 @@ export function Sidebar({
           <FiltersAndList
             filters={filters}
             patch={patch}
+            maksLajki={maksLajki}
             toggleSurface={toggleSurface}
             counts={counts}
             results={results}
@@ -456,6 +461,7 @@ function Collapsible({
 function FiltersAndList({
   filters,
   patch,
+  maksLajki,
   toggleSurface,
   counts,
   results,
@@ -468,6 +474,7 @@ function FiltersAndList({
 }: {
   filters: Filters;
   patch: (p: Partial<Filters>) => void;
+  maksLajki: number;
   toggleSurface: (s: Surface) => void;
   counts: Record<CourtType, number>;
   results: MapCourt[];
@@ -556,24 +563,35 @@ function FiltersAndList({
             </div>
           </div>
 
-          <div>
-            <FieldLabel>
-              Minimum lajków
-              <span className="ml-auto flex items-center gap-1 font-semibold text-ink">
-                <FireBallIcon className="h-3.5 w-3.5" />
-                {filters.minLikes}
-              </span>
-            </FieldLabel>
-            <input
-              type="range"
-              min={0}
-              max={400}
-              step={10}
-              value={filters.minLikes}
-              onChange={(e) => patch({ minLikes: Number(e.target.value) })}
-              className="w-full"
-            />
-          </div>
+          {/*
+            Suwak podpaleń pokazujemy tylko wtedy, gdy jest co filtrować, i w zakresie
+            wyliczonym z danych. Przy sztywnym maksimum 400 wystarczyło go ruszyć, żeby
+            zniknęły wszystkie boiska - bo tylu podpaleń nie ma jeszcze żadne. Krok też
+            idzie z zakresu: przy pięciu podpaleniach skok co dziesięć nie ma sensu.
+          */}
+          {maksLajki > 0 && (
+            <div>
+              <FieldLabel>
+                Minimum lajków
+                <span className="ml-auto flex items-center gap-1 font-semibold text-ink">
+                  <FireBallIcon className="h-3.5 w-3.5" />
+                  {filters.minLikes}
+                </span>
+              </FieldLabel>
+              <input
+                type="range"
+                min={0}
+                max={maksLajki}
+                step={maksLajki > 120 ? 10 : maksLajki > 40 ? 5 : 1}
+                value={Math.min(filters.minLikes, maksLajki)}
+                onChange={(e) => patch({ minLikes: Number(e.target.value) })}
+                className="w-full"
+              />
+              <p className="mt-1 text-[11px] text-faint">
+                najwięcej podpaleń ma teraz jedno boisko: {maksLajki}
+              </p>
+            </div>
+          )}
 
           <div>
             <FieldLabel>Dostępność</FieldLabel>

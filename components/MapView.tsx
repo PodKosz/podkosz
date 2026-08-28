@@ -10,6 +10,7 @@ import type { LeadPoint } from "@/lib/leads";
 import { HoverCard } from "./HoverCard";
 import { FiltrSzkla } from "./FiltrSzkla";
 import { czytajWidok, zapiszWidok } from "@/lib/adres";
+import { fetchCheckinyDzisiaj } from "@/lib/checkins";
 import { MIEJSCA_GRY } from "@/lib/minigra";
 
 const POLAND_BOUNDS: [number, number, number, number] = [13.9, 48.9, 24.3, 55.0];
@@ -404,6 +405,45 @@ export function MapView({
     return () => clearTimeout(t);
   }, []);
 
+  /*
+    Ile osób wybiera się dziś na które boisko. Trzymamy to w ref, a nie w stanie: dane
+    zmieniają pinezki bezpośrednio (klasa i zmienna CSS), więc przerysowywanie całej mapy
+    Reactem byłoby zbędne. Odświeżamy co dwie minuty - deklaracja żyje jeden dzień, ale
+    ludzie dopisują się w ciągu dnia i pinezka ma to pokazać bez przeładowania strony.
+  */
+  const checkinyRef = useRef<Record<string, number>>({});
+
+  const oznaczPinezke = useCallback((el: HTMLElement, id: string) => {
+    const osoby = checkinyRef.current[id] ?? 0;
+    if (osoby > 0) {
+      el.dataset.osoby = String(osoby);
+      /* trzy stopnie „gorąca": jedna osoba, kilka, tłum - wyżej i tak nie widać różnicy */
+      el.style.setProperty("--zar", String(Math.min(osoby, 6)));
+    } else {
+      delete el.dataset.osoby;
+      el.style.removeProperty("--zar");
+    }
+  }, []);
+
+  useEffect(() => {
+    let aktualne = true;
+
+    const odswiez = async () => {
+      const dane = await fetchCheckinyDzisiaj();
+      if (!aktualne) return;
+      checkinyRef.current = dane;
+      for (const [id, { el }] of Object.entries(markersRef.current)) oznaczPinezke(el, id);
+    };
+
+    void odswiez();
+    const zegar = window.setInterval(() => void odswiez(), 120_000);
+
+    return () => {
+      aktualne = false;
+      window.clearInterval(zegar);
+    };
+  }, [oznaczPinezke]);
+
   /* ---- pinezki i klastry ----
      Przy kilkunastu boiskach każde dostaje własną pinezkę HTML - tak jak dotąd.
      Powyżej CLUSTER_FROM wpisów tysiące elementów DOM zabiłyby przeglądarkę, więc punkty
@@ -453,6 +493,8 @@ export function MapView({
         }
         onSelectCourt(court);
       });
+
+      oznaczPinezke(el, court.id);
 
       const marker = new Marker({ element: el, anchor: "bottom" })
         .setLngLat([court.lng, court.lat])
@@ -634,7 +676,7 @@ export function MapView({
       map.off("moveend", syncPins);
       map.off("idle", syncPins);
     };
-  }, [courts, ready, activeId, onHoverCourt, onSelectCourt, reposition, centerPin, coarse]);
+  }, [courts, ready, activeId, onHoverCourt, onSelectCourt, reposition, centerPin, coarse, oznaczPinezke]);
 
   /* ---- podświetlenie aktywnej pinezki ---- */
   useEffect(() => {

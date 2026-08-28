@@ -26,6 +26,7 @@ const ZAWSZE_DOSTEPNE = [
   "/robots.txt",
   "/opengraph-image",
   "/api/zapis-na-otwarcie",
+  "/api/obecnosc",
 ];
 
 /** Wynik sprawdzenia adresu IP - żeby nie pytać bazy przy każdym żądaniu. */

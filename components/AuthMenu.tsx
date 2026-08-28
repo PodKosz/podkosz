@@ -33,7 +33,7 @@ export function AuthMenu({ user }: { user: AuthUser | null }) {
           <span className="hidden sm:inline">Zaloguj</span>
         </button>
         {error && (
-          <p className="glass absolute right-0 top-12 w-64 rounded-2xl p-3 text-[12px] leading-snug text-muted">
+          <p className="glass absolute right-0 top-12 w-64 rounded-2xl bg-[#0b0b0f]/92 p-3 text-[12px] leading-snug text-muted shadow-[0_28px_60px_-18px_rgba(0,0,0,.95)] ring-1 ring-white/10">
             {error}
           </p>
         )}
@@ -60,8 +60,14 @@ export function AuthMenu({ user }: { user: AuthUser | null }) {
         </span>
       </button>
 
+      {/*
+        Menu ma własne, mocniejsze tło zamiast samego `glass`. Na telefonie rozwijało się
+        nad mapą i zlewało się z nią w jedną plamę: szkło rozmywa to, co pod spodem, ale
+        nie odcina od niego. Ciemniejsza podkładka i wyraźniejszy cień robią z tego osobną
+        warstwę, a nie przezroczystą naklejkę.
+      */}
       {open && (
-        <div className="glass absolute right-0 top-12 w-56 overflow-hidden rounded-2xl p-1.5">
+        <div className="glass absolute right-0 top-12 w-56 overflow-hidden rounded-2xl bg-[#0b0b0f]/92 p-1.5 shadow-[0_28px_60px_-18px_rgba(0,0,0,.95)] ring-1 ring-white/10">
           <Link
             href="/konto"
             onClick={() => setOpen(false)}
