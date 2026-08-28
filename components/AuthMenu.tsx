@@ -33,7 +33,7 @@ export function AuthMenu({ user }: { user: AuthUser | null }) {
           <span className="hidden sm:inline">Zaloguj</span>
         </button>
         {error && (
-          <p className="glass absolute right-0 top-12 w-64 rounded-2xl bg-[#0b0b0f]/92 p-3 text-[12px] leading-snug text-muted shadow-[0_28px_60px_-18px_rgba(0,0,0,.95)] ring-1 ring-white/10">
+          <p className="menu-konta absolute right-0 top-12 z-50 w-64 rounded-2xl p-3 text-[12px] leading-snug text-muted">
             {error}
           </p>
         )}
@@ -67,7 +67,7 @@ export function AuthMenu({ user }: { user: AuthUser | null }) {
         warstwę, a nie przezroczystą naklejkę.
       */}
       {open && (
-        <div className="glass absolute right-0 top-12 w-56 overflow-hidden rounded-2xl bg-[#0b0b0f]/92 p-1.5 shadow-[0_28px_60px_-18px_rgba(0,0,0,.95)] ring-1 ring-white/10">
+        <div className="menu-konta absolute right-0 top-12 z-50 w-56 overflow-hidden rounded-2xl p-1.5">
           <Link
             href="/konto"
             onClick={() => setOpen(false)}

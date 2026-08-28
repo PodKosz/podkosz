@@ -995,6 +995,26 @@ body {
   color: rgba(245, 245, 247, 0.4);
 }
 
+/* ---------- menu konta ---------- */
+/*
+  Menu ma własną klasę zamiast `.glass` z dodanym kolorem tła w klasie narzędziowej.
+  `.glass` ustawia skrót `background`, a skrót kasuje `background-color` - kolor dopisany
+  obok po prostu nie wchodził i menu dalej prześwitywało. Tu tło jest jedną deklaracją,
+  więc nie ma czego kasować.
+
+  Nieprzezroczyste z rozmysłem: menu rozwija się nad mapą albo nad rankingiem i musi się
+  od nich ODCIĄĆ, a nie tylko rozmyć to, co pod spodem.
+*/
+.menu-konta {
+  background: #0e0e13;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+    0 30px 64px -18px rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+}
+
 /* ---------- kropka licznika live ---------- */
 .kropka-live {
   width: 8px;
@@ -1117,74 +1137,99 @@ body {
 /* ---------- płomień na pinezce ---------- */
 /*
   Boisko, na które ktoś się dziś zapisał, zaczyna się palić. Im więcej osób, tym większy
-  i jaśniejszy ogień - liczbę podaje mapa w zmiennej `--zar` (1 do 6), a wszystko poniżej
-  liczy się z niej: rozmiar, jasność i tempo migotania.
+  i jaśniejszy ogień - liczbę podaje mapa w zmiennej `--zar` (1 do 6), a rozmiar, jasność
+  i tempo migotania liczą się z niej.
 
-  Ogień jest rysowany, nie wklejony jako gif. Gif w tym miejscu byłby kwadratem
-  z wypaloną rozdzielczością i własnym tłem, a tu potrzeba czegoś, co siada na dowolnym
-  kolorze pinezki, skaluje się z nią i nie waży nic - kilka rozmytych plam wystarczy.
+  Ogień jest rysowany, nie wklejony jako gif. Gif w tym miejscu byłby kwadratem z wypaloną
+  rozdzielczością i własnym tłem, a tu potrzeba czegoś, co siada na dowolnym kolorze
+  pinezki, skaluje się z nią i nie waży nic.
 
-  Płomień leży POD pinezką (`z-index: -1`), więc nie zasłania ikony boiska, i nie łapie
-  zdarzeń myszy, żeby nie psuł najeżdżania na pinezkę.
+  Musi być WYŻSZY od samej pinezki: kula ma 38 px i świeci własną poświatą, więc ogień
+  schowany za nią nie mówi nic. Przy jednej osobie sięga ponad kulę, przy tłumie jest
+  dwa razy wyższy.
 */
-.court-marker[data-osoby] {
-  position: relative;
+.pinezka-ogien {
+  display: none;
 }
 
-.court-marker[data-osoby]::before,
-.court-marker[data-osoby]::after {
-  content: "";
+.court-marker[data-osoby] .pinezka-ogien,
+.court-marker[data-osoby] .pinezka-ogien > span {
   position: absolute;
   left: 50%;
-  bottom: 6px;
-  z-index: -1;
+  display: block;
   pointer-events: none;
-  border-radius: 50% 50% 46% 54% / 60% 58% 42% 40%;
-  /* im większy zapis, tym szerszy i wyższy płomień */
-  width: calc(20px + var(--zar, 1) * 5px);
-  height: calc(26px + var(--zar, 1) * 9px);
   translate: -50% 0;
-  filter: blur(4px);
-  opacity: calc(0.24 + var(--zar, 1) * 0.09);
-  background: radial-gradient(
-    60% 74% at 50% 82%,
-    rgba(255, 236, 170, 0.95) 0%,
-    rgba(255, 158, 40, 0.85) 34%,
-    rgba(255, 72, 10, 0.5) 62%,
-    rgba(255, 40, 0, 0) 82%
-  );
+  border-radius: 50% 50% 46% 54% / 62% 60% 40% 38%;
   animation: pinezka-plomien 1.6s ease-in-out infinite;
 }
 
-/* druga warstwa idzie w przeciwfazie i trochę wolniej - stąd wrażenie chybotania */
-.court-marker[data-osoby]::after {
-  width: calc(13px + var(--zar, 1) * 3px);
-  height: calc(18px + var(--zar, 1) * 6px);
+/*
+  Geometria jest tu całą robotą, bo dolna połowa płomienia i tak siedzi za kulą pinezki.
+  Podstawa startuje w połowie kuli (`bottom`), a pudełko sięga wyraźnie ponad nią - widać
+  więc górne 55-60% kształtu. Dlatego środek gradientu jest przesunięty w dół i ma duży
+  promień: gdyby jasny rdzeń wypadał przy samej krawędzi dolnej (naturalny odruch przy
+  rysowaniu ognia), cała widoczna część leżałaby poza gradientem i płomień byłby
+  przezroczysty - tak właśnie znikał w pierwszym podejściu.
+*/
+.court-marker[data-osoby] .pinezka-ogien {
+  bottom: 26px;
+  width: calc(30px + var(--zar, 1) * 7px);
+  height: calc(46px + var(--zar, 1) * 14px);
+  filter: blur(3px);
+  opacity: calc(0.72 + var(--zar, 1) * 0.05);
+  background: radial-gradient(
+    78% 88% at 50% 70%,
+    rgba(255, 248, 222, 1) 0%,
+    rgba(255, 186, 66, 1) 24%,
+    rgba(255, 108, 14, 0.92) 50%,
+    rgba(255, 56, 0, 0.5) 72%,
+    rgba(255, 40, 0, 0) 92%
+  );
+}
+
+/* jasny rdzeń w środku - idzie w przeciwfazie, stąd wrażenie chybotania */
+.court-marker[data-osoby] .pinezka-ogien > span {
+  bottom: 26%;
+  width: 56%;
+  height: 60%;
   filter: blur(2px);
-  opacity: calc(0.3 + var(--zar, 1) * 0.1);
+  opacity: 0.9;
+  background: radial-gradient(
+    72% 84% at 50% 68%,
+    #fffdf4 0%,
+    #ffe8a6 38%,
+    rgba(255, 205, 105, 0.35) 70%,
+    rgba(255, 196, 90, 0) 92%
+  );
   animation-duration: 2.3s;
   animation-direction: alternate-reverse;
+}
+
+/*
+  Pod ogniem poświata pinezki tylko przeszkadza - fiolet Heatu albo pomarańcz zwykłej
+  pinezki rozlewa się szerzej niż płomień i zjada jego kolor. Przygaszamy ją, żeby to
+  ogień był tym, co widać z daleka.
+*/
+.court-marker[data-osoby] .pulse-glow {
+  opacity: 0.4;
 }
 
 @keyframes pinezka-plomien {
   0%,
   100% {
     scale: 1 1;
-    translate: -50% 0;
   }
   30% {
     scale: 0.9 1.14;
-    translate: -52% -2px;
   }
   65% {
     scale: 1.08 0.94;
-    translate: -48% 1px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .court-marker[data-osoby]::before,
-  .court-marker[data-osoby]::after {
+  .court-marker[data-osoby] .pinezka-ogien,
+  .court-marker[data-osoby] .pinezka-ogien > span {
     animation: none;
   }
 }

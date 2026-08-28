@@ -933,10 +933,21 @@ function markerHtml(court: MapCourt) {
   const dot = court.basketApproved ? "rgba(168,85,247,.85)" : "rgba(255,122,24,.85)";
 
   return `
-  <div class="relative flex flex-col items-center transition-transform duration-200 ease-out"
+  <div class="pinezka-korpus relative flex flex-col items-center transition-transform duration-200 ease-out"
        style="filter: drop-shadow(0 6px 14px rgba(0,0,0,.6))">
     <span class="pulse-glow absolute -top-2 left-1/2 -translate-x-1/2 rounded-full"
           style="width:${size * 1.8}px;height:${size * 1.8}px;background:radial-gradient(circle, ${glow})"></span>
+    <!--
+      Ogień zapisów. Jest w pinezce zawsze, ale widać go dopiero, gdy mapa oznaczy ją
+      atrybutem data-osoby. Prawdziwy element, a nie pseudoelement z ujemnym z-indeksem:
+      korpus ma filtr, więc tworzy własny kontekst nakładania i ujemny z-index chował
+      ogień pod tłem korpusu zamiast położyć go za kulą.
+
+      Kolejność w drzewie jest tu całą mechaniką warstw: ogień stoi PO poświacie, więc
+      kładzie się na niej (inaczej fioletowa poświata Heatu zjadała pomarańcz i nie było
+      go widać), i PRZED kulą, więc języki liżą pinezkę od tyłu, a nie zasłaniają piłki.
+    -->
+    <span class="pinezka-ogien"><span></span></span>
     <span class="marker-core relative grid place-items-center rounded-full transition-all duration-200"
           style="width:${size}px;height:${size}px;background:${core};box-shadow:0 0 0 1.5px rgba(255,255,255,.28) inset, 0 6px 18px -4px ${shadow}">
       <svg viewBox="0 0 24 24" style="width:${size * 0.62}px;height:${size * 0.62}px" fill="none" stroke="${seam}" stroke-width=".95" stroke-linecap="round">
