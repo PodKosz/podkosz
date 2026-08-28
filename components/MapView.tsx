@@ -33,24 +33,52 @@ const PIN_LIMIT = 160;
 // Worker MapLibre serwujemy z /public - patrz scripts/copy-maplibre-worker.mjs.
 setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
+/*
+  Podkład mapy.
+
+  CARTO zaczęło wymagać klucza i od tej pory stempluje KAŻDY kafelek napisem
+  „API KEY REQUIRED" - mapa nadal się ładowała, tylko cała była pokryta tym tekstem.
+  To zmiana po ich stronie, nie błąd tutaj, więc kod musi umieć jedno i drugie:
+
+    - z kluczem w NEXT_PUBLIC_CARTO_KEY wracamy na CARTO i wygląd jest dokładnie ten,
+      pod który robiona była reszta mapy (ciemne kafelki bez podpisów),
+    - bez klucza lecimy na ciemnym podkładzie Esri, który klucza nie wymaga.
+
+  Podkład zapasowy ma własne podpisy krajów, więc przy małym przybliżeniu widać je obok
+  naszych. To brzydkie, ale lepsze niż mapa w znaki wodne - i znika, gdy klucz wróci.
+*/
+const KLUCZ_CARTO = process.env.NEXT_PUBLIC_CARTO_KEY;
+
+const PODKLAD: StyleSpecification["sources"][string] = KLUCZ_CARTO
+  ? {
+      type: "raster",
+      tiles: ["a", "b", "c"].map(
+        (host) =>
+          `https://${host}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png?api_key=${KLUCZ_CARTO}`
+      ),
+      tileSize: 256,
+      maxzoom: 20,
+      attribution:
+        '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · © <a href="https://carto.com/attributions">CARTO</a>',
+    }
+  : {
+      type: "raster",
+      /* uwaga na kolejność: Esri podaje kafelki jako {z}/{y}/{x}, nie {z}/{x}/{y} */
+      tiles: [
+        "https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+      ],
+      tileSize: 256,
+      maxzoom: 16,
+      attribution:
+        '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · Esri',
+    };
+
 const STYLE: StyleSpecification = {
   version: 8,
   // fonts.openmaptiles.org oddaje HTML zamiast pliku .pbf - Protomaps serwuje poprawne glify
   glyphs: "https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf",
   sources: {
-    carto: {
-      type: "raster",
-      // bez podpisów - kafelki CARTO mają nazwy po angielsku, dokładamy własne
-      tiles: [
-        "https://a.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png",
-        "https://b.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png",
-        "https://c.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png",
-      ],
-      tileSize: 256,
-      maxzoom: 20,
-      attribution:
-        '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · © <a href="https://carto.com/attributions">CARTO</a>',
-    },
+    carto: PODKLAD,
     woj: { type: "geojson", data: "/geo/wojewodztwa.geojson" },
     miasta: { type: "geojson", data: CITIES_GEOJSON },
   },

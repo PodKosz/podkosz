@@ -142,12 +142,24 @@ export function szkielet({
 <!-- tekst podglądu na liście wiadomości - w treści niewidoczny -->
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${podglad}</div>
 
+<!--
+  Czerń jest tu podana czterokrotnie: na body, na tym opakowaniu, na tabeli i na komórce.
+  Wygląda na przesadę, ale klient poczty na telefonie potrafi wyciąć <body> razem z jego
+  stylem i podstawić własne, jasne tło - wtedy list z ciemną treścią siedzi na białym.
+  Każda kolejna warstwa jest zabezpieczeniem na wypadek, gdyby poprzednią wycięto.
+-->
+<div style="background-color:${CZERN};">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
   bgcolor="${CZERN}" style="background-color:${CZERN};">
-<tr><td align="center" style="padding:0;">
+<tr><td align="center" bgcolor="${CZERN}" style="padding:0;background-color:${CZERN};">
 
+  <!--
+    Szerokość podana i atrybutem, i stylem. Sam atrybut 600 rozpychał list na wąskim
+    ekranie: wiadomość robiła się szersza od okna, a wokół niej wychodziło tło klienta.
+    Szerokość 100% z ograniczeniem do 600 px pozwala tabeli zmaleć na telefonie.
+  -->
   <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"
-    style="width:600px;max-width:600px;">
+    style="width:100%;max-width:600px;">
   <tr>
     <!--
       Kontur boiska: obrazek tła na komórce (atrybut background dla starych klientów,
@@ -157,7 +169,7 @@ export function szkielet({
     <td background="${TLO}" bgcolor="${CZERN}" valign="top"
       style="background-color:${CZERN};background-image:url('${TLO}');
       background-repeat:no-repeat;background-position:top center;background-size:600px auto;
-      padding:44px 40px 30px;">
+      padding:40px 28px 28px;">
       ${vmlTlo}
       <div style="position:relative;">
         ${tresc}
@@ -168,7 +180,7 @@ export function szkielet({
   <!-- stopka: logo na środku pod treścią -->
   <tr>
     <td align="center" bgcolor="${CZERN}" style="background-color:${CZERN};
-      padding:34px 40px 44px;border-top:1px solid ${KRESKA};">
+      padding:32px 28px 40px;border-top:1px solid ${KRESKA};">
       <a href="${SITE_URL}" style="text-decoration:none;">
         <img src="${LOGO}" alt="PodKosz" width="200" height="61"
           style="display:block;border:0;outline:none;width:200px;height:auto;">
@@ -188,6 +200,7 @@ export function szkielet({
 
 </td></tr>
 </table>
+</div>
 </body>
 </html>`;
 }

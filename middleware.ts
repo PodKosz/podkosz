@@ -13,9 +13,20 @@ import {
 /**
  * Adresy działające także pod zasłoną: sama zasłona, powrót z logowania Google, robots.txt
  * (roboty muszą go przeczytać, żeby dostać zakaz indeksowania - podstawiona strona HTML nic
- * by im nie powiedziała) i obrazek podglądu linków, żeby wysłany link wyglądał jak należy.
+ * by im nie powiedziała), obrazek podglądu linków i zapis na otwarcie.
+ *
+ * Ten ostatni jest tu konieczny, a nie „na wszelki wypadek": formularz zapisu stoi NA
+ * zasłonie, więc jego endpoint musi być spod zasłony osiągalny. Bez tego wpisu żądanie
+ * trafiało w przepisanie na stronę „Już niedługo", a ta nie przyjmuje POST - formularz
+ * dostawał w odpowiedzi HTML z kodem 405 i zapis nie działał w ogóle.
  */
-const ZAWSZE_DOSTEPNE = [SCIEZKA_ZASLONY, "/auth", "/robots.txt", "/opengraph-image"];
+const ZAWSZE_DOSTEPNE = [
+  SCIEZKA_ZASLONY,
+  "/auth",
+  "/robots.txt",
+  "/opengraph-image",
+  "/api/zapis-na-otwarcie",
+];
 
 /** Wynik sprawdzenia adresu IP - żeby nie pytać bazy przy każdym żądaniu. */
 const pamiecIP = new Map<string, { zbanowany: boolean; do: number }>();
