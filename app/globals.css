@@ -1800,6 +1800,73 @@ select option {
   animation: rise 420ms cubic-bezier(0.32, 0.72, 0, 1) both;
 }
 
+/* ---------- kafelek w kaskadzie rankingu boisk ---------- */
+/*
+  Dwa gradienty, każdy o innym zadaniu. Ten w kadrze przygasza dół zdjęcia, żeby liczba
+  podpaleń i numer miejsca miały na czym leżeć - bez niego na jasnym boisku znikały.
+  Ten pod kafelkiem to ciepła kałuża światła: kafelki nie stoją w równych rzędach, więc
+  bez cienia pod spodem wyglądały jak przypadkowo rozsypane, a nie jak ułożone.
+
+  Poświata nie tylko się rozjaśnia pod kursorem, ale i podchodzi bliżej - kafelek sprawia
+  wtedy wrażenie, że unosi się nad tłem.
+*/
+.kafel-rankingu .kafel-obraz::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 58%;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    rgba(6, 5, 8, 0.9) 0%,
+    rgba(6, 5, 8, 0.42) 42%,
+    rgba(6, 5, 8, 0) 100%
+  );
+}
+
+.kafel-rankingu::after {
+  content: "";
+  position: absolute;
+  right: 10%;
+  bottom: -10px;
+  left: 10%;
+  height: 46px;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 50%;
+  filter: blur(18px);
+  opacity: 0.45;
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 96, 20, 0.55) 0%,
+    rgba(255, 122, 24, 0.2) 55%,
+    transparent 100%
+  );
+  transition:
+    opacity 340ms ease,
+    bottom 340ms ease;
+}
+
+.kafel-rankingu:hover::after,
+.kafel-rankingu:focus-visible::after {
+  bottom: -2px;
+  opacity: 1;
+}
+
+/* zdjęcie podchodzi pod kursorem - ruch robi kadr, nie cały kafelek, żeby podpis stał */
+.kafel-rankingu .kafel-obraz {
+  transition: scale 420ms cubic-bezier(0.22, 0.9, 0.24, 1);
+}
+.kafel-rankingu:hover .kafel-obraz {
+  scale: 1.02;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kafel-rankingu:hover .kafel-obraz {
+    scale: 1;
+  }
+}
+
 /* ---------- wizytówka boiska na mapie ---------- */
 /*
   Wejście i wyjście są celowo NIESYMETRYCZNE. Karta wjeżdża miękko, z lekkim wybiciem
