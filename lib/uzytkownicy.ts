@@ -130,7 +130,112 @@ export function useUzytkownicy() {
     return null;
   }, []);
 
-  return { items, loading, error, zablokuj, odblokuj, odswiez };
+  /**
+   * Usuwa konto na dobre - razem z wpisem w auth.users.
+   *
+   * Blokada zostawia konto na miejscu, więc do przetestowania ścieżki dołączania „na
+   * świeżo" się nie nadaje: to samo konto Google wraca z tym samym identyfikatorem i tym
+   * samym profilem. Zanim baza skasuje konto, robi jego zdjęcie i trzyma je 180 dni -
+   * całą tę robotę wykonuje funkcja `usun_konto`, bo tabela auth jest poza zasięgiem
+   * Data API.
+   */
+  const usun = useCallback(async (id: string): Promise<string | null> => {
+    const supabase = await supabaseBrowser();
+    if (!supabase) return BLAD_BAZY;
+
+    const { error: blad } = await supabase.rpc("usun_konto", { in_user: id });
+    if (blad) return blad.message;
+
+    setItems((lista) => lista.filter((u) => u.id !== id));
+    return null;
+  }, []);
+
+  return { items, loading, error, zablokuj, odblokuj, usun, odswiez };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Archiwum usuniętych kont                                           */
+/* ------------------------------------------------------------------ */
+
+export interface UsunieteKonto {
+  id: string;
+  email: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+  usuniete_at: string;
+  wygasa_at: string;
+  oczekuje: boolean;
+  przywrocone_at: string | null;
+  dane: {
+    boiska?: { id: string; slug: string; name: string; likes: number }[];
+    polubienia?: string[];
+    ulubione?: string[];
+    checkinow?: number;
+    statystyki?: Record<string, unknown> | null;
+  };
+}
+
+/**
+ * Zdjęcia skasowanych kont. Żyją 180 dni, potem znikają bezpowrotnie.
+ *
+ * Przywracanie nie odtwarza wpisu w auth.users - tamtej tożsamości nie da się uczciwie
+ * sfabrykować. Liczy się adres: dane doczepiają się do konta o tym samym mailu, od razu
+ * albo przy najbliższym logowaniu.
+ */
+export function useUsunieteKonta() {
+  const [items, setItems] = useState<UsunieteKonto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  /* czysty odczyt - stan ustawiamy dopiero w wywołującym, już po await */
+  const pobierz = useCallback(async (): Promise<{
+    items: UsunieteKonto[];
+    error: string | null;
+  }> => {
+    const supabase = await supabaseBrowser();
+    if (!supabase) return { items: [], error: BLAD_BAZY };
+
+    const { data, error: blad } = await supabase.rpc("lista_usunietych_kont");
+    if (blad) return { items: [], error: blad.message };
+    return { items: (data ?? []) as UsunieteKonto[], error: null };
+  }, []);
+
+  const odswiez = useCallback(async () => {
+    const wynik = await pobierz();
+    setItems(wynik.items);
+    setError(wynik.error);
+    setLoading(false);
+  }, [pobierz]);
+
+  useEffect(() => {
+    let aktualne = true;
+    void (async () => {
+      const wynik = await pobierz();
+      if (!aktualne) return;
+      setItems(wynik.items);
+      setError(wynik.error);
+      setLoading(false);
+    })();
+    return () => {
+      aktualne = false;
+    };
+  }, [pobierz]);
+
+  /** Zwraca komunikat od bazy (co dokładnie się stało) albo rzuca błędem w polu `blad`. */
+  const przywroc = useCallback(
+    async (id: string): Promise<{ wiadomosc?: string; blad?: string }> => {
+      const supabase = await supabaseBrowser();
+      if (!supabase) return { blad: BLAD_BAZY };
+
+      const { data, error: blad } = await supabase.rpc("przywroc_konto", { in_user: id });
+      if (blad) return { blad: blad.message };
+      await odswiez();
+      return { wiadomosc: typeof data === "string" ? data : "Przywrócono." };
+    },
+    [odswiez]
+  );
+
+  return { items, loading, error, przywroc, odswiez };
 }
 
 /* ------------------------------------------------------------------ */

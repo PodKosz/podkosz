@@ -31,6 +31,7 @@ import { BetaAdmin } from "./BetaAdmin";
 import { ZapisyAdmin } from "./ZapisyAdmin";
 import { LicznikOnline } from "./LicznikOnline";
 import { UsersAdmin } from "./UsersAdmin";
+import { HubAdmin } from "./HubAdmin";
 import { NewFromLead } from "./NewFromLead";
 
 const TABS: [SubmissionStatus, string][] = [
@@ -40,6 +41,7 @@ const TABS: [SubmissionStatus, string][] = [
 ];
 
 type View =
+  | "hub"
   | "queue"
   | "stats"
   | "reports"
@@ -53,6 +55,7 @@ type View =
   | "new";
 
 const VIEWS: [View, string][] = [
+  ["hub", "Kokpit"],
   ["queue", "Kolejka zgłoszeń"],
   ["stats", "Statystyki"],
   ["reports", "Błędy w danych"],
@@ -75,7 +78,7 @@ export function AdminPanel({ isAdmin, signedIn }: { isAdmin: boolean; signedIn: 
   const newLeadId = params.get("nowe");
   const queue = useQueue();
   const [view, setView] = useState<View>(
-    editSlug ? "courts" : newLeadId ? "new" : "queue"
+    editSlug ? "courts" : newLeadId ? "new" : "hub"
   );
   const [tab, setTab] = useState<SubmissionStatus>("pending");
   const [openId, setOpenId] = useState<string | null>(null);
@@ -254,7 +257,9 @@ export function AdminPanel({ isAdmin, signedIn }: { isAdmin: boolean; signedIn: 
     return (
       <div className="relative">
         <Header view={view} setView={setView} live={queue.live} />
-        {view === "stats" ? (
+        {view === "hub" ? (
+          <HubAdmin onGoTo={(w) => setView(w as View)} />
+        ) : view === "stats" ? (
           <StatsAdmin />
         ) : view === "courts" ? (
           <CourtsAdmin editSlug={editSlug} />
@@ -490,6 +495,10 @@ function Header({
   live: boolean;
 }) {
   const TITLES: Record<View, [string, string]> = {
+    hub: [
+      "Kokpit",
+      "Najpierw to, co czeka na decyzję, potem puls serwisu, na końcu stan bazy. Kafelki z zaległościami prowadzą prosto w odpowiednią zakładkę.",
+    ],
     queue: [
       "Kolejka zgłoszeń",
       "Zgłoszenia z formularza „Dodaj boisko”. Popraw dane, usuń nieudane zdjęcia, nadaj Mualę albo odrzuć z konkretnym powodem.",
@@ -556,18 +565,27 @@ function Header({
         )}
       </p>
 
-      <div className="mt-6 inline-flex gap-1 rounded-full border border-hairline bg-white/5 p-1">
-        {VIEWS.map(([k, label]) => (
-          <button
-            key={k}
-            onClick={() => setView(k)}
-            className={`rounded-full px-5 py-2.5 text-[13px] font-medium transition ${
-              view === k ? "bg-white/14 text-ink" : "text-muted hover:text-ink"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+      {/*
+        Pasek zakładek przewija się w poziomie zamiast zawijać. Jedenaście nazw, z których
+        część jest trzywyrazowa („Zapisy na otwarcie"), nie mieści się w rzędzie na żadnym
+        telefonie - a przy zawijaniu każdy przycisk łamał się słowo pod słowem i pasek
+        rozjeżdżał się na pół ekranu. `whitespace-nowrap` trzyma nazwę w jednej linii,
+        `shrink-0` nie pozwala jej ściskać, a przewijanie robi resztę.
+      */}
+      <div className="scroll-thin -mx-1 mt-6 flex max-w-full gap-1 overflow-x-auto px-1 pb-1">
+        <div className="flex gap-1 rounded-full border border-hairline bg-white/5 p-1">
+          {VIEWS.map(([k, label]) => (
+            <button
+              key={k}
+              onClick={() => setView(k)}
+              className={`shrink-0 whitespace-nowrap rounded-full px-3.5 py-2 text-[12px] font-medium transition sm:px-5 sm:py-2.5 sm:text-[13px] ${
+                view === k ? "bg-white/14 text-ink" : "text-muted hover:text-ink"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
     </header>
   );
