@@ -63,7 +63,12 @@ export function filtryDoAdresu(f: Filters): Record<string, string | null> {
     woj: f.voivodeship || null,
     dostep: f.access || null,
     swiatlo: f.onlyLit ? "1" : null,
-    lajki: f.minLikes > 0 ? String(f.minLikes) : null,
+    /*
+      Do adresu wpisujemy próg zaokrąglony w górę, a nie surową pozycję uchwytu. Uchwyt
+      sunie ułamkami, żeby ruch był płynny, ale w adresie „lajki=1.24" wyglądałoby jak
+      pomyłka - a filtruje i tak dopiero od dwóch.
+    */
+    lajki: f.minLikes > 0 ? String(Math.ceil(f.minLikes)) : null,
   };
 }
 

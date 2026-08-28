@@ -566,8 +566,12 @@ function FiltersAndList({
           {/*
             Suwak podpaleń pokazujemy tylko wtedy, gdy jest co filtrować, i w zakresie
             wyliczonym z danych. Przy sztywnym maksimum 400 wystarczyło go ruszyć, żeby
-            zniknęły wszystkie boiska - bo tylu podpaleń nie ma jeszcze żadne. Krok też
-            idzie z zakresu: przy pięciu podpaleniach skok co dziesięć nie ma sensu.
+            zniknęły wszystkie boiska - bo tylu podpaleń nie ma jeszcze żadne.
+
+            Uchwyt chodzi płynnie, choć filtr działa na liczbach całkowitych. Krok równy
+            jedności przy maksimum dwa dawał trzy pozycje i uchwyt przeskakiwał przez pół
+            paska; teraz sunie setnymi, a próg odczytujemy w górę. Napis obok pokazuje
+            próg, który naprawdę obowiązuje, więc nic się nie rozjeżdża.
           */}
           {maksLajki > 0 && (
             <div>
@@ -575,14 +579,14 @@ function FiltersAndList({
                 Minimum lajków
                 <span className="ml-auto flex items-center gap-1 font-semibold text-ink">
                   <FireBallIcon className="h-3.5 w-3.5" />
-                  {filters.minLikes}
+                  {Math.ceil(filters.minLikes)}
                 </span>
               </FieldLabel>
               <input
                 type="range"
                 min={0}
                 max={maksLajki}
-                step={maksLajki > 120 ? 10 : maksLajki > 40 ? 5 : 1}
+                step={maksLajki / 100}
                 value={Math.min(filters.minLikes, maksLajki)}
                 onChange={(e) => patch({ minLikes: Number(e.target.value) })}
                 className="w-full"

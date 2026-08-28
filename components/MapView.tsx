@@ -47,6 +47,12 @@ setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
   Podkład zapasowy ma własne podpisy krajów, więc przy małym przybliżeniu widać je obok
   naszych. To brzydkie, ale lepsze niż mapa w znaki wodne - i znika, gdy klucz wróci.
+
+  Uwaga na nazwę parametru: CARTO oczekuje `key`, nie `api_key`. To osobny klucz do samych
+  podkładów, wydawany formularzem na carto.com/basemaps/apikey - NIE jest to token z panelu
+  dewelopera w CARTO Workspace, który służy do ich API danych i z kafelkami nie ma nic
+  wspólnego. Klucz jest darmowy do 5 mln kafelków miesięcznie, pod warunkiem zostawienia
+  widocznej atrybucji CARTO i OpenStreetMap - stąd `attribution` niżej.
 */
 const KLUCZ_CARTO = process.env.NEXT_PUBLIC_CARTO_KEY;
 
@@ -55,7 +61,7 @@ const PODKLAD: StyleSpecification["sources"][string] = KLUCZ_CARTO
       type: "raster",
       tiles: ["a", "b", "c"].map(
         (host) =>
-          `https://${host}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png?api_key=${KLUCZ_CARTO}`
+          `https://${host}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png?key=${KLUCZ_CARTO}`
       ),
       tileSize: 256,
       maxzoom: 20,
