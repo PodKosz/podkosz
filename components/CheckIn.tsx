@@ -6,6 +6,7 @@ import {
   CheckinSlot,
   cancelToday,
   declareToday,
+  fetchBlokada,
   fetchCheckins,
   fetchMyHours,
   fetchOsoby,
@@ -42,11 +43,16 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
   const [podKursorem, setPodKursorem] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
+  /** dlaczego dziś nie da się tu zapisać (dwa boiska dziennie, jedno województwo) */
+  const [blokada, setBlokada] = useState<string | null>(null);
 
   const reload = () => {
     void fetchCheckins(courtId).then(setSlots);
     void fetchOsoby(courtId).then(setOsoby);
-    if (signedIn) void fetchMyHours(courtId).then(setMine);
+    if (signedIn) {
+      void fetchMyHours(courtId).then(setMine);
+      void fetchBlokada(courtId).then(setBlokada);
+    }
   };
 
   useEffect(() => {
@@ -67,6 +73,11 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
       fetchMyHours(courtId)
         .then((hours) => {
           if (alive) setMine(hours);
+        })
+        .catch(() => undefined);
+      fetchBlokada(courtId)
+        .then((powod) => {
+          if (alive) setBlokada(powod);
         })
         .catch(() => undefined);
     }
@@ -171,7 +182,7 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
         </p>
       )}
 
-      {picking && mine.length === 0 && (
+      {picking && mine.length === 0 && !blokada && (
         /*
           Siatka godzin jako nakładka nad treścią pod spodem, a nie element w środku panelu:
           wszystkie godziny widać naraz, a rząd z parametrami boiska nie zmienia wysokości
@@ -255,6 +266,15 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
               Odwołaj
             </button>
           </div>
+        ) : blokada ? (
+          /*
+            Zamiast przycisku, który i tak odbije się od bazy - powód wprost. Deklaracja
+            ma mówić, gdzie ktoś naprawdę będzie, więc dziennie wolno wskazać najwyżej
+            dwa boiska i oba w jednym województwie.
+          */
+          <p className="rounded-2xl border border-hairline bg-white/5 px-4 py-3 text-[12px] leading-snug text-muted">
+            {blokada}
+          </p>
         ) : (
           <button
             onClick={() => {

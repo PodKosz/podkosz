@@ -61,24 +61,24 @@ export function AuthMenu({ user }: { user: AuthUser | null }) {
       </button>
 
       {/*
-        Menu ma własne, mocniejsze tło zamiast samego `glass`. Na telefonie rozwijało się
-        nad mapą i zlewało się z nią w jedną plamę: szkło rozmywa to, co pod spodem, ale
-        nie odcina od niego. Ciemniejsza podkładka i wyraźniejszy cień robią z tego osobną
-        warstwę, a nie przezroczystą naklejkę.
+        Menu ma własne tło zamiast samego `glass`. Na telefonie rozwijało się nad mapą i
+        zlewało się z nią w jedną plamę: szkło rozmywa to, co pod spodem, ale nie odcina
+        od niego. Szczegóły wyglądu siedzą w `.menu-konta` - tło jest tam ciepłe i pełne,
+        a szkło robi wierzchnia warstwa, nie przezroczystość.
       */}
       {open && (
         <div className="menu-konta absolute right-0 top-12 z-50 w-56 overflow-hidden rounded-2xl p-1.5">
           <Link
             href="/konto"
             onClick={() => setOpen(false)}
-            className="block rounded-xl px-3 py-2.5 text-[13px] text-muted transition hover:bg-white/8 hover:text-ink"
+            className="block rounded-xl px-3 py-2.5 text-[13px] text-muted hover:text-ink"
           >
             Moje konto
           </Link>
           <Link
             href="/ulubione"
             onClick={() => setOpen(false)}
-            className="block rounded-xl px-3 py-2.5 text-[13px] text-muted transition hover:bg-white/8 hover:text-ink"
+            className="block rounded-xl px-3 py-2.5 text-[13px] text-muted hover:text-ink"
           >
             Ulubione boiska
           </Link>
@@ -86,14 +86,14 @@ export function AuthMenu({ user }: { user: AuthUser | null }) {
             <Link
               href="/admin"
               onClick={() => setOpen(false)}
-              className="block rounded-xl px-3 py-2.5 text-[13px] text-muted transition hover:bg-white/8 hover:text-ink"
+              className="block rounded-xl px-3 py-2.5 text-[13px] text-muted hover:text-ink"
             >
               Panel administratora
             </Link>
           )}
           <button
             onClick={() => signOut()}
-            className="block w-full rounded-xl px-3 py-2.5 text-left text-[13px] text-muted transition hover:bg-white/8 hover:text-ink"
+            className="block w-full rounded-xl px-3 py-2.5 text-left text-[13px] text-muted hover:text-ink"
           >
             Wyloguj
           </button>

@@ -64,6 +64,24 @@ export async function fetchMyHours(courtId: string): Promise<number[]> {
 }
 
 /**
+ * Czy ta osoba może się dziś zapisać na to boisko - a jeśli nie, to dlaczego.
+ *
+ * Deklaracja mówi, gdzie ktoś faktycznie będzie, więc dziennie wolno wskazać najwyżej
+ * dwa boiska i oba w tym samym województwie. Bez tego jedna osoba zapalała pół mapy i
+ * w minutę wyklikiwała odznaczenia za bywanie na boiskach.
+ *
+ * Zasady pilnuje wyzwalacz w bazie - tabela jest zapisywalna z przeglądarki, więc
+ * sprawdzenie tutaj jest wyłącznie po to, żeby powiedzieć to człowiekowi ZANIM kliknie.
+ */
+export async function fetchBlokada(courtId: string): Promise<string | null> {
+  const supabase = await supabaseBrowser();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase.rpc("checkin_blokada", { in_court: courtId });
+  return !error && typeof data === "string" && data ? data : null;
+}
+
+/**
  * Zapisuje deklarację na dziś dla zakresu godzin (włącznie z końcem).
  * Nowa deklaracja zastępuje poprzednią na tym boisku.
  */
@@ -81,6 +99,14 @@ export async function declareToday(courtId: string, od: number, doGodziny = od):
   if (koniec - start + 1 > MAX_GODZIN) {
     throw new Error(`Najwyżej ${MAX_GODZIN} godzin na jednym boisku w ciągu dnia.`);
   }
+
+  /*
+    Pytamy o limit przed skasowaniem starych godzin. Zapis to „skasuj i wstaw", więc
+    odbicie się od wyzwalacza dopiero przy wstawianiu zostawiłoby człowieka bez
+    poprzedniej deklaracji i bez nowej.
+  */
+  const blokada = await fetchBlokada(courtId);
+  if (blokada) throw new Error(blokada);
 
   const today = new Date().toISOString().slice(0, 10);
 

@@ -999,29 +999,44 @@ body {
 /*
   Menu ma własną klasę zamiast `.glass` z dodanym kolorem tła w klasie narzędziowej.
   `.glass` ustawia skrót `background`, a skrót kasuje `background-color` - kolor dopisany
-  obok po prostu nie wchodził i menu dalej prześwitywało. Tu tło jest jedną deklaracją,
-  więc nie ma czego kasować.
+  obok po prostu nie wchodził i menu dalej prześwitywało.
 
-  Nieprzezroczyste z rozmysłem: menu rozwija się nad mapą albo nad rankingiem i musi się
-  od nich ODCIĄĆ, a nie tylko rozmyć to, co pod spodem. Sama rozmyta szyba tu nie wystarcza -
-  pod menu leżą wielkie zdjęcia i jasne napisy, więc nawet mocny blur zostawiał czytelne
-  plamy i menu zlewało się z tłem.
+  Nieprzepuszczalne z rozmysłem. Menu rozwija się nad mapą albo nad rankingiem, czyli nad
+  wielkimi zdjęciami i jasnymi napisami; przy zwykłej półprzezroczystej szybie nawet mocny
+  blur zostawiał pod spodem czytelne plamy i nie było wiadomo, gdzie kończy się menu.
+  Efekt szkła robi więc WIERZCHNIA warstwa, nie przezroczystość: ciepła poświata w rogach,
+  pionowy rozbłysk u góry i pomarańczowy włos na krawędzi. Pod spodem pełny kolor, także
+  tam, gdzie przeglądarka nie zna `backdrop-filter`.
 
-  Szkło robi więc wierzchnia warstwa, nie przezroczystość: pionowy rozbłysk u góry i
-  ciemniejszy dół dają wrażenie tafli, a nieprzepuszczalna baza pod spodem gwarantuje, że
-  nic zza menu nie prześwituje - również tam, gdzie przeglądarka nie zna backdrop-filter.
+  Baza jest ciepła, nie czarna (#1b1310 -> #0c0908): menu w neutralnej czerni odcinało się
+  od reszty strony, która cała stoi na pomarańczu.
 */
 .menu-konta {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 46%),
-    linear-gradient(180deg, #16161d 0%, #0a0a0e 100%);
+    radial-gradient(120% 100% at 0% 0%, rgba(255, 138, 40, 0.26), rgba(255, 138, 40, 0) 58%),
+    radial-gradient(110% 90% at 100% 100%, rgba(255, 77, 10, 0.2), rgba(255, 77, 10, 0) 62%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 42%),
+    linear-gradient(180deg, #1b1310 0%, #120d0b 55%, #0c0908 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 0 0 1px rgba(255, 122, 24, 0.22),
+    inset 0 -18px 40px -24px rgba(255, 122, 24, 0.35),
     0 24px 70px -14px rgba(0, 0, 0, 0.95),
-    0 0 0 1px rgba(0, 0, 0, 0.6);
+    0 0 0 1px rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(30px) saturate(180%);
   -webkit-backdrop-filter: blur(30px) saturate(180%);
+}
+
+/* pozycje menu: rozgrzewają się pod kursorem zamiast robić się szare */
+.menu-konta a,
+.menu-konta button {
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+.menu-konta a:hover,
+.menu-konta button:hover {
+  background-color: rgba(255, 122, 24, 0.14);
 }
 
 /* ---------- kropka licznika live ---------- */
