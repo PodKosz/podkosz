@@ -254,7 +254,23 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
             powiadomienie o publikacji i punkty w rankingu.
           </p>
 
-          <h2 className="mt-8 text-[12px] uppercase tracking-[0.18em] text-faint">
+          {/*
+            Przycisk startu NAD listą kadrów. Sześć kafelków z przykładami to prawie cały
+            ekran telefonu, więc jedyne wezwanie do działania leżało pod nimi i trzeba było
+            przewinąć całą stronę, żeby w ogóle zacząć. Lista jest tu materiałem
+            pomocniczym - kto chce, przeczyta; kto wie, o co chodzi, klika od razu.
+          */}
+          <button
+            onClick={() => {
+              setShotKind(missing[0]?.kind ?? REQUIRED_PHOTO_STEPS[0].kind);
+              setStage("shots");
+            }}
+            className="mt-7 w-full rounded-2xl flame-gradient px-6 py-4 text-[15px] font-bold text-black transition hover:brightness-110 active:scale-[0.99]"
+          >
+            Zaczynamy
+          </button>
+
+          <h2 className="mt-9 text-[12px] uppercase tracking-[0.18em] text-faint">
             Sześć kadrów, zawsze w tej samej kolejności
           </h2>
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -288,16 +304,6 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
               oświetlenie.
             </li>
           </ul>
-
-          <button
-            onClick={() => {
-              setShotKind(missing[0]?.kind ?? REQUIRED_PHOTO_STEPS[0].kind);
-              setStage("shots");
-            }}
-            className="mt-8 w-full rounded-2xl flame-gradient px-6 py-4 text-[15px] font-bold text-black transition hover:brightness-110 active:scale-[0.99]"
-          >
-            Zaczynamy
-          </button>
         </section>
       )}
 
@@ -329,7 +335,8 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
               <img
                 src={photos[step.kind]}
                 alt={step.title}
-                className="aspect-[4/3] w-full rounded-[24px] border border-hairline object-cover"
+                className="mx-auto w-full rounded-[24px] border border-hairline object-cover"
+                style={{ aspectRatio: "3 / 4", maxWidth: "min(100%, 54svh)" }}
               />
               <div className="flex gap-3">
                 <button
@@ -352,6 +359,7 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
             <CameraCapture
               kind={step.kind}
               hint={step.hint}
+              szeroki={step.szeroki}
               onCapture={(dataUrl) => setPhoto(step.kind, dataUrl)}
             />
           )}

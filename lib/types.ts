@@ -215,6 +215,15 @@ export interface PhotoStep {
   skippable?: boolean;
   /** ponad obowiązkowy zestaw - użytkownik może dorzucić, ale nie musi */
   extra?: boolean;
+  /**
+   * Kadr, w którym wolno przełączyć się na obiektyw szerokokątny (0,5x).
+   *
+   * Tylko ujęcia CAŁOŚCI boiska: na małym placu zwykły obiektyw nie obejmuje płyty z obu
+   * koszami i ludzie odchodzili kilkanaście metrów albo obcinali kadr. Przy koszu, detalu
+   * obręczy i nawierzchni szeroki kąt tylko szkodzi - zakrzywia proporcje i oddala detal,
+   * a to właśnie po nich ocenia się boisko. Dlatego tam zostaje 1x.
+   */
+  szeroki?: boolean;
 }
 
 /**
@@ -228,6 +237,7 @@ export const PHOTO_STEPS: PhotoStep[] = [
     title: "Całe boisko z narożnika",
     hint: "Cała płyta i oba kosze w jednym kadrze - to zdjęcie tytułowe.",
     tip: "Cofnij się do samego rogu płyty i trzymaj telefon poziomo. Linia boczna powinna prowadzić w głąb kadru, a oba kosze zmieścić się w środku. To zdjęcie widać na mapie i na górze karty boiska.",
+    szeroki: true,
   },
   {
     kind: "kosz-a",
@@ -259,6 +269,7 @@ export const PHOTO_STEPS: PhotoStep[] = [
     title: "Całe boisko z drugiej strony",
     hint: "Drugie ujęcie całości - z przeciwnej strony niż kadr 1.",
     tip: "Przejdź na przeciwną stronę i zrób całość jeszcze raz. Dzięki temu widać otoczenie i to, co zasłaniało pierwsze zdjęcie: ogrodzenie, ławki, wejście.",
+    szeroki: true,
   },
   {
     kind: "narożnik-2",
@@ -266,6 +277,7 @@ export const PHOTO_STEPS: PhotoStep[] = [
     hint: "Cokolwiek, co warto pokazać: otoczenie, wejście, oświetlenie.",
     tip: "Zestaw obowiązkowy masz już kompletny. Dodatkowe ujęcie to bonus - otoczenie boiska, wejście, lampy, ławki albo widok z drugiego narożnika.",
     extra: true,
+    szeroki: true,
   },
   {
     kind: "ogólne-1",
@@ -273,6 +285,7 @@ export const PHOTO_STEPS: PhotoStep[] = [
     hint: "Drugi bonusowy kadr, jeśli masz co pokazać.",
     tip: "Kolejne dodatkowe ujęcie. Przydaje się, gdy boisko jest częścią większego kompleksu albo ma coś nietypowego.",
     extra: true,
+    szeroki: true,
   },
   {
     kind: "ogólne-3",
@@ -280,6 +293,7 @@ export const PHOTO_STEPS: PhotoStep[] = [
     hint: "Ostatni bonusowy kadr.",
     tip: "Ostatnie dodatkowe ujęcie - więcej niż trzech bonusów nie zbieramy, żeby karty boisk zostały porównywalne.",
     extra: true,
+    szeroki: true,
   },
 ];
 
