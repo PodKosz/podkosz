@@ -1003,16 +1003,25 @@ body {
   więc nie ma czego kasować.
 
   Nieprzezroczyste z rozmysłem: menu rozwija się nad mapą albo nad rankingiem i musi się
-  od nich ODCIĄĆ, a nie tylko rozmyć to, co pod spodem.
+  od nich ODCIĄĆ, a nie tylko rozmyć to, co pod spodem. Sama rozmyta szyba tu nie wystarcza -
+  pod menu leżą wielkie zdjęcia i jasne napisy, więc nawet mocny blur zostawiał czytelne
+  plamy i menu zlewało się z tłem.
+
+  Szkło robi więc wierzchnia warstwa, nie przezroczystość: pionowy rozbłysk u góry i
+  ciemniejszy dół dają wrażenie tafli, a nieprzepuszczalna baza pod spodem gwarantuje, że
+  nic zza menu nie prześwituje - również tam, gdzie przeglądarka nie zna backdrop-filter.
 */
 .menu-konta {
-  background: #0e0e13;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 46%),
+    linear-gradient(180deg, #16161d 0%, #0a0a0e 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
     inset 0 0 0 1px rgba(255, 255, 255, 0.12),
-    0 30px 64px -18px rgba(0, 0, 0, 0.95);
-  backdrop-filter: blur(24px) saturate(160%);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
+    0 24px 70px -14px rgba(0, 0, 0, 0.95),
+    0 0 0 1px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
 }
 
 /* ---------- kropka licznika live ---------- */
@@ -1137,81 +1146,134 @@ body {
 /* ---------- płomień na pinezce ---------- */
 /*
   Boisko, na które ktoś się dziś zapisał, zaczyna się palić. Im więcej osób, tym większy
-  i jaśniejszy ogień - liczbę podaje mapa w zmiennej `--zar` (1 do 6), a rozmiar, jasność
-  i tempo migotania liczą się z niej.
+  ogień i tym większa sama pinezka - liczbę podaje mapa w zmiennej `--zar` (1 do 6),
+  średnicę kuli w `--kula`, a barwy ognia w `--o1`..`--o4` (trójki RGB w kolorze pinezki).
 
-  Ogień jest rysowany, nie wklejony jako gif. Gif w tym miejscu byłby kwadratem z wypaloną
+  Ogień jest rysowany, nie wklejony jako gif. Gif byłby kwadratem z wypaloną
   rozdzielczością i własnym tłem, a tu potrzeba czegoś, co siada na dowolnym kolorze
   pinezki, skaluje się z nią i nie waży nic.
 
-  Musi być WYŻSZY od samej pinezki: kula ma 38 px i świeci własną poświatą, więc ogień
-  schowany za nią nie mówi nic. Przy jednej osobie sięga ponad kulę, przy tłumie jest
-  dwa razy wyższy.
+  Cały układ pilnuje jednego: żeby płomień był PRZEDŁUŻENIEM pinezki, a nie doklejoną za
+  nią plamą. Stąd trzy warstwy i wspólna paleta - aura obrysowuje kulę ogniem i zasypuje
+  szew, a języki wyrastają dopiero z jej wnętrza.
 */
 .pinezka-ogien {
   display: none;
 }
 
-.court-marker[data-osoby] .pinezka-ogien,
-.court-marker[data-osoby] .pinezka-ogien > span {
+/*
+  Cała pinezka rośnie z liczbą zapisanych - delikatnie, bo mapa ma zostać czytelna: przy
+  jednej osobie o trzy procent, przy tłumie o jedną piątą. Punkt zaczepienia na dole,
+  inaczej powiększona pinezka odrywałaby się od miejsca, które wskazuje.
+*/
+.court-marker[data-osoby] .pinezka-korpus {
+  transform-origin: 50% 100%;
+  scale: calc(1 + var(--zar, 1) * 0.035);
+}
+
+/* ramka odniesienia dla warstw ognia: dolna krawędź = spód kuli (nóżka ma 10 + 3 px) */
+.court-marker[data-osoby] .pinezka-ogien {
+  position: absolute;
+  left: 50%;
+  bottom: 13px;
+  display: block;
+  width: var(--kula, 38px);
+  height: var(--kula, 38px);
+  pointer-events: none;
+  translate: -50% 0;
+}
+
+.court-marker[data-osoby] .ogien-aura,
+.court-marker[data-osoby] .ogien-jezyk {
   position: absolute;
   left: 50%;
   display: block;
-  pointer-events: none;
   translate: -50% 0;
-  border-radius: 50% 50% 46% 54% / 62% 60% 40% 38%;
+}
+
+/*
+  Aura wyśrodkowana dokładnie na kuli. To ona robi „jeden element": bez niej płomień
+  zaczynał się nad pinezką i widać było, gdzie jedno się kończy, a drugie zaczyna.
+*/
+.court-marker[data-osoby] .ogien-aura {
+  --aura: calc(var(--kula, 38px) * 1.75);
+  bottom: calc(var(--kula, 38px) / 2 - var(--aura) / 2);
+  width: var(--aura);
+  height: var(--aura);
+  border-radius: 50%;
+  filter: blur(5px);
+  opacity: calc(0.45 + var(--zar, 1) * 0.05);
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgb(var(--o1) / 0.9) 0%,
+    rgb(var(--o2) / 0.85) 26%,
+    rgb(var(--o3) / 0.55) 46%,
+    rgb(var(--o3) / 0) 70%
+  );
+}
+
+/*
+  Języki. Dwie rzeczy robią tu całą różnicę między ogniem a świecącym słupkiem.
+
+  Kształt: `clip-path` z wielokątem, a nie zaokrąglony prostokąt. Sam border-radius z
+  rozmyciem dawał kolumnę uciętą u góry - trzeba spiczastego czubka i przewężenia u dołu,
+  a procenty w wielokącie skalują się razem z pinezką. Rozmycie idzie po przycięciu, więc
+  krawędzie i tak są miękkie.
+
+  Gradient: pionowy, ale jasny rdzeń NIE jest przy samej podstawie. Dolne 30 procent
+  języka siedzi za kulą i nikt go nie zobaczy; gdyby to tam był biały żar, na zewnątrz
+  wychodziłaby już tylko wygaszona końcówka. Najjaśniejszy punkt wypada dokładnie tam,
+  gdzie płomień wychodzi zza kuli.
+*/
+.court-marker[data-osoby] .ogien-jezyk {
+  bottom: calc(var(--kula, 38px) * 0.34);
+  width: calc(var(--kula, 38px) * 0.95 + var(--zar, 1) * 3px);
+  height: calc(var(--kula, 38px) * 1.32 + var(--zar, 1) * 8px);
+  clip-path: polygon(
+    50% 0%,
+    60% 13%,
+    64% 29%,
+    77% 43%,
+    85% 62%,
+    80% 83%,
+    62% 97%,
+    38% 97%,
+    20% 83%,
+    15% 62%,
+    23% 43%,
+    36% 29%,
+    40% 13%
+  );
+  filter: blur(2.5px);
+  opacity: calc(0.8 + var(--zar, 1) * 0.03);
+  background: linear-gradient(
+    to top,
+    rgb(var(--o1)) 0%,
+    rgb(var(--o1)) 30%,
+    rgb(var(--o2)) 44%,
+    rgb(var(--o3)) 62%,
+    rgb(var(--o3) / 0.42) 80%,
+    rgb(var(--o3) / 0) 96%
+  );
   animation: pinezka-plomien 1.6s ease-in-out infinite;
 }
 
-/*
-  Geometria jest tu całą robotą, bo dolna połowa płomienia i tak siedzi za kulą pinezki.
-  Podstawa startuje w połowie kuli (`bottom`), a pudełko sięga wyraźnie ponad nią - widać
-  więc górne 55-60% kształtu. Dlatego środek gradientu jest przesunięty w dół i ma duży
-  promień: gdyby jasny rdzeń wypadał przy samej krawędzi dolnej (naturalny odruch przy
-  rysowaniu ognia), cała widoczna część leżałaby poza gradientem i płomień byłby
-  przezroczysty - tak właśnie znikał w pierwszym podejściu.
-*/
-.court-marker[data-osoby] .pinezka-ogien {
-  bottom: 26px;
-  width: calc(30px + var(--zar, 1) * 7px);
-  height: calc(46px + var(--zar, 1) * 14px);
-  filter: blur(3px);
-  opacity: calc(0.72 + var(--zar, 1) * 0.05);
-  background: radial-gradient(
-    78% 88% at 50% 70%,
-    rgba(255, 248, 222, 1) 0%,
-    rgba(255, 186, 66, 1) 24%,
-    rgba(255, 108, 14, 0.92) 50%,
-    rgba(255, 56, 0, 0.5) 72%,
-    rgba(255, 40, 0, 0) 92%
-  );
-}
-
-/* jasny rdzeń w środku - idzie w przeciwfazie, stąd wrażenie chybotania */
-.court-marker[data-osoby] .pinezka-ogien > span {
-  bottom: 26%;
-  width: 56%;
-  height: 60%;
+/* wąski, jaśniejszy język w przeciwfazie - stąd wrażenie chybotania */
+.court-marker[data-osoby] .ogien-jezyk-maly {
+  bottom: calc(var(--kula, 38px) * 0.4);
+  width: calc(var(--kula, 38px) * 0.52);
+  height: calc(var(--kula, 38px) * 0.88 + var(--zar, 1) * 4px);
   filter: blur(2px);
-  opacity: 0.9;
-  background: radial-gradient(
-    72% 84% at 50% 68%,
-    #fffdf4 0%,
-    #ffe8a6 38%,
-    rgba(255, 205, 105, 0.35) 70%,
-    rgba(255, 196, 90, 0) 92%
+  opacity: 0.8;
+  background: linear-gradient(
+    to top,
+    rgb(255 255 255 / 0.9) 0%,
+    rgb(var(--o1)) 42%,
+    rgb(var(--o2) / 0.65) 72%,
+    rgb(var(--o2) / 0) 96%
   );
   animation-duration: 2.3s;
   animation-direction: alternate-reverse;
-}
-
-/*
-  Pod ogniem poświata pinezki tylko przeszkadza - fiolet Heatu albo pomarańcz zwykłej
-  pinezki rozlewa się szerzej niż płomień i zjada jego kolor. Przygaszamy ją, żeby to
-  ogień był tym, co widać z daleka.
-*/
-.court-marker[data-osoby] .pulse-glow {
-  opacity: 0.4;
 }
 
 @keyframes pinezka-plomien {
@@ -1220,16 +1282,15 @@ body {
     scale: 1 1;
   }
   30% {
-    scale: 0.9 1.14;
+    scale: 0.94 1.09;
   }
   65% {
-    scale: 1.08 0.94;
+    scale: 1.06 0.95;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .court-marker[data-osoby] .pinezka-ogien,
-  .court-marker[data-osoby] .pinezka-ogien > span {
+  .court-marker[data-osoby] .ogien-jezyk {
     animation: none;
   }
 }

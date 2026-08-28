@@ -932,9 +932,22 @@ function markerHtml(court: MapCourt) {
   const stem = court.basketApproved ? "#a855f7" : "#ff7a18";
   const dot = court.basketApproved ? "rgba(168,85,247,.85)" : "rgba(255,122,24,.85)";
 
+  /*
+    Paleta ognia idzie za kolorem pinezki, nie odwrotnie: pomarańczowa pinezka pali się
+    pomarańczowo, fioletowa pinezka Heatu - fioletowo. Płomień w obcym kolorze wyglądał
+    jak nalepka doklejona za kulą; w kolorze pinezki jest jej przedłużeniem.
+
+    Barwy jako trójki liczb, a nie gotowe kolory, bo w gradientach potrzebny jest ten sam
+    odcień z zerową przezroczystością - `rgb(var(--o3) / 0)`. Wygaszanie do `transparent`
+    idzie w sRGB przez czerń i zostawiało na końcu języka szary muł.
+  */
+  const ogien = court.basketApproved
+    ? { o1: "245 235 255", o2: "192 132 252", o3: "139 92 246", o4: "91 33 182" }
+    : { o1: "255 244 214", o2: "255 176 58", o3: "255 106 14", o4: "255 56 0" };
+
   return `
   <div class="pinezka-korpus relative flex flex-col items-center transition-transform duration-200 ease-out"
-       style="filter: drop-shadow(0 6px 14px rgba(0,0,0,.6))">
+       style="filter: drop-shadow(0 6px 14px rgba(0,0,0,.6));--kula:${size}px;--o1:${ogien.o1};--o2:${ogien.o2};--o3:${ogien.o3};--o4:${ogien.o4}">
     <span class="pulse-glow absolute -top-2 left-1/2 -translate-x-1/2 rounded-full"
           style="width:${size * 1.8}px;height:${size * 1.8}px;background:radial-gradient(circle, ${glow})"></span>
     <!--
@@ -944,10 +957,18 @@ function markerHtml(court: MapCourt) {
       ogień pod tłem korpusu zamiast położyć go za kulą.
 
       Kolejność w drzewie jest tu całą mechaniką warstw: ogień stoi PO poświacie, więc
-      kładzie się na niej (inaczej fioletowa poświata Heatu zjadała pomarańcz i nie było
-      go widać), i PRZED kulą, więc języki liżą pinezkę od tyłu, a nie zasłaniają piłki.
+      kładzie się na niej, i PRZED kulą, więc języki liżą pinezkę od tyłu, a nie
+      zasłaniają piłki.
+
+      Trzy warstwy, bo bez pierwszej widać szew: aura to poświata wyśrodkowana na kuli,
+      która obrysowuje ją ogniem i zszywa płomień z pinezką w jeden kształt. Dopiero na
+      niej stoją dwa języki - szeroki i wąski, w przeciwfazie.
     -->
-    <span class="pinezka-ogien"><span></span></span>
+    <span class="pinezka-ogien">
+      <span class="ogien-aura"></span>
+      <span class="ogien-jezyk"></span>
+      <span class="ogien-jezyk ogien-jezyk-maly"></span>
+    </span>
     <span class="marker-core relative grid place-items-center rounded-full transition-all duration-200"
           style="width:${size}px;height:${size}px;background:${core};box-shadow:0 0 0 1.5px rgba(255,255,255,.28) inset, 0 6px 18px -4px ${shadow}">
       <svg viewBox="0 0 24 24" style="width:${size * 0.62}px;height:${size * 0.62}px" fill="none" stroke="${seam}" stroke-width=".95" stroke-linecap="round">
