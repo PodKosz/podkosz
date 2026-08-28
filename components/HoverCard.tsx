@@ -15,15 +15,24 @@ import { ClockIcon, FireBallIcon, HoopIcon, BasketApprovedBadge, SurfaceIcon } f
  * Wersja dotykowa jest o ~30% mniejsza od tej na kursor: szerokość ogranicza wrapper na mapie,
  * a marginesy i kroje pisma schodzą tutaj, żeby karta nie zajmowała pół ekranu telefonu.
  */
-export function HoverCard({ court, tapHint = false }: { court: MapCourt; tapHint?: boolean }) {
+export function HoverCard({
+  court,
+  tapHint = false,
+  stan = "wchodzi",
+}: {
+  court: MapCourt;
+  tapHint?: boolean;
+  /** „wchodzi" - karta się pojawia, „znika" - gaśnie i zaraz zostanie zdjęta z drzewa */
+  stan?: "wchodzi" | "znika";
+}) {
   // zdjęcia nie przychodzą razem z listą boisk - dociągamy je dla tej jednej pinezki
   const thumbs = useCourtPhotos(court.id, 3);
   const kadry = thumbs.length ? thumbs : [null, null, null];
   return (
     <div
-      className={`szklo-plynne overflow-hidden rounded-[22px] rise ${
-        tapHint ? "w-full" : "w-[320px]"
-      }`}
+      className={`szklo-plynne overflow-hidden rounded-[22px] ${
+        stan === "znika" ? "karta-mapy-znika" : "karta-mapy"
+      } ${tapHint ? "w-full" : "w-[320px]"}`}
     >
       <div className="grid grid-cols-3 gap-[2px] bg-white/5">
         {kadry.map((p, i) => (

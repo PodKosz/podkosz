@@ -8,6 +8,7 @@ import { MapCourt } from "@/lib/types";
 import { CITIES_GEOJSON } from "@/lib/cities";
 import type { LeadPoint } from "@/lib/leads";
 import { HoverCard } from "./HoverCard";
+import { podkladMapy } from "@/lib/podklad";
 import { FiltrSzkla } from "./FiltrSzkla";
 import { czytajWidok, zapiszWidok } from "@/lib/adres";
 import { fetchCheckinyDzisiaj } from "@/lib/checkins";
@@ -30,62 +31,18 @@ const CLUSTER_FROM = 300;
 const PIN_ZOOM = 11;
 /** Górny limit pinezek HTML naraz - powyżej i tak zlewałyby się w plamę. */
 const PIN_LIMIT = 160;
+/** Ile trwa gaśnięcie wizytówki - musi być zgodne z `.karta-mapy-znika` w globals.css. */
+const CZAS_ZNIKANIA = 180;
 
 // Worker MapLibre serwujemy z /public - patrz scripts/copy-maplibre-worker.mjs.
 setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
-
-/*
-  Podkład mapy.
-
-  CARTO zaczęło wymagać klucza i od tej pory stempluje KAŻDY kafelek napisem
-  „API KEY REQUIRED" - mapa nadal się ładowała, tylko cała była pokryta tym tekstem.
-  To zmiana po ich stronie, nie błąd tutaj, więc kod musi umieć jedno i drugie:
-
-    - z kluczem w NEXT_PUBLIC_CARTO_KEY wracamy na CARTO i wygląd jest dokładnie ten,
-      pod który robiona była reszta mapy (ciemne kafelki bez podpisów),
-    - bez klucza lecimy na ciemnym podkładzie Esri, który klucza nie wymaga.
-
-  Podkład zapasowy ma własne podpisy krajów, więc przy małym przybliżeniu widać je obok
-  naszych. To brzydkie, ale lepsze niż mapa w znaki wodne - i znika, gdy klucz wróci.
-
-  Uwaga na nazwę parametru: CARTO oczekuje `key`, nie `api_key`. To osobny klucz do samych
-  podkładów, wydawany formularzem na carto.com/basemaps/apikey - NIE jest to token z panelu
-  dewelopera w CARTO Workspace, który służy do ich API danych i z kafelkami nie ma nic
-  wspólnego. Klucz jest darmowy do 5 mln kafelków miesięcznie, pod warunkiem zostawienia
-  widocznej atrybucji CARTO i OpenStreetMap - stąd `attribution` niżej.
-*/
-const KLUCZ_CARTO = process.env.NEXT_PUBLIC_CARTO_KEY;
-
-const PODKLAD: StyleSpecification["sources"][string] = KLUCZ_CARTO
-  ? {
-      type: "raster",
-      tiles: ["a", "b", "c"].map(
-        (host) =>
-          `https://${host}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}@2x.png?key=${KLUCZ_CARTO}`
-      ),
-      tileSize: 256,
-      maxzoom: 20,
-      attribution:
-        '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · © <a href="https://carto.com/attributions">CARTO</a>',
-    }
-  : {
-      type: "raster",
-      /* uwaga na kolejność: Esri podaje kafelki jako {z}/{y}/{x}, nie {z}/{x}/{y} */
-      tiles: [
-        "https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
-      ],
-      tileSize: 256,
-      maxzoom: 16,
-      attribution:
-        '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · Esri',
-    };
 
 const STYLE: StyleSpecification = {
   version: 8,
   // fonts.openmaptiles.org oddaje HTML zamiast pliku .pbf - Protomaps serwuje poprawne glify
   glyphs: "https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf",
   sources: {
-    carto: PODKLAD,
+    carto: podkladMapy("dark_nolabels"),
     woj: { type: "geojson", data: "/geo/wojewodztwa.geojson" },
     miasta: { type: "geojson", data: CITIES_GEOJSON },
   },
@@ -202,7 +159,18 @@ export function MapView({
   const [ready, setReady] = useState(false);
   const [diag, setDiag] = useState<MapDiag | null>(null);
   const [showDiag, setShowDiag] = useState(false);
-  const [hover, setHover] = useState<{ court: MapCourt; x: number; y: number } | null>(null);
+  type Karta = { court: MapCourt; x: number; y: number };
+  const [hover, setHover] = useState<Karta | null>(null);
+  /**
+   * Wizytówka, która właśnie gaśnie.
+   *
+   * Bez tego karta znikała cięciem: React zdejmuje węzeł z drzewa, więc nie ma czego
+   * animować. Trzymamy ostatnią kopię przez czas animacji wyjścia i dopiero potem ją
+   * zdejmujemy - wejście i wyjście wyglądają wtedy jak jeden ruch, a nie mrugnięcie.
+   */
+  const [znika, setZnika] = useState<Karta | null>(null);
+  const ostatniaKartaRef = useRef<Karta | null>(null);
+  const zegarZnikaniaRef = useRef<number | undefined>(undefined);
   const hoverRef = useRef<MapCourt | null>(null);
   /**
    * Na ekranie dotykowym nie ma najeżdżania: pierwsze dotknięcie pinezki podświetla ją
@@ -223,11 +191,30 @@ export function MapView({
     onSelectLeadRef.current = onSelectLead;
   }, [onSelectLead]);
 
+  /** pokazanie karty przerywa ewentualne znikanie poprzedniej */
+  const pokazKarte = useCallback((karta: Karta) => {
+    window.clearTimeout(zegarZnikaniaRef.current);
+    setZnika(null);
+    ostatniaKartaRef.current = karta;
+    setHover(karta);
+  }, []);
+
+  const schowajKarte = useCallback(() => {
+    const ostatnia = ostatniaKartaRef.current;
+    setHover(null);
+    if (!ostatnia) return;
+    setZnika(ostatnia);
+    window.clearTimeout(zegarZnikaniaRef.current);
+    zegarZnikaniaRef.current = window.setTimeout(() => setZnika(null), CZAS_ZNIKANIA);
+  }, []);
+
+  useEffect(() => () => window.clearTimeout(zegarZnikaniaRef.current), []);
+
   const clearCard = useCallback(() => {
     hoverRef.current = null;
-    setHover(null);
+    schowajKarte();
     onHoverCourt(null);
-  }, [onHoverCourt]);
+  }, [onHoverCourt, schowajKarte]);
 
   useEffect(() => {
     clearCardRef.current = clearCard;
@@ -272,8 +259,8 @@ export function MapView({
     const c = hoverRef.current;
     if (!map || !c) return;
     const p = map.project([c.lng, c.lat]);
-    setHover({ court: c, x: p.x, y: p.y });
-  }, []);
+    pokazKarte({ court: c, x: p.x, y: p.y });
+  }, [pokazKarte]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -483,7 +470,7 @@ export function MapView({
         el.addEventListener("mouseleave", () => {
           hoverRef.current = null;
           onHoverCourt(null);
-          setHover(null);
+          schowajKarte();
         });
       }
       el.addEventListener("click", (e) => {
@@ -682,7 +669,7 @@ export function MapView({
       map.off("moveend", syncPins);
       map.off("idle", syncPins);
     };
-  }, [courts, ready, activeId, onHoverCourt, onSelectCourt, reposition, centerPin, coarse, oznaczPinezke]);
+  }, [courts, ready, activeId, onHoverCourt, onSelectCourt, reposition, centerPin, coarse, oznaczPinezke, schowajKarte]);
 
   /* ---- podświetlenie aktywnej pinezki ---- */
   useEffect(() => {
@@ -795,27 +782,36 @@ export function MapView({
       {/* filtr zaginający tło pod wizytówką - musi być w drzewie, sam nic nie rysuje */}
       <FiltrSzkla />
 
-      {hover &&
+      {/*
+        Rysujemy wizytówkę aktywną ALBO tę, która właśnie gaśnie - nigdy obie. Dzięki temu
+        przejście z pinezki na pinezkę jest jednym ruchem: stara nie zostaje na ekranie,
+        tylko od razu ustępuje nowej.
+      */}
+      {(hover ?? znika) &&
         !sheetOpen &&
-        (coarse ? (
-          // dotyk: wizytówka siedzi nad wysuwanym panelem, cała jest linkiem do boiska
-          // 266 px zamiast 380 px: karta jest o ~30% mniejsza i nie zjada połowy ekranu
-          <div
-            ref={cardRef}
-            className="pointer-events-auto fixed inset-x-3 bottom-[158px] z-[35] mx-auto max-w-[266px] rise"
-          >
-            <Link href={`/boisko/${hover.court.slug}`} className="block">
-              <HoverCard court={hover.court} tapHint />
-            </Link>
-          </div>
-        ) : (
-          <div
-            className="pointer-events-none absolute z-20"
-            style={{ left: hover.x, top: hover.y - 58, transform: "translate(-50%,-100%)" }}
-          >
-            <HoverCard court={hover.court} />
-          </div>
-        ))}
+        (() => {
+          const karta = (hover ?? znika) as { court: MapCourt; x: number; y: number };
+          const stan = hover ? "wchodzi" : "znika";
+          return coarse ? (
+            // dotyk: wizytówka siedzi nad wysuwanym panelem, cała jest linkiem do boiska
+            // 266 px zamiast 380 px: karta jest o ~30% mniejsza i nie zjada połowy ekranu
+            <div
+              ref={cardRef}
+              className="pointer-events-auto fixed inset-x-3 bottom-[158px] z-[35] mx-auto max-w-[266px]"
+            >
+              <Link href={`/boisko/${karta.court.slug}`} className="block">
+                <HoverCard court={karta.court} tapHint stan={stan} />
+              </Link>
+            </div>
+          ) : (
+            <div
+              className="pointer-events-none absolute z-20"
+              style={{ left: karta.x, top: karta.y - 58, transform: "translate(-50%,-100%)" }}
+            >
+              <HoverCard court={karta.court} stan={stan} />
+            </div>
+          );
+        })()}
 
       {showDiag && !ready && diag && (
         <div className="glass absolute left-1/2 top-1/2 z-30 w-[440px] max-w-[86vw] -translate-x-1/2 -translate-y-1/2 rounded-[22px] p-5 text-[13px]">

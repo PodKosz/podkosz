@@ -33,16 +33,24 @@ const MIN_SKALA = 0.52;
 const KOLEJNOSC = ["lg:order-3", "lg:order-2", "lg:order-4", "lg:order-1", "lg:order-5"];
 
 /*
-  Nieregularność układu. Każde miejsce ma własne przesunięcie w pionie, tempo obrotu pierścienia
-  i kierunek - dzięki temu piątka wygląda jak konstelacja, a nie jak rządek. Wartości są
-  wpisane ręcznie, bo losowe rozsypanie zmieniałoby się przy każdym renderowaniu strony.
+  Wysokość mówi o miejscu. Pierwszy stoi najwyżej, drugi trochę niżej, trzeci jeszcze niżej,
+  a czwarty i piąty równo na samym dole - schodek jest ściśle malejący, więc ranking widać
+  bez czytania numerów. Wcześniej przesunięcia były rozsypane „artystycznie" i piąte miejsce
+  potrafiło wisieć wyżej od drugiego.
+
+  Nieregularność zostaje w ruchu, nie w wysokości: każde miejsce ma inne tempo obrotu
+  pierścienia ze zdjęciami i inny kierunek, więc konstelacja dalej nie maszeruje w rytm.
+  Wartości są wpisane ręcznie - losowe zmieniałyby się przy każdym renderowaniu strony.
+
+  Kolejność w poziomie to `KOLEJNOSC` (4, 2, 1, 3, 5), więc schodek układa się w łuk
+  z wierzchołkiem pośrodku.
 */
 const UKLAD = [
-  { dy: "10px", obrot: "52s", kierunek: "normal" },
-  { dy: "-38px", obrot: "44s", kierunek: "reverse" },
-  { dy: "-16px", obrot: "61s", kierunek: "normal" },
-  { dy: "46px", obrot: "48s", kierunek: "reverse" },
-  { dy: "58px", obrot: "56s", kierunek: "normal" },
+  { dy: "-52px", obrot: "52s", kierunek: "normal" },
+  { dy: "-22px", obrot: "44s", kierunek: "reverse" },
+  { dy: "2px", obrot: "61s", kierunek: "normal" },
+  { dy: "30px", obrot: "48s", kierunek: "reverse" },
+  { dy: "30px", obrot: "56s", kierunek: "normal" },
 ] as const;
 
 export function OrbitaOdkrywcow({ odkrywcy }: { odkrywcy: OdkrywcaRanking[] }) {

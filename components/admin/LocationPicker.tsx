@@ -5,22 +5,23 @@ import { Map as MlMap, Marker, StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { PlaceHit, searchPlace } from "@/lib/admin";
 import { LatLng, formatLatLng, parseCoordinates } from "@/lib/coords";
+import { podkladMapy, podpisyMapy } from "@/lib/podklad";
 import { SearchIcon } from "../icons";
+
+/*
+  Podkład bierzemy ze wspólnego miejsca (`lib/podklad`), a nie z własnej kopii adresów.
+  Wybierak miał tu kiedyś swoją definicję kafelków CARTO i został z nią, gdy CARTO zamknęło
+  ruch bez klucza - mapa do stawiania pinezki przyjeżdżała zaklejona napisem
+  „API KEY REQUIRED". Tu, w odróżnieniu od mapy głównej, chcemy warstwy Z podpisami:
+  bez nazw ulic nie da się trafić pinezką w konkretne boisko.
+*/
+const PODPISY = podpisyMapy();
 
 const PICKER_STYLE: StyleSpecification = {
   version: 8,
   sources: {
-    carto: {
-      type: "raster",
-      tiles: [
-        "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
-        "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
-      ],
-      tileSize: 256,
-      maxzoom: 20,
-      attribution:
-        '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · © <a href="https://carto.com/attributions">CARTO</a>',
-    },
+    carto: podkladMapy("dark_all"),
+    ...(PODPISY ? { podpisy: PODPISY } : {}),
   },
   layers: [
     { id: "bg", type: "background", paint: { "background-color": "#07070a" } },
@@ -30,6 +31,16 @@ const PICKER_STYLE: StyleSpecification = {
       source: "carto",
       paint: { "raster-saturation": -0.3, "raster-hue-rotate": -12, "raster-brightness-max": 0.95 },
     },
+    ...(PODPISY
+      ? [
+          {
+            id: "podpisy",
+            type: "raster" as const,
+            source: "podpisy",
+            paint: { "raster-opacity": 0.85 },
+          },
+        ]
+      : []),
   ],
 };
 
