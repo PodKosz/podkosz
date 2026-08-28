@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { MAKS_SERIA, poziomDlaSerii, type IdMiejsca } from "@/lib/minigra";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { useSesja } from "@/lib/sesja";
-import { TloBoiska } from "./TlaBoisk";
 
 /**
  * Minigra: rzut do kosza swipem.
@@ -30,7 +29,7 @@ import { TloBoiska } from "./TlaBoisk";
 const SZER = 1000;
 const WYS = 680;
 
-const GRAWITACJA = 0.72;
+const GRAWITACJA = 0.62;
 const OPOR = 0.9992;
 /*
   Przelicznik szybkości machnięcia na siłę rzutu i górne ograniczenie tej siły.
@@ -47,25 +46,32 @@ const OPOR = 0.9992;
   ale nie wybacza rzutu w bok. Limit siły jest po to, żeby piłka nigdy nie wyleciała poza
   kadr - znikająca piłka nie mówi graczowi nic o tym, co zrobił źle.
 */
-const SILA = 0.26;
-const MAKS_SILA = 23;
+const SILA = 0.28;
+const MAKS_SILA = 24;
 /* poniżej tej szybkości traktujemy ruch jako przypadkowe dotknięcie, nie rzut */
-const MIN_SZYBKOSC = 6;
+const MIN_SZYBKOSC = 4.5;
 /* ile ostatnich milisekund ruchu liczy się jako zamach */
-const OKNO_ZAMACHU = 100;
-/* wyżej piłki przeciągnąć się nie da */
-const SUFIT_CIAGNIECIA = 400;
+const OKNO_ZAMACHU = 110;
+/*
+  Jak mocno piłka idzie za palcem. Nie jeden do jednego z rozmysłem: przy pełnym podążaniu
+  szybkie machnięcie przerzucało piłkę przez pół planszy jeszcze przed puszczeniem i rzut
+  startował za każdym razem z innej wysokości - a wtedy ta sama siła raz wpadała, raz nie.
+  Przy 0.4 piłka wyraźnie reaguje na rękę, ale punkt wyrzutu zostaje w okolicy miejsca,
+  z którego się rzuca.
+*/
+const PODAZANIE = 0.4;
+const ZASIEG_PODAZANIA = 190;
 
 const PILKA_R = 38;
 const START_X = 500;
-const START_Y = 520;
+const START_Y = 470;
 
 /*
   Kosz widziany z przodu, u góry kadru - jak w tej starej grze z komunikatora. Piłka leci
   z dołu w górę i musi wpaść przez obręcz, więc liczy się wyczucie siły, a nie kąt.
 */
 const KOSZ_X = 500;
-const KOSZ_Y = 236;
+const KOSZ_Y = 250;
 const OBRECZ_R = 78;
 const TABLICA_SZER = 300;
 const TABLICA_WYS = 132;
@@ -319,11 +325,16 @@ export function RzutDoKosza({
     if (s.probki.length > 8) s.probki.shift();
 
     /*
-      Piłka idzie za palcem, ale tylko w dolnej części planszy - inaczej dałoby się ją
-      po prostu podnieść pod obręcz i wrzucić z ręki.
+      Piłka idzie za palcem, ale z tłumieniem i w ograniczonym promieniu wokół swojego
+      miejsca. Dzięki temu rzut zawsze startuje mniej więcej stamtąd, skąd gracz się
+      spodziewa - a jednocześnie widać, że ręka piłkę prowadzi.
     */
-    s.x = Math.max(PILKA_R, Math.min(SZER - PILKA_R, p.x));
-    s.y = Math.max(SUFIT_CIAGNIECIA, Math.min(WYS - PILKA_R, p.y));
+    const dx = (p.x - START_X) * PODAZANIE;
+    const dy = (p.y - START_Y) * PODAZANIE;
+    const d = Math.hypot(dx, dy);
+    const skrot = d > ZASIEG_PODAZANIA ? ZASIEG_PODAZANIA / d : 1;
+    s.x = START_X + dx * skrot;
+    s.y = START_Y + dy * skrot;
   };
 
   const puszczaj = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -372,10 +383,12 @@ export function RzutDoKosza({
   const poziom = poziomDlaSerii(seria);
 
   return (
-    <div className="relative overflow-hidden rounded-[28px] shadow-[0_40px_90px_-40px_rgba(0,0,0,.95)]">
-      <div className="relative aspect-[1000/680] w-full">
-        <TloBoiska miejsce={miejsce} />
-
+    /*
+      Plansza nie ma własnego tła ani karty: rysunek miasta leży pod całą stroną, a tu
+      zostaje sama gra. Włosowa obwódka mówi tylko, dokąd sięga pole rzutu.
+    */
+    <div className="relative">
+      <div className="relative aspect-[1000/680] w-full rounded-[28px] border border-hairline">
         <canvas
           ref={canvasRef}
           onPointerDown={start}
@@ -419,7 +432,7 @@ export function RzutDoKosza({
       </div>
 
       {!zalogowany && (
-        <p className="bg-black/40 px-5 py-3 text-center text-[12px] text-muted">
+        <p className="mt-3 text-center text-[12px] text-muted">
           Grasz bez konta - wynik nie wejdzie do rankingu. Zaloguj się, żeby się w nim
           znaleźć.
         </p>

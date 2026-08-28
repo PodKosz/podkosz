@@ -75,10 +75,9 @@ export function PanelGry({
   );
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <RzutDoKosza miejsce={miejsce.id as IdMiejsca} rekord={rekord} onWynik={(w) => void odswiez(w)} />
-
-      <aside className="szklo-pro rounded-[28px] p-6">
+    /* ranking po lewej, plansza po prawej - na wąskim ekranie ranking schodzi pod grę */
+    <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
+      <aside className="szklo-pro order-2 rounded-[28px] p-6 lg:order-1">
         <h2 className="text-[13px] uppercase tracking-[0.16em] text-faint">
           Najdłuższe serie
         </h2>
@@ -141,6 +140,14 @@ export function PanelGry({
           rekord zostaje.
         </p>
       </aside>
+
+      <div className="order-1 lg:order-2">
+        <RzutDoKosza
+          miejsce={miejsce.id as IdMiejsca}
+          rekord={rekord}
+          onWynik={(w) => void odswiez(w)}
+        />
+      </div>
     </div>
   );
 }
