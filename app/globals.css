@@ -1012,9 +1012,9 @@ body {
   od reszty strony, która cała stoi na pomarańczu.
 */
 .menu-konta {
+  position: relative;
+  overflow: hidden;
   background:
-    radial-gradient(120% 100% at 0% 0%, rgba(255, 138, 40, 0.26), rgba(255, 138, 40, 0) 58%),
-    radial-gradient(110% 90% at 100% 100%, rgba(255, 77, 10, 0.2), rgba(255, 77, 10, 0) 62%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 42%),
     linear-gradient(180deg, #1b1310 0%, #120d0b 55%, #0c0908 100%);
   box-shadow:
@@ -1025,6 +1025,92 @@ body {
     0 0 0 1px rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(30px) saturate(180%);
   -webkit-backdrop-filter: blur(30px) saturate(180%);
+}
+
+/*
+  Żar pod menu. Dwie plamy światła w różnym tempie i przeciwnych fazach - jedna wolniejsza
+  i cieplejsza, druga szybsza i bardziej czerwona. Rozjeżdżają się i zbiegają, więc
+  jasność w każdym rogu zmienia się inaczej i całość nie wygląda na jeden mrugający
+  prostokąt.
+
+  Ruch idzie po `translate`/`scale`/`opacity`, a nie po `background-position`: pozycję tła
+  przeglądarka animuje na wątku głównym i przy otwartym menu nad mapą potrafiło to
+  skakać. Plamy są większe od menu (`inset: -45%`) i przycina je `overflow: hidden`
+  rodzica, dzięki czemu nigdzie nie widać ich krawędzi - tylko wędrującą poświatę.
+
+  Warstwa jest NAD nieprzepuszczalnym tłem, nie zamiast niego: menu dalej nic nie
+  przepuszcza, a żar tylko je podgrzewa.
+*/
+.menu-konta::before,
+.menu-konta::after {
+  content: "";
+  position: absolute;
+  inset: -45%;
+  z-index: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(16px);
+}
+
+.menu-konta::before {
+  background: radial-gradient(closest-side, rgba(255, 150, 48, 0.6), rgba(255, 150, 48, 0) 74%);
+  animation: menu-zar-a 11s ease-in-out infinite;
+}
+
+.menu-konta::after {
+  background: radial-gradient(closest-side, rgba(255, 71, 6, 0.52), rgba(255, 71, 6, 0) 74%);
+  animation: menu-zar-b 15s ease-in-out infinite;
+}
+
+/* treść nad żarem - pozycjonowany pseudoelement rysowałby się na zwykłych dzieciach */
+.menu-konta > * {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes menu-zar-a {
+  0%,
+  100% {
+    translate: -22% -26%;
+    scale: 1;
+    opacity: 0.62;
+  }
+  35% {
+    translate: 8% -8%;
+    scale: 1.2;
+    opacity: 1;
+  }
+  70% {
+    translate: -8% 10%;
+    scale: 0.88;
+    opacity: 0.42;
+  }
+}
+
+@keyframes menu-zar-b {
+  0%,
+  100% {
+    translate: 24% 28%;
+    scale: 1.06;
+    opacity: 0.44;
+  }
+  40% {
+    translate: -10% 14%;
+    scale: 0.86;
+    opacity: 0.95;
+  }
+  75% {
+    translate: 18% -8%;
+    scale: 1.24;
+    opacity: 0.38;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-konta::before,
+  .menu-konta::after {
+    animation: none;
+  }
 }
 
 /* pozycje menu: rozgrzewają się pod kursorem zamiast robić się szare */
