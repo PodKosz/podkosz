@@ -129,9 +129,14 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
       Panel stoi w jednym rzędzie z kafelkami parametrów boiska, więc jest wąski i wysoki.
       Gdy ktoś się dziś zapisał, panel się rozpala: ciepły gradient i płomień przy liczbie.
       Póki nikt nie idzie, zostaje zwykłym szkłem - inaczej ogień nic by nie znaczył.
+
+      Uwaga: żadnego `overflow-hidden`. Lista godzin wysuwa się POD panelem (`top-full`),
+      więc przycięcie zawartości do jego kształtu chowało ją w całości i nie dało się
+      wybrać godziny. Zaokrąglenie poświaty załatwia `border-radius: inherit` na warstwie
+      gradientu, bez ruszania tego, co wychodzi poza panel.
     */
     <section
-      className={`glass relative flex h-full min-h-[150px] flex-col overflow-hidden rounded-[20px] p-4 ${
+      className={`glass relative flex h-full min-h-[150px] flex-col rounded-[20px] p-4 ${
         osoby > 0 ? "panel-goracy" : ""
       }`}
       style={osoby > 0 ? { ["--zar" as string]: Math.min(osoby, 6) } : undefined}

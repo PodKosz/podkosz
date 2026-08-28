@@ -1036,6 +1036,11 @@ body {
   content: "";
   position: absolute;
   inset: 0;
+  /*
+    Zaokrąglenie bierzemy z panelu zamiast przycinać go `overflow`, bo lista godzin
+    wysuwa się poza jego obrys - przycięcie chowało ją w całości.
+  */
+  border-radius: inherit;
   pointer-events: none;
   background:
     radial-gradient(
