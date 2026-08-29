@@ -9,7 +9,7 @@ import { CITIES_GEOJSON } from "@/lib/cities";
 import type { LeadPoint } from "@/lib/leads";
 import { HoverCard } from "./HoverCard";
 import { podkladMapy } from "@/lib/podklad";
-import { ZarWojewodztwa, stworzZarWojewodztwa } from "@/lib/zarWojewodztwa";
+import { ZarWojewodztwa, bboxWojewodztwa, stworzZarWojewodztwa } from "@/lib/zarWojewodztwa";
 import { FiltrSzkla } from "./FiltrSzkla";
 import { czytajWidok, zapiszWidok } from "@/lib/adres";
 import { fetchCheckinyDzisiaj } from "@/lib/checkins";
@@ -201,6 +201,22 @@ export function MapView({
   const clearCardRef = useRef(() => undefined as void);
   /** warstwa z żywym gradientem w obrysie województwa */
   const zarRef = useRef<ZarWojewodztwa | null>(null);
+  /**
+   * Województwo wybrane kliknięciem w puste miejsce na mapie.
+   *
+   * Trzymane osobno od `highlightVoivodeship`, które przychodzi z filtrów: to dwa różne
+   * gesty i nie powinny się nadpisywać. Filtr ma pierwszeństwo - skoro ktoś zawęził
+   * wyniki do jednego województwa, to ono ma świecić, choćby kliknął gdzie indziej.
+   */
+  const [wojKlikniete, setWojKlikniete] = useState<string | null>(null);
+  /**
+   * Przybliżenie, poniżej którego wybór się kasuje.
+   *
+   * Ustawiane po zakończeniu dolotu, nie przy kliknięciu: samo `fitBounds` przejeżdża
+   * przez pośrednie wartości przybliżenia i uzbrojony wcześniej próg wyzwoliłby powrót
+   * w połowie własnej animacji.
+   */
+  const progWyjsciaRef = useRef<number | null>(null);
   /** znacznik czasu dotknięcia pinezki - chroni wizytówkę przed klikiem mapy z tego samego dotknięcia */
   const lastPinTapRef = useRef(0);
   /** wizytówka na dotyku - z jej położenia liczymy, gdzie ma wylądować pinezka */
@@ -346,9 +362,40 @@ export function MapView({
     });
     map.on("move", reposition);
     // dotknięcie samej mapy zamyka wizytówkę boiska (na markerach zatrzymujemy zdarzenie)
-    map.on("click", () => {
+    map.on("click", (e) => {
       if (performance.now() - lastPinTapRef.current < 500) return;
       clearCardRef.current();
+
+      /*
+        Kliknięcie w puste miejsce wybiera województwo. „Puste" znaczy: poza pinezkami
+        i poza klastrami - te mają własne obsługi i prowadzą do boisk, a nie do kadru na
+        region. Pinezki HTML zatrzymują zdarzenie na swoim elemencie i tu w ogóle nie
+        docierają; warstwy GeoJSON trzeba odsiać ręcznie, bo one żyją na tej samej kanwie.
+      */
+      const warstwy = ["boiska-klastry", "boiska-punkty", "leads-dots"].filter((w) =>
+        map.getLayer(w)
+      );
+      if (warstwy.length && map.queryRenderedFeatures(e.point, { layers: warstwy }).length) {
+        return;
+      }
+
+      if (!map.getLayer("woj-fill")) return;
+      const trafione = map.queryRenderedFeatures(e.point, { layers: ["woj-fill"] });
+      const nazwa = trafione[0]?.properties?.nazwa;
+      setWojKlikniete(typeof nazwa === "string" ? nazwa : null);
+    });
+
+    /*
+      Wyjście z województwa własnym gestem. Rolka albo szczypanie na telefonie - w obu
+      przypadkach schodzimy poniżej progu i mapa wraca do kadru na Polskę. Sprawdzamy
+      przy każdej zmianie przybliżenia, ale próg gasimy od razu po wykryciu, żeby powrót
+      do kadru krajowego (który sam zmienia przybliżenie) nie wywołał się drugi raz.
+    */
+    map.on("zoom", () => {
+      const prog = progWyjsciaRef.current;
+      if (prog === null || map.getZoom() >= prog) return;
+      progWyjsciaRef.current = null;
+      setWojKlikniete(null);
     });
     /*
       Easter egg: dwie niebieskie pinezki poza Polską - Venice Beach i Manhattan. Wieszamy
@@ -759,16 +806,105 @@ export function MapView({
     else map.once("styledata", attach);
   }, [leads, ready]);
 
+  /*
+    Które województwo świeci: kliknięte na mapie albo wybrane w filtrach. Kliknięcie ma
+    pierwszeństwo, bo jest gestem świeższym i bardziej bezpośrednim - palec wskazał
+    konkretne miejsce. Gdy wybór kliknięciem znika (odsunięcie kamery), wraca podświetlenie
+    z filtrów, o ile jakieś było.
+  */
+  const wybraneWoj = wojKlikniete || highlightVoivodeship;
+
+  /*
+    Zmiana województwa w filtrach kasuje wybór z mapy. Bez tego stare kliknięcie
+    przykrywałoby świeży wybór z panelu i podświetlone byłoby co innego niż na liście.
+
+    Poprawka stanu w trakcie renderu, a nie w efekcie - to dokładnie ten przypadek, dla
+    którego React taki zapis dopuszcza: stan zależny od zmiany właściwości. W efekcie
+    oznaczałoby to render z chwilowo złym podświetleniem i drugi zaraz po nim.
+  */
+  const [ostatniFiltrWoj, setOstatniFiltrWoj] = useState(highlightVoivodeship);
+  if (ostatniFiltrWoj !== highlightVoivodeship) {
+    setOstatniFiltrWoj(highlightVoivodeship);
+    setWojKlikniete(null);
+  }
+
   /* ---- podświetlenie województwa ---- */
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
-    map.setFilter("woj-active", [
-      "==",
-      ["get", "nazwa"],
-      highlightVoivodeship || "__none__",
-    ]);
-  }, [highlightVoivodeship, ready]);
+    map.setFilter("woj-active", ["==", ["get", "nazwa"], wybraneWoj || "__none__"]);
+  }, [wybraneWoj, ready]);
+
+  /*
+    Kadr na kliknięte województwo i powrót po odsunięciu.
+
+    Dolot kończy się ustawieniem progu wyjścia poniżej osiągniętego przybliżenia. Zapas
+    trzech dziesiątych stopnia jest po to, żeby drobne poprawki kadru (bezwładność rolki,
+    odbicie po szczypnięciu) nie liczyły się jako „chcę wyjść" - a jednocześnie żeby
+    świadomy ruch w tył zadziałał od razu, bez odsuwania się przez pół kraju.
+  */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+
+    const szerokosc = containerRef.current?.clientWidth ?? 1024;
+
+    if (!wojKlikniete) {
+      progWyjsciaRef.current = null;
+      return;
+    }
+
+    let aktualne = true;
+
+    void (async () => {
+      const kolekcja = await wczytajWojewodztwa();
+      if (!aktualne || !kolekcja) return;
+
+      const cecha = kolekcja.features.find((f) => f.properties?.nazwa === wojKlikniete);
+      const bbox = cecha?.geometry ? bboxWojewodztwa(cecha.geometry) : null;
+      if (!bbox) return;
+
+      const koniec = () => {
+        if (!aktualne) return;
+        progWyjsciaRef.current = map.getZoom() - 0.3;
+      };
+      map.once("moveend", koniec);
+
+      map.fitBounds(bbox, {
+        padding: fitPadding(szerokosc),
+        duration: 950,
+        essential: true,
+      });
+    })();
+
+    return () => {
+      aktualne = false;
+    };
+  }, [wojKlikniete, ready]);
+
+  /*
+    Powrót do kadru na Polskę po opuszczeniu województwa. Osobny efekt od tego wyżej,
+    bo ma się wykonać TYLKO przy przejściu z wyboru w brak - a nie przy pierwszym
+    renderze, kiedy wyboru nigdy nie było i mapa dopiero układa się w kadrze startowym.
+  */
+  const bylWybor = useRef(false);
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+
+    if (wojKlikniete) {
+      bylWybor.current = true;
+      return;
+    }
+    if (!bylWybor.current) return;
+    bylWybor.current = false;
+
+    map.fitBounds(POLAND_BOUNDS, {
+      padding: fitPadding(containerRef.current?.clientWidth ?? 1024),
+      duration: 900,
+      essential: true,
+    });
+  }, [wojKlikniete, ready]);
 
   /*
     Żywy gradient w obrysie wybranego województwa.
@@ -798,7 +934,7 @@ export function MapView({
       const zar = zarRef.current;
       if (!zar) return;
 
-      if (!highlightVoivodeship) {
+      if (!wybraneWoj) {
         zar.ustaw(null);
         return;
       }
@@ -806,16 +942,14 @@ export function MapView({
       const kolekcja = await wczytajWojewodztwa();
       if (!aktualne || !kolekcja) return;
 
-      const cecha = kolekcja.features.find(
-        (f) => f.properties?.nazwa === highlightVoivodeship
-      );
+      const cecha = kolekcja.features.find((f) => f.properties?.nazwa === wybraneWoj);
       zarRef.current?.ustaw(cecha?.geometry ?? null);
     })();
 
     return () => {
       aktualne = false;
     };
-  }, [highlightVoivodeship, ready]);
+  }, [wybraneWoj, ready]);
 
   /* ---- lot do wybranego boiska ---- */
   useEffect(() => {

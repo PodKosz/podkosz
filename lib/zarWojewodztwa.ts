@@ -79,6 +79,21 @@ function zbudujKsztalt(geom: GeoJSON.Geometry): Ksztalt | null {
   };
 }
 
+/**
+ * Prostokąt otaczający województwo - do przysunięcia kamery po kliknięciu w mapę.
+ *
+ * Liczymy go z tej samej funkcji, co kształt do rysowania, żeby kadr i poświata brały
+ * granice z jednego źródła. Rozjazd byłby widoczny gołym okiem: żar wystawałby poza kadr
+ * albo nie dochodził do jego krawędzi.
+ */
+export function bboxWojewodztwa(
+  geom: GeoJSON.Geometry
+): [number, number, number, number] | null {
+  const k = zbudujKsztalt(geom);
+  if (!k) return null;
+  return [k.nw[0], k.se[1], k.se[0], k.nw[1]];
+}
+
 const NS = "http://www.w3.org/2000/svg";
 
 function el<K extends keyof SVGElementTagNameMap>(nazwa: K): SVGElementTagNameMap[K] {
@@ -118,9 +133,9 @@ export function stworzZarWojewodztwa(map: MlMap, przyrostek: string): ZarWojewod
     bo jedna plama w jednym kolorze czyta się jak reflektor, a nie jak rozgrzana blacha.
   */
   const barwy: [string, string, number][] = [
-    ["zar-a", "255,122,24", 0.34],
-    ["zar-b", "255,64,10", 0.3],
-    ["zar-c", "255,206,110", 0.34],
+    ["zar-a", "255,122,24", 0.26],
+    ["zar-b", "255,64,10", 0.23],
+    ["zar-c", "255,206,110", 0.26],
   ];
   for (const [nazwa, rgb, alfa] of barwy) {
     const g = el("radialGradient");
