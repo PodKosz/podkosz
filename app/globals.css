@@ -204,7 +204,14 @@ body {
     /* ciepły refleks z góry i chłodny od dołu - szkło nigdy nie jest jednobarwne */
     radial-gradient(125% 120% at 14% -12%, rgba(255, 158, 74, 0.15), transparent 58%),
     radial-gradient(115% 130% at 88% 112%, rgba(120, 170, 255, 0.1), transparent 62%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%),
+    /*
+      Ciemna podkładka na samym spodzie stosu. Same rozmycie nie wystarcza: mapa pod
+      wizytówką bywa jasna (piaski, drogi, podświetlone województwo), a rozmyta jasna
+      plama ma dokładnie tę samą jasność co jasna plama ostra - karta rozpływała się w
+      tle. Ta warstwa daje szkłu własną gęstość, więc widać, gdzie się zaczyna.
+    */
+    linear-gradient(180deg, rgba(9, 8, 11, 0.5) 0%, rgba(9, 8, 11, 0.62) 100%);
   box-shadow:
     inset 0 -1px 0 rgba(255, 255, 255, 0.07),
     0 2px 8px -2px rgba(0, 0, 0, 0.5),
@@ -222,8 +229,14 @@ body {
   z-index: 0;
   border-radius: inherit;
   pointer-events: none;
-  backdrop-filter: blur(28px) saturate(205%) brightness(1.34) contrast(1.04);
-  -webkit-backdrop-filter: blur(28px) saturate(205%) brightness(1.34) contrast(1.04);
+  /*
+    Mocniejsze rozmycie i przyciemnienie zamiast rozjaśniania. Poprzednie `brightness(1.34)`
+    podnosiło jasność tła pod szkłem - ładne nad ciemną mapą, ale nad jasnym kadrem
+    zdjęcia albo nad podświetlonym województwem robiło z karty świetlistą plamę zlaną
+    z tłem. Teraz tło idzie w dół, a treść karty w górę.
+  */
+  backdrop-filter: blur(46px) saturate(190%) brightness(0.72) contrast(1.08);
+  -webkit-backdrop-filter: blur(46px) saturate(190%) brightness(0.72) contrast(1.08);
   -webkit-mask-image:
     linear-gradient(
       to right,
@@ -1864,6 +1877,115 @@ select option {
 @media (prefers-reduced-motion: reduce) {
   .kafel-rankingu:hover .kafel-obraz {
     scale: 1;
+  }
+}
+
+/* ---------- żywe podświetlenie województwa ---------- */
+/*
+  Warstwa SVG nad kanwą mapy, pod pinezkami. Trzy plamy światła przycięte do obrysu
+  województwa krążą po nim w różnym tempie i w przeciwnych fazach, więc gradient w środku
+  wolno się przesuwa i przygasa, zamiast stać albo mrugać całością.
+
+  Rozmiary i amplitudy przychodzą z kodu jako `--dx`/`--dy` liczone z rozmiaru konkretnego
+  województwa: mazowieckie jest trzy razy większe od opolskiego, a żar ma w obu wyglądać
+  tak samo gęsto. Klatki operują więc na ułamkach tych zmiennych, nie na stałych pikselach.
+
+  `transform-box: fill-box` jest tu konieczne: bez niego `scale()` na elemencie SVG liczy
+  się względem początku układu współrzędnych, a nie środka elipsy - plama odjeżdżałaby
+  w róg zamiast pęcznieć w miejscu.
+*/
+.zar-woj {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+}
+
+/*
+  Rozjaśnienie klatkami, nie przejściem. Przejście `transition: opacity` na tym elemencie
+  potrafiło utknąć na zerze - zaczyna się w tej samej klatce, w której warstwa trafia do
+  drzewa mapy, a wtedy przeglądarka nie ma poprzedniej wartości, od której ma jechać.
+  Animacja ma własny punkt startu wpisany w klatki i tego problemu nie ma.
+*/
+.zar-woj-widoczny {
+  animation: zar-woj-wejscie 620ms ease both;
+}
+
+@keyframes zar-woj-wejscie {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.zar-woj-plama {
+  transform-box: fill-box;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.zar-woj-plama-1 {
+  animation: zar-woj-a 17s ease-in-out infinite;
+}
+.zar-woj-plama-2 {
+  animation: zar-woj-b 23s ease-in-out infinite;
+}
+.zar-woj-plama-3 {
+  animation: zar-woj-c 13s ease-in-out infinite;
+}
+
+@keyframes zar-woj-a {
+  0%,
+  100% {
+    transform: translate(calc(var(--dx) * -0.5), calc(var(--dy) * -0.35)) scale(0.94);
+    opacity: 0.72;
+  }
+  45% {
+    transform: translate(calc(var(--dx) * 0.55), calc(var(--dy) * 0.3)) scale(1.14);
+    opacity: 1;
+  }
+  72% {
+    transform: translate(calc(var(--dx) * 0.1), calc(var(--dy) * -0.5)) scale(1.02);
+    opacity: 0.82;
+  }
+}
+
+@keyframes zar-woj-b {
+  0%,
+  100% {
+    transform: translate(calc(var(--dx) * 0.6), calc(var(--dy) * 0.45)) scale(1.08);
+    opacity: 0.6;
+  }
+  40% {
+    transform: translate(calc(var(--dx) * -0.45), calc(var(--dy) * 0.15)) scale(0.9);
+    opacity: 0.95;
+  }
+  70% {
+    transform: translate(calc(var(--dx) * -0.15), calc(var(--dy) * -0.55)) scale(1.16);
+    opacity: 0.68;
+  }
+}
+
+@keyframes zar-woj-c {
+  0%,
+  100% {
+    transform: translate(calc(var(--dx) * 0.25), calc(var(--dy) * -0.6)) scale(0.86);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translate(calc(var(--dx) * -0.55), calc(var(--dy) * 0.5)) scale(1.2);
+    opacity: 0.9;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zar-woj-plama {
+    animation: none;
   }
 }
 

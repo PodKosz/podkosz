@@ -9,6 +9,7 @@ import { CITIES_GEOJSON } from "@/lib/cities";
 import type { LeadPoint } from "@/lib/leads";
 import { HoverCard } from "./HoverCard";
 import { podkladMapy } from "@/lib/podklad";
+import { ZarWojewodztwa, stworzZarWojewodztwa } from "@/lib/zarWojewodztwa";
 import { FiltrSzkla } from "./FiltrSzkla";
 import { czytajWidok, zapiszWidok } from "@/lib/adres";
 import { fetchCheckinyDzisiaj } from "@/lib/checkins";
@@ -72,7 +73,13 @@ const STYLE: StyleSpecification = {
       type: "fill",
       source: "woj",
       filter: ["==", ["get", "nazwa"], "__none__"],
-      paint: { "fill-color": "#ff7a18", "fill-opacity": 0.16 },
+      /*
+        Płaskie wypełnienie jest tylko podkładem - żywy gradient dokłada warstwa SVG
+        (`lib/zarWojewodztwa`). Zostaje niższe niż kiedyś, żeby suma nie wyszła jaskrawa,
+        a jednocześnie na tyle widoczna, że podświetlenie działa nawet wtedy, gdy
+        przeglądarka nie poradzi sobie z warstwą SVG.
+      */
+      paint: { "fill-color": "#ff7a18", "fill-opacity": 0.09 },
     },
     {
       id: "woj-line",
@@ -182,6 +189,8 @@ export function MapView({
       window.matchMedia("(hover: none), (pointer: coarse)").matches
   );
   const clearCardRef = useRef(() => undefined as void);
+  /** warstwa z żywym gradientem w obrysie województwa */
+  const zarRef = useRef<ZarWojewodztwa | null>(null);
   /** znacznik czasu dotknięcia pinezki - chroni wizytówkę przed klikiem mapy z tego samego dotknięcia */
   const lastPinTapRef = useRef(0);
   /** wizytówka na dotyku - z jej położenia liczymy, gdzie ma wylądować pinezka */
@@ -750,6 +759,53 @@ export function MapView({
     ]);
   }, [highlightVoivodeship, ready]);
 
+  /*
+    Żywy gradient w obrysie wybranego województwa.
+
+    Kształt bierzemy z tego samego pliku, którym karmimy mapę - przeglądarka ma go już
+    w pamięci, więc drugie pobranie nic nie kosztuje. Czytamy go osobno, a nie przez
+    `querySourceFeatures`, bo tamto oddaje geometrię pociętą na kafelki: obrys byłby
+    poszarpany na granicach kafelków i zależny od aktualnego przybliżenia.
+  */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+
+    const zar = stworzZarWojewodztwa(map, przyrostekZaru());
+    zarRef.current = zar;
+
+    return () => {
+      zarRef.current = null;
+      zar.zniszcz();
+    };
+  }, [ready]);
+
+  useEffect(() => {
+    let aktualne = true;
+
+    void (async () => {
+      const zar = zarRef.current;
+      if (!zar) return;
+
+      if (!highlightVoivodeship) {
+        zar.ustaw(null);
+        return;
+      }
+
+      const kolekcja = await wczytajWojewodztwa();
+      if (!aktualne || !kolekcja) return;
+
+      const cecha = kolekcja.features.find(
+        (f) => f.properties?.nazwa === highlightVoivodeship
+      );
+      zarRef.current?.ustaw(cecha?.geometry ?? null);
+    })();
+
+    return () => {
+      aktualne = false;
+    };
+  }, [highlightVoivodeship, ready]);
+
   /* ---- lot do wybranego boiska ---- */
   useEffect(() => {
     const map = mapRef.current;
@@ -910,6 +966,26 @@ function markerGryHtml() {
     <span style="position:absolute;left:50%;bottom:-3px;width:7px;height:4px;translate:-50% 0;
       border-radius:999px;background:rgba(0,0,0,.45);filter:blur(1px)"></span>
   </span>`;
+}
+
+/*
+  Plik z granicami czytamy raz na całą sesję. Identyfikatory gradientów w SVG muszą być
+  unikalne na stronie, stąd licznik - dwie mapy na jednej stronie (np. przy przyszłym
+  podglądzie) nie mogą sobie podbierać wypełnień.
+*/
+let wojewodztwaPromise: Promise<GeoJSON.FeatureCollection | null> | null = null;
+
+function wczytajWojewodztwa() {
+  wojewodztwaPromise ??= fetch("/geo/wojewodztwa.geojson")
+    .then((r) => (r.ok ? (r.json() as Promise<GeoJSON.FeatureCollection>) : null))
+    .catch(() => null);
+  return wojewodztwaPromise;
+}
+
+let licznikZaru = 0;
+function przyrostekZaru() {
+  licznikZaru += 1;
+  return String(licznikZaru);
 }
 
 function markerHtml(court: MapCourt) {
