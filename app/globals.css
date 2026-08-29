@@ -1785,12 +1785,19 @@ select option {
   will-change: transform;
 }
 
+/*
+  Poświata pod kulą przy najechaniu i na pinezce aktywnej idzie w kolorze samej pinezki -
+  trójkę RGB podaje marker w zmiennej `--cien`. Wcześniej stał tu wpisany na sztywno
+  pomarańcz, więc fioletowa pinezka Heatu dostawała pod spodem pomarańczową łunę i
+  wyglądała, jakby ktoś pomylił warstwy. Wartość zapasowa zostaje pomarańczowa, bo takich
+  pinezek jest większość.
+*/
 .court-marker:hover .marker-core,
 .court-marker[data-active="true"] .marker-core {
   transform: scale(1.22);
   box-shadow:
     0 0 0 2px rgba(255, 255, 255, 0.45) inset,
-    0 10px 26px -4px rgba(255, 77, 10, 1) !important;
+    0 10px 26px -4px rgb(var(--cien, 255 77 10)) !important;
 }
 
 .court-marker[data-active="true"] {
@@ -1877,6 +1884,140 @@ select option {
 @media (prefers-reduced-motion: reduce) {
   .kafel-rankingu:hover .kafel-obraz {
     scale: 1;
+  }
+}
+
+/* ---------- losowanie boiska ---------- */
+/*
+  Nakładka na czas losowania. Rozmycie robi tu robotę, której nie zrobi przyciemnienie:
+  mapa pod spodem jest gęsta i kontrastowa, a cienki obrys kostki potrzebuje spokojnego
+  tła, żeby dało się go w ogóle zobaczyć. Przyciemnienie samo w sobie zostawiłoby wszystkie
+  krawędzie na miejscu i kostka zginęłaby w liniach ulic.
+
+  Wejście i wyjście są krótkie z rozmysłem - to przerywnik między dwiema stronami, a nie
+  ekran ładowania. Wszystko razem trwa poniżej półtorej sekundy.
+*/
+.losowanie {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 22px;
+  background: rgba(6, 5, 8, 0.42);
+  backdrop-filter: blur(22px) saturate(120%) brightness(0.72);
+  -webkit-backdrop-filter: blur(22px) saturate(120%) brightness(0.72);
+  animation: losowanie-wejscie 260ms ease both;
+}
+
+.losowanie-znika {
+  animation: losowanie-wyjscie 320ms ease both;
+}
+
+@keyframes losowanie-wejscie {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0) saturate(100%) brightness(1);
+    -webkit-backdrop-filter: blur(0) saturate(100%) brightness(1);
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes losowanie-wyjscie {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/*
+  Kostka nie „obraca się" w kółko - chwieje się w dwie strony i lekko podskakuje. Pełny
+  obrót czyta się jak spinner ładowania, a tu ma być rzut: coś, co zaraz stanie.
+*/
+.losowanie-kostka {
+  width: clamp(108px, 22vw, 168px);
+  height: clamp(108px, 22vw, 168px);
+  filter: drop-shadow(0 0 26px rgba(255, 122, 24, 0.28));
+  animation: losowanie-rzut 900ms cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+/* na wyniku kostka staje prosto i robi jedno krótkie odbicie */
+.losowanie-kostka-stoi {
+  animation: losowanie-stoi 420ms cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+
+@keyframes losowanie-rzut {
+  0% {
+    rotate: -13deg;
+    scale: 0.97;
+    translate: 0 4px;
+  }
+  50% {
+    rotate: 12deg;
+    scale: 1.03;
+    translate: 0 -6px;
+  }
+  100% {
+    rotate: -13deg;
+    scale: 0.97;
+    translate: 0 4px;
+  }
+}
+
+@keyframes losowanie-stoi {
+  0% {
+    rotate: -8deg;
+    scale: 1.02;
+  }
+  60% {
+    rotate: 0deg;
+    scale: 1.12;
+  }
+  100% {
+    rotate: 0deg;
+    scale: 1;
+  }
+}
+
+/* obrys rysuje się linią, tak samo jak kontury boiska i piłki w tle stron */
+.losowanie-obrys {
+  stroke-dasharray: 1;
+  animation: losowanie-rysuj 460ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+@keyframes losowanie-rysuj {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* oczka zapalają się miękko, żeby zmiana ścianki nie migała twardo */
+.losowanie-oczko {
+  transition: opacity 90ms linear;
+}
+
+.losowanie-podpis {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-muted, rgba(245, 245, 247, 0.62));
+  animation: losowanie-wejscie 420ms 120ms ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .losowanie-kostka,
+  .losowanie-obrys,
+  .losowanie-podpis,
+  .losowanie {
+    animation: none;
   }
 }
 

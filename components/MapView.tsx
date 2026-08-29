@@ -1028,9 +1028,17 @@ function markerHtml(court: MapCourt) {
     ? { o1: "245 235 255", o2: "192 132 252", o3: "139 92 246", o4: "91 33 182" }
     : { o1: "255 244 214", o2: "255 176 58", o3: "255 106 14", o4: "255 56 0" };
 
+  /*
+    Kolor poświaty pod kulą przy najechaniu i na pinezce aktywnej. Wcześniej ten cień był
+    wpisany na sztywno w arkuszu, na pomarańczowo i z `!important` - fioletowa pinezka
+    Heatu dostawała więc pod spodem pomarańczową łunę i wyglądała, jakby ktoś pomylił
+    warstwy. Podajemy trójkę RGB, bo arkusz składa z niej kolor z własną przezroczystością.
+  */
+  const cien = court.basketApproved ? "139 92 246" : "255 77 10";
+
   return `
   <div class="pinezka-korpus relative flex flex-col items-center transition-transform duration-200 ease-out"
-       style="filter: drop-shadow(0 6px 14px rgba(0,0,0,.6));--kula:${size}px;--o1:${ogien.o1};--o2:${ogien.o2};--o3:${ogien.o3};--o4:${ogien.o4}">
+       style="filter: drop-shadow(0 6px 14px rgba(0,0,0,.6));--kula:${size}px;--cien:${cien};--o1:${ogien.o1};--o2:${ogien.o2};--o3:${ogien.o3};--o4:${ogien.o4}">
     <span class="pulse-glow absolute -top-2 left-1/2 -translate-x-1/2 rounded-full"
           style="width:${size * 1.8}px;height:${size * 1.8}px;background:radial-gradient(circle, ${glow})"></span>
     <!--

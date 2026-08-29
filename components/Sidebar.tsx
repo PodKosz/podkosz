@@ -13,6 +13,7 @@ import {
   VOIVODESHIPS,
 } from "@/lib/types";
 import { Filters } from "@/lib/filters";
+import { useLosowanie } from "./Losowanie";
 import {
   BallIcon,
   BulbIcon,
@@ -69,6 +70,8 @@ export function Sidebar({
   const [openMore, setOpenMore] = useState(false);
   /** Na komputerze lista filtrów jest schowana pod napisem „filtry”. */
   const [panelOpen, setPanelOpen] = useState(false);
+  /** kostka na czas losowania boiska - `nakladka` doklejamy na końcu drzewa */
+  const { losuj, nakladka } = useLosowanie();
 
   /*
     Gest na telefonie: przeciągnięcie w górę wyciąga arkusz, w dół go schowa.
@@ -218,15 +221,19 @@ export function Sidebar({
             />
           </button>
 
-          <Link
-            href="/losowe"
-            prefetch={false}
+          {/*
+            Przycisk, nie odnośnik: losowanie ma najpierw pokazać kostkę, a dopiero potem
+            przejść na kartę boiska. Adres i tak liczy serwer - `useLosowanie` odpytuje
+            tę samą trasę `/losowe`, tylko przez `fetch`.
+          */}
+          <button
+            onClick={() => losuj("/losowe")}
             className="glass-dim flex items-center gap-2 rounded-full px-4 py-2 text-[11px] uppercase tracking-[0.16em] text-muted transition hover:text-flame"
             title="Wskocz na kartę losowego boiska"
           >
             <DiceIcon className="h-4 w-4" />
             losowe boisko
-          </Link>
+          </button>
         </div>
 
         {panelOpen && (
@@ -309,14 +316,14 @@ export function Sidebar({
                 <ChevronIcon className="h-4 w-4 rotate-180" />
               </span>
             </button>
-            <Link
-              href="/losowe"
-              prefetch={false}
+            {/* wersja na telefon - to samo losowanie z kostką co na dużym ekranie */}
+            <button
+              onClick={() => losuj("/losowe")}
               className="flex shrink-0 items-center gap-2 rounded-full border border-hairline bg-white/5 px-3.5 py-2 text-[11px] uppercase tracking-[0.14em] text-muted"
             >
               <DiceIcon className="h-4 w-4" />
               losowe
-            </Link>
+            </button>
           </div>
         )}
         </div>
@@ -344,6 +351,8 @@ export function Sidebar({
           />
         </div>
       </aside>
+
+      {nakladka}
     </>
   );
 }

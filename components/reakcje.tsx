@@ -1,12 +1,12 @@
 "use client";
 
-import { Suspense } from "react";
+import { useSyncExternalStore } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { useSesja } from "@/lib/sesja";
 import { CheckIn } from "./CheckIn";
 import { FavoriteButton } from "./FavoriteButton";
 import { LikeButton } from "./LikeButton";
+import { useLosowanie } from "./Losowanie";
 import { DiceIcon, PencilIcon } from "./icons";
 
 /**
@@ -67,33 +67,49 @@ export function LinkEdycji({ slug }: { slug: string }) {
 }
 
 /**
- * Pasek „losuj dalej" pojawia się po wejściu z losowania. Parametr adresu czytamy tutaj,
- * w przeglądarce - gdyby czytała go strona na serwerze, karta boiska nie mogłaby być
- * cache'owana (dostęp do parametrów wymusza renderowanie na żądanie). Odczyt parametrów musi
- * przy tym siedzieć w granicy `Suspense`, bo strona jest budowana z góry, kiedy adresu
- * jeszcze nie ma.
+ * Pasek „losuj dalej" pojawia się po wejściu z losowania.
+ *
+ * Parametr adresu czytamy w efekcie, po zamontowaniu - a nie hakiem `useSearchParams`.
+ * Powód jest konkretny: karta boiska jest budowana z góry, więc przy pierwszym renderze
+ * w przeglądarce parametry są jeszcze puste. Warunek `if (!czynne) return null` sprawiał
+ * wtedy, że klient nie rysował NIC, a serwerowy przycisk zostawał w drzewie jako martwy
+ * HTML - React nie przejmował go na własność i kliknięcie nie robiło nic. Dopóki był to
+ * zwykły odnośnik, nikt tego nie zauważył: link działa bez JavaScriptu. Przycisk już nie.
+ *
+ * Odczyt po zamontowaniu daje ten sam wynik na serwerze i przy pierwszym renderze klienta
+ * (nic), więc React ma co hydratować, a przycisk pojawia się klatkę później - już żywy.
  */
 export function PasekLosowania({ slug }: { slug: string }) {
-  return (
-    <Suspense fallback={null}>
-      <PasekLosowaniaTresc slug={slug} />
-    </Suspense>
+  const { losuj, nakladka } = useLosowanie();
+
+  /*
+    `useSyncExternalStore` jest tu dokładnie na swoim miejscu: pierwszy render bierze
+    migawkę serwerową (pusty adres), więc serwer i klient zgadzają się co do joty, a zaraz
+    po hydratacji React przechodzi na migawkę z przeglądarki. Bez tego trzeba by ustawiać
+    stan w efekcie, co jest tym samym w gorszym opakowaniu.
+  */
+  const zapytanie = useSyncExternalStore(
+    (odswiez) => {
+      window.addEventListener("popstate", odswiez);
+      return () => window.removeEventListener("popstate", odswiez);
+    },
+    () => window.location.search,
+    () => ""
   );
-}
 
-function PasekLosowaniaTresc({ slug }: { slug: string }) {
-  const parametry = useSearchParams();
-  if (parametry.get("losowe") !== "1") return null;
-
-  const dziwne = parametry.get("dziwne") === "1";
+  const p = new URLSearchParams(zapytanie);
+  if (p.get("losowe") !== "1") return null;
+  const adres = `/losowe?omin=${slug}${p.get("dziwne") === "1" ? "&dziwne=1" : ""}`;
 
   return (
-    <Link
-      href={`/losowe?omin=${slug}${dziwne ? "&dziwne=1" : ""}`}
-      prefetch={false}
-      className="inline-flex w-fit items-center gap-1.5 rounded-full flame-gradient px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-black transition hover:brightness-110 sm:gap-2 sm:px-4 sm:py-2 sm:text-[12px] sm:tracking-[0.14em]"
-    >
-      <DiceIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> losuj dalej
-    </Link>
+    <>
+      <button
+        onClick={() => losuj(adres)}
+        className="inline-flex w-fit items-center gap-1.5 rounded-full flame-gradient px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-black transition hover:brightness-110 sm:gap-2 sm:px-4 sm:py-2 sm:text-[12px] sm:tracking-[0.14em]"
+      >
+        <DiceIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> losuj dalej
+      </button>
+      {nakladka}
+    </>
   );
 }
