@@ -102,6 +102,8 @@ function el<K extends keyof SVGElementTagNameMap>(nazwa: K): SVGElementTagNameMa
 
 export interface ZarWojewodztwa {
   ustaw(geom: GeoJSON.Geometry | null): void;
+  /** 1 = pełny żar, 0 = wygaszony. Do płynnego gaśnięcia przy oddalaniu kamery. */
+  przygas(wartosc: number): void;
   zniszcz(): void;
 }
 
@@ -206,6 +208,8 @@ export function stworzZarWojewodztwa(map: MlMap, przyrostek: string): ZarWojewod
 
       ksztalt = nowy;
       sciezka.setAttribute("d", nowy.d);
+      /* nowy wybór zaczyna od pełnej jasności - inaczej zostałaby ta z poprzedniego gaśnięcia */
+      svg.style.removeProperty("opacity");
 
       /*
         Plamy dobieramy do rozmiaru województwa, nie do stałej liczby pikseli: mazowieckie
@@ -231,6 +235,17 @@ export function stworzZarWojewodztwa(map: MlMap, przyrostek: string): ZarWojewod
 
       svg.classList.add("zar-woj-widoczny");
       przelicz();
+    },
+
+    /*
+      Wygaszanie w rytm oddalania kamery. Ustawiamy przezroczystość wprost na elemencie,
+      bo to jedyna wartość zmieniana co klatkę - reszta wyglądu zostaje w arkuszu.
+      Działa dopiero po zakończeniu animacji wejścia: dopóki ona trwa, to ona rządzi tą
+      właściwością. Nikt nie zdąży odsunąć kamery w ciągu tych sześciuset milisekund,
+      a gdyby zdążył, żar i tak zgaśnie chwilę później.
+    */
+    przygas(wartosc) {
+      svg.style.opacity = String(Math.max(0, Math.min(1, wartosc)));
     },
 
     zniszcz() {

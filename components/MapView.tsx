@@ -34,6 +34,16 @@ const PIN_ZOOM = 11;
 const PIN_LIMIT = 160;
 /** Ile trwa gaśnięcie wizytówki - musi być zgodne z `.karta-mapy-znika` w globals.css. */
 const CZAS_ZNIKANIA = 180;
+/**
+ * Gaśnięcie żaru przy oddalaniu kamery, w stopniach przybliżenia.
+ *
+ * `MARTWA_STREFA` to zapas na drobne poprawki kadru - bezwładność rolki, odbicie po
+ * szczypnięciu, dociągnięcie po dolocie. W tym zakresie żar świeci pełnią, bo to jeszcze
+ * nie jest „chcę wyjść". Dalej gaśnie liniowo przez `ZAKRES_GASNIECIA`, a na końcu
+ * wybór się kasuje i mapa wraca do kadru na Polskę.
+ */
+const MARTWA_STREFA = 0.25;
+const ZAKRES_GASNIECIA = 1;
 
 // Worker MapLibre serwujemy z /public - patrz scripts/copy-maplibre-worker.mjs.
 setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
@@ -210,13 +220,13 @@ export function MapView({
    */
   const [wojKlikniete, setWojKlikniete] = useState<string | null>(null);
   /**
-   * Przybliżenie, poniżej którego wybór się kasuje.
+   * Przybliżenie osiągnięte po dolocie do województwa - punkt odniesienia dla gaśnięcia.
    *
    * Ustawiane po zakończeniu dolotu, nie przy kliknięciu: samo `fitBounds` przejeżdża
-   * przez pośrednie wartości przybliżenia i uzbrojony wcześniej próg wyzwoliłby powrót
-   * w połowie własnej animacji.
+   * przez pośrednie wartości przybliżenia i uzbrojony wcześniej punkt odniesienia
+   * wygaszałby żar w połowie własnej animacji.
    */
-  const progWyjsciaRef = useRef<number | null>(null);
+  const zoomWejsciaRef = useRef<number | null>(null);
   /** znacznik czasu dotknięcia pinezki - chroni wizytówkę przed klikiem mapy z tego samego dotknięcia */
   const lastPinTapRef = useRef(0);
   /** wizytówka na dotyku - z jej położenia liczymy, gdzie ma wylądować pinezka */
@@ -386,15 +396,24 @@ export function MapView({
     });
 
     /*
-      Wyjście z województwa własnym gestem. Rolka albo szczypanie na telefonie - w obu
-      przypadkach schodzimy poniżej progu i mapa wraca do kadru na Polskę. Sprawdzamy
-      przy każdej zmianie przybliżenia, ale próg gasimy od razu po wykryciu, żeby powrót
-      do kadru krajowego (który sam zmienia przybliżenie) nie wywołał się drugi raz.
+      Wyjście z województwa własnym gestem, ale nie skokiem: żar gaśnie w rytm oddalania.
+      Rolka i szczypanie na telefonie wysyłają zdarzenie zmiany przybliżenia w sposób
+      ciągły, więc przezroczystość idzie za palcem - widać, że wyjście się zbliża, zanim
+      nastąpi. Dopiero na zerze kasujemy wybór i wracamy do kadru na Polskę.
+
+      Próg gasimy od razu po wykryciu, żeby sam powrót (który przecież zmienia
+      przybliżenie) nie wywołał tej samej ścieżki drugi raz.
     */
     map.on("zoom", () => {
-      const prog = progWyjsciaRef.current;
-      if (prog === null || map.getZoom() >= prog) return;
-      progWyjsciaRef.current = null;
+      const wejscie = zoomWejsciaRef.current;
+      if (wejscie === null) return;
+
+      const dolna = wejscie - MARTWA_STREFA - ZAKRES_GASNIECIA;
+      const jasnosc = (map.getZoom() - dolna) / ZAKRES_GASNIECIA;
+      zarRef.current?.przygas(jasnosc);
+
+      if (jasnosc > 0) return;
+      zoomWejsciaRef.current = null;
       setWojKlikniete(null);
     });
     /*
@@ -838,10 +857,8 @@ export function MapView({
   /*
     Kadr na kliknięte województwo i powrót po odsunięciu.
 
-    Dolot kończy się ustawieniem progu wyjścia poniżej osiągniętego przybliżenia. Zapas
-    trzech dziesiątych stopnia jest po to, żeby drobne poprawki kadru (bezwładność rolki,
-    odbicie po szczypnięciu) nie liczyły się jako „chcę wyjść" - a jednocześnie żeby
-    świadomy ruch w tył zadziałał od razu, bez odsuwania się przez pół kraju.
+    Dolot kończy się zapamiętaniem osiągniętego przybliżenia - od niego liczy się potem
+    gaśnięcie żaru przy oddalaniu kamery (patrz obsługa zdarzenia `zoom` wyżej).
   */
   useEffect(() => {
     const map = mapRef.current;
@@ -850,7 +867,7 @@ export function MapView({
     const szerokosc = containerRef.current?.clientWidth ?? 1024;
 
     if (!wojKlikniete) {
-      progWyjsciaRef.current = null;
+      zoomWejsciaRef.current = null;
       return;
     }
 
@@ -866,7 +883,7 @@ export function MapView({
 
       const koniec = () => {
         if (!aktualne) return;
-        progWyjsciaRef.current = map.getZoom() - 0.3;
+        zoomWejsciaRef.current = map.getZoom();
       };
       map.once("moveend", koniec);
 

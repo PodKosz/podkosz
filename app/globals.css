@@ -2050,9 +2050,15 @@ select option {
   potrafiło utknąć na zerze - zaczyna się w tej samej klatce, w której warstwa trafia do
   drzewa mapy, a wtedy przeglądarka nie ma poprzedniej wartości, od której ma jechać.
   Animacja ma własny punkt startu wpisany w klatki i tego problemu nie ma.
+
+  Bez `both` z rozmysłem: po zakończeniu animacji przezroczystość wraca pod kontrolę
+  kaskady, a wtedy wartość ustawiona wprost na elemencie (gaśnięcie w rytm oddalania
+  kamery) ma nad nią pierwszeństwo. Z `both` animacja trzymałaby jedynkę na zawsze
+  i wygaszanie nie miałoby czego zmieniać.
 */
 .zar-woj-widoczny {
-  animation: zar-woj-wejscie 620ms ease both;
+  opacity: 1;
+  animation: zar-woj-wejscie 620ms ease;
 }
 
 @keyframes zar-woj-wejscie {
