@@ -14,7 +14,7 @@ export async function supabaseServer() {
         try {
           list.forEach(({ name, value, options }) => store.set(name, value, options));
         } catch {
-          // W komponentach serwerowych ciasteczek nie da się ustawić - odświeża je middleware.
+          // W komponentach serwerowych ciasteczek nie da się ustawić - odświeża je proxy.
         }
       },
     },

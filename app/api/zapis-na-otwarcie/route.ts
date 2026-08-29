@@ -1,3 +1,4 @@
+import { nadawca } from "@/lib/mail/nadawca";
 import { supabaseServer } from "@/lib/supabase/server";
 import {
   htmlPotwierdzenia,
@@ -16,7 +17,7 @@ import {
  * zasypywania cudzej skrzynki. Chroni przed tym klucz główny tabeli: list leci TYLKO
  * wtedy, gdy wiersz naprawdę powstał. Powtórzony adres dostaje spokojne „już jesteś
  * na liście" i żadnej wiadomości - a że adres da się zapisać tylko raz, to samo dotyczy
- * listu. Zablokowane adresy IP odsiewa wcześniej middleware.
+ * listu. Zablokowane adresy IP odsiewa wcześniej proxy (dawne middleware).
  */
 export const dynamic = "force-dynamic";
 
@@ -58,10 +59,14 @@ export async function POST(request: Request) {
     mieć adres bez potwierdzenia niż stracić zapis przez awarię dostawcy.
   */
   const key = process.env.RESEND_API_KEY;
-  const from = process.env.FEEDBACK_FROM ?? "PodKosz <onboarding@resend.dev>";
+  const { from, awaryjny } = nadawca();
   const odpowiedzi = process.env.FEEDBACK_TO;
 
-  if (!key) return Response.json({ zapisany: true, nowy: true, mail: false });
+  /*
+    Zapis do bazy już się udał, więc odpowiadamy sukcesem - brakuje tylko potwierdzenia
+    na maila. `mail: false` mówi wprost, że listu nie było.
+  */
+  if (!key || awaryjny) return Response.json({ zapisany: true, nowy: true, mail: false });
 
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",

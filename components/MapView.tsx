@@ -41,7 +41,17 @@ setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 const STYLE: StyleSpecification = {
   version: 8,
   // fonts.openmaptiles.org oddaje HTML zamiast pliku .pbf - Protomaps serwuje poprawne glify
-  glyphs: "https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf",
+  /*
+    Glify trzymamy u siebie, w `public/mapa/fonts`. Wcześniej leciały z GitHub Pages
+    projektu Protomaps - działało, ale to cudze repozytorium, którego nikt nam nie
+    obiecał utrzymywać. Gdyby zniknęło albo zmieniło układ katalogów, z mapy zniknęłyby
+    wszystkie napisy, a my dowiedzielibyśmy się o tym od kogoś, kto to zauważy.
+
+    Trzy zakresy wystarczają na polską mapę: 0-255 to łacina podstawowa, 256-511 dodaje
+    ogonki i kreski (Świdnica, Łódź, Gdańsk), 8192-8447 to znaki interpunkcyjne, po które
+    sięga MapLibre. Razem niecałe pół megabajta, wczytywane leniwie i tylko raz.
+  */
+  glyphs: "/mapa/fonts/{fontstack}/{range}.pbf",
   sources: {
     carto: podkladMapy("dark_nolabels"),
     woj: { type: "geojson", data: "/geo/wojewodztwa.geojson" },
@@ -618,7 +628,8 @@ export function MapView({
         filter: ["has", "point_count"],
         layout: {
           "text-field": ["get", "point_count_abbreviated"],
-          "text-font": ["Noto Sans Bold"],
+          /* w zestawie glifów nie ma odmiany Bold - Medium jest najgrubszą dostępną */
+          "text-font": ["Noto Sans Medium"],
           "text-size": 13,
         },
         paint: { "text-color": "#12060a" },

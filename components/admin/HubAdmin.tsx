@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Kokpit, usePanelGlowny } from "@/lib/kokpit";
 import { DB_LIMIT, STORAGE_LIMIT, formatBytes } from "@/lib/stats";
@@ -197,7 +197,122 @@ export function HubAdmin({ onGoTo }: { onGoTo: (widok: string) => void }) {
           <Pasmo etykieta="Baza danych" uzyte={dane.db_bytes} limit={DB_LIMIT} />
         </div>
       </section>
+
+      <KonfiguracjaKafel />
     </div>
+  );
+}
+
+interface Pozycja {
+  klucz: string;
+  ustawione: boolean;
+  waga: "krytyczne" | "wazne" | "opcjonalne";
+  skutek: string;
+}
+
+interface StanKonfiguracji {
+  pozycje: Pozycja[];
+  zaslona: boolean;
+  srodowisko: string;
+}
+
+/**
+ * Stan konfiguracji.
+ *
+ * Najgorsze awarie tego projektu nie polegały na tym, że coś rzucało błędem, tylko że coś
+ * po cichu nie działało: brakująca zmienna od nadawcy poczty nie wywala niczego - po
+ * prostu maile powitalne nie docierają. Ten kafelek istnieje po to, żeby takie rzeczy
+ * dało się zobaczyć, a nie odkryć po miesiącu.
+ *
+ * Pokazujemy wyłącznie, czy zmienna JEST ustawiona - nigdy jej wartości.
+ */
+function KonfiguracjaKafel() {
+  const [stan, setStan] = useState<StanKonfiguracji | null>(null);
+
+  useEffect(() => {
+    let aktualne = true;
+    void (async () => {
+      try {
+        const res = await fetch("/api/konfiguracja");
+        if (!res.ok) return;
+        const dane = (await res.json()) as StanKonfiguracji;
+        if (aktualne) setStan(dane);
+      } catch {
+        /* brak odpowiedzi nie może wywrócić kokpitu */
+      }
+    })();
+    return () => {
+      aktualne = false;
+    };
+  }, []);
+
+  if (!stan) return null;
+
+  const braki = stan.pozycje.filter((p) => !p.ustawione);
+  const pilne = braki.filter((p) => p.waga !== "opcjonalne");
+
+  return (
+    <section>
+      <Pasek
+        tytul="Konfiguracja"
+        opis={
+          pilne.length
+            ? `${pilne.length} ${plural(pilne.length, ["ustawienie wymaga", "ustawienia wymagają", "ustawień wymaga"])} uwagi.`
+            : braki.length
+              ? "Wszystko ważne ustawione, brakuje tylko dodatków."
+              : "Wszystko ustawione."
+        }
+      />
+
+      <div className="glass mt-4 rounded-[22px] p-5">
+        <div className="flex flex-wrap items-center gap-2 text-[12px]">
+          <span
+            className={`rounded-full px-3 py-1 font-semibold ${
+              stan.zaslona ? "bg-flame/15 text-flame" : "bg-white/10 text-muted"
+            }`}
+          >
+            {stan.zaslona ? "zasłona włączona - serwis niewidoczny" : "serwis otwarty"}
+          </span>
+          <span className="text-faint">środowisko: {stan.srodowisko}</span>
+        </div>
+
+        <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+          {stan.pozycje.map((p) => (
+            <li
+              key={p.klucz}
+              className={`rounded-2xl border px-3.5 py-2.5 ${
+                p.ustawione
+                  ? "border-hairline bg-white/4"
+                  : p.waga === "opcjonalne"
+                    ? "border-hairline bg-white/4"
+                    : "border-ember/40 bg-ember/8"
+              }`}
+            >
+              <p className="flex items-center gap-2 text-[12px] font-medium">
+                <span
+                  className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                    p.ustawione
+                      ? "bg-emerald-400"
+                      : p.waga === "opcjonalne"
+                        ? "bg-white/25"
+                        : "bg-ember"
+                  }`}
+                />
+                <code className="truncate">{p.klucz}</code>
+              </p>
+              {!p.ustawione && (
+                <p className="mt-1 text-[11px] leading-snug text-muted">{p.skutek}</p>
+              )}
+            </li>
+          ))}
+        </ul>
+
+        <p className="mt-4 text-[11px] leading-snug text-faint">
+          Zmienne ustawia się na Vercelu w Settings → Environment Variables. Pełna lista
+          z opisami leży w repozytorium w pliku <code>.env.example</code>.
+        </p>
+      </div>
+    </section>
   );
 }
 

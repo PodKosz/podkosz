@@ -13,8 +13,15 @@
  */
 export const ZASLONA = process.env.PODKOSZ_OTWARTA !== "1";
 
-/** Klucz wpuszczający bez konta. Można nadpisać zmienną środowiskową. */
-export const KLUCZ_WEJSCIA = process.env.PODKOSZ_KLUCZ ?? "wpusc-mnie-na-kosz";
+/**
+ * Klucz wpuszczający bez konta - wyłącznie ze zmiennej środowiskowej.
+ *
+ * Wcześniej stała tu wartość domyślna wpisana w kod. Repozytorium jest publiczne, więc
+ * ten „sekret" mógł przeczytać każdy i wejść za zasłonę linkiem. Bez ustawionej zmiennej
+ * furtka po prostu nie istnieje - to bezpieczna strona pomyłki, bo administrator i tak
+ * wchodzi przez zalogowanie się na swoje konto.
+ */
+export const KLUCZ_WEJSCIA = process.env.PODKOSZ_KLUCZ?.trim() || null;
 
 /** Ciasteczko z przepustką - trzyma się rok, żeby nie wklejać klucza za każdym razem. */
 export const CIASTKO_WEJSCIA = "podkosz-przepustka";
@@ -25,7 +32,7 @@ export const SCIEZKA_ZASLONY = "/wkrotce";
 /**
  * Jak długo pamiętamy wynik sprawdzenia adresu IP (w milisekundach).
  *
- * Blokady IP sprawdza middleware przy każdym żądaniu, więc bez pamięci byłoby to zapytanie
+ * Blokady IP sprawdza proxy przy każdym żądaniu, więc bez pamięci byłoby to zapytanie
  * do bazy za każdym razem. Adres niezablokowany trzymamy dłużej (to przypadek typowy),
  * zablokowany krócej, żeby zdjęcie blokady działało od razu.
  */

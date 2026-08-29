@@ -1,5 +1,6 @@
 import { getSessionUser, supabaseServer } from "@/lib/supabase/server";
 import { htmlOtwarcia, tekstOtwarcia, tematOtwarcia } from "@/lib/mail/otwarcie";
+import { POWOD_BRAK_NADAWCY, nadawca } from "@/lib/mail/nadawca";
 
 /**
  * Rozesłanie wiadomości o otwarciu serwisu do osób zapisanych na stronie „Już niedługo".
@@ -33,10 +34,12 @@ export async function POST() {
   if (!user?.isAdmin) return Response.json({ blad: "tylko administrator" }, { status: 403 });
 
   const key = process.env.RESEND_API_KEY;
-  const from = process.env.FEEDBACK_FROM ?? "PodKosz <onboarding@resend.dev>";
+  const { from, awaryjny } = nadawca();
   const odpowiedzi = process.env.FEEDBACK_TO;
 
   if (!key) return Response.json({ wyslane: 0, powod: "brak konfiguracji poczty" });
+  /* adresem testowym Resend nie da się napisać do obcych - lepiej nie udawać, że poszło */
+  if (awaryjny) return Response.json({ wyslane: 0, powod: POWOD_BRAK_NADAWCY });
 
   const supabase = await supabaseServer();
   if (!supabase) return Response.json({ wyslane: 0, powod: "brak bazy" }, { status: 500 });

@@ -32,6 +32,8 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# wzorzec bez wartości - ma być w repozytorium, bo to jedyna lista wymaganych zmiennych
+!.env.example
 
 # vercel
 .vercel

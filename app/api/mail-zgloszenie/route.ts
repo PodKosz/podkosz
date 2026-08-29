@@ -1,3 +1,4 @@
+import { POWOD_BRAK_NADAWCY, nadawca } from "@/lib/mail/nadawca";
 import { supabaseServer } from "@/lib/supabase/server";
 import { SITE_URL } from "@/lib/site";
 
@@ -15,7 +16,9 @@ import { SITE_URL } from "@/lib/site";
  */
 export async function POST(request: Request) {
   const key = process.env.RESEND_API_KEY;
-  const from = process.env.FEEDBACK_FROM ?? "PodKosz <onboarding@resend.dev>";
+  const { from, awaryjny } = nadawca();
+  /* adresem testowym Resend nie da się napisać do obcych - lepiej nie udawać, że poszło */
+  if (awaryjny) return Response.json({ sent: false, reason: POWOD_BRAK_NADAWCY });
 
   let body: {
     submissionId?: string;

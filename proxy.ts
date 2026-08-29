@@ -27,6 +27,7 @@ const ZAWSZE_DOSTEPNE = [
   "/opengraph-image",
   "/api/zapis-na-otwarcie",
   "/api/obecnosc",
+  "/api/utrzymanie",
 ];
 
 /** Wynik sprawdzenia adresu IP - żeby nie pytać bazy przy każdym żądaniu. */
@@ -76,7 +77,7 @@ napisz na opinie@podkosz.pl.</p>
  * trzyma zasłonę: wszystko poza stroną „Już niedługo" widzą tylko zalogowani i osoby
  * z przepustką.
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const sciezka = request.nextUrl.pathname;
 
   let response = NextResponse.next({ request });
@@ -126,7 +127,8 @@ export async function middleware(request: NextRequest) {
   if (!ZASLONA) return response;
 
   /* Klucz w adresie zapisuje przepustkę w ciasteczku i wraca na czysty adres. */
-  if (request.nextUrl.searchParams.get("wpusc") === KLUCZ_WEJSCIA) {
+  /* bez ustawionego klucza furtka nie istnieje - `null === null` nie może jej otworzyć */
+  if (KLUCZ_WEJSCIA && request.nextUrl.searchParams.get("wpusc") === KLUCZ_WEJSCIA) {
     const czysty = request.nextUrl.clone();
     czysty.searchParams.delete("wpusc");
     const przekierowanie = NextResponse.redirect(czysty);

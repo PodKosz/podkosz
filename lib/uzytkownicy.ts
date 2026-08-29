@@ -309,7 +309,7 @@ export interface BanIP {
 /**
  * Blokady IP działają obok blokad kont: zgłoszenia, opinie i raporty można wysłać bez
  * logowania, więc czasem trzeba odciąć samo źródło. Zablokowany adres nie wchodzi nawet
- * na stronę - odsiewa go middleware, jeszcze przed jakimkolwiek zapisem.
+ * na stronę - odsiewa go proxy, jeszcze przed jakimkolwiek zapisem.
  */
 export function useBanyIP() {
   const [items, setItems] = useState<BanIP[]>([]);

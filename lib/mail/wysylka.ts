@@ -1,3 +1,4 @@
+import { POWOD_BRAK_NADAWCY, nadawca } from "./nadawca";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ZASLONA, CIASTKO_WEJSCIA } from "@/lib/zaslona";
 import {
@@ -64,7 +65,9 @@ export async function wyslijPowitanie(
   const key = process.env.RESEND_API_KEY;
   if (!key) return { wyslano: false, powod: "brak konfiguracji poczty" };
 
-  const from = process.env.FEEDBACK_FROM ?? "PodKosz <onboarding@resend.dev>";
+  const { from, awaryjny } = nadawca();
+  /* adresem testowym Resend nie da się napisać do obcych - lepiej nie udawać, że poszło */
+  if (awaryjny) return { wyslano: false, powod: POWOD_BRAK_NADAWCY };
   const odpowiedzi = process.env.FEEDBACK_TO;
 
   const { data, error } = await supabase.rpc("powitanie_zaklep", {

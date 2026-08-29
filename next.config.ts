@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 /**
  * Nagłówki bezpieczeństwa dla całego serwisu.
  * Nagłówki dobrane tak, żeby nic nie psuły działania aplikacji - pełne CSP ze
- * `script-src` wymagałoby nonce'ów generowanych w middleware.
+ * `script-src` wymagałoby nonce'ów generowanych w proxy.
  */
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -45,8 +45,20 @@ const nextConfig: NextConfig = {
     kilkadziesiąt razy mniej bajtów niż surowe pliki.
   */
   images: {
+    /*
+      Nazwę hosta bierzemy ze zmiennej środowiskowej, a nie z wpisanego na sztywno adresu.
+      Wcześniej stał tu identyfikator konkretnego projektu Supabase - przy przeniesieniu
+      bazy (albo osobnym projekcie na testy) zdjęcia przestawały się wyświetlać z błędem
+      o niedozwolonej domenie, a poprawka wymagała zmiany w kodzie zamiast w ustawieniach.
+    */
     remotePatterns: [
-      { protocol: "https", hostname: "muyhxifftgjnygyrbjqn.supabase.co", pathname: "/storage/**" },
+      {
+        protocol: "https",
+        hostname: new URL(
+          process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://localhost"
+        ).hostname,
+        pathname: "/storage/**",
+      },
     ],
     formats: ["image/avif", "image/webp"],
     /*
