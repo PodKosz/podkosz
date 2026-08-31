@@ -1,66 +1,98 @@
-﻿import type { Metadata } from "next";
-import { listCourts, listRankingOdkrywcow } from "@/lib/repo";
-import { RankingTabs } from "@/components/RankingTabs";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { listCourts } from "@/lib/repo";
+import { RankingBoisk } from "@/components/ranking/RankingBoisk";
 import { HoopOutline } from "@/components/HoopOutline";
 
 export const metadata: Metadata = {
-  title: "Ranking - PodKosz",
+  title: "Ranking boisk - PodKosz",
   description:
-    "Najpopularniejsze boiska do koszykówki w Polsce według liczby lajków oraz ranking osób, które dodały ich najwięcej.",
+    "Najgorętsze boiska do koszykówki w Polsce. Kolejność wyznaczają płonące piłki od społeczności - podpalaj te, na których dobrze się gra.",
 };
 
 /* Kolejność zmienia podpalanie, a to unieważnia znacznik boisk - pięć minut wystarczy. */
 export const revalidate = 300;
 
 export default async function RankingPage() {
-  const [courts, odkrywcy] = await Promise.all([listCourts(), listRankingOdkrywcow()]);
+  const courts = await listCourts();
   const sorted = [...courts].sort((a, b) => b.likes - a.likes);
 
   return (
-    <main className="relative mx-auto min-h-dvh max-w-5xl px-6 pb-24 pt-28">
-      {/*
-        Płynne plamy gradientu za nagłówkiem. Siedzą w warstwie na całą szerokość okna, a nie
-        w kolumnie tekstu: przycięte do kolumny kończyły się widoczną, twardą krawędzią.
-        Same plamy wygasają do przezroczystości długo przed swoim brzegiem, więc światło
-        rozpływa się w tle bez żadnej linii.
-      */}
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <span
-          className="liquid-blob left-[4vw] top-[-6rem] h-[520px] w-[680px]"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(255,122,24,.20) 0%, rgba(255,77,10,.07) 46%, rgba(255,77,10,.02) 66%, transparent 80%)",
-          }}
-        />
-        <span
-          className="liquid-blob right-[2vw] top-[8vh] h-[460px] w-[560px]"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(255,178,92,.13) 0%, rgba(255,178,92,.04) 48%, transparent 78%)",
-          }}
-        />
-      </div>
+    /*
+      Szeroka kolumna, nie wąska wstęga. Ranking jest siatką zdjęć, a nie artykułem - przy
+      1024 pikselach na monitorze zostawało czarne pole po obu stronach i strona wyglądała
+      na niedokończoną. 1600 pikseli mieści cztery karty w rzędzie i wciąż trzyma długość
+      wiersza w ryzach tam, gdzie jest tekst.
+    */
+    <main className="relative mx-auto min-h-dvh w-full max-w-[1600px] px-5 pb-28 pt-28 sm:px-8">
+      <Tlo />
 
-      {/*
-        Zarys kosza od przodu pod całą stroną - ta sama kreska co kontur boiska na „O nas",
-        tylko widok z drugiej strony: tablica, obręcz i siatka. Warstwa jest przyklejona do
-        okna i nieklikalna, a rysunek trzyma własne proporcje (`meet` w SVG), bo rozciągnięty
-        kosz od razu wygląda jak błąd.
-      */}
+      <header className="mb-14 max-w-2xl">
+        <p className="text-[12px] uppercase tracking-[0.22em] text-flame">Ranking</p>
+        <h1 className="mt-3 text-[clamp(34px,5.5vw,62px)] font-semibold leading-[1.02] tracking-[-0.03em]">
+          Najgorętsze boiska w Polsce
+        </h1>
+        <p className="mt-5 text-[clamp(15px,1.4vw,17px)] leading-relaxed text-muted">
+          Kolejność wyznaczają płonące piłki od społeczności. Podpalaj boiska, na których
+          dobrze się gra - to jedyne, co przesuwa je w górę.
+        </p>
+        <Link
+          href="/gracze"
+          className="mt-6 inline-flex items-center gap-2 text-[13px] uppercase tracking-[0.16em] text-muted transition hover:text-flame"
+        >
+          zobacz ranking graczy <span aria-hidden>→</span>
+        </Link>
+      </header>
+
+      <RankingBoisk courts={sorted} />
+    </main>
+  );
+}
+
+/**
+ * Tło strony: kosz w lewym dolnym rogu i ciepłe plamy światła.
+ *
+ * Kosz stał wcześniej wyśrodkowany u góry, dokładnie pod nagłówkiem - kreska przebijała
+ * przez tekst i rysunek czytał się jak przypadkowa tekstura. Z narożnika daje ten sam
+ * sygnał, a treść zostaje na czystym tle. Wychodzi poza obie krawędzie, więc widać jego
+ * fragment, nie całą ikonę - to różnica między tłem a naklejką.
+ *
+ * Obie warstwy są przyklejone do okna (`fixed`): rysunek trzyma wtedy proporcje niezależnie
+ * od długości strony, a plamy szersze od ekranu nie dorzucają poziomego przewijania.
+ */
+function Tlo() {
+  return (
+    <>
       <div
-        className="kosz-tlo kontur-rysowany pointer-events-none fixed left-1/2 top-[-14vh] -z-10 aspect-[480/440] w-[min(1600px,210vw)] sm:w-[min(1720px,132vw)]"
+        className="kosz-tlo kontur-rysowany pointer-events-none fixed bottom-[-22vh] left-[-26vw] -z-10 aspect-[480/440] w-[min(1200px,150vw)] sm:bottom-[-26vh] sm:left-[-14vw] sm:w-[min(1500px,92vw)]"
         aria-hidden
       >
-        <HoopOutline uid="ranking" />
+        <HoopOutline uid="ranking-boisk" />
       </div>
 
-      {odkrywcy.length || sorted.length ? (
-        <RankingTabs courts={sorted} odkrywcy={odkrywcy} />
-      ) : (
-        <p className="glass rounded-[24px] p-10 text-center text-[15px] text-muted">
-          Baza jest jeszcze pusta - dodaj pierwsze boisko.
-        </p>
-      )}
-    </main>
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden>
+        <span
+          className="liquid-blob left-[-10vw] top-[-8rem] h-[560px] w-[720px]"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(255,122,24,.22) 0%, rgba(255,77,10,.07) 48%, transparent 76%)",
+          }}
+        />
+        <span
+          className="liquid-blob right-[-8vw] top-[26vh] h-[560px] w-[660px]"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(255,178,92,.14) 0%, rgba(255,122,24,.04) 50%, transparent 78%)",
+          }}
+        />
+        <span
+          className="liquid-blob bottom-[-14rem] left-[24vw] h-[520px] w-[680px]"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(255,77,10,.16) 0%, rgba(255,122,24,.05) 52%, transparent 76%)",
+          }}
+        />
+      </div>
+    </>
   );
 }

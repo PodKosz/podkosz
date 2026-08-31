@@ -37,7 +37,10 @@ export function SiteFooter() {
             mapa
           </Link>
           <Link href="/ranking" className="transition hover:text-flame">
-            ranking
+            ranking boisk
+          </Link>
+          <Link href="/gracze" className="transition hover:text-flame">
+            ranking graczy
           </Link>
           <Link href="/dodaj" className="transition hover:text-flame">
             dodaj boisko

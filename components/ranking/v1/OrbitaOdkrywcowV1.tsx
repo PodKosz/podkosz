@@ -4,9 +4,9 @@ import { useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import type { OdkrywcaRanking } from "@/lib/repo";
 import { plural } from "@/lib/site";
-import { CourtPhoto } from "../CourtPhoto";
-import { IkonaOdznaczenia } from "../IkonaOdznaczenia";
-import { FireBallIcon } from "../icons";
+import { CourtPhoto } from "@/components/CourtPhoto";
+import { IkonaOdznaczenia } from "@/components/IkonaOdznaczenia";
+import { FireBallIcon } from "@/components/icons";
 
 /**
  * Top 5 odkrywców jako konstelacja.
@@ -53,7 +53,7 @@ const UKLAD = [
   { dy: "30px", obrot: "56s", kierunek: "normal" },
 ] as const;
 
-export function OrbitaOdkrywcow({ odkrywcy }: { odkrywcy: OdkrywcaRanking[] }) {
+export function OrbitaOdkrywcowV1({ odkrywcy }: { odkrywcy: OdkrywcaRanking[] }) {
   const maks = Math.max(...odkrywcy.map((o) => o.courts), 1);
   const miejsca = Array.from({ length: MIEJSC_W_KONSTELACJI }, (_, i) => odkrywcy[i] ?? null);
 

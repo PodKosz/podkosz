@@ -5,15 +5,23 @@ import Link from "next/link";
 import { Court, TYPE_LABEL } from "@/lib/types";
 import type { OdkrywcaRanking } from "@/lib/repo";
 import { plural } from "@/lib/site";
-import { CourtPhoto } from "./CourtPhoto";
-import { MIEJSC_W_KONSTELACJI, OrbitaOdkrywcow } from "./ranking/OrbitaOdkrywcow";
+import { CourtPhoto } from "@/components/CourtPhoto";
+import { MIEJSC_W_KONSTELACJI, OrbitaOdkrywcowV1 } from "./OrbitaOdkrywcowV1";
 import {
   ArrowLeftIcon,
   BasketApprovedBadge,
   FireBallIcon,
   FunnyBadge,
   PinIcon,
-} from "./icons";
+} from "@/components/icons";
+
+/*
+  ARCHIWUM - „rankingi V1".
+  Pierwsza warstwa wizualna obu rankingów: karuzela okładek dla boisk i konstelacja
+  avatarów dla graczy. Zastąpiona osobnymi stronami `/ranking` i `/gracze`. Leży tu
+  w całości, bo to jedyny sposób, żeby dało się ją obejrzeć i porównać bez grzebania
+  w historii - patrz `components/ranking/v1/README.md`.
+*/
 
 /** Ile boisk pokazujemy w karuzeli okładek, a ile w liście pod nią. */
 const TOP = 10;
@@ -22,7 +30,7 @@ const LISTA_DO = 25;
 /** Konstelacja bierze pięć pierwszych miejsc, reszta idzie listą. */
 const TOP_GRACZY = 5;
 
-export function RankingTabs({
+export function RankingTabsV1({
   courts,
   odkrywcy,
 }: {
@@ -417,7 +425,7 @@ function Konstelacja({ odkrywcy }: { odkrywcy: OdkrywcaRanking[] }) {
       </h2>
 
       <div className="py-4 sm:py-8">
-        <OrbitaOdkrywcow odkrywcy={odkrywcy} />
+        <OrbitaOdkrywcowV1 odkrywcy={odkrywcy} />
       </div>
     </section>
   );

@@ -446,42 +446,79 @@ body {
 /* ---------- Rysunki w tle ---------- */
 
 /*
-  Kosz na stronie rankingu żyje przy przewijaniu: schodzi nieco wolniej niż treść, lekko
-  rośnie i przygasa. Animacja jest sterowana pozycją przewijania (`animation-timeline`),
-  więc nie ma tu ani jednego nasłuchu w JS - przeglądarka liczy to na wątku kompozytora,
-  a strona nie gubi płynności. Gdzie tej funkcji nie ma, rysunek stoi nieruchomo.
+  Rysunki pod rankingami żyją przy przewijaniu: dryfują wolniej niż treść, lekko rosną
+  i przygasają. Ruchem steruje pozycja przewijania (`animation-timeline`), więc nie ma tu
+  ani jednego nasłuchu w JS - przeglądarka liczy to na wątku kompozytora i strona nie gubi
+  płynności. Gdzie tej funkcji nie ma, rysunek stoi nieruchomo i to jest w porządku.
+
+  Oba siedzą w lewym dolnym rogu i wychodzą poza obie krawędzie, więc widać ich FRAGMENT,
+  a nie całą ikonę - to różnica między tłem a naklejką. Wcześniej kosz stał wyśrodkowany
+  u góry, dokładnie pod nagłówkiem: kreska przebijała przez tekst i całość czytała się jak
+  przypadkowa tekstura.
+
+  Kierunki dryfu są przeciwne (kosz w górę, rzut w dół), żeby dwie strony rankingów nie
+  wyglądały na jedną z podmienionym rysunkiem.
 */
 .kosz-tlo {
-  translate: -50% 0;
-  rotate: -3deg;
+  rotate: -6deg;
   opacity: 0.2;
 }
 
+.rzut-tlo {
+  rotate: 4deg;
+  opacity: 0.22;
+}
+
 @supports (animation-timeline: scroll()) {
-  .kosz-tlo {
-    animation: kosz-parallaksa linear both;
+  .kosz-tlo,
+  .rzut-tlo {
     animation-timeline: scroll(root block);
     animation-range: 0 220vh;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+  }
+
+  .kosz-tlo {
+    animation-name: kosz-parallaksa;
+  }
+  .rzut-tlo {
+    animation-name: rzut-parallaksa;
   }
 
   @keyframes kosz-parallaksa {
     from {
-      translate: -50% 0;
-      rotate: -3deg;
+      translate: 0 0;
+      rotate: -6deg;
       scale: 1;
       opacity: 0.2;
     }
     to {
-      translate: -50% 14vh;
-      rotate: -0.6deg;
-      scale: 1.07;
+      translate: 3vw -13vh;
+      rotate: -1.5deg;
+      scale: 1.08;
       opacity: 0.1;
+    }
+  }
+
+  @keyframes rzut-parallaksa {
+    from {
+      translate: 0 0;
+      rotate: 4deg;
+      scale: 1;
+      opacity: 0.22;
+    }
+    to {
+      translate: -3vw 10vh;
+      rotate: 0deg;
+      scale: 1.1;
+      opacity: 0.11;
     }
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .kosz-tlo {
+  .kosz-tlo,
+  .rzut-tlo {
     animation: none;
   }
 }
@@ -1873,6 +1910,24 @@ select option {
   opacity: 1;
 }
 
+/*
+  Kadr zwycięzcy. Na wąskim ekranie zwykła proporcja, bo karta stoi sama. Od progu `lg`
+  rozciąga się na całą wolną wysokość: obok stoi kolumna z dwiema mniejszymi kartami
+  i podium musi kończyć się równo, a wysokość ma dobierać ZDJĘCIE, nie opis - inaczej
+  między nazwą a listwą faktów zostaje pusta dziura na jedną trzecią karty.
+*/
+.karta-zwyciezcy-kadr {
+  aspect-ratio: 16 / 11;
+}
+
+@media (min-width: 1024px) {
+  .karta-zwyciezcy-kadr {
+    flex: 1 1 auto;
+    min-height: 340px;
+    aspect-ratio: auto;
+  }
+}
+
 /* zdjęcie podchodzi pod kursorem - ruch robi kadr, nie cały kafelek, żeby podpis stał */
 .kafel-rankingu .kafel-obraz {
   transition: scale 420ms cubic-bezier(0.22, 0.9, 0.24, 1);
@@ -1883,6 +1938,145 @@ select option {
 
 @media (prefers-reduced-motion: reduce) {
   .kafel-rankingu:hover .kafel-obraz {
+    scale: 1;
+  }
+}
+
+/* ---------- rankingi: karty, wiersze, avatary ---------- */
+/*
+  Wspólny język obu rankingów. Ranking boisk i ranking graczy pokazują co innego, ale mają
+  się czytać jak jedna rodzina - stąd te same krawędzie, ta sama reakcja na kursor i ta
+  sama zasada: kolor pojawia się dopiero pod kursorem, a w spoczynku strona jest spokojna.
+*/
+.karta-rankingu {
+  transition:
+    translate 420ms cubic-bezier(0.22, 0.9, 0.24, 1),
+    box-shadow 420ms ease;
+}
+
+.karta-rankingu:hover,
+.karta-rankingu:focus-visible {
+  translate: 0 -4px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 0 0 1px rgba(255, 122, 24, 0.28),
+    0 34px 80px -30px rgba(0, 0, 0, 0.95),
+    0 0 60px -22px rgba(255, 122, 24, 0.55);
+}
+
+/*
+  Wygaszenie dołu kadru. Bez niego numer miejsca i liczba podpaleń giną na jasnym zdjęciu -
+  a to są jedyne dwie rzeczy, które muszą być czytelne z każdego kadru, jaki ktoś wgra.
+*/
+.karta-rankingu-zaslona {
+  background: linear-gradient(
+    to top,
+    rgba(6, 5, 8, 0.9) 0%,
+    rgba(6, 5, 8, 0.45) 34%,
+    rgba(6, 5, 8, 0) 72%
+  );
+}
+
+/*
+  Kadr zwycięzcy. Na wąskim ekranie zwykła proporcja, bo karta stoi sama. Od progu `lg`
+  rozciąga się na całą wolną wysokość: obok stoi kolumna z dwiema mniejszymi kartami
+  i podium musi kończyć się równo, a wysokość ma dobierać ZDJĘCIE, nie opis - inaczej
+  między nazwą a listwą faktów zostaje pusta dziura na jedną trzecią karty.
+*/
+.karta-zwyciezcy-kadr {
+  aspect-ratio: 16 / 11;
+}
+
+@media (min-width: 1024px) {
+  .karta-zwyciezcy-kadr {
+    flex: 1 1 auto;
+    min-height: 340px;
+    aspect-ratio: auto;
+  }
+}
+
+/* zdjęcie podchodzi pod kursorem - ruch robi kadr, nie cały kafelek, żeby podpis stał */
+.karta-rankingu img,
+.karta-rankingu picture {
+  transition: scale 620ms cubic-bezier(0.22, 0.9, 0.24, 1);
+}
+.karta-rankingu:hover img,
+.karta-rankingu:hover picture {
+  scale: 1.03;
+}
+
+/* ciepła poświata za avatarem - jedyny mocny akcent koloru na karcie gracza */
+.karta-gracza-zar {
+  width: 340px;
+  height: 260px;
+  filter: blur(46px);
+  opacity: 0.55;
+  translate: -50% -38%;
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 122, 24, 0.5) 0%,
+    rgba(255, 77, 10, 0.16) 55%,
+    transparent 100%
+  );
+  transition: opacity 420ms ease;
+}
+.karta-rankingu:hover .karta-gracza-zar {
+  opacity: 0.85;
+}
+
+.avatar-rankingu {
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow:
+    0 0 0 1.5px rgba(255, 150, 70, 0.4),
+    0 18px 46px -18px rgba(255, 77, 10, 0.6);
+}
+
+/*
+  Wiersz dalszych miejsc. Ciepła smuga wjeżdża od lewej pod kursorem - ten sam gest co
+  w liście wyników na mapie, więc nikt nie musi się go uczyć drugi raz.
+*/
+.wiersz-rankingu {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  transition: box-shadow 320ms ease;
+}
+
+.wiersz-rankingu::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    100deg,
+    rgba(255, 122, 24, 0.22) 0%,
+    rgba(255, 122, 24, 0.06) 34%,
+    transparent 68%
+  );
+  transition: opacity 320ms ease;
+}
+
+.wiersz-rankingu:hover,
+.wiersz-rankingu:focus-visible {
+  box-shadow: inset 0 0 0 1px rgba(255, 122, 24, 0.3);
+}
+.wiersz-rankingu:hover::before,
+.wiersz-rankingu:focus-visible::before {
+  opacity: 1;
+}
+
+.wiersz-rankingu > * {
+  position: relative;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .karta-rankingu,
+  .karta-rankingu:hover,
+  .karta-rankingu:hover img,
+  .karta-rankingu:hover picture {
+    translate: none;
     scale: 1;
   }
 }
