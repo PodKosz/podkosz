@@ -218,7 +218,38 @@ export function MapView({
    * gesty i nie powinny się nadpisywać. Filtr ma pierwszeństwo - skoro ktoś zawęził
    * wyniki do jednego województwa, to ono ma świecić, choćby kliknął gdzie indziej.
    */
-  const [wojKlikniete, setWojKlikniete] = useState<string | null>(null);
+  /*
+    Stan startuje od województwa wskazanego w adresie (`?woj=...`) - tak trafia się tu ze
+    stopki i z pustego regionu. Taki adres traktujemy jak kliknięcie w mapę, a nie jak samo
+    zawężenie listy: obrys się zapala, kamera dolatuje do regionu, a oddalenie gasi jedno
+    i drugie. Inaczej odnośnik ze stopki otwierał mapę całej Polski z zawężoną listą
+    i człowiek musiał sam szukać, gdzie ten region leży.
+
+    Właściwość czytamy tylko przy montowaniu. Późniejsze zmiany w panelu filtrów mają własną
+    ścieżkę (patrz `ostatniFiltrWoj`) i nie ruszają kamery - wybór z panelu jest zawężeniem
+    listy, nie wskazaniem miejsca.
+  */
+  const [wojKlikniete, setWojKlikniete] = useState<string | null>(
+    () => highlightVoivodeship || null
+  );
+  /**
+   * Kopia `wojKlikniete` do czytania z nasłuchów mapy.
+   *
+   * Nasłuchy wieszamy raz, przy tworzeniu mapy, więc ich domknięcie ma zamrożoną pierwszą
+   * wartość stanu. Ref jest tu jedynym sposobem, żeby obsługa oddalania wiedziała, z którego
+   * województwa użytkownik właśnie wychodzi. Wypełnia go efekt zaraz po zamontowaniu -
+   * nasłuchy strzelają dopiero po pierwszym ruchu myszy albo pomiarze kontenera, więc nigdy
+   * nie trafiają na puste.
+   */
+  const wojKlikRef = useRef<string | null>(null);
+  /**
+   * Województwo opuszczone własnym gestem, choć wciąż zawęża listę.
+   *
+   * Bez tego wyjście z regionu wskazanego w adresie kończyło się mrugnięciem: żar gasł
+   * w rytm oddalania, a w chwili wyzerowania wracał w pełnej sile - bo filtr został
+   * włączony i podświetlenie zapalało się od nowa, tym razem na kadrze całej Polski.
+   */
+  const [porzuconeWoj, setPorzuconeWoj] = useState<string | null>(null);
   /**
    * Przybliżenie osiągnięte po dolocie do województwa - punkt odniesienia dla gaśnięcia.
    *
@@ -414,6 +445,7 @@ export function MapView({
 
       if (jasnosc > 0) return;
       zoomWejsciaRef.current = null;
+      setPorzuconeWoj(wojKlikRef.current);
       setWojKlikniete(null);
     });
     /*
@@ -446,7 +478,10 @@ export function MapView({
       map.resize();
       if (!framed) {
         framed = true;
-        map.fitBounds(POLAND_BOUNDS, { padding: fitPadding(width), duration: 0 });
+        // z województwem w adresie kadr ustawia dolot do regionu - nie odbieramy mu go
+        if (!wojKlikRef.current) {
+          map.fitBounds(POLAND_BOUNDS, { padding: fitPadding(width), duration: 0 });
+        }
       }
     });
     ro.observe(containerRef.current);
@@ -831,7 +866,13 @@ export function MapView({
     konkretne miejsce. Gdy wybór kliknięciem znika (odsunięcie kamery), wraca podświetlenie
     z filtrów, o ile jakieś było.
   */
-  const wybraneWoj = wojKlikniete || highlightVoivodeship;
+  const zFiltru = highlightVoivodeship === porzuconeWoj ? "" : highlightVoivodeship;
+  const wybraneWoj = wojKlikniete || zFiltru;
+
+  /* nasłuchy mapy czytają wybór z refa - patrz komentarz przy `wojKlikRef` */
+  useEffect(() => {
+    wojKlikRef.current = wojKlikniete;
+  }, [wojKlikniete]);
 
   /*
     Zmiana województwa w filtrach kasuje wybór z mapy. Bez tego stare kliknięcie
@@ -845,6 +886,8 @@ export function MapView({
   if (ostatniFiltrWoj !== highlightVoivodeship) {
     setOstatniFiltrWoj(highlightVoivodeship);
     setWojKlikniete(null);
+    /* świeży wybór w panelu ma świecić także wtedy, gdy z tego samego regionu się wyszło */
+    setPorzuconeWoj(null);
   }
 
   /* ---- podświetlenie województwa ---- */
@@ -863,9 +906,6 @@ export function MapView({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
-
-    const szerokosc = containerRef.current?.clientWidth ?? 1024;
-
     if (!wojKlikniete) {
       zoomWejsciaRef.current = null;
       return;
@@ -876,6 +916,13 @@ export function MapView({
     void (async () => {
       const kolekcja = await wczytajWojewodztwa();
       if (!aktualne || !kolekcja) return;
+
+      /*
+        Szerokość mierzymy po dociągnięciu granic, nie przed. Przy wejściu z adresu ten
+        efekt rusza razem z mapą i kontener bywa w tej chwili jeszcze zerowy - wyliczony
+        z niego margines dawałby kadr obok regionu.
+      */
+      const szerokosc = containerRef.current?.clientWidth ?? 1024;
 
       const cecha = kolekcja.features.find((f) => f.properties?.nazwa === wojKlikniete);
       const bbox = cecha?.geometry ? bboxWojewodztwa(cecha.geometry) : null;

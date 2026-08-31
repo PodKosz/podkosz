@@ -42,6 +42,18 @@ export function slugifyPlace(name: string) {
     .replace(/^-|-$/g, "");
 }
 
+/**
+ * Odnośnik na mapę z jednym województwem: kamera dolatuje do regionu, obrys się zapala,
+ * a lista boisk zawęża się do niego.
+ *
+ * Sam parametr `woj` obsługuje już panel filtrów, więc taki adres jest zwyczajnym stanem
+ * mapy - da się go wysłać, wrzucić do zakładek i przetrwa odświeżenie strony. Reszta
+ * (dolot, żar, powrót do kadru na Polskę po oddaleniu) dzieje się w `MapView`.
+ */
+export function linkNaMape(wojewodztwo: string) {
+  return `/?woj=${encodeURIComponent(wojewodztwo)}`;
+}
+
 /** Odległość dla człowieka: „320 m", „2,4 km", „67 km". */
 export function formatDistance(meters: number) {
   if (meters < 950) return `${Math.round(meters / 10) * 10} m`;

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { listCourtsForPlace, listPlaces } from "@/lib/repo";
 import { PlaceListing } from "@/components/PlaceListing";
-import { SITE_NAME, slugifyPlace } from "@/lib/site";
-import { VOIVODESHIPS, WOJEWODZTWA_SRODKI } from "@/lib/types";
+import { SITE_NAME, linkNaMape, slugifyPlace } from "@/lib/site";
+import { VOIVODESHIPS } from "@/lib/types";
 
 export const revalidate = 3600;
 
@@ -55,18 +55,18 @@ export default async function VoivodeshipPage({
   const found = await listCourtsForPlace("voivodeship", slug);
 
   /*
-    Województwo bez ani jednego boiska nie ma czego wypisać, ale nie jest błędem - stopka
-    linkuje do wszystkich szesnastu, więc na pustym regionie użytkownik dostawał 404 za
-    kliknięcie w istniejące miejsce. Zamiast tego odsyłamy na mapę ustawioną na ten region
-    i z włączonym filtrem: człowiek widzi, gdzie jest, i że po prostu nikt jeszcze nic tu
-    nie dodał.
+    Województwo bez ani jednego boiska nie ma czego wypisać, ale nie jest błędem - adres
+    jest w mapie strony i ktoś może w niego wejść wprost, więc pusty region nie może kończyć
+    się czterysta czwórką. Odsyłamy na mapę z tym jednym województwem: kamera dolatuje do
+    regionu, obrys się zapala, a pusta lista mówi wprost, że nikt jeszcze nic tu nie dodał.
+
+    Bez `m=` w adresie, celowo. Gotowa pozycja kamery ustawiłaby kadr skokiem, a wtedy
+    dolotu nie ma - jest podmiana widoku. Mapa startuje więc na Polsce i sama dojeżdża.
   */
   if (!found) {
     const nazwa = VOIVODESHIPS.find((v) => slugifyPlace(v) === slug);
     if (!nazwa) notFound();
-
-    const { lat, lng, zoom } = WOJEWODZTWA_SRODKI[nazwa];
-    redirect(`/?m=${lat},${lng},${zoom}&woj=${encodeURIComponent(nazwa)}`);
+    redirect(linkNaMape(nazwa));
   }
 
   const { voivodeships } = await listPlaces();
