@@ -9,12 +9,13 @@ import { toApprovedCourts, useSubmissions } from "@/lib/submissions";
 import { prefetchCourtPhotos } from "@/lib/galeria";
 import { useSesja } from "@/lib/sesja";
 import { supabaseEnabled } from "@/lib/supabase/config";
-import { Filters, applyFilters, countByType } from "@/lib/filters";
+import { DEFAULT_FILTERS, Filters, applyFilters, countByType } from "@/lib/filters";
 import {
   SZUKANIE_W_BAZIE_OD,
+  czytajFiltry,
   filtryDoAdresu,
-  filtryStartowe,
   szukajWBazie,
+  useZapytanieFiltrow,
   wedlugTrafnosci,
   zapiszAdres,
 } from "@/lib/adres";
@@ -50,8 +51,28 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
   const isAdmin = Boolean(sesja?.user?.isAdmin);
 
   const router = useRouter();
-  // filtry startowe czytamy z adresu, żeby link „mapa Krakowa, tylko oświetlone" działał
-  const [filters, setFilters] = useState<Filters>(filtryStartowe);
+
+  /*
+    Filtry: adres na wejściu, stan po pierwszej zmianie.
+
+    Link „mapa Krakowa, tylko oświetlone" ma działać, więc filtry startowe czytamy z adresu -
+    ale przez `useZapytanieFiltrow`, nie w `useState`. Odczyt adresu w stanie startowym dawał
+    pierwszy render inny niż HTML z serwera i React wyrzucał całe poddrzewo mapy, żeby złożyć
+    je od nowa (szczegóły przy samej funkcji w `lib/adres.ts`).
+
+    Po pierwszej zmianie robionej przez człowieka rządzi już `zmiany`, a nie adres. To nie
+    komplikacja na zapas: gdyby adres był jedynym źródłem, wracałby przez `filtryDoAdresu`
+    obcięty - spacja wpisana w szukajkę ginęłaby w `trim()` w połowie wyrazu, a suwak
+    podpaleń przeskakiwał do liczb całkowitych, bo do adresu trafia próg zaokrąglony w górę.
+  */
+  const zapytanieFiltrow = useZapytanieFiltrow();
+  const zAdresu = useMemo(
+    () => ({ ...DEFAULT_FILTERS, ...czytajFiltry(new URLSearchParams(zapytanieFiltrow)) }),
+    [zapytanieFiltrow]
+  );
+  const [zmiany, setZmiany] = useState<Filters | null>(null);
+  const filters = zmiany ?? zAdresu;
+  const setFilters = useCallback((f: Filters) => setZmiany(f), []);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
   /** Na telefonie panel z filtrami startuje zwinięty, żeby mapa miała cały ekran. */
@@ -165,10 +186,18 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
     else setTimeout(start, 600);
   }, [all]);
 
-  /* Filtry lądują w adresie, więc widok da się wysłać linkiem i przetrwa odświeżenie. */
+  /*
+    Filtry lądują w adresie, więc widok da się wysłać linkiem i przetrwa odświeżenie.
+
+    Zapisujemy dopiero po zmianie zrobionej przez człowieka. Zapis przy samym wejściu na
+    stronę wycierał z adresu to, czego jeszcze nie zdążyliśmy z niego odczytać: pierwszy
+    render idzie po stanie serwerowym, czyli po domyślnych filtrach, i taki zapis kasował
+    z paska adresu `woj` przyniesione ze stopki.
+  */
   useEffect(() => {
-    zapiszAdres(filtryDoAdresu(filters));
-  }, [filters]);
+    if (!zmiany) return;
+    zapiszAdres(filtryDoAdresu(zmiany));
+  }, [zmiany]);
 
   const onSelect = useCallback(
     (c: MapCourt) => router.push(`/boisko/${c.slug}`),

@@ -1,7 +1,8 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import { CourtType, MapCourt, Surface, Access } from "./types";
-import { DEFAULT_FILTERS, Filters } from "./filters";
+import { Filters } from "./filters";
 import { supabaseBrowser } from "./supabase/client";
 
 /**
@@ -72,10 +73,58 @@ export function filtryDoAdresu(f: Filters): Record<string, string | null> {
   };
 }
 
-/** Filtry startowe: domyślne uzupełnione tym, co jest w adresie. */
-export function filtryStartowe(): Filters {
-  if (typeof window === "undefined") return DEFAULT_FILTERS;
-  return { ...DEFAULT_FILTERS, ...czytajFiltry(new URLSearchParams(window.location.search)) };
+/* ---- czytanie filtrów z adresu w komponencie ---- */
+/*
+  Klucze filtrów, i tylko one. Adres nosi jeszcze położenie kamery (`m`), które zmienia się
+  przy każdym przesunięciu mapy - gdyby wchodziło do odczytu, każde drgnięcie kadru
+  wyglądałoby jak zmiana filtrów i przeliczałoby całą listę boisk.
+*/
+const KLUCZE_FILTROW = ["q", "typ", "naw", "woj", "dostep", "swiatlo", "lajki"] as const;
+
+const sluchacze = new Set<() => void>();
+
+function subskrybuj(powiadom: () => void) {
+  sluchacze.add(powiadom);
+  /* wstecz/dalej w przeglądarce zmienia adres bez przeładowania - filtry mają za tym iść */
+  window.addEventListener("popstate", powiadom);
+  return () => {
+    sluchacze.delete(powiadom);
+    window.removeEventListener("popstate", powiadom);
+  };
+}
+
+function stanPrzegladarki() {
+  const sp = new URLSearchParams(window.location.search);
+  const tylkoFiltry = new URLSearchParams();
+  for (const klucz of KLUCZE_FILTROW) {
+    const wartosc = sp.get(klucz);
+    if (wartosc !== null) tylkoFiltry.set(klucz, wartosc);
+  }
+  return tylkoFiltry.toString();
+}
+
+/* na serwerze adresu nie ma - i to jest właściwa odpowiedź, nie brak odpowiedzi */
+const stanSerwera = () => "";
+
+/**
+ * Filtry zapisane w adresie, w postaci nadającej się do czytania w komponencie.
+ *
+ * `useState(() => window.location.search)` wyglądało na to samo, a nie było: serwer adresu
+ * nie zna, więc pierwszy render w przeglądarce wychodził inny niż HTML przysłany z serwera.
+ * React zgłaszał wtedy niezgodność hydracji i skladał całe poddrzewo mapy od nowa - czyli
+ * prerender strony, która jest statyczna właśnie po to, żeby wychodzić z cache, szedł do
+ * kosza. Widać to było na liczniku boisk w pasku filtrów: serwer pisał „24", przeglądarka
+ * przy `?woj=mazowieckie` - „1".
+ *
+ * `useSyncExternalStore` jest dokładnie na ten przypadek: hydracja idzie po stanie
+ * serwerowym, więc zgadza się co do znaku, a zaraz po niej React sam sięga po prawdziwy
+ * adres i renderuje jeszcze raz - już bez błędu.
+ *
+ * Zwraca zapytanie, a nie gotowe filtry: napis daje się porównać przez `Object.is`, więc
+ * React widzi zmianę stanu tylko wtedy, gdy adres naprawdę się zmienił.
+ */
+export function useZapytanieFiltrow() {
+  return useSyncExternalStore(subskrybuj, stanPrzegladarki, stanSerwera);
 }
 
 /** Położenie mapy z adresu (`m=lat,lng,zoom`). */
@@ -106,6 +155,12 @@ export function zapiszAdres(patch: Record<string, string | null>) {
   // replaceState, a nie router.push: nie chcemy przeładowania ani wpisu w historii
   // przy każdym przesunięciu mapy
   window.history.replaceState(null, "", adres);
+
+  /*
+    Świadomie nie budzimy tu `useZapytanieFiltrow`. Ten zapis jest skutkiem zmiany filtrów,
+    nie jej źródłem - powiadomienie zrobiłoby z tego pętlę render → zapis → render. Sam
+    odczyt i tak zwróci nową wartość przy następnym renderze, więc nic się nie rozjeżdża.
+  */
 }
 
 /** Zapisuje położenie mapy w adresie. */
