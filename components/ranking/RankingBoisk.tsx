@@ -13,47 +13,66 @@ import {
 /**
  * Ranking boisk.
  *
- * Trzy pasy o malejącej wadze, bo tak się czyta ranking: kto wygrał, kto goni, kto jeszcze
- * jest w stawce. Każdy pas ma inną gęstość i inny rozmiar kadru, więc kolejność widać
- * układem, zanim ktokolwiek przeczyta numer.
+ * Wszystkie karty są kadrem z treścią NA nim, a nie kadrem z panelem pod spodem. To jedna
+ * decyzja, która przesądza o reszcie: karta staje się plakatem, wysokość dobiera zdjęcie,
+ * a nie długość opisu, i znika problem pustych pól przy krótkich nazwach. Ten sam język
+ * obowiązuje na wszystkich trzech poziomach, więc strona czyta się jak jedna rzecz.
  *
- *   1. Podium (1-3) - jedna wielka karta i dwie mniejsze obok. Asymetria jest tu celem,
- *      nie ozdobą: trzy równe kafelki mówiłyby, że te miejsca są równorzędne.
- *   2. Miejsca 4-10 - siatka kart średniej wielkości, do czterech w rzędzie.
- *   3. Miejsca 11-25 - zwarte wiersze w dwóch kolumnach, bo przy tej gęstości zdjęcie jest
+ * Poziomy różnią się wyłącznie skalą i gęstością - i to ona niesie kolejność:
+ *
+ *   1. Zwycięzca - jeden kadr na całą szerokość, panoramiczny. Nie da się go pomylić z niczym.
+ *   2. Miejsca 2-3 - dwa kadry obok siebie, wciąż duże.
+ *   3. Miejsca 4-10 - trzy w rzędzie.
+ *   4. Miejsca 11-25 - włosowe wiersze w dwóch kolumnach; przy tej gęstości zdjęcie jest
  *      już tylko znacznikiem, a nie treścią.
  *
- * Wszystko jest zwykłym HTML-em bez stanu - żadna z tych rzeczy nie wymaga JavaScriptu,
- * więc strona renderuje się na serwerze i wyszukiwarka widzi pełną listę.
+ * Całość jest zwykłym HTML-em bez stanu. Pojawianie się przy przewijaniu, reakcje na
+ * kursor i potwierdzenie kliknięcia robi CSS (patrz `.wjazd`, `.karta-rankingu`), więc
+ * strona renderuje się na serwerze, wyszukiwarka widzi pełną listę, a przeglądarka nie
+ * dostaje ani jednego nasłuchu przewijania.
  */
 
-/** Ile boisk trafia do siatki środkowej, a ile do listy na dole. */
 const SIATKA_DO = 10;
 const LISTA_DO = 25;
 
 export function RankingBoisk({ courts }: { courts: Court[] }) {
-  const podium = courts.slice(0, 3);
+  const [pierwszy, ...reszta] = courts;
+  const duet = reszta.slice(0, 2);
   const siatka = courts.slice(3, SIATKA_DO);
   const lista = courts.slice(SIATKA_DO, LISTA_DO);
 
-  if (!podium.length) {
+  if (!pierwszy) {
     return (
-      <p className="szklo-pro rounded-[26px] p-10 text-center text-[15px] text-muted">
+      <p className="szklo-pro rounded-[28px] p-10 text-center text-[15px] text-muted">
         Baza jest jeszcze pusta - dodaj pierwsze boisko.
       </p>
     );
   }
 
   return (
-    <div className="space-y-20">
-      <Podium courts={podium} />
+    <div className="space-y-24">
+      <section className="wjazd">
+        <KartaBoiska court={pierwszy} miejsce={1} wariant="zwyciezca" />
+      </section>
+
+      {duet.length > 0 && (
+        <section className="grid gap-5 lg:grid-cols-2 lg:gap-6">
+          {duet.map((c, i) => (
+            <div key={c.id} className="wjazd">
+              <KartaBoiska court={c} miejsce={i + 2} wariant="duet" />
+            </div>
+          ))}
+        </section>
+      )}
 
       {siatka.length > 0 && (
         <section>
           <Naglowek tytul="Goniący" opis={`Miejsca 4-${3 + siatka.length}`} />
-          <div className="mt-7 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3 xl:gap-6">
             {siatka.map((c, i) => (
-              <KartaBoiska key={c.id} court={c} miejsce={i + 4} />
+              <div key={c.id} className="wjazd">
+                <KartaBoiska court={c} miejsce={i + 4} />
+              </div>
             ))}
           </div>
         </section>
@@ -67,10 +86,10 @@ export function RankingBoisk({ courts }: { courts: Court[] }) {
           />
           {/*
             Dwie kolumny od dużego ekranu. Jedna kolumna wierszy przez pół monitora to
-            wąska wstęga tekstu z pustką po bokach - dokładnie to, co sprawiało, że
-            poprzednia wersja wyglądała na zawieszoną w próżni.
+            wąska wstęga z pustką po bokach - dokładnie to, co sprawiało, że poprzednia
+            wersja wyglądała na zawieszoną w próżni.
           */}
-          <ol className="mt-7 grid gap-2.5 xl:grid-cols-2 xl:gap-x-5">
+          <ol className="mt-6 grid xl:grid-cols-2 xl:gap-x-12">
             {lista.map((c, i) => (
               <WierszBoiska key={c.id} court={c} miejsce={SIATKA_DO + 1 + i} />
             ))}
@@ -83,47 +102,19 @@ export function RankingBoisk({ courts }: { courts: Court[] }) {
 
 function Naglowek({ tytul, opis }: { tytul: string; opis: string }) {
   return (
-    <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-hairline pb-3">
-      <h2 className="text-[clamp(19px,2vw,24px)] font-semibold tracking-[-0.01em]">{tytul}</h2>
-      <p className="text-[12px] uppercase tracking-[0.18em] text-faint">{opis}</p>
+    <div className="wjazd-boczny flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-hairline pb-4">
+      <h2 className="text-[clamp(20px,2.2vw,28px)] font-semibold tracking-[-0.02em]">{tytul}</h2>
+      <p className="text-[12px] uppercase tracking-[0.2em] text-faint">{opis}</p>
     </div>
   );
 }
 
 /**
- * Podium.
+ * Karta boiska - kadr z treścią na nim.
  *
- * Na dużym ekranie dwanaście kolumn: zwycięzca bierze siedem i pełną wysokość, drugie
- * i trzecie dzielą pozostałe pięć, jedno pod drugim. Proporcja siedem do pięciu jest
- * bliska złotemu podziałowi i czyta się jako „ten jest ważniejszy", a nie „ten jest
- * przypadkowo większy".
- */
-function Podium({ courts }: { courts: Court[] }) {
-  const [pierwszy, ...reszta] = courts;
-
-  return (
-    <section className="grid gap-5 lg:grid-cols-12">
-      <div className="lg:col-span-7">
-        <KartaBoiska court={pierwszy} miejsce={1} wariant="zwyciezca" />
-      </div>
-
-      {reszta.length > 0 && (
-        <div className="grid gap-5 sm:grid-cols-2 lg:col-span-5 lg:grid-cols-1">
-          {reszta.map((c, i) => (
-            <KartaBoiska key={c.id} court={c} miejsce={i + 2} wariant="podium" />
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
-
-/**
- * Karta boiska.
- *
- * Trzy warianty różnią się wyłącznie proporcją kadru i wielkością pisma - reszta (szkło,
- * numer, plakietki, dolna listwa) jest wspólna, żeby cała strona czytała się jako jedna
- * rodzina, a nie trzy osobne pomysły.
+ * Trzy warianty różnią się wysokością kadru i skalą pisma. Wszystko poza tym jest wspólne:
+ * ten sam gradient u dołu, ten sam wydrążony numer, ta sama listwa faktów. Wariant nie
+ * zmienia więc KOMPOZYCJI, tylko jej głośność.
  */
 function KartaBoiska({
   court,
@@ -132,83 +123,100 @@ function KartaBoiska({
 }: {
   court: Court;
   miejsce: number;
-  wariant?: "zwyciezca" | "podium" | "siatka";
+  wariant?: "zwyciezca" | "duet" | "siatka";
 }) {
   const zwyciezca = wariant === "zwyciezca";
-  const proporcje = wariant === "podium" ? "16 / 9" : "4 / 3";
+  const duet = wariant === "duet";
+
+  /*
+    Wysokość zamiast proporcji. Panoramiczny kadr opisany proporcją potrafi na wąskim
+    ekranie schudnąć do paska wysokiego na sto pikseli; `clamp` trzyma dolną granicę,
+    a górną wiąże z szerokością okna, więc kadr rośnie razem z ekranem i nigdy nie zjada
+    całej strony.
+  */
+  const wysokosc = zwyciezca
+    ? "clamp(380px, 44vw, 660px)"
+    : duet
+      ? "clamp(300px, 30vw, 460px)"
+      : "clamp(260px, 24vw, 360px)";
 
   return (
     <Link
       href={`/boisko/${court.slug}`}
-      className="karta-rankingu szklo-pro group relative flex h-full flex-col overflow-hidden rounded-[26px]"
+      className="karta-rankingu group relative flex overflow-hidden rounded-[28px]"
+      style={{ height: wysokosc }}
     >
-      {/*
-        U zwycięzcy kadr rozciąga się na całą wolną wysokość zamiast trzymać stałe
-        proporcje. Karta stoi obok kolumny z dwiema mniejszymi i musi sięgnąć jej dna;
-        gdyby wysokość dobierał opis, między nazwą a listwą faktów zostawała pusta dziura
-        na jedną trzecią karty. Szczegóły w `.karta-zwyciezcy-kadr` w globals.css - na
-        wąskim ekranie wraca zwykła proporcja, bo tam nic się obok nie układa.
-      */}
+      <CourtPhoto
+        photo={court.photos[0]}
+        seed={court.seed}
+        sizes={
+          zwyciezca
+            ? "(min-width: 1600px) 1600px, 100vw"
+            : duet
+              ? "(min-width: 1024px) 50vw, 100vw"
+              : "(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw"
+        }
+        priority={miejsce <= 3}
+      />
+
+      <span className="karta-rankingu-zaslona pointer-events-none absolute inset-0" />
+      <span aria-hidden className="karta-rankingu-blysk" />
+
+      {/* włosowa obwódka od środka - szkło ma krawędź, ale nie ramkę */}
       <span
-        className={`relative block overflow-hidden ${zwyciezca ? "karta-zwyciezcy-kadr" : ""}`}
-        style={zwyciezca ? undefined : { aspectRatio: proporcje }}
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-[28px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.09),inset_0_1px_0_rgba(255,255,255,0.14)]"
+      />
+
+      {(court.basketApproved || court.funny) && (
+        <span className="absolute left-5 top-5 z-[2] flex flex-wrap gap-1.5">
+          {court.basketApproved && <BasketApprovedBadge />}
+          {court.funny && <FunnyBadge />}
+        </span>
+      )}
+
+      {/* numer w prawym górnym rogu - czyta się jak paginacja, nie jak nalepka */}
+      <span
+        aria-hidden
+        className={`numer-rankingu pointer-events-none absolute right-5 top-2 z-[2] font-bold leading-none tabular-nums ${
+          zwyciezca
+            ? "text-[clamp(76px,9vw,150px)]"
+            : duet
+              ? "text-[clamp(58px,6vw,104px)]"
+              : "numer-rankingu-maly text-[clamp(44px,4.5vw,72px)]"
+        }`}
       >
-        <CourtPhoto
-          photo={court.photos[0]}
-          seed={court.seed}
-          sizes={zwyciezca ? "(min-width: 1024px) 58vw, 100vw" : "(min-width: 1280px) 24vw, 50vw"}
-          priority={miejsce <= 3}
-        />
-
-        {/* wygaszenie dołu kadru - bez niego numer i podpalenia gubią się na jasnym zdjęciu */}
-        <span className="karta-rankingu-zaslona pointer-events-none absolute inset-0" />
-
-        {/*
-          Numer miejsca jako znak wodny w kadrze. Duży, ale wtopiony - ma być widoczny
-          kątem oka przy przewijaniu, a nie konkurować ze zdjęciem boiska.
-        */}
-        <span
-          aria-hidden
-          className={`pointer-events-none absolute -bottom-2 right-3 flame-text font-bold leading-none tabular-nums opacity-60 transition-opacity duration-500 group-hover:opacity-90 ${
-            zwyciezca
-              ? "text-[clamp(88px,11vw,168px)]"
-              : wariant === "podium"
-                ? "text-[clamp(64px,7vw,104px)]"
-                : "text-[clamp(48px,5vw,76px)]"
-          }`}
-        >
-          {miejsce}
-        </span>
-
-        {(court.basketApproved || court.funny) && (
-          <span className="absolute left-4 top-4 flex flex-wrap gap-1.5">
-            {court.basketApproved && <BasketApprovedBadge />}
-            {court.funny && <FunnyBadge />}
-          </span>
-        )}
-
-        <span className="absolute bottom-4 left-4 inline-flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1.5 text-[13px] font-bold text-glow backdrop-blur">
-          <FireBallIcon className="h-4 w-4" /> {court.likes}
-        </span>
+        {String(miejsce).padStart(2, "0")}
       </span>
 
-      <span className="flex flex-col gap-3 p-5">
-        <span className="block">
-          <span
-            className={`block truncate font-semibold leading-tight tracking-[-0.01em] transition-colors group-hover:text-glow ${
-              zwyciezca ? "text-[clamp(20px,2.4vw,30px)]" : "text-[clamp(15px,1.4vw,19px)]"
-            }`}
-          >
-            {court.name}
+      <span
+        className={`relative z-[2] mt-auto flex w-full flex-col gap-3 ${
+          zwyciezca ? "p-7 sm:p-9" : "p-6"
+        }`}
+      >
+        <span className="flex items-center gap-2.5">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-black/45 px-3 py-1.5 text-[13px] font-bold text-glow backdrop-blur">
+            <FireBallIcon className="h-4 w-4" /> {court.likes}
           </span>
-          <span className="mt-1.5 flex items-center gap-1.5 truncate text-[13px] text-muted">
-            <PinIcon className="h-3.5 w-3.5 shrink-0 text-flame" />
+          <span className="flex items-center gap-1.5 text-[13px] text-white/70">
+            <PinIcon className="h-3.5 w-3.5 text-flame" />
             {court.city}
           </span>
         </span>
 
-        {/* trzy fakty w jednej linii - tyle, ile trzeba, żeby zdecydować, czy tam iść */}
-        <span className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px] text-faint">
+        <span
+          className={`block font-semibold leading-[1.05] tracking-[-0.025em] transition-colors group-hover:text-glow ${
+            zwyciezca
+              ? "text-[clamp(26px,3.4vw,52px)]"
+              : duet
+                ? "text-[clamp(20px,2.2vw,32px)]"
+                : "text-[clamp(17px,1.6vw,23px)]"
+          }`}
+        >
+          {court.name}
+        </span>
+
+        <span className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[12px] text-white/55">
           <span className="inline-flex items-center gap-1.5">
             <HoopIcon className="h-3.5 w-3.5 text-flame/80" />
             {TYPE_LABEL[court.type]}
@@ -236,10 +244,10 @@ function WierszBoiska({ court, miejsce }: { court: Court; miejsce: number }) {
     <li className="min-w-0">
       <Link
         href={`/boisko/${court.slug}`}
-        className="wiersz-rankingu group flex items-center gap-4 rounded-[20px] p-2.5 pr-5"
+        className="wiersz-rankingu group flex items-center gap-4 py-3 pr-2"
       >
-        <span className="w-9 shrink-0 text-center text-[15px] font-semibold tabular-nums text-faint transition-colors group-hover:text-flame">
-          {miejsce}
+        <span className="w-10 shrink-0 text-center text-[14px] font-semibold tabular-nums text-faint transition-colors group-hover:text-flame">
+          {String(miejsce).padStart(2, "0")}
         </span>
 
         <span className="relative h-14 w-20 shrink-0 overflow-hidden rounded-[14px]">
@@ -248,16 +256,16 @@ function WierszBoiska({ court, miejsce }: { court: Court; miejsce: number }) {
 
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2">
-            <span className="truncate text-[15px] font-semibold">{court.name}</span>
+            <span className="truncate text-[15px] font-medium">{court.name}</span>
             {court.basketApproved && <BasketApprovedBadge />}
             {court.funny && <FunnyBadge />}
           </span>
-          <span className="block truncate text-[13px] text-muted">
+          <span className="block truncate text-[13px] text-faint">
             {court.city} · {TYPE_LABEL[court.type]}
           </span>
         </span>
 
-        <span className="flex shrink-0 items-center gap-1.5 text-[15px] font-bold text-glow">
+        <span className="flex shrink-0 items-center gap-1.5 text-[15px] font-semibold text-glow">
           <FireBallIcon className="h-4 w-4" /> {court.likes}
         </span>
       </Link>

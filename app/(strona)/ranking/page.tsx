@@ -64,7 +64,7 @@ function Tlo() {
   return (
     <>
       <div
-        className="kosz-tlo kontur-rysowany pointer-events-none fixed bottom-[-22vh] left-[-26vw] -z-10 aspect-[480/440] w-[min(1200px,150vw)] sm:bottom-[-26vh] sm:left-[-14vw] sm:w-[min(1500px,92vw)]"
+        className="kosz-tlo kontur-rysowany pointer-events-none fixed bottom-[-34vh] left-[-42vw] -z-10 aspect-[480/440] w-[min(1900px,215vw)] sm:bottom-[-40vh] sm:left-[-26vw] sm:w-[min(2400px,148vw)]"
         aria-hidden
       >
         <HoopOutline uid="ranking-boisk" />

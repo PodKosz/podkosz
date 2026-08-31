@@ -53,7 +53,7 @@ function Tlo() {
   return (
     <>
       <div
-        className="rzut-tlo kontur-rysowany pointer-events-none fixed bottom-[-16vh] left-[-22vw] -z-10 aspect-[900/640] w-[min(1300px,165vw)] sm:bottom-[-18vh] sm:left-[-10vw] sm:w-[min(1560px,98vw)]"
+        className="rzut-tlo kontur-rysowany pointer-events-none fixed bottom-[-26vh] left-[-34vw] -z-10 aspect-[900/640] w-[min(2000px,230vw)] sm:bottom-[-30vh] sm:left-[-20vw] sm:w-[min(2600px,158vw)]"
         aria-hidden
       >
         <RzutOutline uid="gracze" />

@@ -1942,105 +1942,267 @@ select option {
   }
 }
 
-/* ---------- rankingi: karty, wiersze, avatary ---------- */
+/* ---------- rankingi: karty, wiersze, mechaniki ---------- */
 /*
-  Wspólny język obu rankingów. Ranking boisk i ranking graczy pokazują co innego, ale mają
-  się czytać jak jedna rodzina - stąd te same krawędzie, ta sama reakcja na kursor i ta
-  sama zasada: kolor pojawia się dopiero pod kursorem, a w spoczynku strona jest spokojna.
+  Wspólny język obu rankingów. Pokazują co innego, ale mają się czytać jak jedna rodzina,
+  więc krawędzie, reakcje na kursor i sposób pojawiania się są tu opisane raz.
+
+  Zasada nadrzędna: w spoczynku strona jest cicha. Kolor, ruch i światło pojawiają się
+  dopiero w reakcji na coś - na przewinięcie, na kursor, na dotknięcie. Dzięki temu przy
+  dwudziestu pięciu kartach naraz nic nie krzyczy, a każda pojedyncza reaguje wyraźnie.
 */
+
+/* ---- pojawianie się przy przewijaniu ---- */
+/*
+  Karty wjeżdżają, kiedy wchodzą w kadr. Steruje tym `animation-timeline: view()`, czyli
+  sama pozycja elementu względem okna - ani jednego nasłuchu w JS, ani jednego
+  IntersectionObservera. Przeglądarka liczy to na wątku kompozytora, więc dwadzieścia pięć
+  kart animuje się bez zająknięcia.
+
+  Ruch jest krótki i jednokierunkowy: dwadzieścia osiem pikseli w górę i cztery procent
+  skali. Większy skok wygląda jak karuzela z szablonu, mniejszy nie jest zauważalny.
+  Elementy widoczne zaraz po wejściu na stronę mają swój przedział już za sobą, więc
+  rysują się od razu w stanie końcowym - nikt nie patrzy na puste miejsce.
+*/
+.wjazd {
+  opacity: 1;
+}
+
+@supports (animation-timeline: view()) {
+  .wjazd {
+    animation: wjazd-elementu linear both;
+    animation-timeline: view();
+    animation-range: entry 5% entry 55%;
+  }
+
+  @keyframes wjazd-elementu {
+    from {
+      opacity: 0;
+      translate: 0 28px;
+      scale: 0.96;
+    }
+    to {
+      opacity: 1;
+      translate: 0 0;
+      scale: 1;
+    }
+  }
+
+  /* nagłówki sekcji wjeżdżają z boku - inny kierunek niż karty, więc pas się rozdziela */
+  .wjazd-boczny {
+    animation: wjazd-boczny linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 45%;
+  }
+
+  @keyframes wjazd-boczny {
+    from {
+      opacity: 0;
+      translate: -22px 0;
+    }
+    to {
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+}
+
+/* ---- karta ---- */
 .karta-rankingu {
+  position: relative;
+  isolation: isolate;
   transition:
-    translate 420ms cubic-bezier(0.22, 0.9, 0.24, 1),
-    box-shadow 420ms ease;
+    translate 520ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 520ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .karta-rankingu:hover,
 .karta-rankingu:focus-visible {
-  translate: 0 -4px;
+  translate: 0 -6px;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    inset 0 0 0 1px rgba(255, 122, 24, 0.28),
-    0 34px 80px -30px rgba(0, 0, 0, 0.95),
-    0 0 60px -22px rgba(255, 122, 24, 0.55);
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 0 0 1px rgba(255, 122, 24, 0.26),
+    0 40px 90px -34px rgba(0, 0, 0, 0.96),
+    0 0 70px -24px rgba(255, 122, 24, 0.5);
 }
 
 /*
-  Wygaszenie dołu kadru. Bez niego numer miejsca i liczba podpaleń giną na jasnym zdjęciu -
-  a to są jedyne dwie rzeczy, które muszą być czytelne z każdego kadru, jaki ktoś wgra.
+  Dotknięcie: karta ugina się na chwilę i wraca. Krótko i w drugą stronę niż najechanie -
+  to jest potwierdzenie kliknięcia, a nie kolejna ozdoba. Na telefonie, gdzie najechania
+  nie ma wcale, to jedyna reakcja, po której widać, że kliknięcie doszło.
+*/
+.karta-rankingu:active {
+  translate: 0 -1px;
+  scale: 0.988;
+  transition-duration: 140ms;
+}
+
+/*
+  Smuga światła przejeżdżająca po szkle pod kursorem. Leży nad zdjęciem, ale pod treścią,
+  i startuje spoza lewej krawędzi - stąd wrażenie, że to odbicie, a nie nakładka.
+*/
+.karta-rankingu-blysk {
+  position: absolute;
+  inset: -40% -60%;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  rotate: -14deg;
+  translate: -34% 0;
+  background: linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0) 34%,
+    rgba(255, 255, 255, 0.1) 46%,
+    rgba(255, 214, 170, 0.14) 52%,
+    rgba(255, 255, 255, 0) 66%
+  );
+  transition:
+    translate 900ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 420ms ease;
+}
+
+.karta-rankingu:hover .karta-rankingu-blysk {
+  opacity: 1;
+  translate: 34% 0;
+}
+
+/*
+  Wygaszenie dołu kadru. Bez niego numer i liczba podpaleń giną na jasnym zdjęciu - a to
+  są jedyne dwie rzeczy, które muszą być czytelne z każdego kadru, jaki ktoś wgra.
 */
 .karta-rankingu-zaslona {
   background: linear-gradient(
     to top,
-    rgba(6, 5, 8, 0.9) 0%,
-    rgba(6, 5, 8, 0.45) 34%,
-    rgba(6, 5, 8, 0) 72%
+    rgba(5, 4, 7, 0.94) 0%,
+    rgba(5, 4, 7, 0.66) 26%,
+    rgba(5, 4, 7, 0.16) 58%,
+    rgba(5, 4, 7, 0) 82%
   );
-}
-
-/*
-  Kadr zwycięzcy. Na wąskim ekranie zwykła proporcja, bo karta stoi sama. Od progu `lg`
-  rozciąga się na całą wolną wysokość: obok stoi kolumna z dwiema mniejszymi kartami
-  i podium musi kończyć się równo, a wysokość ma dobierać ZDJĘCIE, nie opis - inaczej
-  między nazwą a listwą faktów zostaje pusta dziura na jedną trzecią karty.
-*/
-.karta-zwyciezcy-kadr {
-  aspect-ratio: 16 / 11;
-}
-
-@media (min-width: 1024px) {
-  .karta-zwyciezcy-kadr {
-    flex: 1 1 auto;
-    min-height: 340px;
-    aspect-ratio: auto;
-  }
 }
 
 /* zdjęcie podchodzi pod kursorem - ruch robi kadr, nie cały kafelek, żeby podpis stał */
 .karta-rankingu img,
 .karta-rankingu picture {
-  transition: scale 620ms cubic-bezier(0.22, 0.9, 0.24, 1);
+  transition: scale 900ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 .karta-rankingu:hover img,
 .karta-rankingu:hover picture {
-  scale: 1.03;
+  scale: 1.045;
 }
 
-/* ciepła poświata za avatarem - jedyny mocny akcent koloru na karcie gracza */
-.karta-gracza-zar {
-  width: 340px;
-  height: 260px;
-  filter: blur(46px);
-  opacity: 0.55;
-  translate: -50% -38%;
-  background: radial-gradient(
-    closest-side,
-    rgba(255, 122, 24, 0.5) 0%,
-    rgba(255, 77, 10, 0.16) 55%,
-    transparent 100%
-  );
-  transition: opacity 420ms ease;
+/* ---- numer miejsca ---- */
+/*
+  Numer jest wydrążony, nie wypełniony: sam kontur czyta się jako znak porządkowy, a nie
+  jako druga treść konkurująca ze zdjęciem. Wypełnia się dopiero pod kursorem i wtedy
+  dostaje barwę marki - ten sam gest co w całej reszcie strony.
+*/
+.numer-rankingu {
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.46);
+  /*
+    Cień pod konturem, bo numer leży na cudzym zdjęciu. Sam biały włos znika nad jasnym
+    niebem albo nad słońcem w kadrze - a numer miejsca musi być czytelny na KAŻDYM
+    zdjęciu, jakie ktoś wgra. Cień jest miękki i ciemny, więc na ciemnym kadrze nic nie
+    zmienia, a na jasnym daje konturowi tło.
+  */
+  filter: drop-shadow(0 2px 12px rgba(0, 0, 0, 0.65));
+  transition:
+    color 520ms ease,
+    -webkit-text-stroke-color 520ms ease;
 }
-.karta-rankingu:hover .karta-gracza-zar {
-  opacity: 0.85;
+
+.karta-rankingu:hover .numer-rankingu {
+  color: rgba(255, 138, 44, 0.9);
+  -webkit-text-stroke-color: rgba(255, 196, 120, 0.55);
+}
+
+/* mniejsze numery w gęstych siatkach mają cieńszy kontur, inaczej robią się kleksem */
+.numer-rankingu-maly {
+  -webkit-text-stroke-width: 1px;
+}
+
+/* ---- mozaika zdjęć w tle karty gracza ---- */
+/*
+  Karta osoby ma w tle kadry jej boisk. To najkrótsza możliwa odpowiedź na pytanie, kto to
+  jest: nie liczba, nie opis, tylko miejsca, które ta osoba wniosła do serwisu.
+
+  Mozaika musi zniknąć w tle, więc idzie przez trzy zabiegi naraz: przygaszenie,
+  odbarwienie i ciemna szyba na wierzchu. Zdjęcia zostawione w pełnych barwach zamieniały
+  kartę w kolaż, na którym nie dało się przeczytać nicku.
+*/
+.mozaika-gracza {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  /*
+    Dwa piksele przerwy między kadrami. Zestawione na styk czytały się jak jedno rozdarte
+    zdjęcie; szczelina w kolorze tła robi z nich świadomą siatkę, a nie sklejkę.
+  */
+  gap: 2px;
+  background: rgba(5, 4, 7, 0.9);
+  opacity: 0.82;
+  filter: saturate(0.72) brightness(0.82);
+  transition:
+    opacity 720ms cubic-bezier(0.16, 1, 0.3, 1),
+    filter 720ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.karta-rankingu:hover .mozaika-gracza {
+  opacity: 1;
+  filter: saturate(1) brightness(0.95);
+}
+
+/* szyba nad mozaiką - to ona odpowiada za czytelność treści, nie sama przezroczystość zdjęć */
+.mozaika-szyba {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  /*
+    Winieta odwrotna niż zwykle: ciemno w ŚRODKU, jaśniej przy krawędziach. Treść karty
+    (twarz, nick, liczby) stoi pośrodku i to ona potrzebuje spokojnego tła, a zdjęcia mają
+    być widoczne tam, gdzie nic na nich nie leży. Równomierne przyciemnienie gasiło kadry
+    do czarnej płyty i cały pomysł z tłem przestawał cokolwiek znaczyć.
+  */
+  background:
+    radial-gradient(
+      78% 62% at 50% 50%,
+      rgba(5, 4, 7, 0.88) 0%,
+      rgba(5, 4, 7, 0.62) 46%,
+      rgba(5, 4, 7, 0.24) 78%,
+      rgba(5, 4, 7, 0.12) 100%
+    ),
+    linear-gradient(180deg, rgba(5, 4, 7, 0.34) 0%, rgba(5, 4, 7, 0.1) 42%, rgba(5, 4, 7, 0.5) 100%);
 }
 
 .avatar-rankingu {
   background: rgba(255, 255, 255, 0.05);
   box-shadow:
-    0 0 0 1.5px rgba(255, 150, 70, 0.4),
-    0 18px 46px -18px rgba(255, 77, 10, 0.6);
+    0 0 0 1.5px rgba(255, 150, 70, 0.42),
+    0 22px 54px -20px rgba(255, 77, 10, 0.62);
+  transition: box-shadow 520ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.karta-rankingu:hover .avatar-rankingu {
+  box-shadow:
+    0 0 0 1.5px rgba(255, 186, 110, 0.7),
+    0 26px 62px -18px rgba(255, 77, 10, 0.8);
+}
+
+/* ---- zwarty wiersz dalszych miejsc ---- */
 /*
-  Wiersz dalszych miejsc. Ciepła smuga wjeżdża od lewej pod kursorem - ten sam gest co
-  w liście wyników na mapie, więc nikt nie musi się go uczyć drugi raz.
+  Przy dwudziestu pięciu wierszach wypełnienie każdego z nich robi z listy pasiastą ścianę.
+  Zostaje więc sama włosowa linia u dołu, a tło i światło pojawiają się pod kursorem -
+  spokojnie w spoczynku, wyraźnie przy dotknięciu.
 */
 .wiersz-rankingu {
   position: relative;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.035);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
-  transition: box-shadow 320ms ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  transition:
+    background-color 320ms ease,
+    padding-left 420ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .wiersz-rankingu::before {
@@ -2051,33 +2213,66 @@ select option {
   opacity: 0;
   background: linear-gradient(
     100deg,
-    rgba(255, 122, 24, 0.22) 0%,
-    rgba(255, 122, 24, 0.06) 34%,
-    transparent 68%
+    rgba(255, 122, 24, 0.16) 0%,
+    rgba(255, 122, 24, 0.04) 38%,
+    transparent 70%
   );
   transition: opacity 320ms ease;
 }
 
+/* włosowy akcent wjeżdżający od lewej - jedyny element, który się wysuwa */
+.wiersz-rankingu::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 18%;
+  bottom: 18%;
+  width: 2px;
+  border-radius: 99px;
+  background: linear-gradient(180deg, #ffb25c, #ff4d0a);
+  scale: 1 0;
+  transition: scale 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .wiersz-rankingu:hover,
 .wiersz-rankingu:focus-visible {
-  box-shadow: inset 0 0 0 1px rgba(255, 122, 24, 0.3);
+  background-color: rgba(255, 255, 255, 0.03);
+  padding-left: 12px;
 }
 .wiersz-rankingu:hover::before,
 .wiersz-rankingu:focus-visible::before {
   opacity: 1;
 }
+.wiersz-rankingu:hover::after,
+.wiersz-rankingu:focus-visible::after {
+  scale: 1 1;
+}
 
 .wiersz-rankingu > * {
   position: relative;
+  z-index: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .wjazd,
+  .wjazd-boczny {
+    animation: none;
+    opacity: 1;
+    translate: none;
+    scale: 1;
+  }
+
   .karta-rankingu,
   .karta-rankingu:hover,
+  .karta-rankingu:active,
   .karta-rankingu:hover img,
   .karta-rankingu:hover picture {
     translate: none;
     scale: 1;
+  }
+
+  .karta-rankingu-blysk {
+    display: none;
   }
 }
 
