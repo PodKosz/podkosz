@@ -99,7 +99,7 @@ const STYLE: StyleSpecification = {
         a jednocześnie na tyle widoczna, że podświetlenie działa nawet wtedy, gdy
         przeglądarka nie poradzi sobie z warstwą SVG.
       */
-      paint: { "fill-color": "#ff7a18", "fill-opacity": 0.09 },
+      paint: { "fill-color": "#ff7a18", "fill-opacity": 0.05 },
     },
     {
       id: "woj-line",

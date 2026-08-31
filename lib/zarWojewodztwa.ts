@@ -216,13 +216,20 @@ export function stworzZarWojewodztwa(map: MlMap, przyrostek: string): ZarWojewod
         jest trzy razy większe od opolskiego, a żar ma w obu wyglądać tak samo gęsto.
         Amplituda ruchu też idzie z rozmiaru - stąd zmienne w stylu, z których korzystają
         klatki animacji w globals.css.
+
+        Promienie są wyraźnie mniejsze od samego województwa i to jest sedno: żar ma być
+        ciepłym środkiem, który wygasa przed granicami, a nie wypełnieniem po brzegi.
+        Przy poprzednich wartościach największa plama miała średnicę półtora raza większą
+        od regionu - po dolocie kamery, kiedy województwo zajmuje cały ekran, wychodziła
+        z tego pomarańczowa płachta. Najmocniej widać to na telefonie, gdzie kadr jest
+        wąski i region wypełnia go w całości.
       */
       const w = nowy.lokalneSE.x - nowy.lokalneNW.x;
       const h = nowy.lokalneSE.y - nowy.lokalneNW.y;
       const cx = nowy.lokalneNW.x + w / 2;
       const cy = nowy.lokalneNW.y + h / 2;
 
-      const rozmiary = [0.82, 0.58, 0.34];
+      const rozmiary = [0.5, 0.34, 0.2];
       plamy.forEach((e, i) => {
         const f = rozmiary[i];
         e.setAttribute("cx", cx.toFixed(2));
