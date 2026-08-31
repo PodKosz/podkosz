@@ -21,10 +21,14 @@ import {
  * Poziomy różnią się wyłącznie skalą i gęstością - i to ona niesie kolejność:
  *
  *   1. Zwycięzca - jeden kadr na całą szerokość, panoramiczny. Nie da się go pomylić z niczym.
- *   2. Miejsca 2-3 - dwa kadry obok siebie, wciąż duże.
- *   3. Miejsca 4-10 - trzy w rzędzie.
+ *   2. Miejsca 2-4 - trzy kadry w rzędzie, wciąż duże.
+ *   3. Miejsca 5-10 - sześć kadrów, czyli dokładnie dwa pełne rzędy po trzy.
  *   4. Miejsca 11-25 - włosowe wiersze w dwóch kolumnach; przy tej gęstości zdjęcie jest
  *      już tylko znacznikiem, a nie treścią.
+ *
+ * Podział 1 + 3 + 6 jest tu wyborem arytmetycznym, nie estetycznym: przy trzech kolumnach
+ * każdy rząd wychodzi pełny. Poprzedni układ 1 + 2 + 7 zostawiał w ostatnim rzędzie
+ * pojedynczą kartę i pustkę obok niej - a nic nie psuje siatki tak, jak niedomknięty rząd.
  *
  * Całość jest zwykłym HTML-em bez stanu. Pojawianie się przy przewijaniu, reakcje na
  * kursor i potwierdzenie kliknięcia robi CSS (patrz `.wjazd`, `.karta-rankingu`), więc
@@ -37,8 +41,8 @@ const LISTA_DO = 25;
 
 export function RankingBoisk({ courts }: { courts: Court[] }) {
   const [pierwszy, ...reszta] = courts;
-  const duet = reszta.slice(0, 2);
-  const siatka = courts.slice(3, SIATKA_DO);
+  const trojka = reszta.slice(0, 3);
+  const siatka = courts.slice(4, SIATKA_DO);
   const lista = courts.slice(SIATKA_DO, LISTA_DO);
 
   if (!pierwszy) {
@@ -55,11 +59,11 @@ export function RankingBoisk({ courts }: { courts: Court[] }) {
         <KartaBoiska court={pierwszy} miejsce={1} wariant="zwyciezca" />
       </section>
 
-      {duet.length > 0 && (
-        <section className="grid gap-5 lg:grid-cols-2 lg:gap-6">
-          {duet.map((c, i) => (
+      {trojka.length > 0 && (
+        <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+          {trojka.map((c, i) => (
             <div key={c.id} className="wjazd">
-              <KartaBoiska court={c} miejsce={i + 2} wariant="duet" />
+              <KartaBoiska court={c} miejsce={i + 2} wariant="trojka" />
             </div>
           ))}
         </section>
@@ -67,11 +71,11 @@ export function RankingBoisk({ courts }: { courts: Court[] }) {
 
       {siatka.length > 0 && (
         <section>
-          <Naglowek tytul="Goniący" opis={`Miejsca 4-${3 + siatka.length}`} />
+          <Naglowek tytul="Goniący" opis={`Miejsca 5-${4 + siatka.length}`} />
           <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3 xl:gap-6">
             {siatka.map((c, i) => (
               <div key={c.id} className="wjazd">
-                <KartaBoiska court={c} miejsce={i + 4} />
+                <KartaBoiska court={c} miejsce={i + 5} />
               </div>
             ))}
           </div>
@@ -123,10 +127,10 @@ function KartaBoiska({
 }: {
   court: Court;
   miejsce: number;
-  wariant?: "zwyciezca" | "duet" | "siatka";
+  wariant?: "zwyciezca" | "trojka" | "siatka";
 }) {
   const zwyciezca = wariant === "zwyciezca";
-  const duet = wariant === "duet";
+  const trojka = wariant === "trojka";
 
   /*
     Wysokość zamiast proporcji. Panoramiczny kadr opisany proporcją potrafi na wąskim
@@ -136,9 +140,9 @@ function KartaBoiska({
   */
   const wysokosc = zwyciezca
     ? "clamp(380px, 44vw, 660px)"
-    : duet
-      ? "clamp(300px, 30vw, 460px)"
-      : "clamp(260px, 24vw, 360px)";
+    : trojka
+      ? "clamp(300px, 29vw, 440px)"
+      : "clamp(240px, 21vw, 320px)";
 
   return (
     <Link
@@ -152,9 +156,7 @@ function KartaBoiska({
         sizes={
           zwyciezca
             ? "(min-width: 1600px) 1600px, 100vw"
-            : duet
-              ? "(min-width: 1024px) 50vw, 100vw"
-              : "(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw"
+            : "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
         }
         priority={miejsce <= 3}
       />
@@ -181,9 +183,9 @@ function KartaBoiska({
         className={`numer-rankingu pointer-events-none absolute right-5 top-2 z-[2] font-bold leading-none tabular-nums ${
           zwyciezca
             ? "text-[clamp(76px,9vw,150px)]"
-            : duet
-              ? "text-[clamp(58px,6vw,104px)]"
-              : "numer-rankingu-maly text-[clamp(44px,4.5vw,72px)]"
+            : trojka
+              ? "text-[clamp(54px,5.5vw,92px)]"
+              : "numer-rankingu-maly text-[clamp(40px,4vw,64px)]"
         }`}
       >
         {String(miejsce).padStart(2, "0")}
@@ -208,9 +210,9 @@ function KartaBoiska({
           className={`block font-semibold leading-[1.05] tracking-[-0.025em] transition-colors group-hover:text-glow ${
             zwyciezca
               ? "text-[clamp(26px,3.4vw,52px)]"
-              : duet
-                ? "text-[clamp(20px,2.2vw,32px)]"
-                : "text-[clamp(17px,1.6vw,23px)]"
+              : trojka
+                ? "text-[clamp(19px,2vw,29px)]"
+                : "text-[clamp(16px,1.5vw,21px)]"
           }`}
         >
           {court.name}

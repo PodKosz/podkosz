@@ -14,8 +14,10 @@ import { FireBallIcon } from "@/components/icons";
  * miejsca, które ta osoba wniosła do serwisu. Na wierzchu zostaje twarz i dwie liczby.
  *
  * Poziomy odpowiadają jeden do jednego rankingowi boisk, żeby obie strony czytały się jak
- * jedna rzecz: zwycięzca na całą szerokość, dwójka obok siebie, trójka w rzędzie, potem
- * włosowe wiersze. Puste miejsca zostają w układzie jako przerywane kształty - ranking
+ * jedna rzecz: zwycięzca na całą szerokość, potem trójka w rzędzie, potem sześć kart
+ * (dwa pełne rzędy po trzy), na końcu włosowe wiersze. Podział 1 + 3 + 6 jest wyborem
+ * arytmetycznym: przy trzech kolumnach każdy rząd wychodzi pełny, bez osieroconej karty
+ * w ostatnim. Puste miejsca zostają w układzie jako przerywane kształty - ranking
  * z trzema osobami wygląda na porzucony, a ranking z trzema osobami i dwudziestoma dwoma
  * wolnymi miejscami wygląda na zaproszenie.
  */
@@ -25,10 +27,12 @@ const LISTA_DO = 25;
 
 export function RankingGraczy({ odkrywcy }: { odkrywcy: OdkrywcaRanking[] }) {
   const [pierwszy, ...reszta] = odkrywcy;
-  const duet = reszta.slice(0, 2);
-  const siatka = odkrywcy.slice(3, SIATKA_DO);
+  const trojka = reszta.slice(0, 3);
+  const siatka = odkrywcy.slice(4, SIATKA_DO);
   const lista = odkrywcy.slice(SIATKA_DO, LISTA_DO);
-  const wolneWSiatce = Math.max(0, SIATKA_DO - 3 - siatka.length);
+  /* trójka i siatka mogą być niepełne - dopisujemy puste miejsca, żeby rzędy się domykały */
+  const wolneWTrojce = Math.max(0, 3 - trojka.length);
+  const wolneWSiatce = Math.max(0, SIATKA_DO - 4 - siatka.length);
   const wolneWLiscie = Math.max(0, LISTA_DO - Math.max(odkrywcy.length, SIATKA_DO));
 
   if (!pierwszy) {
@@ -45,27 +49,30 @@ export function RankingGraczy({ odkrywcy }: { odkrywcy: OdkrywcaRanking[] }) {
         <KartaGracza odkrywca={pierwszy} miejsce={1} wariant="zwyciezca" />
       </section>
 
-      {duet.length > 0 && (
-        <section className="grid gap-5 lg:grid-cols-2 lg:gap-6">
-          {duet.map((o, i) => (
-            <div key={o.slug} className="wjazd">
-              <KartaGracza odkrywca={o} miejsce={i + 2} wariant="duet" />
-            </div>
-          ))}
-        </section>
-      )}
+      <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+        {trojka.map((o, i) => (
+          <div key={o.slug} className="wjazd">
+            <KartaGracza odkrywca={o} miejsce={i + 2} wariant="trojka" />
+          </div>
+        ))}
+        {Array.from({ length: wolneWTrojce }, (_, i) => (
+          <div key={`wolna-trio-${i}`} className="wjazd">
+            <WolnaKarta miejsce={2 + trojka.length + i} duza />
+          </div>
+        ))}
+      </section>
 
       <section>
-        <Naglowek tytul="Goniący" opis={`Miejsca 4-${SIATKA_DO}`} />
+        <Naglowek tytul="Goniący" opis={`Miejsca 5-${SIATKA_DO}`} />
         <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3 xl:gap-6">
           {siatka.map((o, i) => (
             <div key={o.slug} className="wjazd">
-              <KartaGracza odkrywca={o} miejsce={i + 4} />
+              <KartaGracza odkrywca={o} miejsce={i + 5} />
             </div>
           ))}
           {Array.from({ length: wolneWSiatce }, (_, i) => (
             <div key={`wolna-${i}`} className="wjazd">
-              <WolnaKarta miejsce={4 + siatka.length + i} />
+              <WolnaKarta miejsce={5 + siatka.length + i} />
             </div>
           ))}
         </div>
@@ -148,17 +155,17 @@ function KartaGracza({
 }: {
   odkrywca: OdkrywcaRanking;
   miejsce: number;
-  wariant?: "zwyciezca" | "duet" | "siatka";
+  wariant?: "zwyciezca" | "trojka" | "siatka";
 }) {
   const zwyciezca = wariant === "zwyciezca";
-  const duet = wariant === "duet";
-  const kadry = odkrywca.kadry.slice(0, zwyciezca ? 4 : duet ? 3 : 2);
+  const trojka = wariant === "trojka";
+  const kadry = odkrywca.kadry.slice(0, zwyciezca ? 4 : trojka ? 3 : 2);
 
   const wysokosc = zwyciezca
     ? "clamp(380px, 42vw, 620px)"
-    : duet
-      ? "clamp(300px, 30vw, 440px)"
-      : "clamp(260px, 24vw, 340px)";
+    : trojka
+      ? "clamp(300px, 29vw, 440px)"
+      : "clamp(240px, 21vw, 320px)";
 
   return (
     <Link
@@ -168,7 +175,7 @@ function KartaGracza({
     >
       <Mozaika
         kadry={kadry}
-        sizes={zwyciezca ? "(min-width: 1600px) 800px, 50vw" : "(min-width: 1280px) 20vw, 50vw"}
+        sizes={zwyciezca ? "(min-width: 1600px) 800px, 50vw" : "(min-width: 1024px) 18vw, 50vw"}
       />
       <span aria-hidden className="mozaika-szyba" />
       <span aria-hidden className="karta-rankingu-blysk" />
@@ -178,9 +185,9 @@ function KartaGracza({
         className={`numer-rankingu pointer-events-none absolute right-5 top-2 z-[2] font-bold leading-none tabular-nums ${
           zwyciezca
             ? "text-[clamp(76px,9vw,150px)]"
-            : duet
-              ? "text-[clamp(58px,6vw,104px)]"
-              : "numer-rankingu-maly text-[clamp(44px,4.5vw,72px)]"
+            : trojka
+              ? "text-[clamp(54px,5.5vw,92px)]"
+              : "numer-rankingu-maly text-[clamp(40px,4vw,64px)]"
         }`}
       >
         {String(miejsce).padStart(2, "0")}
@@ -191,9 +198,9 @@ function KartaGracza({
           className={`avatar-rankingu relative grid place-items-center overflow-hidden rounded-full ${
             zwyciezca
               ? "h-[clamp(104px,11vw,168px)] w-[clamp(104px,11vw,168px)]"
-              : duet
-                ? "h-[clamp(84px,8vw,116px)] w-[clamp(84px,8vw,116px)]"
-                : "h-[76px] w-[76px]"
+              : trojka
+                ? "h-[clamp(80px,7.5vw,110px)] w-[clamp(80px,7.5vw,110px)]"
+                : "h-[70px] w-[70px]"
           }`}
         >
           {odkrywca.avatar ? (
@@ -211,9 +218,9 @@ function KartaGracza({
             className={`block truncate font-semibold leading-[1.05] tracking-[-0.025em] transition-colors group-hover:text-glow ${
               zwyciezca
                 ? "text-[clamp(24px,3vw,44px)]"
-                : duet
-                  ? "text-[clamp(19px,2vw,28px)]"
-                  : "text-[17px]"
+                : trojka
+                  ? "text-[clamp(18px,1.9vw,27px)]"
+                  : "text-[16px]"
             }`}
           >
             @{odkrywca.name}
@@ -244,7 +251,7 @@ function KartaGracza({
 
         {odkrywca.plakietki.length > 0 && (
           <span className="flex flex-wrap items-center justify-center gap-1.5">
-            {odkrywca.plakietki.slice(0, zwyciezca ? 5 : 3).map((p) => (
+            {odkrywca.plakietki.slice(0, zwyciezca ? 5 : trojka ? 3 : 2).map((p) => (
               <span key={p.id} title={p.nazwa} className={`medal medal-${p.poziom} h-8 w-8`}>
                 <IkonaOdznaczenia id={p.id} className="h-[17px] w-[17px]" />
               </span>
@@ -257,11 +264,11 @@ function KartaGracza({
 }
 
 /** Wolne miejsce w siatce - ten sam komunikat co w wierszach, tylko w kształcie karty. */
-function WolnaKarta({ miejsce }: { miejsce: number }) {
+function WolnaKarta({ miejsce, duza = false }: { miejsce: number; duza?: boolean }) {
   return (
     <div
       className="flex flex-col items-center justify-center gap-4 rounded-[28px] border border-dashed border-white/10 p-6 text-center"
-      style={{ height: "clamp(260px, 24vw, 340px)" }}
+      style={{ height: duza ? "clamp(300px, 29vw, 440px)" : "clamp(240px, 21vw, 320px)" }}
     >
       <span className="text-[26px] font-semibold tabular-nums text-white/15">
         {String(miejsce).padStart(2, "0")}
