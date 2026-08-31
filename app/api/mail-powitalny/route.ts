@@ -1,6 +1,6 @@
 import { getSessionUser, supabaseServer } from "@/lib/supabase/server";
 import { htmlPowitania, type RodzajPowitania } from "@/lib/mail/powitanie";
-import { CIASTKO_PRZEPUSTKI, czyWpuszczony, wyslijPowitanie } from "@/lib/mail/wysylka";
+import { czyWpuszczony, wyslijPowitanie } from "@/lib/mail/wysylka";
 
 /**
  * Mail powitalny - podgląd i wysyłka na żądanie.
@@ -38,7 +38,7 @@ export async function GET(request: Request) {
   });
 }
 
-export async function POST(request: Request) {
+export async function POST() {
   const supabase = await supabaseServer();
   if (!supabase) return Response.json({ wyslano: false, powod: "brak bazy" }, { status: 500 });
 
@@ -47,8 +47,7 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
   if (!user) return Response.json({ wyslano: false, powod: "brak sesji" }, { status: 401 });
 
-  const przepustka = request.headers.get("cookie")?.includes(`${CIASTKO_PRZEPUSTKI}=1`) ?? false;
-  const wynik = await wyslijPowitanie(supabase, await czyWpuszczony(supabase, przepustka));
+  const wynik = await wyslijPowitanie(supabase, await czyWpuszczony(supabase));
 
   return Response.json(wynik, { status: wynik.wyslano ? 200 : 200 });
 }

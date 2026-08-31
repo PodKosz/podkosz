@@ -1,6 +1,6 @@
 import { NextResponse, after, type NextRequest } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
-import { CIASTKO_PRZEPUSTKI, czyWpuszczony, wyslijPowitanie } from "@/lib/mail/wysylka";
+import { czyWpuszczony, wyslijPowitanie } from "@/lib/mail/wysylka";
 
 /** Odbiera kod OAuth od Google i zamienia go na sesję w ciasteczkach. */
 export async function GET(request: NextRequest) {
@@ -24,10 +24,9 @@ export async function GET(request: NextRequest) {
         na Resenda, zanim zobaczy stronę. Sama decyzja „czy wysyłać" siedzi w bazie,
         więc powtórne logowania nic nie robią.
       */
-      const przepustka = request.cookies.get(CIASTKO_PRZEPUSTKI)?.value === "1";
       after(async () => {
         try {
-          const wpuszczony = await czyWpuszczony(supabase, przepustka);
+          const wpuszczony = await czyWpuszczony(supabase);
           await wyslijPowitanie(supabase, wpuszczony);
         } catch {
           // logowanie musi się udać nawet wtedy, gdy poczta leży

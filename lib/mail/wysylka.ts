@@ -1,6 +1,6 @@
 import { POWOD_BRAK_NADAWCY, nadawca } from "./nadawca";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { ZASLONA, CIASTKO_WEJSCIA } from "@/lib/zaslona";
+import { ZASLONA } from "@/lib/zaslona";
 import {
   htmlPowitania,
   tekstPowitania,
@@ -44,19 +44,17 @@ interface WierszZaklepania {
  * Za zasłoną samo zalogowanie nic nie znaczy: konto zakłada trigger na `auth.users`, ale
  * kto nie jest na liście beta testerów, wraca na „Już niedługo". Takiej osobie powitanie
  * byłoby nie na miejscu - wita się kogoś, kto wszedł.
+ *
+ * Pytamy o to bazę i tylko bazę. Wcześniej wystarczyła jeszcze przepustka w ciasteczku,
+ * ale ta dawała się dopisać ręcznie - a wtedy list powitalny szedł do kogoś, kto za
+ * zasłoną w ogóle nie jest.
  */
-export async function czyWpuszczony(
-  supabase: SupabaseClient,
-  przepustka: boolean
-): Promise<boolean> {
-  if (!ZASLONA || przepustka) return true;
+export async function czyWpuszczony(supabase: SupabaseClient): Promise<boolean> {
+  if (!ZASLONA) return true;
 
   const { data } = await supabase.rpc("czy_wpuscic");
   return data === true;
 }
-
-/** Nazwa ciasteczka z przepustką - żeby wołający nie musiał znać lib/zaslona.ts. */
-export const CIASTKO_PRZEPUSTKI = CIASTKO_WEJSCIA;
 
 export async function wyslijPowitanie(
   supabase: SupabaseClient,

@@ -71,12 +71,6 @@ export async function GET() {
       skutek: "Bez tego mapa jedzie na zapasowym podkładzie Esri.",
     },
     {
-      klucz: "PODKOSZ_KLUCZ",
-      ustawione: jest(process.env.PODKOSZ_KLUCZ),
-      waga: "opcjonalne",
-      skutek: "Bez tego nie działa furtka ?wpusc= dla beta testerów bez konta.",
-    },
-    {
       klucz: "NEXT_PUBLIC_INSTAGRAM",
       ustawione: jest(process.env.NEXT_PUBLIC_INSTAGRAM),
       waga: "opcjonalne",

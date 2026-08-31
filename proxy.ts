@@ -2,10 +2,10 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { SUPABASE_ANON_KEY, SUPABASE_URL, supabaseEnabled } from "@/lib/supabase/config";
 import {
-  CIASTKO_WEJSCIA,
-  KLUCZ_WEJSCIA,
   PAMIEC_IP_WOLNY,
   PAMIEC_IP_ZBANOWANY,
+  PAMIEC_WEJSCIA_NIE,
+  PAMIEC_WEJSCIA_TAK,
   SCIEZKA_ZASLONY,
   ZASLONA,
 } from "@/lib/zaslona";
@@ -28,10 +28,27 @@ const ZAWSZE_DOSTEPNE = [
   "/api/zapis-na-otwarcie",
   "/api/obecnosc",
   "/api/utrzymanie",
+  /*
+    Sesja też, i to nie z wygody: zasłona musi umieć powiedzieć zalogowanemu, że jego
+    adresu nie ma na liście testerów. Bez tego wpisu odpowiedź o sesji przechodziła przez
+    przepisanie na „Już niedługo", wracała jako HTML i strona uznawała każdego za
+    niezalogowanego - więc po zalogowaniu widać było ten sam przycisk co przed nim.
+    Trasa oddaje wyłącznie dane właściciela ciasteczka, więc nic tu nie wycieka.
+  */
+  "/api/sesja",
 ];
 
 /** Wynik sprawdzenia adresu IP - żeby nie pytać bazy przy każdym żądaniu. */
 const pamiecIP = new Map<string, { zbanowany: boolean; do: number }>();
+
+/**
+ * Wynik sprawdzenia, czy konto wpuszczamy za zasłonę - po identyfikatorze użytkownika.
+ *
+ * Tu jest różnica między pamięcią a przepustką: to siedzi w procesie serwera, a nie
+ * w ciasteczku, więc nikt tego sobie nie ustawi. Pusta pamięć nie wpuszcza nikogo -
+ * oznacza tylko, że trzeba zapytać bazę.
+ */
+const pamiecWejscia = new Map<string, { wpuszczony: boolean; do: number }>();
 
 /** Adres klienta: za Cloudflare i Vercelem prawdziwy adres siedzi w tych nagłówkach. */
 function adresKlienta(request: NextRequest): string | null {
@@ -81,7 +98,7 @@ export async function proxy(request: NextRequest) {
   const sciezka = request.nextUrl.pathname;
 
   let response = NextResponse.next({ request });
-  let zalogowany = false;
+  let idUzytkownika: string | null = null;
   let klient: ReturnType<typeof createServerClient> | null = null;
 
   if (supabaseEnabled) {
@@ -99,7 +116,7 @@ export async function proxy(request: NextRequest) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    zalogowany = Boolean(user);
+    idUzytkownika = user?.id ?? null;
     klient = supabase;
   }
 
@@ -126,48 +143,33 @@ export async function proxy(request: NextRequest) {
 
   if (!ZASLONA) return response;
 
-  /* Klucz w adresie zapisuje przepustkę w ciasteczku i wraca na czysty adres. */
-  /* bez ustawionego klucza furtka nie istnieje - `null === null` nie może jej otworzyć */
-  if (KLUCZ_WEJSCIA && request.nextUrl.searchParams.get("wpusc") === KLUCZ_WEJSCIA) {
-    const czysty = request.nextUrl.clone();
-    czysty.searchParams.delete("wpusc");
-    const przekierowanie = NextResponse.redirect(czysty);
-    przekierowanie.cookies.set(CIASTKO_WEJSCIA, "1", {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: true,
-      path: "/",
-      maxAge: 60 * 60 * 24 * 365,
-    });
-    return przekierowanie;
-  }
-
-  const zPrzepustka = request.cookies.get(CIASTKO_WEJSCIA)?.value === "1";
   const zawszeDostepny = ZAWSZE_DOSTEPNE.some(
     (p) => sciezka === p || sciezka.startsWith(`${p}/`)
   );
 
   /*
-    Zalogowanego pytamy bazy, czy go wpuścić: administrator i adresy z listy beta testerów
-    przechodzą, reszta zostaje na zasłonie. Wynik zapisujemy w przepustce na tydzień, żeby
-    nie odpytywać bazy przy każdym żądaniu.
+    Jedyna droga za zasłonę: zalogowana sesja, której adres jest na liście beta testerów
+    (albo konto administratora). Pyta o to `czy_wpuscic()` w bazie, a wynik trzymamy
+    w pamięci procesu po identyfikatorze konta, żeby nie odpytywać bazy przy każdym
+    kliknięciu.
+
+    Wcześniej stały tu jeszcze dwie ścieżki - klucz w adresie i ciasteczko z przepustką -
+    i obie dawały się obejść bez konta. Powód ich usunięcia opisuje `lib/zaslona.ts`.
   */
-  let betaWpuszczony = false;
-  if (!zPrzepustka && !zawszeDostepny && zalogowany && klient) {
-    const { data } = await klient.rpc("czy_wpuscic");
-    betaWpuszczony = data === true;
-  }
+  let wpuszczony = zawszeDostepny;
 
-  const wpuszczony = zPrzepustka || zawszeDostepny || betaWpuszczony;
-
-  if (wpuszczony && betaWpuszczony) {
-    response.cookies.set(CIASTKO_WEJSCIA, "1", {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: true,
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7,
-    });
+  if (!wpuszczony && idUzytkownika && klient) {
+    const znane = pamiecWejscia.get(idUzytkownika);
+    if (znane && znane.do > Date.now()) {
+      wpuszczony = znane.wpuszczony;
+    } else {
+      const { data } = await klient.rpc("czy_wpuscic");
+      wpuszczony = data === true;
+      pamiecWejscia.set(idUzytkownika, {
+        wpuszczony,
+        do: Date.now() + (wpuszczony ? PAMIEC_WEJSCIA_TAK : PAMIEC_WEJSCIA_NIE),
+      });
+    }
   }
 
   if (!wpuszczony) {
