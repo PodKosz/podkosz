@@ -157,7 +157,6 @@ interface MapDiag {
 export function MapView({
   courts,
   activeId,
-  focusId,
   highlightVoivodeship,
   onHoverCourt,
   onSelectCourt,
@@ -168,7 +167,6 @@ export function MapView({
 }: {
   courts: MapCourt[];
   activeId: string | null;
-  focusId: string | null;
   highlightVoivodeship: string;
   onHoverCourt: (id: string | null) => void;
   onSelectCourt: (court: MapCourt) => void;
@@ -250,6 +248,14 @@ export function MapView({
    * włączony i podświetlenie zapalało się od nowa, tym razem na kadrze całej Polski.
    */
   const [porzuconeWoj, setPorzuconeWoj] = useState<string | null>(null);
+  /**
+   * Miejsce ostatniego kliknięcia w mapę (lng, lat) - punkt wyjścia fali podświetlenia.
+   *
+   * Trzymane w stanie, a nie w refie, właśnie po to, żeby zmiana wywołała efekt zapalający
+   * żar: dzięki temu drugie kliknięcie w to samo województwo też puszcza falę, choć nazwa
+   * regionu się nie zmieniła. Każde kliknięcie daje nową tablicę, czyli nową tożsamość.
+   */
+  const [punktKliku, setPunktKliku] = useState<[number, number] | null>(null);
   /**
    * Przybliżenie osiągnięte po dolocie do województwa - punkt odniesienia dla gaśnięcia.
    *
@@ -423,7 +429,9 @@ export function MapView({
       if (!map.getLayer("woj-fill")) return;
       const trafione = map.queryRenderedFeatures(e.point, { layers: ["woj-fill"] });
       const nazwa = trafione[0]?.properties?.nazwa;
-      setWojKlikniete(typeof nazwa === "string" ? nazwa : null);
+      const wRegionie = typeof nazwa === "string";
+      setPunktKliku(wRegionie ? [e.lngLat.lng, e.lngLat.lat] : null);
+      setWojKlikniete(wRegionie ? nazwa : null);
     });
 
     /*
@@ -447,6 +455,7 @@ export function MapView({
       zoomWejsciaRef.current = null;
       setPorzuconeWoj(wojKlikRef.current);
       setWojKlikniete(null);
+      setPunktKliku(null);
     });
     /*
       Easter egg: dwie niebieskie pinezki poza Polską - Venice Beach i Manhattan. Wieszamy
@@ -1007,28 +1016,21 @@ export function MapView({
       if (!aktualne || !kolekcja) return;
 
       const cecha = kolekcja.features.find((f) => f.properties?.nazwa === wybraneWoj);
-      zarRef.current?.ustaw(cecha?.geometry ?? null);
+      /*
+        Punkt kliknięcia podajemy tylko wtedy, gdy świeci region wskazany palcem. Wybór
+        z panelu filtrów albo z adresu nie ma miejsca, z którego fala miałaby wyjść - tam
+        zostaje zwykłe rozjaśnienie.
+      */
+      zarRef.current?.ustaw(
+        cecha?.geometry ?? null,
+        wojKlikniete === wybraneWoj && punktKliku ? punktKliku : undefined
+      );
     })();
 
     return () => {
       aktualne = false;
     };
-  }, [wybraneWoj, ready]);
-
-  /* ---- lot do wybranego boiska ---- */
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !ready || !focusId) return;
-    const court = courts.find((c) => c.id === focusId);
-    if (!court) return;
-    map.flyTo({
-      center: [court.lng, court.lat],
-      zoom: Math.max(map.getZoom(), 13.5),
-      offset: (containerRef.current?.clientWidth ?? 1024) < 768 ? [0, -70] : [180, 0],
-      speed: 1.1,
-      curve: 1.5,
-    });
-  }, [focusId, courts, ready]);
+  }, [wybraneWoj, wojKlikniete, punktKliku, ready]);
 
   const zoomBy = (d: number) => mapRef.current?.zoomTo((mapRef.current?.getZoom() ?? 6) + d, { duration: 320 });
 

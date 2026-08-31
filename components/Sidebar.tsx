@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import {
   ACCESS_LABEL,
   Access,
@@ -12,7 +11,7 @@ import {
   TYPE_LABEL,
   VOIVODESHIPS,
 } from "@/lib/types";
-import { Filters } from "@/lib/filters";
+import { DEFAULT_FILTERS, Filters } from "@/lib/filters";
 import { useLosowanie } from "./Losowanie";
 import {
   BallIcon,
@@ -46,8 +45,6 @@ export function Sidebar({
   maksLajki,
   results,
   counts,
-  activeId,
-  onHover,
   sheetOpen,
   setSheetOpen,
 }: {
@@ -55,10 +52,9 @@ export function Sidebar({
   setFilters: (f: Filters) => void;
   /** najwięcej podpaleń, jakie ma dziś jakiekolwiek boisko - górna granica suwaka */
   maksLajki: number;
+  /** wyniki filtrowania - potrzebny sam licznik, listy panel już nie pokazuje */
   results: MapCourt[];
   counts: Record<CourtType, number>;
-  activeId: string | null;
-  onHover: (id: string | null) => void;
   /*
     Stan arkusza na telefonie siedzi w Explorerze, bo dotyczy też mapy: przy otwarciu
     panelu trzeba schować wizytówkę boiska, żeby jedno nie nachodziło na drugie.
@@ -66,9 +62,7 @@ export function Sidebar({
   sheetOpen: boolean;
   setSheetOpen: (open: boolean) => void;
 }) {
-  const [openSurface, setOpenSurface] = useState(false);
-  const [openMore, setOpenMore] = useState(false);
-  /** Na komputerze lista filtrów jest schowana pod napisem „filtry”. */
+  /** Na komputerze panel filtrów jest schowany pod napisem „filtry”. */
   const [panelOpen, setPanelOpen] = useState(false);
   /** kostka na czas losowania boiska - `nakladka` doklejamy na końcu drzewa */
   const { losuj, nakladka } = useLosowanie();
@@ -237,21 +231,14 @@ export function Sidebar({
         </div>
 
         {panelOpen && (
-          <div className="glass-dim pointer-events-auto min-h-0 flex-1 overflow-hidden rounded-[26px]">
-            <div className="scroll-thin h-full overflow-y-auto px-5 py-5">
-              <FiltersAndList
+          <div className="panel-filtrow pointer-events-auto min-h-0 flex-1 rounded-[26px]">
+            <div className="scroll-thin h-full overflow-y-auto px-5 py-4">
+              <Filtry
                 filters={filters}
                 patch={patch}
                 maksLajki={maksLajki}
                 toggleSurface={toggleSurface}
                 counts={counts}
-                results={results}
-                activeId={activeId}
-                onHover={onHover}
-                    openSurface={openSurface}
-                setOpenSurface={setOpenSurface}
-                openMore={openMore}
-                setOpenMore={setOpenMore}
               />
             </div>
           </div>
@@ -275,7 +262,7 @@ export function Sidebar({
           transition: "transform 460ms cubic-bezier(.32,.72,0,1)",
           willChange: "transform",
         }}
-        className="glass-dim pointer-events-auto fixed inset-x-0 bottom-0 top-[68px] z-30 flex flex-col overflow-hidden rounded-t-[26px] md:hidden"
+        className="panel-filtrow pointer-events-auto fixed inset-x-0 bottom-0 top-[68px] z-30 flex flex-col rounded-t-[26px] md:hidden"
       >
         <div ref={stripRef}>
         <button
@@ -312,7 +299,7 @@ export function Sidebar({
                 {results.length} {results.length === 1 ? "boisko" : "boisk"} na mapie
               </span>
               <span className="mt-0.5 flex items-center gap-1.5 text-[12px] uppercase tracking-[0.12em] text-flame">
-                filtry i lista
+                filtry
                 <ChevronIcon className="h-4 w-4 rotate-180" />
               </span>
             </button>
@@ -335,19 +322,12 @@ export function Sidebar({
             sheetOpen ? "block" : "hidden"
           }`}
         >
-          <FiltersAndList
+          <Filtry
             filters={filters}
             patch={patch}
             maksLajki={maksLajki}
             toggleSurface={toggleSurface}
             counts={counts}
-            results={results}
-            activeId={activeId}
-            onHover={onHover}
-            openSurface={openSurface}
-            setOpenSurface={setOpenSurface}
-            openMore={openMore}
-            setOpenMore={setOpenMore}
           />
         </div>
       </aside>
@@ -357,311 +337,230 @@ export function Sidebar({
   );
 }
 
-function CourtCard({
-  court,
-  index,
-  active,
-  onHover,
-}: {
-  court: MapCourt;
-  index: number;
-  active: boolean;
-  onHover: (id: string | null) => void;
-}) {
-  const Icon = TYPE_ICON[court.type];
-  return (
-    /*
-      Wiersz jest odnośnikiem, a nie przyciskiem: wcześniej przejście robił dopiero
-      router.push w JavaScripcie, więc w kodzie strony nie istniał ani jeden link do karty
-      boiska - wyszukiwarki nie miały jak ich znaleźć. onClick zostaje, bo Explorer
-      przy wyborze robi jeszcze swoje (podświetlenie, zamknięcie arkusza).
-    */
-    <Link
-      href={`/boisko/${court.slug}`}
-      onMouseEnter={() => onHover(court.id)}
-      onMouseLeave={() => onHover(null)}
-      className={`flex w-full items-center gap-3 rounded-2xl border p-2.5 text-left transition ${
-        active
-          ? "border-flame/50 bg-gradient-to-r from-flame/18 to-transparent"
-          : "border-hairline bg-white/4 hover:bg-white/7"
-      }`}
-    >
-      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-hairline bg-black/30 text-flame">
-        <Icon className="h-6 w-6" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-1.5">
-          <span className="truncate text-[13px] font-semibold uppercase tracking-wide">
-            {index}. {court.name}
-          </span>
-          {court.funny && (
-            <span
-              title="Śmieszne boisko"
-              className="h-2 w-2 shrink-0 rounded-full lime-gradient"
-            />
-          )}
-        </span>
-        <span className="mt-0.5 flex items-center gap-1 text-[12px] text-muted">
-          <PinIcon className="h-3.5 w-3.5" /> {court.city}
-        </span>
-        <span className="mt-0.5 flex items-center gap-1 text-[12px] text-muted">
-          <BallIcon className="h-3.5 w-3.5" /> {TYPE_LABEL[court.type]}
-        </span>
-      </span>
-      <span className="flex shrink-0 items-center gap-1 self-end text-[12px] font-semibold text-glow">
-        <FireBallIcon className="h-3.5 w-3.5" />
-        {court.likes}
-      </span>
-    </Link>
-  );
-}
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <h2 className="mb-3 text-[13px] font-medium lowercase tracking-wide text-ink/90">{children}</h2>
-  );
-}
-
-function FieldLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mb-1.5 flex items-center text-[11px] uppercase tracking-[0.14em] text-faint">
-      {children}
-    </div>
-  );
-}
-
-function Collapsible({
-  title,
-  open,
-  onToggle,
-  badge,
+/**
+ * Jedna sekcja filtrów: nagłówek, opcjonalna wartość po prawej, treść.
+ *
+ * `kolejnosc` to miejsce w kaskadzie wjazdu - CSS bierze z niej opóźnienie animacji, więc
+ * sekcje pojawiają się jedna po drugiej, a nie wszystkie naraz.
+ */
+function Sekcja({
+  tytul,
+  prawo,
+  kolejnosc,
   children,
 }: {
-  title: string;
-  open: boolean;
-  onToggle: () => void;
-  badge?: number;
+  tytul: string;
+  prawo?: React.ReactNode;
+  kolejnosc: number;
   children: React.ReactNode;
 }) {
   return (
-    <div className="mt-5 border-t border-hairline pt-4">
-      <button onClick={onToggle} className="flex w-full items-center gap-2 text-left">
-        <span className="flex-1 text-[14px]">{title}</span>
-        {badge ? (
-          <span className="grid h-5 min-w-5 place-items-center rounded-full flame-gradient px-1.5 text-[11px] font-bold text-black">
-            {badge}
-          </span>
-        ) : null}
-        <ChevronIcon
-          className={`h-4 w-4 text-muted transition-transform duration-300 ${open ? "rotate-180" : ""}`}
-        />
-      </button>
-      <div
-        className="grid transition-all duration-300 ease-out"
-        style={{ gridTemplateRows: open ? "1fr" : "0fr", opacity: open ? 1 : 0 }}
-      >
-        <div className="overflow-hidden">{children}</div>
+    <section
+      className="sekcja-filtra py-5 first:pt-1"
+      style={{ "--i": kolejnosc } as React.CSSProperties}
+    >
+      <div className="mb-3 flex items-baseline gap-3">
+        <h2 className="text-[11px] uppercase tracking-[0.18em] text-faint">{tytul}</h2>
+        {prawo ? <span className="ml-auto">{prawo}</span> : null}
       </div>
-    </div>
+      {children}
+    </section>
   );
 }
 
-/** Filtry i lista wyników - ta sama treść na komputerze i w arkuszu na telefonie. */
-function FiltersAndList({
+/**
+ * Filtry mapy - ta sama treść na komputerze i w arkuszu na telefonie.
+ *
+ * Panel jest teraz wyłącznie filtrami. Wcześniej pod nimi jechała jeszcze numerowana lista
+ * wszystkich wyników i to ona zajmowała większość wysokości: filtry były wąskim paskiem na
+ * górze, a dwie z nich („Nawierzchnia" i „Więcej filtrów") siedziały schowane w zwijanych
+ * pudełkach, bo inaczej nie miały gdzie się zmieścić. Do województwa czy oświetlenia trzeba
+ * było dojechać dwoma kliknięciami.
+ *
+ * Teraz każdy filtr ma własną sekcję i wszystkie są widoczne od razu, bez zwijania. Nie ma
+ * czego rozwijać, bo nie ma z czym konkurować o miejsce - a stan filtrów czyta się z jednego
+ * spojrzenia, zamiast pamiętać, co jest pod którym pudełkiem.
+ */
+function Filtry({
   filters,
   patch,
   maksLajki,
   toggleSurface,
   counts,
-  results,
-  activeId,
-  onHover,
-  openSurface,
-  setOpenSurface,
-  openMore,
-  setOpenMore,
 }: {
   filters: Filters;
   patch: (p: Partial<Filters>) => void;
   maksLajki: number;
   toggleSurface: (s: Surface) => void;
   counts: Record<CourtType, number>;
-  results: MapCourt[];
-  activeId: string | null;
-  onHover: (id: string | null) => void;
-  openSurface: boolean;
-  setOpenSurface: (fn: (v: boolean) => boolean) => void;
-  openMore: boolean;
-  setOpenMore: (fn: (v: boolean) => boolean) => void;
 }) {
-  return (
-    <>
-      <SectionLabel>typ boiska</SectionLabel>
-      <div className="space-y-2">
-        {(Object.keys(TYPE_LABEL) as CourtType[]).map((t) => {
-          const Icon = TYPE_ICON[t];
-          return (
-            <button
-              key={t}
-              onClick={() => patch({ types: { ...filters.types, [t]: !filters.types[t] } })}
-              className="flex w-full items-center gap-3 rounded-2xl border border-transparent px-1 py-1.5 text-left transition hover:border-hairline hover:bg-white/4"
-            >
-              <Icon className="h-4 w-4 text-flame" />
-              <span className="flex-1 text-[14px]">
-                {TYPE_LABEL[t]} <span className="text-faint">[{counts[t]}]</span>
-              </span>
-              <span className="switch" data-on={filters.types[t]} />
-            </button>
-          );
-        })}
-      </div>
+  /* czy cokolwiek odbiega od stanu domyślnego - od tego zależy, czy pokazujemy czyszczenie */
+  const czynne =
+    (Object.keys(filters.types) as CourtType[]).some((t) => !filters.types[t]) ||
+    filters.surfaces.length > 0 ||
+    Boolean(filters.voivodeship) ||
+    Boolean(filters.access) ||
+    filters.onlyLit ||
+    filters.minLikes > 0;
 
-      <Collapsible
-        title="Nawierzchnia"
-        open={openSurface}
-        onToggle={() => setOpenSurface((v) => !v)}
-        badge={filters.surfaces.length || undefined}
-      >
-        <div className="flex flex-wrap gap-2 pt-1">
-          {(Object.keys(SURFACE_LABEL) as Surface[]).map((s) => {
-            const on = filters.surfaces.includes(s);
+  const prog = Math.min(filters.minLikes, maksLajki);
+
+  return (
+    <div>
+      <Sekcja tytul="typ boiska" kolejnosc={0}>
+        <div className="space-y-1">
+          {(Object.keys(TYPE_LABEL) as CourtType[]).map((t) => {
+            const Icon = TYPE_ICON[t];
             return (
               <button
-                key={s}
-                onClick={() => toggleSurface(s)}
-                className={`rounded-full border px-3 py-1.5 text-[12px] transition ${
-                  on
-                    ? "border-transparent flame-gradient font-semibold text-black"
-                    : "border-hairline bg-white/5 text-muted hover:text-ink"
-                }`}
+                key={t}
+                onClick={() => patch({ types: { ...filters.types, [t]: !filters.types[t] } })}
+                className="wiersz-filtra flex w-full items-center gap-3 px-1.5 py-2 text-left"
               >
-                {SURFACE_LABEL[s]}
+                <Icon className="h-4 w-4 shrink-0 text-flame" />
+                <span className="flex-1 text-[14px]">
+                  {TYPE_LABEL[t]} <span className="text-faint">[{counts[t]}]</span>
+                </span>
+                <span className="switch" data-on={filters.types[t]} />
               </button>
             );
           })}
         </div>
-      </Collapsible>
+      </Sekcja>
 
-      <Collapsible
-        title="Więcej filtrów"
-        open={openMore}
-        onToggle={() => setOpenMore((v) => !v)}
-        badge={
-          (filters.voivodeship ? 1 : 0) +
-            (filters.minLikes > 0 ? 1 : 0) +
-            (filters.access ? 1 : 0) +
-            (filters.onlyLit ? 1 : 0) || undefined
+      <Sekcja
+        tytul="nawierzchnia"
+        kolejnosc={1}
+        prawo={
+          filters.surfaces.length ? (
+            <span className="text-[11px] uppercase tracking-[0.12em] text-flame">
+              {filters.surfaces.length} z {Object.keys(SURFACE_LABEL).length}
+            </span>
+          ) : null
         }
       >
-        <div className="space-y-4 pt-1">
-          <div>
-            <FieldLabel>Województwo</FieldLabel>
-            <div className="field px-3 py-2">
-              <select
-                value={filters.voivodeship}
-                onChange={(e) => patch({ voivodeship: e.target.value })}
-                className="w-full bg-transparent text-[13px] outline-none"
-              >
-                <option value="">wszystkie</option>
-                {VOIVODESHIPS.map((w) => (
-                  <option key={w} value={w}>
-                    {w}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+        <div className="flex flex-wrap gap-2">
+          {(Object.keys(SURFACE_LABEL) as Surface[]).map((s) => (
+            <button
+              key={s}
+              onClick={() => toggleSurface(s)}
+              data-on={filters.surfaces.includes(s)}
+              className="pastylka rounded-full px-3.5 py-2 text-[12px] text-muted"
+            >
+              {SURFACE_LABEL[s]}
+            </button>
+          ))}
+        </div>
+      </Sekcja>
 
-          {/*
-            Suwak podpaleń pokazujemy tylko wtedy, gdy jest co filtrować, i w zakresie
-            wyliczonym z danych. Przy sztywnym maksimum 400 wystarczyło go ruszyć, żeby
-            zniknęły wszystkie boiska - bo tylu podpaleń nie ma jeszcze żadne.
-
-            Uchwyt chodzi płynnie, choć filtr działa na liczbach całkowitych. Krok równy
-            jedności przy maksimum dwa dawał trzy pozycje i uchwyt przeskakiwał przez pół
-            paska; teraz sunie setnymi, a próg odczytujemy w górę. Napis obok pokazuje
-            próg, który naprawdę obowiązuje, więc nic się nie rozjeżdża.
-          */}
-          {maksLajki > 0 && (
-            <div>
-              <FieldLabel>
-                Minimum lajków
-                <span className="ml-auto flex items-center gap-1 font-semibold text-ink">
-                  <FireBallIcon className="h-3.5 w-3.5" />
-                  {Math.ceil(filters.minLikes)}
-                </span>
-              </FieldLabel>
-              <input
-                type="range"
-                min={0}
-                max={maksLajki}
-                step={maksLajki / 100}
-                value={Math.min(filters.minLikes, maksLajki)}
-                onChange={(e) => patch({ minLikes: Number(e.target.value) })}
-                className="w-full"
-              />
-              <p className="mt-1 text-[11px] text-faint">
-                najwięcej podpaleń ma teraz jedno boisko: {maksLajki}
-              </p>
-            </div>
-          )}
-
-          <div>
-            <FieldLabel>Dostępność</FieldLabel>
-            <div className="flex gap-1 rounded-2xl border border-hairline bg-white/5 p-1">
-              {ACCESS_TABS.map(([k, label]) => (
-                <button
-                  key={k || "all"}
-                  onClick={() => patch({ access: k })}
-                  title={k ? ACCESS_LABEL[k] : "Każda dostępność"}
-                  className={`flex-1 rounded-xl px-2 py-1.5 text-[11px] transition ${
-                    filters.access === k
-                      ? "bg-white/12 font-semibold text-ink shadow"
-                      : "text-muted hover:text-ink"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <button
-            onClick={() => patch({ onlyLit: !filters.onlyLit })}
-            className="flex w-full items-center gap-3 rounded-2xl px-1 py-1 text-left"
+      <Sekcja tytul="województwo" kolejnosc={2}>
+        <div className="field flex items-center gap-2.5 px-3.5 py-2.5">
+          <PinIcon className="h-3.5 w-3.5 shrink-0 text-flame" />
+          <select
+            value={filters.voivodeship}
+            onChange={(e) => patch({ voivodeship: e.target.value })}
+            className="w-full bg-transparent text-[13px] outline-none"
           >
-            <BulbIcon className="h-4 w-4 text-flame" />
-            <span className="flex-1 text-[14px]">Tylko oświetlone</span>
-            <span className="switch" data-on={filters.onlyLit} />
+            <option value="">wszystkie województwa</option>
+            {VOIVODESHIPS.map((w) => (
+              <option key={w} value={w}>
+                {w}
+              </option>
+            ))}
+          </select>
+        </div>
+        {/* podświetlenie regionu na mapie robi już samo wybranie - stąd ta podpowiedź */}
+        {filters.voivodeship ? (
+          <p className="mt-2 px-1 text-[11px] text-faint">
+            region świeci na mapie, dopóki nie odsuniesz kamery
+          </p>
+        ) : null}
+      </Sekcja>
+
+      <Sekcja tytul="dostępność" kolejnosc={3}>
+        <div className="segmenty flex gap-1 p-1">
+          {ACCESS_TABS.map(([k, label]) => (
+            <button
+              key={k || "all"}
+              onClick={() => patch({ access: k })}
+              data-on={filters.access === k}
+              title={k ? ACCESS_LABEL[k] : "Każda dostępność"}
+              className="segment flex-1 px-2 py-2 text-[11px] text-muted"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </Sekcja>
+
+      <Sekcja tytul="oświetlenie" kolejnosc={4}>
+        <button
+          onClick={() => patch({ onlyLit: !filters.onlyLit })}
+          className="wiersz-filtra flex w-full items-center gap-3 px-1.5 py-2 text-left"
+        >
+          <BulbIcon className="h-4 w-4 shrink-0 text-flame" />
+          <span className="flex-1 text-[14px]">Tylko oświetlone</span>
+          <span className="switch" data-on={filters.onlyLit} />
+        </button>
+      </Sekcja>
+
+      {/*
+        Suwak podpaleń pokazujemy tylko wtedy, gdy jest co filtrować, i w zakresie wyliczonym
+        z danych. Przy sztywnym maksimum 400 wystarczyło go ruszyć, żeby zniknęły wszystkie
+        boiska - bo tylu podpaleń nie ma jeszcze żadne.
+
+        Uchwyt chodzi płynnie, choć filtr działa na liczbach całkowitych. Krok równy jedności
+        przy maksimum dwa dawał trzy pozycje i uchwyt przeskakiwał przez pół paska; teraz
+        sunie setnymi, a próg odczytujemy w górę. Liczba w nagłówku pokazuje próg, który
+        naprawdę obowiązuje, więc nic się nie rozjeżdża.
+      */}
+      {maksLajki > 0 && (
+        <Sekcja
+          tytul="podpalenia"
+          kolejnosc={5}
+          prawo={
+            <span className="flex items-center gap-1.5 text-[13px] font-semibold text-glow">
+              <FireBallIcon className="h-3.5 w-3.5" />
+              od {Math.ceil(filters.minLikes)}
+            </span>
+          }
+        >
+          <input
+            type="range"
+            min={0}
+            max={maksLajki}
+            step={maksLajki / 100}
+            value={prog}
+            onChange={(e) => patch({ minLikes: Number(e.target.value) })}
+            /* przebyta część toru świeci - CSS bierze procent z tej zmiennej */
+            style={{ "--wypelnienie": `${(prog / maksLajki) * 100}%` } as React.CSSProperties}
+            className="suwak-podpalen w-full"
+            aria-label="Minimum podpaleń"
+          />
+          <p className="mt-2 text-[11px] text-faint">
+            najwięcej podpaleń ma teraz jedno boisko: {maksLajki}
+          </p>
+        </Sekcja>
+      )}
+
+      {czynne && (
+        <div
+          className="sekcja-filtra pt-5"
+          style={{ "--i": 6 } as React.CSSProperties}
+        >
+          {/*
+            Czyszczenie zostawia wpisaną frazę. Przycisk mówi o filtrach, a szukajka stoi
+            osobno, nad panelem - wytarcie razem z nią wyglądałoby na zjedzenie tekstu,
+            którego nikt nie kazał ruszać.
+          */}
+          <button
+            onClick={() => patch({ ...DEFAULT_FILTERS, q: filters.q })}
+            className="wyczysc-filtry flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-[11px] uppercase tracking-[0.16em] text-flame"
+          >
+            wyczyść filtry
           </button>
         </div>
-      </Collapsible>
-
-      <div className="mt-6 mb-3 flex items-center justify-between">
-        <span className="text-[11px] uppercase tracking-[0.18em] text-faint">
-          {results.length} {results.length === 1 ? "boisko" : "boisk"}
-        </span>
-        <Link href="/ranking" className="text-[11px] uppercase tracking-[0.14em] text-flame hover:text-glow">
-          ranking →
-        </Link>
-      </div>
-
-      <div className="space-y-2.5">
-        {results.map((c, i) => (
-          <CourtCard
-            key={c.id}
-            court={c}
-            index={i + 1}
-            active={c.id === activeId}
-            onHover={onHover}
-          />
-        ))}
-        {!results.length && (
-          <p className="rounded-2xl border border-hairline bg-white/4 px-4 py-6 text-center text-[13px] text-muted">
-            Brak boisk dla tych filtrów.
-          </p>
-        )}
-      </div>
-    </>
+      )}
+    </div>
   );
 }

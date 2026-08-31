@@ -2459,6 +2459,82 @@ select option {
   }
 }
 
+/* ---- fala od miejsca kliknięcia ---- */
+/*
+  Kliknięcie w województwo nie zapala go całą powierzchnią naraz: od punktu, w który ktoś
+  kliknął, rozchodzi się czoło poświaty, dobija do granic i gaśnie, a za nim osiada zwykły
+  żar. Ruch idzie w stronę, w którą patrzy człowiek, więc podświetlenie czyta się jako
+  odpowiedź na jego gest, a nie jako włączone światło.
+
+  Skalujemy `transform`, a nie promień `r`. Promień jako właściwość CSS to geometria SVG -
+  animowana dopiero w nowszych przeglądarkach i nie wszędzie tak samo. `transform` na
+  elemencie SVG działa od zawsze i idzie przez kompozytor, więc fala nie obciąża wątku
+  głównego przy przesuwaniu mapy.
+*/
+.zar-woj-fala {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.zar-woj-fala-gra {
+  animation: zar-woj-fala 1150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes zar-woj-fala {
+  0% {
+    transform: scale(0.02);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  68% {
+    opacity: 0.86;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+/*
+  Żar wstaje za falą, nie razem z nią. Ćwierć sekundy zwłoki wystarcza, żeby czoło zdążyło
+  odejść od punktu kliknięcia - bez tego fala przechodziła po już rozświetlonej powierzchni
+  i cały ruch ginął.
+*/
+.zar-woj-plamy-po-fali {
+  animation: zar-woj-plamy-wejscie 820ms ease 240ms both;
+}
+
+@keyframes zar-woj-plamy-wejscie {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/*
+  Przy fali warstwa nie rozjaśnia się jako całość - wejście robią fala i plamy, każde
+  w swoim czasie. Wspólne rozjaśnienie na wierzchu tylko by je stłumiło.
+*/
+.zar-woj-widoczny.zar-woj-z-fala {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zar-woj-fala-gra {
+    animation: none;
+  }
+
+  .zar-woj-plamy-po-fali {
+    animation: zar-woj-plamy-wejscie 300ms ease both;
+  }
+}
+
 .zar-woj-plama {
   transform-box: fill-box;
   transform-origin: center;
@@ -2941,5 +3017,346 @@ select option {
 @media (prefers-reduced-motion: reduce) {
   .orbita-kadr-slot {
     animation: none;
+  }
+}
+
+/* ---------- panel filtrów mapy ---------- */
+/*
+  Panel filtrów jest jedyną płaszczyzną w serwisie, która leży wprost na mapie i ma na niej
+  zostać przez cały czas przeglądania. Stąd dwie decyzje, które rządzą tym blokiem:
+
+  1. Tło musi być nieprzepuszczalne. Mapa pod spodem jest ruchoma i kolorowa - przez
+     półprzejrzysty panel przebijały pinezki i nazwy miast, i nie dało się przeczytać nazw
+     filtrów. Szkło robi tu `backdrop-filter`, a czytelność - ciemna baza pod nim.
+  2. Ruch jest wolny. Przy tak dużej płaszczyźnie wszystko szybsze niż kilkanaście sekund na
+     cykl zamienia panel w migającą reklamę. Żar ma się przelewać, nie pulsować.
+
+  Świadomie bez `position`: panel na komputerze jest ustawiany jako `absolute`, a arkusz na
+  telefonie jako `fixed` - własne `position` w tej klasie nadpisałoby jedno i drugie. Plamy
+  światła i tak mają się do czego zaczepić.
+*/
+.panel-filtrow {
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 38%),
+    radial-gradient(120% 80% at 6% -8%, rgba(255, 122, 24, 0.16), transparent 56%),
+    linear-gradient(180deg, #161011 0%, #100c0d 52%, #0a0809 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.11),
+    inset 0 0 0 1px rgba(255, 122, 24, 0.16),
+    inset 0 -22px 48px -30px rgba(255, 122, 24, 0.42),
+    0 30px 80px -20px rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(30px) saturate(175%);
+  -webkit-backdrop-filter: blur(30px) saturate(175%);
+}
+
+/*
+  Żar pod panelem: dwie plamy w przeciwnych fazach i w różnym tempie, tak jak pod menu
+  konta. Ruch po `translate`/`scale`/`opacity`, nigdy po `background-position` - tę drugą
+  przeglądarka animuje na wątku głównym i nad mapą potrafi zacinać.
+
+  Plamy są większe od panelu (`inset: -40%`), więc widać samą wędrującą poświatę, a nie ich
+  krawędzie. Przycina je `overflow: hidden` wyżej.
+*/
+.panel-filtrow::before,
+.panel-filtrow::after {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  z-index: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(22px);
+}
+
+.panel-filtrow::before {
+  background: radial-gradient(closest-side, rgba(255, 145, 46, 0.34), rgba(255, 145, 46, 0) 72%);
+  animation: panel-zar-a 19s ease-in-out infinite;
+}
+
+.panel-filtrow::after {
+  background: radial-gradient(closest-side, rgba(255, 66, 6, 0.3), rgba(255, 66, 6, 0) 72%);
+  animation: panel-zar-b 27s ease-in-out infinite;
+}
+
+/* treść nad żarem - pozycjonowany pseudoelement rysowałby się na zwykłych dzieciach */
+.panel-filtrow > * {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes panel-zar-a {
+  0%,
+  100% {
+    translate: -18% -24%;
+    scale: 1;
+    opacity: 0.5;
+  }
+  38% {
+    translate: 10% -6%;
+    scale: 1.22;
+    opacity: 0.9;
+  }
+  71% {
+    translate: -6% 14%;
+    scale: 0.9;
+    opacity: 0.34;
+  }
+}
+
+@keyframes panel-zar-b {
+  0%,
+  100% {
+    translate: 20% 26%;
+    scale: 1.08;
+    opacity: 0.34;
+  }
+  44% {
+    translate: -12% 10%;
+    scale: 0.88;
+    opacity: 0.82;
+  }
+  76% {
+    translate: 16% -12%;
+    scale: 1.26;
+    opacity: 0.28;
+  }
+}
+
+/* ---- sekcja ---- */
+/*
+  Sekcje wjeżdżają jedna po drugiej, z opóźnieniem branym ze zmiennej `--i`. Kaskada jest
+  krótka - 55 ms na sekcję - bo to nie pokaz, tylko potwierdzenie, że panel się otworzył:
+  całość domyka się poniżej czterech dziesiątych sekundy, więc nikt nie czeka na filtry.
+
+  Na telefonie panel nie jest odmontowywany, tylko ukrywany przez `display: none`. To działa
+  na naszą korzyść: przeglądarka uruchamia animacje od nowa, kiedy element wraca do układu,
+  więc kaskada gra przy każdym wysunięciu arkusza, a nie tylko raz na wczytanie strony.
+*/
+.sekcja-filtra {
+  position: relative;
+  animation: sekcja-wjazd 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 55ms);
+}
+
+@keyframes sekcja-wjazd {
+  from {
+    opacity: 0;
+    translate: 0 12px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+/*
+  Rozdzielenie sekcji: włosowa linia, która gaśnie na obu końcach i cieplej świeci
+  w środku. Zwykła krawędź na całą szerokość dzieliła panel na sztywne piętra - a to ma być
+  jedna płaszczyzna z rytmem, nie tabela.
+*/
+.sekcja-filtra + .sekcja-filtra::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.09) 16%,
+    rgba(255, 160, 80, 0.26) 50%,
+    rgba(255, 255, 255, 0.09) 84%,
+    transparent 100%
+  );
+}
+
+/* ---- wiersz z przełącznikiem ---- */
+/*
+  W spoczynku sam napis, pod kursorem ciepłe tło wjeżdżające od lewej. Wypełnienie
+  wszystkich wierszy na stałe robiło z panelu pasiastą ścianę - przy dziewięciu pozycjach
+  naraz nie dało się złapać wzrokiem, na którą się patrzy.
+*/
+.wiersz-filtra {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  transition:
+    padding-left 380ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 260ms ease;
+}
+
+.wiersz-filtra::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    100deg,
+    rgba(255, 122, 24, 0.2) 0%,
+    rgba(255, 122, 24, 0.05) 42%,
+    transparent 74%
+  );
+  transition: opacity 260ms ease;
+}
+
+.wiersz-filtra:hover::before,
+.wiersz-filtra:focus-visible::before {
+  opacity: 1;
+}
+
+.wiersz-filtra:hover,
+.wiersz-filtra:focus-visible {
+  background-color: rgba(255, 255, 255, 0.03);
+  padding-left: 10px;
+}
+
+.wiersz-filtra > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---- pastylka wyboru (nawierzchnie) ---- */
+.pastylka {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid var(--color-hairline);
+  background: rgba(255, 255, 255, 0.05);
+  transition:
+    color 220ms ease,
+    border-color 220ms ease,
+    background 220ms ease,
+    box-shadow 320ms cubic-bezier(0.16, 1, 0.3, 1),
+    translate 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pastylka:hover {
+  translate: 0 -1px;
+  border-color: rgba(255, 122, 24, 0.3);
+}
+
+/* smuga światła przejeżdżająca po pastylce pod kursorem - stąd wrażenie szkła */
+.pastylka::after {
+  content: "";
+  position: absolute;
+  inset: -60% -80%;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  rotate: -16deg;
+  translate: -40% 0;
+  background: linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0) 32%,
+    rgba(255, 255, 255, 0.16) 48%,
+    rgba(255, 222, 186, 0.2) 54%,
+    rgba(255, 255, 255, 0) 68%
+  );
+  transition:
+    translate 760ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 340ms ease;
+}
+
+.pastylka:hover::after {
+  opacity: 1;
+  translate: 40% 0;
+}
+
+.pastylka[data-on="true"] {
+  border-color: transparent;
+  background: linear-gradient(135deg, #ffb25c 0%, #ff7a18 46%, #ff4d0a 100%);
+  color: #08060a;
+  font-weight: 600;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 10px 26px -10px rgba(255, 95, 18, 0.75);
+}
+
+/* ---- segmentowany wybór dostępności ---- */
+.segmenty {
+  border: 1px solid var(--color-hairline);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.segment {
+  position: relative;
+  border-radius: 14px;
+  transition:
+    color 220ms ease,
+    background 260ms ease,
+    box-shadow 320ms ease;
+}
+
+.segment[data-on="true"] {
+  color: #08060a;
+  font-weight: 600;
+  background: linear-gradient(135deg, #ffc27a 0%, #ff8a2c 52%, #ff5f12 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    0 8px 20px -10px rgba(255, 95, 18, 0.7);
+}
+
+.segment:not([data-on="true"]):hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ---- suwak podpaleń ---- */
+/*
+  Przebyta część toru świeci gradientem marki, resztę zostawiamy przygaszoną. Procent
+  wjeżdża zmienną `--wypelnienie` ustawianą przy elemencie, bo tylko JavaScript zna stosunek
+  progu do maksimum.
+
+  Selektor musi mieć `input` z przodu. Reguła ogólna dla `input[type="range"]` wyżej w tym
+  arkuszu waży tyle samo, co element plus klasa - przy równej wadze wygrywa ta późniejsza,
+  ale tylko wtedy, gdy wagi naprawdę są równe. Sama klasa waży mniej i przegrywa.
+*/
+input.suwak-podpalen {
+  background: linear-gradient(
+    90deg,
+    #ffb25c 0%,
+    #ff5f12 var(--wypelnienie, 0%),
+    rgba(255, 255, 255, 0.14) var(--wypelnienie, 0%),
+    rgba(255, 255, 255, 0.14) 100%
+  );
+  transition: background 160ms linear;
+}
+
+/* ---- czyszczenie filtrów ---- */
+.wyczysc-filtry {
+  border: 1px solid rgba(255, 122, 24, 0.24);
+  background: linear-gradient(180deg, rgba(255, 122, 24, 0.12), rgba(255, 122, 24, 0.04));
+  transition:
+    border-color 260ms ease,
+    background 260ms ease,
+    translate 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.wyczysc-filtry:hover {
+  translate: 0 -1px;
+  border-color: rgba(255, 160, 80, 0.5);
+  background: linear-gradient(180deg, rgba(255, 122, 24, 0.2), rgba(255, 122, 24, 0.07));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel-filtrow::before,
+  .panel-filtrow::after {
+    animation: none;
+  }
+
+  .sekcja-filtra {
+    animation: none;
+  }
+
+  .pastylka:hover,
+  .wyczysc-filtry:hover {
+    translate: none;
+  }
+
+  .pastylka::after {
+    display: none;
   }
 }

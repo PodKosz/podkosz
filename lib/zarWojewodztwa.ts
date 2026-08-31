@@ -101,7 +101,15 @@ function el<K extends keyof SVGElementTagNameMap>(nazwa: K): SVGElementTagNameMa
 }
 
 export interface ZarWojewodztwa {
-  ustaw(geom: GeoJSON.Geometry | null): void;
+  /**
+   * Zapala żar na podanym kształcie.
+   *
+   * `punkt` (lng, lat) to miejsce kliknięcia w mapę. Gdy jest podany, poświata nie pojawia
+   * się całą powierzchnią naraz: od tego punktu rozchodzi się fala do granic województwa,
+   * a żar wstaje za nią. Bez punktu - przy wyborze z panelu filtrów albo z adresu - zostaje
+   * zwykłe rozjaśnienie, bo nie ma miejsca, z którego fala miałaby wyjść.
+   */
+  ustaw(geom: GeoJSON.Geometry | null, punkt?: [number, number]): void;
   /** 1 = pełny żar, 0 = wygaszony. Do płynnego gaśnięcia przy oddalaniu kamery. */
   przygas(wartosc: number): void;
   zniszcz(): void;
@@ -154,6 +162,27 @@ export function stworzZarWojewodztwa(map: MlMap, przyrostek: string): ZarWojewod
     g.append(s1, s2, s3);
     defs.appendChild(g);
   }
+  /*
+    Gradient fali. Najjaśniejszy jest jej brzeg, a nie środek - dzięki temu czyta się jako
+    czoło rozchodzącej się poświaty, a nie jako rosnąca plama. Środek zostawiamy prawie
+    przezroczysty, więc pod falą widać już wstający żar.
+  */
+  const gFala = el("radialGradient");
+  gFala.setAttribute("id", `zar-woj-fala-${przyrostek}`);
+  for (const [offset, kolor] of [
+    ["0%", "rgba(255,190,120,0)"],
+    ["54%", "rgba(255,172,92,0.10)"],
+    ["84%", "rgba(255,214,160,0.30)"],
+    ["96%", "rgba(255,244,222,0.44)"],
+    ["100%", "rgba(255,255,255,0)"],
+  ] as [string, string][]) {
+    const stop = el("stop");
+    stop.setAttribute("offset", offset);
+    stop.setAttribute("stop-color", kolor);
+    gFala.appendChild(stop);
+  }
+  defs.appendChild(gFala);
+
   svg.appendChild(defs);
 
   /** grupa przesuwana i skalowana razem z mapą */
@@ -163,13 +192,28 @@ export function stworzZarWojewodztwa(map: MlMap, przyrostek: string): ZarWojewod
   scena.appendChild(przyciete);
   svg.appendChild(scena);
 
+  /*
+    Plamy w osobnej grupie, bo po kliknięciu w mapę wstają z opóźnieniem - najpierw
+    przechodzi fala, potem osiada żar. Każda plama animuje już własną przezroczystość, więc
+    wspólne wejście musi mieć swój element; nakładanie dwóch animacji tej samej właściwości
+    na jednym elemencie skończyłoby się tym, że jedna po prostu wygrywa.
+  */
+  const grupaPlam = el("g");
+  przyciete.appendChild(grupaPlam);
+
   const plamy = barwy.map(([nazwa], i) => {
     const e = el("ellipse");
     e.setAttribute("fill", `url(#${nazwa}-${przyrostek})`);
     e.setAttribute("class", `zar-woj-plama zar-woj-plama-${i + 1}`);
-    przyciete.appendChild(e);
+    grupaPlam.appendChild(e);
     return e;
   });
+
+  /* czoło fali - nad plamami, w tym samym przycięciu, więc zatrzymuje się na granicy */
+  const fala = el("circle");
+  fala.setAttribute("class", "zar-woj-fala");
+  fala.setAttribute("fill", `url(#zar-woj-fala-${przyrostek})`);
+  przyciete.appendChild(fala);
 
   kontener.insertBefore(svg, kanwa.nextSibling);
 
@@ -192,10 +236,13 @@ export function stworzZarWojewodztwa(map: MlMap, przyrostek: string): ZarWojewod
   map.on("resize", przelicz);
 
   return {
-    ustaw(geom) {
+    ustaw(geom, punkt) {
       if (!geom) {
         ksztalt = null;
         svg.classList.remove("zar-woj-widoczny");
+        svg.classList.remove("zar-woj-z-fala");
+        fala.classList.remove("zar-woj-fala-gra");
+        grupaPlam.classList.remove("zar-woj-plamy-po-fali");
         return;
       }
 
@@ -239,6 +286,47 @@ export function stworzZarWojewodztwa(map: MlMap, przyrostek: string): ZarWojewod
         e.style.setProperty("--dx", `${(w * 0.26).toFixed(2)}px`);
         e.style.setProperty("--dy", `${(h * 0.26).toFixed(2)}px`);
       });
+
+      /*
+        Fala od miejsca kliknięcia.
+
+        Punkt przeliczamy tym samym Merkatorem, co obrys, więc trafia wprost w przestrzeń
+        lokalną - nie ma potrzeby odwracać przekształcenia ekranowego, a fala jedzie razem
+        z kamerą tak jak reszta warstwy.
+
+        Promień to odległość do najdalszego narożnika prostokąta otaczającego. Fala jest
+        przycięta do kształtu, więc dobicie do narożników gwarantuje, że dojdzie do każdej
+        granicy - także gdy ktoś kliknie przy samej krawędzi i do przeciwnej strony jest
+        trzy razy dalej.
+
+        Animację restartujemy zdjęciem i ponownym nadaniem klasy, z wymuszonym przeliczeniem
+        układu pomiędzy. Bez tego drugie kliknięcie w to samo województwo nie robiło nic:
+        klasa już tam była, a przeglądarka nie ma powodu puszczać animacji od nowa.
+      */
+      if (punkt) {
+        const p = merkator(punkt[0], punkt[1]);
+        const promien = Math.max(
+          Math.hypot(p.x - nowy.lokalneNW.x, p.y - nowy.lokalneNW.y),
+          Math.hypot(p.x - nowy.lokalneSE.x, p.y - nowy.lokalneSE.y),
+          Math.hypot(p.x - nowy.lokalneNW.x, p.y - nowy.lokalneSE.y),
+          Math.hypot(p.x - nowy.lokalneSE.x, p.y - nowy.lokalneNW.y)
+        );
+
+        fala.setAttribute("cx", p.x.toFixed(2));
+        fala.setAttribute("cy", p.y.toFixed(2));
+        fala.setAttribute("r", promien.toFixed(2));
+
+        fala.classList.remove("zar-woj-fala-gra");
+        grupaPlam.classList.remove("zar-woj-plamy-po-fali");
+        void fala.getBoundingClientRect();
+        fala.classList.add("zar-woj-fala-gra");
+        grupaPlam.classList.add("zar-woj-plamy-po-fali");
+        svg.classList.add("zar-woj-z-fala");
+      } else {
+        fala.classList.remove("zar-woj-fala-gra");
+        grupaPlam.classList.remove("zar-woj-plamy-po-fali");
+        svg.classList.remove("zar-woj-z-fala");
+      }
 
       svg.classList.add("zar-woj-widoczny");
       przelicz();

@@ -74,7 +74,6 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
   const filters = zmiany ?? zAdresu;
   const setFilters = useCallback((f: Filters) => setZmiany(f), []);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [focusId, setFocusId] = useState<string | null>(null);
   /** Na telefonie panel z filtrami startuje zwinięty, żeby mapa miała cały ekran. */
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -204,11 +203,6 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
     [router]
   );
 
-  const onHoverFromList = useCallback((id: string | null) => {
-    setActiveId(id);
-    if (id) setFocusId(id);
-  }, []);
-
   const toggleLeads = useCallback(async () => {
     if (showLeads) {
       setShowLeads(false);
@@ -245,7 +239,6 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
       <MapView
         courts={results}
         activeId={activeId}
-        focusId={focusId}
         highlightVoivodeship={filters.voivodeship}
         onHoverCourt={setActiveId}
         onSelectCourt={onSelect}
@@ -260,8 +253,6 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
         maksLajki={maksLajki}
         results={results}
         counts={counts}
-        activeId={activeId}
-        onHover={onHoverFromList}
         sheetOpen={sheetOpen}
         setSheetOpen={openSheet}
       />
