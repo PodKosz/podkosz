@@ -219,7 +219,8 @@ export interface Queue {
   live: boolean;
   reload: () => void;
   patch: (id: string, patch: Partial<Submission>) => Promise<void>;
-  approve: (id: string) => Promise<void>;
+  /** publikuje zgłoszenie i oddaje identyfikator powstałego boiska (null w trybie testowym) */
+  approve: (id: string) => Promise<string | null>;
   reject: (id: string, reason: string) => Promise<void>;
   remove: (id: string) => Promise<void>;
   removePhoto: (submission: Submission, index: number) => Promise<void>;
@@ -297,9 +298,14 @@ export function useQueue(): Queue {
       const supabase = await supabaseBrowser();
       if (!supabase) {
         updateSubmission(id, { status: "approved" });
-        return;
+        return null;
       }
-      const { error: err } = await supabase.rpc("approve_submission", { sub_id: id });
+      /*
+        Wynik funkcji nie idzie już do kosza. `approve_submission()` oddaje identyfikator
+        boiska, które właśnie powstało - a bez niego mail o publikacji nie miał czym
+        odesłać autora do jego karty i prowadził na stronę główną.
+      */
+      const { data, error: err } = await supabase.rpc("approve_submission", { sub_id: id });
       if (err) {
         setError(err.message);
         throw new Error(err.message);
@@ -307,6 +313,7 @@ export function useQueue(): Queue {
       // opublikowane boisko musi zniknąć z pamięci podręcznej odczytów publicznych
       await refreshCourtsCache();
       await fetchList();
+      return typeof data === "string" ? data : null;
     },
     [fetchList]
   );

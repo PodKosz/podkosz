@@ -105,7 +105,9 @@ export function AdminPanel({ isAdmin, signedIn }: { isAdmin: boolean; signedIn: 
   const notifyAuthor = async (
     s: Submission,
     decision: "approved" | "rejected",
-    reason?: string
+    reason?: string,
+    /** identyfikator opublikowanego boiska - z niego serwer bierze adres karty */
+    courtId?: string | null
   ) => {
     if (!s.author.email) return false;
     try {
@@ -117,6 +119,8 @@ export function AdminPanel({ isAdmin, signedIn }: { isAdmin: boolean; signedIn: 
           decision,
           reason,
           courtName: s.name,
+          courtCity: s.city,
+          courtId,
         }),
       });
       const data = (await res.json()) as { sent?: boolean };
@@ -186,8 +190,8 @@ export function AdminPanel({ isAdmin, signedIn }: { isAdmin: boolean; signedIn: 
       const s = list.find((x) => x.id === id);
       if (!s || s.status !== "pending") continue;
       try {
-        await queue.approve(id);
-        await notifyAuthor(s, "approved");
+        const courtId = await queue.approve(id);
+        await notifyAuthor(s, "approved", undefined, courtId);
         ok += 1;
       } catch {
         // pojedyncza wywrotka nie może zatrzymać reszty paczki
@@ -201,9 +205,9 @@ export function AdminPanel({ isAdmin, signedIn }: { isAdmin: boolean; signedIn: 
 
   const approve = async (s: Submission) => {
     try {
-      await queue.approve(s.id);
+      const courtId = await queue.approve(s.id);
       setOpenId(null);
-      const sent = await notifyAuthor(s, "approved");
+      const sent = await notifyAuthor(s, "approved", undefined, courtId);
       flash(
         sent
           ? "Opublikowano. Autor dostał maila o publikacji."

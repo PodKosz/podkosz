@@ -1,12 +1,21 @@
 import { POWOD_BRAK_NADAWCY, nadawca } from "@/lib/mail/nadawca";
+import {
+  htmlOdmowy,
+  htmlPublikacji,
+  tekstOdmowy,
+  tekstPublikacji,
+  tematOdmowy,
+  tematPublikacji,
+} from "@/lib/mail/zgloszenie";
 import { supabaseServer } from "@/lib/supabase/server";
-import { SITE_URL } from "@/lib/site";
 
 /**
  * Powiadamia autora zgłoszenia o decyzji: boisko opublikowane albo odrzucone z powodem.
  *
- * Do tej pory nikt nie dowiadywał się, co się stało z jego zgłoszeniem - adres autora
- * leżał w bazie nieużywany. Mail o publikacji jest zarazem powodem do powrotu na stronę.
+ * Adres autora bierze się z `submissions.author_email`, a ten wypełnia się w dwóch
+ * przypadkach - kiedy ktoś dodaje boisko z konta (adres konta) i kiedy gość wpisze go
+ * ręcznie w kreatorze. Kto nie zostawił adresu, nie dostanie listu i nie ma na to
+ * sposobu; wysyłka po prostu nie startuje.
  *
  * Wymagane zmienne środowiskowe (te same, co przy opiniach):
  *   RESEND_API_KEY - klucz z resend.com
@@ -25,7 +34,9 @@ export async function POST(request: Request) {
     decision?: "approved" | "rejected";
     reason?: string;
     courtName?: string;
-    courtSlug?: string;
+    /** identyfikator opublikowanego boiska - z niego bierzemy adres karty i miasto */
+    courtId?: string;
+    courtCity?: string;
   };
   try {
     body = await request.json();
@@ -61,28 +72,46 @@ export async function POST(request: Request) {
   }
 
   const nazwa = body.courtName?.trim() || "Twoje boisko";
-  const link = body.courtSlug ? `${SITE_URL}/boisko/${body.courtSlug}` : SITE_URL;
+  let miasto = body.courtCity?.trim() || null;
+  let slug: string | null = null;
 
-  const [subject, text] =
+  /*
+    Adres karty czytamy z bazy, a nie z ciała żądania, bo wcześniej nikt go tam nie wkładał:
+    `approve_submission()` układa go z miasta i nazwy dopiero przy publikacji, więc panel go
+    nie znał i list prowadził na stronę główną. Zamiast pisać „Twoje boisko jest na mapie"
+    i odsyłać człowieka do samodzielnego szukania, pytamy o `courts` po identyfikatorze,
+    który ta funkcja zwraca.
+  */
+  if (decision === "approved" && body.courtId) {
+    const { data: boisko } = await supabase
+      .from("courts")
+      .select("slug, city")
+      .eq("id", body.courtId)
+      .maybeSingle();
+
+    if (boisko) {
+      slug = boisko.slug;
+      miasto = miasto ?? boisko.city;
+    }
+  }
+
+  const [subject, html, text] =
     decision === "approved"
       ? [
-          `${nazwa} jest już na mapie PodKosza`,
-          `Dzięki! Boisko, które zgłosiłeś, przeszło sprawdzenie i jest już widoczne dla wszystkich:\n${link}\n\n` +
-            `Jeśli zauważysz coś do poprawy, napisz - zaktualizujemy wpis.\n\n` +
-            `Znasz kolejne boisko bez wpisu? ${SITE_URL}/dodaj\n\n---\nPodKosz`,
+          tematPublikacji({ nazwa, miasto, slug }),
+          htmlPublikacji({ nazwa, miasto, slug }),
+          tekstPublikacji({ nazwa, miasto, slug }),
         ]
       : [
-          `Zgłoszenie boiska nie zostało opublikowane`,
-          `Dziękujemy za zgłoszenie, ale tym razem nie trafiło ono na mapę.\n\n` +
-            `Powód: ${body.reason?.trim() || "brak szczegółów"}\n\n` +
-            `Jeśli uważasz, że to pomyłka, odpisz na tę wiadomość.\n` +
-            `Możesz też zgłosić boisko ponownie z poprawionymi zdjęciami: ${SITE_URL}/dodaj\n\n---\nPodKosz`,
+          tematOdmowy(),
+          htmlOdmowy({ nazwa, miasto, powod: body.reason }),
+          tekstOdmowy({ nazwa, miasto, powod: body.reason }),
         ];
 
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from, to: [adres], subject, text }),
+    body: JSON.stringify({ from, to: [adres], subject, html, text }),
   });
 
   return Response.json({ sent: res.ok }, { status: res.ok ? 200 : 502 });
