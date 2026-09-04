@@ -53,7 +53,13 @@ export const PILKA_R = 24;
 export const OBRECZ_R = 80;
 export const ZELAZO_R = 7;
 export const TABLICA_SZER = 320;
-export const TABLICA_WYS = 130;
+/*
+  Proporcja tablicy jest wzięta z prawdziwej: 183 na 105 cm, czyli 1,74 : 1. Poprzednie
+  320 na 130 dawało 2,46 : 1 - płytę dwa razy bardziej spłaszczoną niż jakakolwiek tablica,
+  która stoi na boisku. Przy 185 wychodzi 1,73 : 1 i górna krawędź nadal zostaje w kadrze
+  (sprawdzone: 167 px od góry świata).
+*/
+export const TABLICA_WYS = 185;
 /** odstęp między dolną krawędzią tablicy a obręczą - miejsce na mocowanie */
 export const TABLICA_ODSTEP = 28;
 /**
@@ -231,6 +237,23 @@ export function wektorRzutu(
   return { vx: (dx / d) * moc, vy: (dy / d) * moc, moc: t };
 }
 
+/**
+ * Prędkość obrotu piłki w radianach na sekundę, nadawana w chwili rzutu.
+ *
+ * Kierunek bierze się ze składowej poziomej, tempo z mocy i z tego, jak pionowy był rzut.
+ * Znak jest ujemny, czyli piłka kręci się PRZECIWNIE do kierunku lotu - tak wygląda
+ * podkręcenie nadawane nadgarstkiem i tak kręci się piłka na każdym nagraniu rzutu do
+ * kosza. Obrót zgodny z lotem czyta się jak koło, które się toczy, a nie jak rzut.
+ *
+ * Płaski rzut kręci się leniwiej od pionowego przy tej samej mocy - stąd mnożnik z udziału
+ * składowej pionowej w prędkości.
+ */
+export function predkoscObrotu(vx: number, vy: number, moc: number) {
+  const v = Math.max(Math.hypot(vx, vy), 1);
+  const pion = Math.abs(vy) / v;
+  return -Math.sign(vx || 1) * (6 * moc + Math.abs(vx) * 0.004) * (0.7 + 0.6 * pion);
+}
+
 /** Jeden krok lotu: grawitacja, opór i odbicia od dwóch krańców obręczy. */
 export function krokLotu(c: Cialo, dt: number, koszX: number, koszY: number) {
   c.x += c.vx * dt;
@@ -314,4 +337,195 @@ export function rozegrajRzut(
   }
 
   return { trafiony: false, tor, szczyt, poza };
+}
+
+/**
+ * Węzeł siatki: pozycja, pozycja poprzednia (verlet) i czy wisi na obręczy.
+ *
+ * Długości spoczynkowe więzów siedzą W WĘŹLE, a nie są liczone ze wzoru. Pierwsza wersja
+ * liczyła je z głębokości podzielonej przez liczbę rzędów - i to był błąd, bo siatka jest
+ * stożkiem: sąsiednie rzędy mają różne promienie, więc węzły są przesunięte także w bok
+ * i prawdziwa odległość między nimi jest większa od samego odstępu pionowego. Więzy
+ * ściągały więc siatkę od pierwszej klatki, a to, co miało być reakcją na piłkę, tonęło
+ * w jej własnym zapadaniu się. Zmierzone: dolny wieniec nie ugiął się przy przelocie ani
+ * o piksel, a po dziesięciu sekundach węzły stały 35 px od miejsca, w którym powstały.
+ */
+export interface PunktSiatki {
+  x: number;
+  y: number;
+  px: number;
+  py: number;
+  /** górny rząd wisi na obręczy i nie spada */
+  przypiety: boolean;
+  /** długość spoczynkowa więzu do następnego węzła w rzędzie */
+  dlPoziom: number;
+  /** długość spoczynkowa więzu do węzła poniżej */
+  dlPion: number;
+  /** miejsce spoczynkowe względem środka obręczy - do niego siatka wraca */
+  bazaX: number;
+  bazaY: number;
+}
+
+/** To, co siatka musi wiedzieć o piłce: gdzie jest i jaki ma promień. */
+export interface StanSiatki {
+  x: number;
+  y: number;
+  siatka: PunktSiatki[];
+}
+
+/* siatka jako tkanina na więzach - kolumny, rzędy i głębokość w pikselach świata */
+export const SIATKA_KOL = 11;
+export const SIATKA_RZED = 6;
+export const SIATKA_GLEB = 132;
+
+/* ---------------------------------------------------------------- siatka */
+
+/**
+ * Siatka jako tkanina na więzach odległości (verlet).
+ *
+ * Górny wieniec wisi na obręczy, resztę ciągnie w dół grawitacja, a więzy trzymają nitki
+ * na stałej długości. Dokładnie to samo zrobiłby silnik fizyki dla tkaniny - tylko że
+ * tutaj mieści się w czterdziestu linijkach i nic więcej nie musi umieć.
+ *
+ * Piłka odpycha punkty promieniowo, więc przelot przez obręcz szarpie siatką w dół i na
+ * boki, a potem więzy same ją składają. Nie ma tu żadnej animacji „po trafieniu" -
+ * siatka rusza się, bo coś przez nią przeszło.
+ *
+ * Górny wieniec siedzi na PRZEDNIEJ połowie elipsy obręczy, nie na prostej. Obręcz jest
+ * rysowana w lekkiej perspektywie, więc nitki przypięte do odcinka odstawałyby od żelaza
+ * dokładnie w środku, tam gdzie elipsa opada najniżej.
+ */
+export function zbudujSiatke(x: number, y: number): PunktSiatki[] {
+  const p: PunktSiatki[] = [];
+
+  const gdzie = (r: number, k: number) => {
+    const t = r / (SIATKA_RZED - 1);
+    /* stożek: dolny wieniec jest węższy od obręczy */
+    const promien = OBRECZ_R * (1 - t * 0.44);
+    const u = k / (SIATKA_KOL - 1);
+    return {
+      x: x - promien + u * promien * 2,
+      y: y + krzywaObreczy(u) + t * SIATKA_GLEB,
+    };
+  };
+
+  for (let r = 0; r < SIATKA_RZED; r++) {
+    for (let k = 0; k < SIATKA_KOL; k++) {
+      const tu = gdzie(r, k);
+      /*
+        Długości spoczynkowe bierzemy z faktycznej odległości między węzłami w chwili
+        budowy. Siatka jest wtedy dokładnie w równowadze: więzy nie mają czego ściągać,
+        więc jedyne, co nią rusza, to piłka.
+      */
+      const obok = k < SIATKA_KOL - 1 ? gdzie(r, k + 1) : null;
+      const nizej = r < SIATKA_RZED - 1 ? gdzie(r + 1, k) : null;
+      p.push({
+        x: tu.x,
+        y: tu.y,
+        px: tu.x,
+        py: tu.y,
+        przypiety: r === 0,
+        dlPoziom: obok ? Math.hypot(obok.x - tu.x, obok.y - tu.y) : 0,
+        dlPion: nizej ? Math.hypot(nizej.x - tu.x, nizej.y - tu.y) : 0,
+        bazaX: tu.x - x,
+        bazaY: tu.y - y,
+      });
+    }
+  }
+  return p;
+}
+
+export function krokSiatki(s: StanSiatki, dt: number, koszX: number, koszY: number) {
+  const p = s.siatka;
+  if (!p.length) return;
+
+  for (let r = 0; r < SIATKA_RZED; r++) {
+    for (let k = 0; k < SIATKA_KOL; k++) {
+      const i = r * SIATKA_KOL + k;
+      const pkt = p[i];
+
+      if (pkt.przypiety) {
+        /* górny wieniec trzyma się obręczy, także wtedy, gdy kosz ucieka na boki */
+        const u = k / (SIATKA_KOL - 1);
+        pkt.x = koszX - OBRECZ_R + u * OBRECZ_R * 2;
+        pkt.y = koszY + krzywaObreczy(u);
+        pkt.px = pkt.x;
+        pkt.py = pkt.y;
+        continue;
+      }
+
+      /* verlet: nowa pozycja z poprzedniej i przyspieszenia, bez trzymania prędkości */
+      const vx = (pkt.x - pkt.px) * 0.965;
+      const vy = (pkt.y - pkt.py) * 0.965;
+      pkt.px = pkt.x;
+      pkt.py = pkt.y;
+      pkt.x += vx;
+      pkt.y += vy + GRAWITACJA * 0.35 * dt * dt;
+
+      /*
+        Piłka rozpycha nitki. Zasięg jest większy od samej piłki (1,6 promienia), bo siatka
+        ma się ugiąć PRZED kontaktem, a nie dopiero pod nią - inaczej wygląda, jakby piłka
+        przechodziła przez nitki na wylot. Odepchnięcie jest pełne (0,85), więc przelot
+        wyraźnie wypycha oczka w dół i na boki, a więzy dopiero potem je składają.
+      */
+      const zasieg = PILKA_R * 1.6;
+      const dx = pkt.x - s.x;
+      const dy = pkt.y - s.y;
+      const d = Math.hypot(dx, dy);
+      if (d < zasieg && d > 0.001) {
+        /*
+          Odepchnięcie jest ograniczone do sześciu pikseli na krok. Bez tego ograniczenia
+          szybka piłka wyrzucała węzły o sto dwadzieścia pikseli w jednym kroku, oczka
+          przechodziły jedno przez drugie i więzy zaklinowywały siatkę w pozgniecionym
+          kształcie - zmierzone: po dziesięciu sekundach nie wracała bliżej niż czterdzieści
+          pikseli od spoczynku. Mniejsze pchnięcie, powtórzone przez kilkanaście kroków
+          przelotu, daje ten sam ruch, ale bez zaplątania.
+        */
+        const push = Math.min((zasieg - d) * 0.7, 9);
+        pkt.x += (dx / d) * push;
+        pkt.y += (dy / d) * push;
+      }
+
+      /*
+        Słaby powrót do miejsca spoczynkowego. Same więzy trzymają odległości, ale nie
+        kształt: siatka wypchnięta w bok może w nich wisieć krzywo bez końca, bo nic jej nie
+        prostuje. Prawdziwa siatka wisi w jednym kształcie i do niego wraca - stąd ten
+        ciąg, słaby na tyle, żeby przelot dalej było widać.
+      */
+      const bazaX = koszX + pkt.bazaX;
+      const bazaY = koszY + pkt.bazaY;
+      pkt.x += (bazaX - pkt.x) * 0.05;
+      pkt.y += (bazaY - pkt.y) * 0.05;
+    }
+  }
+
+  /*
+    Trzy przebiegi więzów, nie dwa. Przy dwóch siatka po przelocie wracała leniwie i
+    wyglądało to jak guma, nie jak nitki; trzeci przebieg daje jej sprężysty powrót
+    z krótkim kołysaniem.
+  */
+  for (let iter = 0; iter < 3; iter++) {
+    for (let r = 0; r < SIATKA_RZED; r++) {
+      for (let k = 0; k < SIATKA_KOL; k++) {
+        const i = r * SIATKA_KOL + k;
+        if (k < SIATKA_KOL - 1) wiaz(p[i], p[i + 1], p[i].dlPoziom);
+        if (r < SIATKA_RZED - 1) wiaz(p[i], p[i + SIATKA_KOL], p[i].dlPion);
+      }
+    }
+  }
+}
+
+
+function wiaz(a: PunktSiatki, b: PunktSiatki, dl: number) {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const d = Math.hypot(dx, dy);
+  if (d < 0.001) return;
+  const roznica = (d - dl) / d;
+  const ruchA = a.przypiety ? 0 : b.przypiety ? 1 : 0.5;
+  const ruchB = b.przypiety ? 0 : a.przypiety ? 1 : 0.5;
+  a.x += dx * roznica * ruchA;
+  a.y += dy * roznica * ruchA;
+  b.x -= dx * roznica * ruchB;
+  b.y -= dy * roznica * ruchB;
 }

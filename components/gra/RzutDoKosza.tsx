@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import { MAKS_SERIA, poziomDlaSerii, type IdMiejsca } from "@/lib/minigra";
 import {
-  GRAWITACJA,
   KOSZ_Y,
   KROK,
   OBRECZ_R,
@@ -12,11 +11,16 @@ import {
   TABLICA_SZER,
   TABLICA_WYS,
   WYS,
+  SIATKA_KOL,
+  SIATKA_RZED,
   czyTrafienie,
   geometriaKosza,
   krokLotu,
-  krzywaObreczy,
+  krokSiatki,
+  predkoscObrotu,
   pozycjaPilki,
+  type PunktSiatki,
+  zbudujSiatke,
   rozegrajRzut,
   wektorRzutu,
 } from "@/lib/gra/fizyka";
@@ -80,21 +84,18 @@ import { useSesja } from "@/lib/sesja";
 const WYGLADZANIE = 0.24;
 
 
-/* siatka jako tkanina na więzach - kolumny, rzędy i głębokość w pikselach świata */
-const SIATKA_KOL = 11;
-const SIATKA_RZED = 6;
-const SIATKA_GLEB = 132;
+/*
+  „wpadla" jest osobną fazą, a nie chwilą. Wcześniej trafienie natychmiast przenosiło piłkę
+  na następne stanowisko - czyli w klatce, w której czubek piłki mijał płaszczyznę obręczy,
+  piłka po prostu znikała. Siatka dostawała wtedy jedno szturchnięcie i nic więcej: nie było
+  czego przez nią przepuścić. Teraz piłka leci dalej przez siatkę i tam ją rozpycha, a na
+  następne stanowisko wraca po `CZAS_PRZELOTU`.
+*/
+type Faza = "rysowanie" | "gotowa" | "celowanie" | "lot" | "wpadla" | "koniec";
 
-type Faza = "rysowanie" | "gotowa" | "celowanie" | "lot" | "koniec";
+/** ile piłka leci jeszcze po trafieniu, żeby przejść przez całą siatkę (w sekundach) */
+const CZAS_PRZELOTU = 0.55;
 
-interface Punkt {
-  x: number;
-  y: number;
-  px: number;
-  py: number;
-  /** górny rząd wisi na obręczy i nie spada */
-  przypiety: boolean;
-}
 
 interface Stan {
   faza: Faza;
@@ -107,6 +108,13 @@ interface Stan {
   vx: number;
   vy: number;
   obrot: number;
+  /**
+   * Prędkość obrotu w radianach na sekundę, nadawana w chwili rzutu.
+   *
+   * Osobno od kąta, bo obrót nie jest ozdobą doklejoną do lotu - wynika z rzutu i ma
+   * o nim mówić. Do tej pory nikt jej nie ustawiał i piłka leciała bez obrotu w ogóle.
+   */
+  obrotV: number;
   /** wygładzony punkt celowania */
   celX: number;
   celY: number;
@@ -114,11 +122,13 @@ interface Stan {
   wskX: number;
   wskY: number;
   nadObreczka: boolean;
+  /** czas od trafienia - odlicza przelot przez siatkę */
+  przelot: number;
   seria: number;
   czas: number;
   /** klatka ostatniego trafienia - do błysku obręczy */
   blysk: number;
-  siatka: Punkt[];
+  siatka: PunktSiatki[];
 }
 
 export function RzutDoKosza({
@@ -169,16 +179,6 @@ export function RzutDoKosza({
       s.pilka = 0;
     }
   }, [zaczeta]);
-
-  /* piłki to te same pliki, co odznaczenia na profilu */
-  const pilkiRef = useRef<Record<string, HTMLImageElement>>({});
-  useEffect(() => {
-    (["zar", "iskra", "plomien", "niebieski"] as const).forEach((nazwa) => {
-      const img = new Image();
-      img.src = `/odznaczenia/${nazwa}.webp`;
-      pilkiRef.current[nazwa] = img;
-    });
-  }, []);
 
   const zapiszWynik = useCallback(
     async (wynik: number) => {
@@ -259,19 +259,29 @@ export function RzutDoKosza({
       zapas += dt;
       while (zapas >= KROK) {
         zapas -= KROK;
-        if (s.faza === "lot") krokLotu(s, KROK, koszX, koszY);
+        if (s.faza === "lot" || s.faza === "wpadla") krokLotu(s, KROK, koszX, koszY);
         krokSiatki(s, KROK, koszX, koszY);
       }
 
-      if (s.faza === "lot") {
+      /* obrót leci razem z piłką - także po trafieniu, w czasie przelotu przez siatkę */
+      if (s.faza === "lot" || s.faza === "wpadla") s.obrot += s.obrotV * dt;
+
+      if (s.faza === "wpadla") {
+        /* piłka przelatuje przez siatkę - dopiero potem wraca na następne stanowisko */
+        s.przelot += dt;
+        if (s.przelot >= CZAS_PRZELOTU) {
+          ustawPilke(s, szer);
+          s.faza = "gotowa";
+        }
+      } else if (s.faza === "lot") {
         if (s.y < koszY - PILKA_R) s.nadObreczka = true;
 
         if (czyTrafienie(s, koszX, koszY, s.nadObreczka)) {
           s.seria += 1;
           s.blysk = s.czas;
+          s.przelot = 0;
+          s.faza = "wpadla";
           onSeria(s.seria, null);
-          ustawPilke(s, szer);
-          s.faza = "gotowa";
         } else if (s.y > WYS + 160 || s.x < -200 || s.x > szer + 200) {
           const wynik = s.seria;
           s.faza = "koniec";
@@ -286,10 +296,15 @@ export function RzutDoKosza({
       ctx.clearRect(0, 0, szer, WYS);
 
       rysujRekord(ctx, szer, rekordRef.current);
+      /*
+        Siatka rysuje się PO piłce, żeby przy przelocie przednie nitki przechodziły przed
+        nią. Odwrotna kolejność zasłaniała siatkę piłką dokładnie w tej jednej chwili,
+        w której cała rzecz się dzieje.
+      */
       rysujKosz(ctx, koszX, koszY, s);
-      rysujSiatke(ctx, s);
       if (s.faza === "celowanie") rysujTor(ctx, s, szer, koszX, koszY);
-      rysujPilke(ctx, s, pilkiRef.current[poziom.pilka]);
+      rysujPilke(ctx, s, poziom.pilka);
+      rysujSiatke(ctx, s);
 
       klatka = requestAnimationFrame(petla);
     };
@@ -316,7 +331,7 @@ export function RzutDoKosza({
   const start = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!zaczeta) return;
     const s = stanRef.current;
-    if (s.faza === "lot" || s.faza === "rysowanie") return;
+    if (s.faza === "lot" || s.faza === "wpadla" || s.faza === "rysowanie") return;
 
     if (s.faza === "koniec") {
       s.seria = 0;
@@ -361,6 +376,10 @@ export function RzutDoKosza({
 
     s.vx = rzut.vx;
     s.vy = rzut.vy;
+
+    /* obrót z rzutu - kierunek, moc i kąt, opis przy funkcji w lib/gra/fizyka.ts */
+    s.obrotV = predkoscObrotu(rzut.vx, rzut.vy, rzut.moc);
+
     s.faza = "lot";
     s.nadObreczka = false;
   };
@@ -390,11 +409,13 @@ function nowyStan(): Stan {
     vx: 0,
     vy: 0,
     obrot: 0,
+    obrotV: 0,
     celX: 0,
     celY: 0,
     wskX: 0,
     wskY: 0,
     nadObreczka: false,
+    przelot: 0,
     seria: 0,
     czas: 0,
     blysk: -99,
@@ -410,110 +431,8 @@ function ustawPilke(s: Stan, szer: number) {
   s.vx = 0;
   s.vy = 0;
   s.obrot = 0;
+  s.obrotV = 0;
   s.nadObreczka = false;
-}
-
-/* ---------------------------------------------------------------- siatka */
-
-/**
- * Siatka jako tkanina na więzach odległości (verlet).
- *
- * Górny wieniec wisi na obręczy, resztę ciągnie w dół grawitacja, a więzy trzymają nitki
- * na stałej długości. Dokładnie to samo zrobiłby silnik fizyki dla tkaniny - tylko że
- * tutaj mieści się w czterdziestu linijkach i nic więcej nie musi umieć.
- *
- * Piłka odpycha punkty promieniowo, więc przelot przez obręcz szarpie siatką w dół i na
- * boki, a potem więzy same ją składają. Nie ma tu żadnej animacji „po trafieniu" -
- * siatka rusza się, bo coś przez nią przeszło.
- *
- * Górny wieniec siedzi na PRZEDNIEJ połowie elipsy obręczy, nie na prostej. Obręcz jest
- * rysowana w lekkiej perspektywie, więc nitki przypięte do odcinka odstawałyby od żelaza
- * dokładnie w środku, tam gdzie elipsa opada najniżej.
- */
-function zbudujSiatke(x: number, y: number): Punkt[] {
-  const p: Punkt[] = [];
-  for (let r = 0; r < SIATKA_RZED; r++) {
-    const t = r / (SIATKA_RZED - 1);
-    /* stożek: dolny wieniec jest węższy od obręczy */
-    const promien = OBRECZ_R * (1 - t * 0.44);
-    for (let k = 0; k < SIATKA_KOL; k++) {
-      const u = k / (SIATKA_KOL - 1);
-      const px = x - promien + u * promien * 2;
-      const py = y + krzywaObreczy(u) + t * SIATKA_GLEB;
-      p.push({ x: px, y: py, px, py, przypiety: r === 0 });
-    }
-  }
-  return p;
-}
-
-function krokSiatki(s: Stan, dt: number, koszX: number, koszY: number) {
-  const p = s.siatka;
-  if (!p.length) return;
-
-  for (let r = 0; r < SIATKA_RZED; r++) {
-    for (let k = 0; k < SIATKA_KOL; k++) {
-      const i = r * SIATKA_KOL + k;
-      const pkt = p[i];
-
-      if (pkt.przypiety) {
-        /* górny wieniec trzyma się obręczy, także wtedy, gdy kosz ucieka na boki */
-        const u = k / (SIATKA_KOL - 1);
-        pkt.x = koszX - OBRECZ_R + u * OBRECZ_R * 2;
-        pkt.y = koszY + krzywaObreczy(u);
-        pkt.px = pkt.x;
-        pkt.py = pkt.y;
-        continue;
-      }
-
-      /* verlet: nowa pozycja z poprzedniej i przyspieszenia, bez trzymania prędkości */
-      const vx = (pkt.x - pkt.px) * 0.94;
-      const vy = (pkt.y - pkt.py) * 0.94;
-      pkt.px = pkt.x;
-      pkt.py = pkt.y;
-      pkt.x += vx;
-      pkt.y += vy + GRAWITACJA * 0.35 * dt * dt;
-
-      /* piłka rozpycha nitki - stąd szarpnięcie przy przelocie */
-      const dx = pkt.x - s.x;
-      const dy = pkt.y - s.y;
-      const d = Math.hypot(dx, dy);
-      if (d < PILKA_R * 1.15 && d > 0.001) {
-        const push = (PILKA_R * 1.15 - d) * 0.6;
-        pkt.x += (dx / d) * push;
-        pkt.y += (dy / d) * push;
-      }
-    }
-  }
-
-  /* więzy: dwa przebiegi wystarczają, siatka nie musi być sztywna */
-  for (let iter = 0; iter < 2; iter++) {
-    for (let r = 0; r < SIATKA_RZED; r++) {
-      for (let k = 0; k < SIATKA_KOL; k++) {
-        const i = r * SIATKA_KOL + k;
-        if (k < SIATKA_KOL - 1) wiaz(p[i], p[i + 1], dlugoscPoziom(r));
-        if (r < SIATKA_RZED - 1) wiaz(p[i], p[i + SIATKA_KOL], SIATKA_GLEB / (SIATKA_RZED - 1));
-      }
-    }
-  }
-}
-
-function dlugoscPoziom(r: number) {
-  const t = r / (SIATKA_RZED - 1);
-  return (OBRECZ_R * 2 * (1 - t * 0.44)) / (SIATKA_KOL - 1);
-}
-
-function wiaz(a: Punkt, b: Punkt, dl: number) {
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  const d = Math.hypot(dx, dy);
-  if (d < 0.001) return;
-  const roznica = (d - dl) / d;
-  const ruchA = a.przypiety ? 0 : b.przypiety ? 1 : 0.5;
-  const ruchB = b.przypiety ? 0 : a.przypiety ? 1 : 0.5;
-  a.x += dx * roznica * ruchA;
-  a.y += dy * roznica * ruchA;
-  b.x -= dx * roznica * ruchB;
-  b.y -= dy * roznica * ruchB;
 }
 
 /* ---------------------------------------------------------------- rysunki */
@@ -524,11 +443,30 @@ function wiaz(a: Punkt, b: Punkt, dl: number) {
  * Kanwa 2D nie czyta arkusza: `ctx.fillStyle = "var(--color-flame)"` nie jest błędem,
  * jest ciszą - przeglądarka odrzuca nierozpoznaną wartość i zostawia poprzednią barwę.
  */
+/*
+  Wartości zapamiętujemy do czasu zmiany motywu. Rysunek pyta o kilkanaście zmiennych
+  w każdej klatce, a `getComputedStyle` wymusza przeliczenie stylu - przy sześćdziesięciu
+  klatkach to prawie tysiąc takich przeliczeń na sekundę za odpowiedzi, które się nie
+  zmieniają. Pamięć czyścimy po atrybucie `data-motyw`, bo tylko on je zmienia.
+*/
+const pamiecBarw = new Map<string, string>();
+let pamiecMotywu: string | null = null;
+
 function barwa(nazwa: string, awaryjna: string, alfa?: number) {
-  const v =
-    typeof window === "undefined"
-      ? ""
-      : getComputedStyle(document.documentElement).getPropertyValue(nazwa).trim();
+  if (typeof window === "undefined") return awaryjna;
+
+  const motyw = document.documentElement.dataset.motyw ?? "";
+  if (motyw !== pamiecMotywu) {
+    pamiecBarw.clear();
+    pamiecMotywu = motyw;
+  }
+
+  let v = pamiecBarw.get(nazwa);
+  if (v === undefined) {
+    v = getComputedStyle(document.documentElement).getPropertyValue(nazwa).trim();
+    pamiecBarw.set(nazwa, v);
+  }
+
   if (!v) return awaryjna;
   return alfa === undefined ? v : `rgb(${v} / ${alfa})`;
 }
@@ -811,36 +749,144 @@ function rysujTor(
   ctx.restore();
 }
 
-function rysujPilke(
-  ctx: CanvasRenderingContext2D,
-  s: Stan,
-  obrazek: HTMLImageElement | undefined
-) {
+/**
+ * Piłka rysowana kreską i gradientem, bez pliku graficznego.
+ *
+ * Wcześniej piłką był obrazek z katalogu odznaczeń - ten sam webp, który stoi na profilu
+ * przy stopniach. Miało to sens jako skrót, ale kosztowało trzy rzeczy: cztery pobrania
+ * przy wejściu do gry, brak jakiegokolwiek światła zgodnego ze sceną i - najgorsze -
+ * niewidoczny obrót. Obrócony obrazek piłki wygląda jak obrócony obrazek, bo szwy na nim
+ * są namalowane razem z odblaskiem: kręci się cała fotografia, a nie kula.
+ *
+ * Teraz piłka jest złożona z czterech warstw i to ta kolejność sprzedaje bryłę:
+ *
+ *   1. ŁUNA pod piłką - w barwie stopnia, żeby na ciemnym tle nie ginęła.
+ *   2. KORPUS - gradient promieniowy z ogniskiem przesuniętym w górę i w lewo: jasny
+ *      grzbiet, nasycony środek, ciemna krawędź.
+ *   3. SZWY - obracane razem z piłką. Cztery kreski w układzie prawdziwej piłki:
+ *      równik, południk i dwie klamry po bokach.
+ *   4. ODBLASK - NIEOBRACANY. To jedyna warstwa, która stoi w miejscu, i właśnie dlatego
+ *      wszystko działa: światło zostaje tam, gdzie było, a kula pod nim się kręci.
+ *      Gdyby odblask kręcił się razem ze szwami, wróciłby efekt obracanego obrazka.
+ *
+ * Barwy idą ze stopni odznaczeń (`--zar-*`, `--iskra-*`, `--plomien-*`, `--niebieski-*`)
+ * i to jedyne miejsce w grze, gdzie barwa nie należy do motywu. Powód jest ten sam, co
+ * przy samych odznaczeniach: kolor jest tu TREŚCIĄ - mówi, jak długa jest seria. Piłka
+ * w barwie motywu wyglądałaby spójniej i nie mówiłaby nic.
+ */
+const PALETY: Record<string, [string, string, string]> = {
+  zar: ["#ffc79a", "#ff7a2e", "#6e2405"],
+  iskra: ["#ffe9a8", "#f0b53c", "#6b4204"],
+  plomien: ["#ffa392", "#ec2f2a", "#5c060c"],
+  niebieski: ["#d6f2ff", "#3f9bff", "#0b2170"],
+};
+
+function paletaPilki(nazwa: string): [string, string, string] {
+  const zapas = PALETY[nazwa] ?? PALETY.zar;
+  return [
+    barwa(`--${nazwa}-a`, zapas[0]),
+    barwa(`--${nazwa}-b`, zapas[1]),
+    barwa(`--${nazwa}-c`, zapas[2]),
+  ];
+}
+
+function rysujPilke(ctx: CanvasRenderingContext2D, s: Stan, nazwaPilki: string) {
   if (s.pilka <= 0) return;
+
   /* piłka pojawia się z lekkim przeskalowaniem - stąd „wjazd" po dorysowaniu kosza */
   const skala = 0.7 + 0.3 * s.pilka;
   const r = PILKA_R * skala;
+  const [jasna, srodek, ciemna] = paletaPilki(nazwaPilki);
 
   ctx.save();
   ctx.globalAlpha = s.pilka;
 
-  const swiatlo = ctx.createRadialGradient(s.x, s.y, r * 0.5, s.x, s.y, r * 1.9);
-  swiatlo.addColorStop(0, barwa("--rgb-flame", "rgba(255,122,24,.34)", 0.3));
-  swiatlo.addColorStop(1, barwa("--rgb-flame", "rgba(255,122,24,0)", 0));
-  ctx.fillStyle = swiatlo;
+  /* --- 1. łuna pod piłką --- */
+  const luna = ctx.createRadialGradient(s.x, s.y, r * 0.6, s.x, s.y, r * 2.1);
+  luna.addColorStop(0, przezroczysta(srodek, 0.3));
+  luna.addColorStop(1, przezroczysta(srodek, 0));
+  ctx.fillStyle = luna;
   ctx.beginPath();
-  ctx.arc(s.x, s.y, r * 1.9, 0, Math.PI * 2);
+  ctx.arc(s.x, s.y, r * 2.1, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.translate(s.x, s.y);
+
+  /* --- 2. korpus --- */
+  const korpus = ctx.createRadialGradient(-r * 0.34, -r * 0.4, r * 0.08, 0, 0, r * 1.06);
+  korpus.addColorStop(0, jasna);
+  korpus.addColorStop(0.42, srodek);
+  korpus.addColorStop(1, ciemna);
+  ctx.fillStyle = korpus;
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.fill();
+
+  /* krawędź: ciemny pierścień od środka, żeby kula miała obrys bez rysowania obrysu */
+  const brzeg = ctx.createRadialGradient(0, 0, r * 0.72, 0, 0, r);
+  brzeg.addColorStop(0, przezroczysta(ciemna, 0));
+  brzeg.addColorStop(1, przezroczysta(ciemna, 0.55));
+  ctx.fillStyle = brzeg;
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.fill();
+
+  /* --- 3. szwy, obracane razem z piłką --- */
+  ctx.save();
   ctx.rotate(s.obrot);
-  if (obrazek?.complete && obrazek.naturalWidth) {
-    ctx.drawImage(obrazek, -r, -r, r * 2, r * 2);
-  } else {
-    ctx.fillStyle = barwa("--color-flame", "#ff7a18");
-    ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.fill();
-  }
+  /*
+    Szwy przycinamy do koła piłki. Bez przycięcia klamry po bokach wychodzą za krawędź
+    przy każdym obrocie, w którym elipsa nie leży dokładnie w osi - i piłka dostaje wąsy.
+  */
+  ctx.beginPath();
+  ctx.arc(0, 0, r * 0.99, 0, Math.PI * 2);
+  ctx.clip();
+
+  ctx.strokeStyle = przezroczysta(ciemna, 0.72);
+  ctx.lineWidth = Math.max(1.2, r * 0.085);
+  ctx.lineCap = "round";
+
+  /* równik i południk */
+  ctx.beginPath();
+  ctx.moveTo(-r, 0);
+  ctx.lineTo(r, 0);
+  ctx.moveTo(0, -r);
+  ctx.lineTo(0, r);
+  ctx.stroke();
+
+  /* dwie klamry - elipsa o zwężonej poziomej półosi daje obie naraz */
+  ctx.beginPath();
+  ctx.ellipse(0, 0, r * 0.6, r, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
   ctx.restore();
+
+  /* --- 4. odblask, nieobracany --- */
+  const blask = ctx.createRadialGradient(-r * 0.4, -r * 0.46, 0, -r * 0.4, -r * 0.46, r * 0.62);
+  blask.addColorStop(0, "rgba(255,255,255,.5)");
+  blask.addColorStop(0.55, "rgba(255,255,255,.1)");
+  blask.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = blask;
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+/**
+ * Barwa z dodaną przezroczystością.
+ *
+ * Zmienne stopni trzymają gotowe barwy w zapisie szesnastkowym, nie składowe RGB, więc
+ * nie da się z nich zrobić „to samo, ale 30%" tak, jak z `--rgb-*`. Doklejamy więc dwie
+ * cyfry kanału alfa - to jedyny sposób, który działa dla obu zapisów, jakie mogą tu
+ * przyjść: `#rrggbb` z arkusza i wartość zapasowa z tego pliku.
+ */
+function przezroczysta(kolor: string, alfa: number) {
+  const a = Math.round(Math.max(0, Math.min(1, alfa)) * 255)
+    .toString(16)
+    .padStart(2, "0");
+  if (/^#[0-9a-f]{6}$/i.test(kolor)) return `${kolor}${a}`;
+  /* nieznany zapis - lepiej oddać barwę bez alfy niż nic nie narysować */
+  return alfa <= 0.02 ? "transparent" : kolor;
 }
