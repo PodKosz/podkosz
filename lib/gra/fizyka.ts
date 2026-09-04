@@ -54,6 +54,17 @@ export const OBRECZ_R = 80;
 export const ZELAZO_R = 7;
 export const TABLICA_SZER = 320;
 export const TABLICA_WYS = 130;
+/** odstęp między dolną krawędzią tablicy a obręczą - miejsce na mocowanie */
+export const TABLICA_ODSTEP = 28;
+/**
+ * Spłaszczenie elipsy obręczy.
+ *
+ * Rysunek, nie fizyka - ale trzymany razem z resztą geometrii, bo od niego zależy, gdzie
+ * wisi górny wieniec siatki. Krańce elipsy leżą dokładnie na wysokości obręczy, czyli
+ * tam, gdzie liczone są zderzenia z żelazem: perspektywa nie kłamie w miejscu, w którym
+ * coś od niej zależy.
+ */
+export const OBRECZ_RY = 17;
 
 /** wysokość obręczy i pozycja piłki, w ułamku wysokości świata */
 export const KOSZ_Y = 0.38;
@@ -88,13 +99,102 @@ export const MAKS_PREDKOSC = 1650;
 /** stały krok fizyki - ten sam w locie i w podglądzie toru */
 export const KROK = 1 / 120;
 
-/** Gdzie stoi piłka przy danej szerokości planszy - patrz `ODSUNIECIE_PILKI`. */
-export function pozycjaPilki(szer: number) {
+/**
+ * Miejsca, z których się rzuca - dwanaście stanowisk objeżdżanych po kolei.
+ *
+ * Do tej pory piłka wracała zawsze w to samo miejsce, więc pierwsze dwadzieścia trafień
+ * było dwudziestoma powtórzeniami jednego ruchu: raz wyćwiczony gest wystarczał, dopóki
+ * kosz nie zaczynał uciekać. Teraz każde trafienie przenosi na następne stanowisko, więc
+ * ten sam odcinek gry uczy CELOWANIA, a nie zapamiętywania jednego przeciągnięcia.
+ *
+ * `dx` to odsunięcie w bok od kosza w pikselach świata (znak wyznacza stronę), `y` to
+ * wysokość w ułamku wysokości świata. Kolejność jest ułożona, nie losowa: strony zmieniają
+ * się naprzemiennie, a odległość rośnie i maleje falami - dwa kolejne rzuty nigdy nie są
+ * tym samym rzutem, ale nigdy też nie przeskakują z najbliższego na najdalszy.
+ *
+ * Po dwudziestym trafieniu stanowiska zaczynają się powtarzać, a różnicę robi już ruchomy
+ * kosz (patrz `POZIOMY_GRY` w `lib/minigra.ts`).
+ */
+export const POZYCJE_RZUTU: { dx: number; y: number }[] = [
+  { dx: -340, y: 0.86 },
+  { dx: 300, y: 0.86 },
+  { dx: -230, y: 0.9 },
+  { dx: 400, y: 0.82 },
+  { dx: -420, y: 0.8 },
+  { dx: 240, y: 0.9 },
+  { dx: -290, y: 0.84 },
+  { dx: 360, y: 0.88 },
+  { dx: -400, y: 0.9 },
+  { dx: 280, y: 0.8 },
+  { dx: -250, y: 0.82 },
+  { dx: 420, y: 0.86 },
+];
+
+/**
+ * Gdzie stoi piłka przy danym numerze rzutu i szerokości planszy.
+ *
+ * Odsunięcie jest przycinane do szerokości okna z dwóch stron. Górne ograniczenie jest
+ * oczywiste - piłka nie może wyjść za krawędź. Dolne jest ważniejsze: przy bardzo wąskim
+ * ekranie wszystkie stanowiska zbiegłyby się pod obręcz, a rzut prosto w górę wraca tą
+ * samą linią i trafia wyłącznie pełną mocą (zmierzone: 0,4% skuteczności). Dlatego piłka
+ * nigdy nie stoi bliżej niż 14% szerokości od pionu kosza.
+ */
+export function pozycjaPilki(szer: number, nrRzutu = 0) {
   const koszX = szer / 2;
+  const poz = POZYCJE_RZUTU[((nrRzutu % POZYCJE_RZUTU.length) + POZYCJE_RZUTU.length) % POZYCJE_RZUTU.length];
+
+  const gora = szer * 0.36;
+  const dol = szer * 0.14;
+  const dlugosc = Math.min(Math.max(Math.abs(poz.dx), dol), gora);
+
   return {
-    x: koszX - Math.min(ODSUNIECIE_PILKI, szer * 0.3),
-    y: WYS * PILKA_Y,
+    x: koszX + Math.sign(poz.dx) * dlugosc,
+    y: WYS * poz.y,
   };
+}
+
+/** O ile przednia krawędź obręczy opada w danym miejscu jej szerokości (0-1). */
+export function krzywaObreczy(u: number) {
+  return Math.sin(Math.PI * u) * OBRECZ_RY;
+}
+
+/**
+ * Rozkład elementów kosza wokół punktu obręczy.
+ *
+ * Jedno miejsce na wszystkie te liczby, bo rysunek i sprawdzenie muszą patrzeć na to samo.
+ * Bez tego „ładniejszy kosz" byłby zmianą, której nie da się skontrolować inaczej niż
+ * okiem - a w tym środowisku nie mam czym na niego spojrzeć: kanwa nie dostaje klatek
+ * animacji, więc nic się nie rysuje.
+ */
+export function geometriaKosza(koszX: number, koszY: number) {
+  const tablica = {
+    x: koszX - TABLICA_SZER / 2,
+    y: koszY - TABLICA_WYS - TABLICA_ODSTEP,
+    w: TABLICA_SZER,
+    h: TABLICA_WYS,
+  };
+  const kwWys = TABLICA_WYS * 0.52;
+  const kwSzer = TABLICA_SZER * 0.4;
+  const kwadrat = {
+    x: koszX - kwSzer / 2,
+    y: tablica.y + TABLICA_WYS - kwWys - 12,
+    w: kwSzer,
+    h: kwWys,
+  };
+  /** dwa ukosy od dołu tablicy do obręczy */
+  const mocowanie = [-1, 1].map((znak) => ({
+    ax: koszX + znak * 26,
+    ay: tablica.y + TABLICA_WYS,
+    bx: koszX + znak * (OBRECZ_R * 0.62),
+    by: koszY,
+  }));
+  /** krańce obręczy - te same punkty, w których liczymy zderzenia z żelazem */
+  const zelazo = [
+    { x: koszX - OBRECZ_R, y: koszY },
+    { x: koszX + OBRECZ_R, y: koszY },
+  ];
+
+  return { tablica, kwadrat, mocowanie, zelazo, obrecz: { x: koszX, y: koszY, rx: OBRECZ_R, ry: OBRECZ_RY } };
 }
 
 export interface Cialo {

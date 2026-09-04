@@ -7,12 +7,15 @@ import {
   KOSZ_Y,
   KROK,
   OBRECZ_R,
+  OBRECZ_RY,
   PILKA_R,
   TABLICA_SZER,
   TABLICA_WYS,
   WYS,
   czyTrafienie,
+  geometriaKosza,
   krokLotu,
+  krzywaObreczy,
   pozycjaPilki,
   rozegrajRzut,
   wektorRzutu,
@@ -76,10 +79,11 @@ import { useSesja } from "@/lib/sesja";
 /** jak szybko celownik dogania kursor (0-1 na klatkę 60 Hz) */
 const WYGLADZANIE = 0.24;
 
+
 /* siatka jako tkanina na więzach - kolumny, rzędy i głębokość w pikselach świata */
-const SIATKA_KOL = 9;
+const SIATKA_KOL = 11;
 const SIATKA_RZED = 6;
-const SIATKA_GLEB = 104;
+const SIATKA_GLEB = 132;
 
 type Faza = "rysowanie" | "gotowa" | "celowanie" | "lot" | "koniec";
 
@@ -399,7 +403,8 @@ function nowyStan(): Stan {
 }
 
 function ustawPilke(s: Stan, szer: number) {
-  const p = pozycjaPilki(szer);
+  /* stanowisko wybiera numer trafienia: każde trafienie przenosi na następne */
+  const p = pozycjaPilki(szer, s.seria);
   s.x = p.x;
   s.y = p.y;
   s.vx = 0;
@@ -413,24 +418,28 @@ function ustawPilke(s: Stan, szer: number) {
 /**
  * Siatka jako tkanina na więzach odległości (verlet).
  *
- * Górny rząd wisi na obręczy, resztę ciągnie w dół grawitacja, a więzy trzymają nitki
+ * Górny wieniec wisi na obręczy, resztę ciągnie w dół grawitacja, a więzy trzymają nitki
  * na stałej długości. Dokładnie to samo zrobiłby silnik fizyki dla tkaniny - tylko że
  * tutaj mieści się w czterdziestu linijkach i nic więcej nie musi umieć.
  *
  * Piłka odpycha punkty promieniowo, więc przelot przez obręcz szarpie siatką w dół i na
  * boki, a potem więzy same ją składają. Nie ma tu żadnej animacji „po trafieniu" -
  * siatka rusza się, bo coś przez nią przeszło.
+ *
+ * Górny wieniec siedzi na PRZEDNIEJ połowie elipsy obręczy, nie na prostej. Obręcz jest
+ * rysowana w lekkiej perspektywie, więc nitki przypięte do odcinka odstawałyby od żelaza
+ * dokładnie w środku, tam gdzie elipsa opada najniżej.
  */
 function zbudujSiatke(x: number, y: number): Punkt[] {
   const p: Punkt[] = [];
   for (let r = 0; r < SIATKA_RZED; r++) {
     const t = r / (SIATKA_RZED - 1);
     /* stożek: dolny wieniec jest węższy od obręczy */
-    const promien = OBRECZ_R * (1 - t * 0.42);
+    const promien = OBRECZ_R * (1 - t * 0.44);
     for (let k = 0; k < SIATKA_KOL; k++) {
       const u = k / (SIATKA_KOL - 1);
       const px = x - promien + u * promien * 2;
-      const py = y + t * SIATKA_GLEB;
+      const py = y + krzywaObreczy(u) + t * SIATKA_GLEB;
       p.push({ x: px, y: py, px, py, przypiety: r === 0 });
     }
   }
@@ -447,10 +456,10 @@ function krokSiatki(s: Stan, dt: number, koszX: number, koszY: number) {
       const pkt = p[i];
 
       if (pkt.przypiety) {
-        /* górny rząd trzyma się obręczy, także wtedy, gdy kosz ucieka na boki */
+        /* górny wieniec trzyma się obręczy, także wtedy, gdy kosz ucieka na boki */
         const u = k / (SIATKA_KOL - 1);
         pkt.x = koszX - OBRECZ_R + u * OBRECZ_R * 2;
-        pkt.y = koszY;
+        pkt.y = koszY + krzywaObreczy(u);
         pkt.px = pkt.x;
         pkt.py = pkt.y;
         continue;
@@ -490,7 +499,7 @@ function krokSiatki(s: Stan, dt: number, koszX: number, koszY: number) {
 
 function dlugoscPoziom(r: number) {
   const t = r / (SIATKA_RZED - 1);
-  return (OBRECZ_R * 2 * (1 - t * 0.42)) / (SIATKA_KOL - 1);
+  return (OBRECZ_R * 2 * (1 - t * 0.44)) / (SIATKA_KOL - 1);
 }
 
 function wiaz(a: Punkt, b: Punkt, dl: number) {
@@ -533,61 +542,97 @@ function rysujRekord(ctx: CanvasRenderingContext2D, szer: number, rekord: number
   ctx.textBaseline = "middle";
   ctx.lineWidth = 3;
   ctx.strokeStyle = barwa("--rgb-szyba", "rgba(255,255,255,.07)", 0.07);
-  ctx.strokeText(String(rekord), szer / 2, WYS * 0.58);
+  ctx.strokeText(String(rekord), szer / 2, WYS * 0.62);
   ctx.restore();
 }
 
 /**
- * Kosz rysowany kreską, z postępem 0-1.
+ * Kosz: tablica, kwadrat celowniczy, mocowanie, obręcz w perspektywie i siatka.
  *
- * Każdy element ma własne okno w tym postępie, więc rysunek powstaje po kolei: najpierw
- * tablica, potem kwadrat celowniczy, na końcu obręcz. To ten sam gest, co obrysy na tłach
- * strony - tylko że tam rysuje go CSS, a tu trzeba było rozłożyć go na ułamki ścieżek.
+ * Poprzednia wersja była trzema prostokątami i odcinkiem - czytelna, ale wyglądała jak
+ * schemat, nie jak kosz. Trzy rzeczy to zmieniają:
+ *
+ *   1. OBRĘCZ JEST ELIPSĄ, nie odcinkiem. Sam kształt daje perspektywę: przednia połowa
+ *      idzie grubą kreską w barwie marki, tylna cieńszą i przygaszoną, jakby schodziła
+ *      za siatkę. Fizyka na tym nie traci - krańce elipsy leżą dokładnie tam, gdzie
+ *      punkty zderzeń z żelazem, czyli na wysokości obręczy.
+ *   2. TABLICA MA SZYBĘ - bardzo słabe wypełnienie i jaśniejszą krawędź. Puste obrysy
+ *      wyglądały na dziurę w tle, a nie na płytę, przez którą coś prześwituje.
+ *   3. MOCOWANIE. Dwa krótkie ukosy od dołu tablicy do obręczy. Bez nich obręcz wisiała
+ *      w powietrzu pod tablicą i to była pierwsza rzecz, która rzucała się w oczy.
+ *
+ * Wszystko rysuje się z postępem 0-1, każdy element w swoim oknie - to ten sam gest, co
+ * obrysy na tłach strony, tylko że tam rysuje je CSS, a tu trzeba rozłożyć ścieżki na
+ * ułamki.
  */
 function rysujKosz(ctx: CanvasRenderingContext2D, x: number, y: number, s: Stan) {
   const p = s.rysunek;
   if (p <= 0) return;
 
-  const lewa = x - TABLICA_SZER / 2;
-  const gora = y - TABLICA_WYS;
-  const kreda = barwa("--rgb-szyba", "rgba(226,228,236,.6)", 0.55);
+  const { tablica, kwadrat, mocowanie } = geometriaKosza(x, y);
+  const lewa = tablica.x;
+  const gora = tablica.y;
+  const kreda = barwa("--rgb-szyba", "rgba(226,228,236,.6)", 0.5);
+  const kredaMocna = barwa("--rgb-szyba", "rgba(226,228,236,.8)", 0.72);
 
   ctx.save();
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
 
-  /* tablica: obwód rysowany od górnego lewego narożnika */
-  ctx.strokeStyle = kreda;
-  ctx.lineWidth = 5;
-  obwod(ctx, lewa, gora, TABLICA_SZER, TABLICA_WYS, okno(p, 0, 0.45));
-
-  /* kwadrat celowniczy */
-  ctx.lineWidth = 4;
-  const kw = TABLICA_SZER * 0.42;
-  obwod(ctx, x - kw / 2, y - 74, kw, 62, okno(p, 0.32, 0.62));
-
-  /* wspornik pod obręczą */
-  const w = okno(p, 0.5, 0.62);
-  if (w > 0) {
-    ctx.lineWidth = 7;
-    ctx.beginPath();
-    ctx.moveTo(x - 20, y + 16);
-    ctx.lineTo(x - 20 + 40 * w, y + 16);
-    ctx.stroke();
+  /* szyba tablicy - pojawia się razem z jej obwodem, więc płyta nie „doskakuje" po nim */
+  const szyba = okno(p, 0.06, 0.5);
+  if (szyba > 0) {
+    ctx.globalAlpha = szyba;
+    const g = ctx.createLinearGradient(lewa, gora, lewa, gora + TABLICA_WYS);
+    g.addColorStop(0, barwa("--rgb-szyba", "rgba(255,255,255,.07)", 0.07));
+    g.addColorStop(1, barwa("--rgb-szyba", "rgba(255,255,255,.02)", 0.02));
+    ctx.fillStyle = g;
+    zaokraglonaSciezka(ctx, lewa, gora, TABLICA_SZER, TABLICA_WYS, 12);
+    ctx.fill();
+    ctx.globalAlpha = 1;
   }
 
-  /* obręcz - jedyny mocny akcent w kadrze, bo jedyny cel */
-  const o = okno(p, 0.58, 1);
+  /* obwód tablicy rysowany od górnego lewego narożnika */
+  ctx.strokeStyle = kredaMocna;
+  ctx.lineWidth = 5;
+  obwod(ctx, lewa, gora, TABLICA_SZER, TABLICA_WYS, okno(p, 0, 0.42));
+
+  /* kwadrat celowniczy */
+  ctx.strokeStyle = kreda;
+  ctx.lineWidth = 4;
+  obwod(ctx, kwadrat.x, kwadrat.y, kwadrat.w, kwadrat.h, okno(p, 0.3, 0.58));
+
+  /* mocowanie: dwa ukosy od dołu tablicy do krańców obręczy */
+  const moc = okno(p, 0.5, 0.66);
+  if (moc > 0) {
+    ctx.strokeStyle = kredaMocna;
+    ctx.lineWidth = 6;
+    for (const { ax, ay, bx, by } of mocowanie) {
+      ctx.beginPath();
+      ctx.moveTo(ax, ay);
+      ctx.lineTo(ax + (bx - ax) * moc, ay + (by - ay) * moc);
+      ctx.stroke();
+    }
+  }
+
+  /* obręcz: tylna połowa elipsy przygaszona, przednia w barwie marki */
+  const o = okno(p, 0.6, 1);
   if (o > 0) {
     const swieze = Math.max(0, 1 - (s.czas - s.blysk) / 0.5);
+
+    ctx.strokeStyle = barwa("--rgb-ember", "rgba(255,77,10,.45)", 0.35 + swieze * 0.3);
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.ellipse(x, y, OBRECZ_R, OBRECZ_RY, 0, Math.PI, Math.PI + Math.PI * o);
+    ctx.stroke();
+
     ctx.save();
-    ctx.shadowColor = barwa("--rgb-ember", "rgba(255,77,10,.7)", 0.55 + swieze * 0.45);
+    ctx.shadowColor = barwa("--rgb-ember", "rgba(255,77,10,.7)", 0.5 + swieze * 0.45);
     ctx.shadowBlur = 16 + swieze * 26;
     ctx.strokeStyle = barwa("--color-ember", "#ff4d0a");
     ctx.lineWidth = 9 + swieze * 3;
     ctx.beginPath();
-    ctx.moveTo(x - OBRECZ_R, y);
-    ctx.lineTo(x - OBRECZ_R + OBRECZ_R * 2 * o, y);
+    ctx.ellipse(x, y, OBRECZ_R, OBRECZ_RY, 0, 0, Math.PI * o);
     ctx.stroke();
     ctx.restore();
   }
@@ -600,6 +645,24 @@ function okno(p: number, od: number, do_: number) {
   if (p <= od) return 0;
   if (p >= do_) return 1;
   return (p - od) / (do_ - od);
+}
+
+/** Ścieżka zaokrąglonego prostokąta - bez rysowania, do wypełnienia albo obrysu. */
+function zaokraglonaSciezka(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number
+) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
 }
 
 /** Obwód prostokąta rysowany częściowo, zaczynając od górnego lewego narożnika. */
@@ -634,36 +697,61 @@ function obwod(
   ctx.stroke();
 }
 
+/**
+ * Siatka: nitki pionowe, wieńce poziome i przeplot na ukos.
+ *
+ * Ukosy to jedyny dodatek, który zmienia rysunek z „kilku kresek pod obręczą" w siatkę:
+ * dopiero po nich widać oczka. Idą tylko w jedną stronę na rząd, naprzemiennie, bo pełny
+ * przeplot w obu kierunkach przy dziewięciu kolumnach zamienia się w plamę.
+ */
 function rysujSiatke(ctx: CanvasRenderingContext2D, s: Stan) {
   const p = s.siatka;
-  const post = okno(s.rysunek, 0.72, 1);
+  const post = okno(s.rysunek, 0.7, 1);
   if (!p.length || post <= 0) return;
 
   ctx.save();
-  ctx.strokeStyle = barwa("--rgb-szyba", "rgba(255,255,255,.4)", 0.42);
-  ctx.lineWidth = 2;
   ctx.lineCap = "round";
 
-  const rzedy = Math.max(1, Math.round(SIATKA_RZED * post));
+  const rzedy = Math.max(2, Math.round(SIATKA_RZED * post));
+  const pkt = (r: number, k: number) => p[r * SIATKA_KOL + k];
 
-  /* nitki pionowe */
+  /* nitki pionowe - gasną ku dołowi, bo tam siatka jest luźniejsza i cieńsza */
   for (let k = 0; k < SIATKA_KOL; k++) {
     ctx.beginPath();
     for (let r = 0; r < rzedy; r++) {
-      const pkt = p[r * SIATKA_KOL + k];
-      if (r === 0) ctx.moveTo(pkt.x, pkt.y);
-      else ctx.lineTo(pkt.x, pkt.y);
+      const q = pkt(r, k);
+      if (r === 0) ctx.moveTo(q.x, q.y);
+      else ctx.lineTo(q.x, q.y);
     }
+    ctx.strokeStyle = barwa("--rgb-szyba", "rgba(255,255,255,.4)", 0.4);
+    ctx.lineWidth = 2;
     ctx.stroke();
   }
 
-  /* wieńce poziome - bez górnego, bo tam jest już obręcz */
+  /* wieńce poziome - bez górnego, tam jest już żelazo obręczy */
   for (let r = 1; r < rzedy; r++) {
     ctx.beginPath();
     for (let k = 0; k < SIATKA_KOL; k++) {
-      const pkt = p[r * SIATKA_KOL + k];
-      if (k === 0) ctx.moveTo(pkt.x, pkt.y);
-      else ctx.lineTo(pkt.x, pkt.y);
+      const q = pkt(r, k);
+      if (k === 0) ctx.moveTo(q.x, q.y);
+      else ctx.lineTo(q.x, q.y);
+    }
+    ctx.strokeStyle = barwa("--rgb-szyba", "rgba(255,255,255,.28)", 0.26);
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+  }
+
+  /* przeplot na ukos - to on robi oczka */
+  ctx.strokeStyle = barwa("--rgb-szyba", "rgba(255,255,255,.2)", 0.18);
+  ctx.lineWidth = 1.4;
+  for (let r = 0; r < rzedy - 1; r++) {
+    const wPrawo = r % 2 === 0;
+    ctx.beginPath();
+    for (let k = 0; k < SIATKA_KOL - 1; k++) {
+      const a = wPrawo ? pkt(r, k) : pkt(r, k + 1);
+      const b = wPrawo ? pkt(r + 1, k + 1) : pkt(r + 1, k);
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
     }
     ctx.stroke();
   }
