@@ -120,6 +120,14 @@
   --moc-cienia: 1;
   /* to samo dla poświat pod pinezkami: czerwona łuna na bieli czyta się jak plama */
   --moc-poswiaty: 1;
+  /*
+    Barwa przygaszeń leżących NA zdjęciach: dolna zasłona pod napisem na karcie boiska
+    i winieta pod twarzą gracza. W motywie ciemnym to niemal czerń, bo taka jest strona.
+    W jasnych schodzi w głęboki ton marki - czarna płyta pośrodku białej strony czytała się
+    jak dziura, a nie jak przygaszone zdjęcie. Ton jest CIEMNY, nie jasny, bo napisy na nim
+    zostają białe.
+  */
+  --rgb-zaslona: 5 4 7;
   /* dwie duże powierzchnie mają własne stopnie, bo w motywie ciemnym są ciepłe, nie neutralne */
   --panel-1: #161011;
   --panel-2: #100c0d;
@@ -180,6 +188,7 @@
   --rgb-dymek: 255 255 255;
   --moc-cienia: 0.3;
   --moc-poswiaty: 0.5;
+  --rgb-zaslona: 74 6 18;
   --panel-1: #ffffff;
   --panel-2: #fbf9fa;
   --panel-3: #f3f1f3;
@@ -234,6 +243,7 @@
   --rgb-dymek: 255 255 255;
   --moc-cienia: 0.3;
   --moc-poswiaty: 0.5;
+  --rgb-zaslona: 4 44 24;
   --panel-1: #ffffff;
   --panel-2: #f9fcfa;
   --panel-3: #f0f6f2;
@@ -2297,10 +2307,10 @@ select option {
 .karta-rankingu-zaslona {
   background: linear-gradient(
     to top,
-    rgba(5, 4, 7, 0.94) 0%,
-    rgba(5, 4, 7, 0.66) 26%,
-    rgba(5, 4, 7, 0.16) 58%,
-    rgba(5, 4, 7, 0) 82%
+    rgb(var(--rgb-zaslona) / 0.94) 0%,
+    rgb(var(--rgb-zaslona) / 0.66) 26%,
+    rgb(var(--rgb-zaslona) / 0.16) 58%,
+    rgb(var(--rgb-zaslona) / 0) 82%
   );
 }
 
@@ -2364,7 +2374,7 @@ select option {
     zdjęcie; szczelina w kolorze tła robi z nich świadomą siatkę, a nie sklejkę.
   */
   gap: 2px;
-  background: rgba(5, 4, 7, 0.9);
+  background: rgb(var(--rgb-zaslona) / 0.9);
   opacity: 0.82;
   filter: saturate(0.72) brightness(0.82);
   transition:
@@ -2392,12 +2402,12 @@ select option {
   background:
     radial-gradient(
       78% 62% at 50% 50%,
-      rgba(5, 4, 7, 0.88) 0%,
-      rgba(5, 4, 7, 0.62) 46%,
-      rgba(5, 4, 7, 0.24) 78%,
-      rgba(5, 4, 7, 0.12) 100%
+      rgb(var(--rgb-zaslona) / 0.88) 0%,
+      rgb(var(--rgb-zaslona) / 0.62) 46%,
+      rgb(var(--rgb-zaslona) / 0.24) 78%,
+      rgb(var(--rgb-zaslona) / 0.12) 100%
     ),
-    linear-gradient(180deg, rgba(5, 4, 7, 0.34) 0%, rgba(5, 4, 7, 0.1) 42%, rgba(5, 4, 7, 0.5) 100%);
+    linear-gradient(180deg, rgb(var(--rgb-zaslona) / 0.34) 0%, rgb(var(--rgb-zaslona) / 0.1) 42%, rgb(var(--rgb-zaslona) / 0.5) 100%);
 }
 
 .avatar-rankingu {
