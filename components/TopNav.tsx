@@ -40,6 +40,13 @@ export function TopNav() {
   const path = usePathname();
   const sesja = useSesja();
 
+  /*
+    Na minigrze paska nie ma. Gra zajmuje całe okno i ma w narożnikach dokładnie trzy
+    rzeczy: powrót na mapę, licznik serii i ranking. Pasek nawigacji leżałby na planszy
+    dokładnie tam, gdzie stoi licznik, a przy rzucie w górę zasłaniałby obręcz.
+  */
+  if (path.startsWith("/gra/")) return null;
+
   return (
     <div className="pointer-events-none fixed inset-x-0 top-0 z-40 flex items-center justify-between gap-2 p-3 sm:p-5">
       {/* na telefonie logo jest zawsze, także na mapie - inaczej nie ma jak wrócić */}

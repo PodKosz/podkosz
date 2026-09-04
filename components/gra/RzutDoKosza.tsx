@@ -1,137 +1,172 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { MAKS_SERIA, poziomDlaSerii, type IdMiejsca } from "@/lib/minigra";
+import {
+  GRAWITACJA,
+  KOSZ_Y,
+  KROK,
+  OBRECZ_R,
+  PILKA_R,
+  TABLICA_SZER,
+  TABLICA_WYS,
+  WYS,
+  czyTrafienie,
+  krokLotu,
+  pozycjaPilki,
+  rozegrajRzut,
+  wektorRzutu,
+} from "@/lib/gra/fizyka";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { useSesja } from "@/lib/sesja";
 
 /**
- * Minigra: rzut do kosza swipem.
+ * Minigra: rzut do kosza.
  *
- * Zasada jest ta sama, co w starej grze z komunikatora: machasz piłką w stronę kosza.
- * O rzucie decyduje PRĘDKOŚĆ ręki w chwili puszczenia, a nie odległość przeciągnięcia -
- * dlatego powolne przeciągnięcie przez pół ekranu nie wystrzeli piłki, a krótkie, ostre
- * machnięcie owszem. Kierunek ruchu to kąt wylotu, szybkość to zasięg. Nie ma tu żadnej
- * linii celowniczej ani wskaźnika siły: całą informację zwrotną daje sama piłka, która
- * idzie za palcem.
+ * ------------------------------------------------------------------ sterowanie
  *
- * Seria kończy się na pierwszym pudle i to ona jest wynikiem - dlatego trudność rośnie
- * razem z nią, a nie z liczbą podejść. Kosz zaczyna uciekać dopiero po dwudziestu
- * trafieniach: pierwsze rzuty mają być spokojne, żeby dało się zrozumieć zasady.
+ * Celujesz, ciągnąc od piłki w stronę, w którą ma polecieć. Kierunek to kierunek
+ * przeciągnięcia, siła to jego długość, a nad piłką widać kropkowany tor, którym rzut
+ * poleci. Puszczasz - piłka leci dokładnie tam.
  *
- * Rysujemy na `canvas`, bo lecąca piłka to sześćdziesiąt klatek na sekundę - w DOM-ie
- * każda z nich byłaby przeliczeniem układu strony. Tło zostaje SVG pod spodem: jest
- * nieruchome, więc nie ma powodu przerysowywać go w każdej klatce.
+ * Poprzednia wersja liczyła rzut z PRĘDKOŚCI machnięcia i to był jej główny problem.
+ * Prędkość ręki jest wielkością chwilową: mysz podskoczy o trzy piksele w ostatnich
+ * dwudziestu milisekundach i ten sam ruch daje raz rzut pod obręcz, raz przez pół ekranu.
+ * Nie da się tego wytrenować, bo gracz nie ma jak zobaczyć, co właściwie zrobił.
+ *
+ * Nowy model jest deterministyczny: ten sam gest daje ten sam rzut, zawsze. Do tego trzy
+ * rzeczy, które razem robią całą płynność:
+ *
+ *   1. MARTWA STREFA - przeciągnięcie krótsze niż `MARTWA_STREFA` nie jest rzutem.
+ *      Drgnięcie nadgarstka i kliknięcie w planszę nie wyrzucają piłki.
+ *   2. WYGŁADZANIE - celownik dochodzi do kursora wykładniczo, nie skacze za nim. Szum
+ *      trackpada i drżenie palca gasną, a świadomy ruch przechodzi bez opóźnienia.
+ *      To jest ta różnica między „ledwo ruszyłem, a poleciała w kosmos" i „prowadzę ją".
+ *   3. TOR NA PODGLĄDZIE - liczony tą samą fizyką, którą potem leci piłka. Nie przybliżenie
+ *      i nie ozdoba: jeśli kropki wchodzą w obręcz, rzut wpada.
+ *
+ * Krzywa siły jest wypukła (`Math.pow(t, 1.35)`): przy krótkim przeciągnięciu przyrost
+ * jest łagodny, przy długim szybszy. Dzięki temu delikatne poprawki celowania są naprawdę
+ * delikatne, a pełną moc trzeba świadomie wyciągnąć.
+ *
+ * Silnika fizyki tu nie ma i to jest decyzja, nie zaniedbanie. Matter.js (MIT),
+ * Planck.js (zlib) i Rapier (Apache-2.0) są darmowe i dobre, ale rozwiązują problem,
+ * którego tu nie ma: kolizje wielu ciał. Tu jest jedno ciało, dwa punkty żelaza i siatka.
+ * Za to każdy z nich dodaje od 90 do 400 kB do paczki easter egga i odbiera kontrolę nad
+ * dokładnie tym, co w tej grze jest najważniejsze - wyczuciem lotu. Zamiast silnika
+ * pożyczamy z tych gier MECHANIKĘ: celowanie przeciągnięciem z podglądem toru (model
+ * „procy" znany z Angry Birds) i siatkę na więzach odległości (verlet), czyli to samo,
+ * co silnik zrobiłby dla tkaniny.
+ *
+ * ------------------------------------------------------------------ krok czasu
+ *
+ * Fizyka liczy się stałym krokiem 1/120 s w akumulatorze, niezależnie od tego, ile klatek
+ * daje przeglądarka. Na monitorze 144 Hz i na telefonie w oszczędzaniu energii lot jest
+ * ten sam - przy liczeniu „na klatkę" gra na szybszym ekranie leciała szybciej.
  */
 
-/* Świat gry ma stałe wymiary, a canvas tylko go skaluje - dzięki temu fizyka zachowuje
-   się identycznie na telefonie i na monitorze. */
-const SZER = 1000;
-const WYS = 680;
-
-const GRAWITACJA = 0.62;
-const OPOR = 0.9992;
-/*
-  Przelicznik szybkości machnięcia na siłę rzutu i górne ograniczenie tej siły.
-
-  Obie liczby są wyliczone, nie zgadnięte - przelotów nie da się rozegrać automatem
-  (przeglądarka nie daje klatek w niewidocznej karcie), więc lot przeliczyłem osobno,
-  tą samą fizyką, dla kilku profili machnięcia. Przy tym zestawie:
-
-    leciutkie i spokojne machnięcie  - nie sięga obręczy, widać że było za słabe
-    typowe i pewne                   - wpada, piłka cały czas w kadrze
-    mocne i zamaszyste               - ścina je górne ograniczenie, więc nie ucieka z ekranu
-
-  Tolerancja kąta wychodzi około ±40 px odchylenia machnięcia: wybacza drgnięcie ręki,
-  ale nie wybacza rzutu w bok. Limit siły jest po to, żeby piłka nigdy nie wyleciała poza
-  kadr - znikająca piłka nie mówi graczowi nic o tym, co zrobił źle.
-*/
-const SILA = 0.28;
-const MAKS_SILA = 24;
-/* poniżej tej szybkości traktujemy ruch jako przypadkowe dotknięcie, nie rzut */
-const MIN_SZYBKOSC = 4.5;
-/* ile ostatnich milisekund ruchu liczy się jako zamach */
-const OKNO_ZAMACHU = 110;
-/*
-  Jak mocno piłka idzie za palcem. Nie jeden do jednego z rozmysłem: przy pełnym podążaniu
-  szybkie machnięcie przerzucało piłkę przez pół planszy jeszcze przed puszczeniem i rzut
-  startował za każdym razem z innej wysokości - a wtedy ta sama siła raz wpadała, raz nie.
-  Przy 0.4 piłka wyraźnie reaguje na rękę, ale punkt wyrzutu zostaje w okolicy miejsca,
-  z którego się rzuca.
-*/
-const PODAZANIE = 0.4;
-const ZASIEG_PODAZANIA = 190;
-
-const PILKA_R = 38;
-const START_X = 500;
-const START_Y = 470;
+/* ---------------------------------------------------------------- plansza */
 
 /*
-  Kosz widziany z przodu, u góry kadru - jak w tej starej grze z komunikatora. Piłka leci
-  z dołu w górę i musi wpaść przez obręcz, więc liczy się wyczucie siły, a nie kąt.
+  Zasady lotu, rozmiary i próg martwej strefy siedzą w `lib/gra/fizyka.ts` - tu zostaje
+  rysowanie i sterowanie. Podział nie jest kosmetyczny: fizykę da się tam rozegrać bez
+  przeglądarki i policzyć, ile błędu celowania jeszcze wpada.
 */
-const KOSZ_X = 500;
-const KOSZ_Y = 250;
-const OBRECZ_R = 78;
-const TABLICA_SZER = 300;
-const TABLICA_WYS = 132;
 
-type Faza = "gotowa" | "celowanie" | "lot" | "koniec";
+/** jak szybko celownik dogania kursor (0-1 na klatkę 60 Hz) */
+const WYGLADZANIE = 0.24;
+
+/* siatka jako tkanina na więzach - kolumny, rzędy i głębokość w pikselach świata */
+const SIATKA_KOL = 9;
+const SIATKA_RZED = 6;
+const SIATKA_GLEB = 104;
+
+type Faza = "rysowanie" | "gotowa" | "celowanie" | "lot" | "koniec";
+
+interface Punkt {
+  x: number;
+  y: number;
+  px: number;
+  py: number;
+  /** górny rząd wisi na obręczy i nie spada */
+  przypiety: boolean;
+}
 
 interface Stan {
   faza: Faza;
+  /** postęp rysowania kosza, 0-1 */
+  rysunek: number;
+  /** postęp pojawiania się piłki, 0-1 */
+  pilka: number;
   x: number;
   y: number;
   vx: number;
   vy: number;
   obrot: number;
-  /*
-    Ostatnie położenia palca razem z czasem. Rzut bierze prędkość z tych próbek, a nie
-    z odległości między początkiem a końcem przeciągnięcia: liczy się to, jak szybko ręka
-    szła w chwili puszczenia, więc powolne przeciągnięcie przez pół ekranu nie wystrzeli
-    piłki, a krótkie, ostre machnięcie owszem.
-  */
-  probki: { x: number; y: number; t: number }[];
-  /* czy w tym locie piłka była już nad obręczą - bez tego licząc trafienie z dołu */
+  /** wygładzony punkt celowania */
+  celX: number;
+  celY: number;
+  /** surowa pozycja wskaźnika */
+  wskX: number;
+  wskY: number;
   nadObreczka: boolean;
   seria: number;
   czas: number;
+  /** klatka ostatniego trafienia - do błysku obręczy */
+  blysk: number;
+  siatka: Punkt[];
 }
 
 export function RzutDoKosza({
   miejsce,
   rekord,
+  zaczeta,
   onWynik,
+  onSeria,
 }: {
   miejsce: IdMiejsca;
-  /** najlepszy wynik zalogowanego gracza w tym miejscu */
+  /** najlepszy wynik gracza w tym miejscu - stoi w tle planszy */
   rekord: number;
-  /** wywoływane po zakończeniu serii - odświeża ranking na stronie */
+  /** dopóki false, plansza jest zamglona i nie przyjmuje rzutów (ekran tytułowy) */
+  zaczeta: boolean;
+  /** po zakończonej serii - odświeża ranking na stronie */
   onWynik: (seria: number) => void;
+  /** przy każdej zmianie serii - licznik nad planszą */
+  onSeria: (seria: number, komunikat: string | null) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const stanRef = useRef<Stan>({
-    faza: "gotowa",
-    x: START_X,
-    y: START_Y,
-    vx: 0,
-    vy: 0,
-    obrot: 0,
-    probki: [],
-    nadObreczka: false,
-    seria: 0,
-    czas: 0,
-  });
-
-  const [seria, setSeria] = useState(0);
-  const [najlepszy, setNajlepszy] = useState(rekord);
-  const [komunikat, setKomunikat] = useState<string | null>(null);
-  const [zagrane, setZagrane] = useState(false);
+  const stanRef = useRef<Stan>(nowyStan());
+  const zaczetaRef = useRef(zaczeta);
 
   const sesja = useSesja();
   const zalogowany = Boolean(sesja?.user);
 
-  /* piłki wczytujemy raz - to te same pliki, co odznaczenia na profilu */
+  /*
+    Rekord czytamy przez ref, nie przez stan. Liczba stoi w tle planszy, czyli na kanwie -
+    a pętla rysująca i tak działa poza Reactem. Trzymanie go dodatkowo w stanie tego
+    komponentu dawałoby drugie źródło prawdy obok `EkranGry`, który już nim zarządza.
+  */
+  const rekordRef = useRef(rekord);
+  useEffect(() => {
+    rekordRef.current = rekord;
+  }, [rekord]);
+
+  /*
+    Rysowanie kosza startuje w chwili zniknięcia ekranu tytułowego, nie przy montowaniu:
+    plansza jest pod tytułem widoczna (rozmyta), więc gdyby kreska rysowała się od razu,
+    cały efekt zdążyłby się skończyć, zanim ktokolwiek na niego spojrzy.
+  */
+  useEffect(() => {
+    zaczetaRef.current = zaczeta;
+    if (zaczeta) {
+      const s = stanRef.current;
+      s.faza = "rysowanie";
+      s.rysunek = 0;
+      s.pilka = 0;
+    }
+  }, [zaczeta]);
+
+  /* piłki to te same pliki, co odznaczenia na profilu */
   const pilkiRef = useRef<Record<string, HTMLImageElement>>({});
   useEffect(() => {
     (["zar", "iskra", "plomien", "niebieski"] as const).forEach((nazwa) => {
@@ -165,313 +200,322 @@ export function RzutDoKosza({
 
     let klatka = 0;
     let zywy = true;
+    let poprzednia = performance.now();
+    let zapas = 0;
+    /* szerokość świata zależy od proporcji okna - liczona przy każdym dopasowaniu */
+    let szer = WYS;
 
     const dopasuj = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const r = canvas.getBoundingClientRect();
-      canvas.width = Math.round(r.width * dpr);
-      canvas.height = Math.round(r.height * dpr);
+      canvas.width = Math.max(1, Math.round(r.width * dpr));
+      canvas.height = Math.max(1, Math.round(r.height * dpr));
+      szer = (r.width / Math.max(r.height, 1)) * WYS;
+      const s = stanRef.current;
+      if (s.faza === "gotowa" || s.faza === "rysowanie" || s.faza === "koniec") {
+        ustawPilke(s, szer);
+      }
+      if (!s.siatka.length) s.siatka = zbudujSiatke(szer / 2, WYS * KOSZ_Y);
     };
     dopasuj();
-    window.addEventListener("resize", dopasuj);
+    const ro = new ResizeObserver(dopasuj);
+    ro.observe(canvas);
 
-    const rysuj = () => {
+    const petla = (teraz: number) => {
       if (!zywy) return;
       const s = stanRef.current;
-      s.czas += 1;
+
+      /* dt ograniczamy: po powrocie z innej karty zaległość byłaby liczona jak teleport */
+      const dt = Math.min((teraz - poprzednia) / 1000, 0.05);
+      poprzednia = teraz;
+      s.czas += dt;
 
       const poziom = poziomDlaSerii(s.seria);
-      const t = (s.czas / 60) * poziom.tempo;
-      const koszX = KOSZ_X + Math.sin(t * 1.1) * poziom.bok * SZER;
-      const koszY = KOSZ_Y + Math.sin(t * 1.7 + 1.2) * poziom.pion * WYS;
+      const t = s.czas * poziom.tempo;
+      const koszX = szer / 2 + Math.sin(t * 1.1) * poziom.bok * szer;
+      const koszY = WYS * KOSZ_Y + Math.sin(t * 1.7 + 1.2) * poziom.pion * WYS;
 
-      /* --- fizyka --- */
+      if (s.faza === "rysowanie") {
+        s.rysunek = Math.min(1, s.rysunek + dt / 1.15);
+        if (s.rysunek >= 1) s.pilka = Math.min(1, s.pilka + dt / 0.4);
+        if (s.pilka >= 1) s.faza = "gotowa";
+      } else if (zaczetaRef.current) {
+        s.rysunek = 1;
+        s.pilka = 1;
+      }
+
+      /* celownik dogania kursor wykładniczo - to on odpowiada za płynność */
+      if (s.faza === "celowanie") {
+        const k = 1 - Math.pow(1 - WYGLADZANIE, dt * 60);
+        s.celX += (s.wskX - s.celX) * k;
+        s.celY += (s.wskY - s.celY) * k;
+      }
+
+      /* --- fizyka stałym krokiem --- */
+      zapas += dt;
+      while (zapas >= KROK) {
+        zapas -= KROK;
+        if (s.faza === "lot") krokLotu(s, KROK, koszX, koszY);
+        krokSiatki(s, KROK, koszX, koszY);
+      }
+
       if (s.faza === "lot") {
-        s.x += s.vx;
-        s.y += s.vy;
-        s.vy += GRAWITACJA;
-        s.vx *= OPOR;
-        s.obrot += s.vx * 0.02;
-
-        /*
-          Krawędzie obręczy odbijają piłkę. To one dają w tej grze całą dramaturgię:
-          rzut trochę za mocny nie leci po prostu obok, tylko puka o żelazo i czasem
-          jednak wpada.
-        */
-        for (const kraniec of [koszX - OBRECZ_R, koszX + OBRECZ_R]) {
-          const dx = s.x - kraniec;
-          const dy = s.y - koszY;
-          const d = Math.hypot(dx, dy);
-          if (d < PILKA_R + 6 && d > 0.001) {
-            const nx = dx / d;
-            const ny = dy / d;
-            const rzut = s.vx * nx + s.vy * ny;
-            s.vx = (s.vx - 2 * rzut * nx) * 0.62;
-            s.vy = (s.vy - 2 * rzut * ny) * 0.62;
-            s.x = kraniec + nx * (PILKA_R + 6);
-            s.y = koszY + ny * (PILKA_R + 6);
-          }
-        }
-
-        /*
-          Tablicy nie sprawdzamy. Przy koszu widzianym z przodu płyta wisi ZA obręczą,
-          a piłka leci przed nią - odbicie od niej wymagałoby trzeciego wymiaru, którego
-          tu nie ma. Wcześniejsza wersja traktowała tablicę jak ścianę w płaszczyźnie gry
-          i zawracała każdy rzut jeszcze przed obręczą, więc trafić nie dało się w ogóle.
-        */
-
         if (s.y < koszY - PILKA_R) s.nadObreczka = true;
 
-        /* trafienie: opada, jest w świetle obręczy i wcześniej była nad nią */
-        const trafiona =
-          s.vy > 0 &&
-          s.nadObreczka &&
-          Math.abs(s.y - koszY) < 16 &&
-          Math.abs(s.x - koszX) < OBRECZ_R - PILKA_R * 0.5;
-
-        if (trafiona) {
+        if (czyTrafienie(s, koszX, koszY, s.nadObreczka)) {
           s.seria += 1;
-          setSeria(s.seria);
-          setNajlepszy((n) => Math.max(n, s.seria));
-          setKomunikat(null);
-          resetPilki(s);
-        } else if (s.y > WYS + 120 || s.x < -140 || s.x > SZER + 140) {
-          /* pudło kończy serię */
+          s.blysk = s.czas;
+          onSeria(s.seria, null);
+          ustawPilke(s, szer);
+          s.faza = "gotowa";
+        } else if (s.y > WYS + 160 || s.x < -200 || s.x > szer + 200) {
           const wynik = s.seria;
           s.faza = "koniec";
-          setKomunikat(wynik > 0 ? `Seria przerwana na ${wynik}` : "Pudło - spróbuj jeszcze raz");
+          onSeria(wynik, wynik > 0 ? `Seria przerwana na ${wynik}` : "Pudło");
           void zapiszWynik(wynik);
         }
       }
 
       /* --- rysowanie --- */
-      const skala = canvas.width / SZER;
+      const skala = canvas.width / szer;
       ctx.setTransform(skala, 0, 0, skala, 0, 0);
-      ctx.clearRect(0, 0, SZER, WYS);
+      ctx.clearRect(0, 0, szer, WYS);
 
-      rysujKosz(ctx, koszX, koszY);
+      rysujRekord(ctx, szer, rekordRef.current);
+      rysujKosz(ctx, koszX, koszY, s);
+      rysujSiatke(ctx, s);
+      if (s.faza === "celowanie") rysujTor(ctx, s, szer, koszX, koszY);
+      rysujPilke(ctx, s, pilkiRef.current[poziom.pilka]);
 
-      /*
-        Poświata pod piłką. Na czarnym tle ciemna piłka „żaru" gubiła się kompletnie -
-        a to jedyny obiekt, który gracz musi widzieć zawsze i natychmiast.
-      */
-      const obrazek = pilkiRef.current[poziom.pilka];
-      const swiatlo = ctx.createRadialGradient(s.x, s.y, PILKA_R * 0.5, s.x, s.y, PILKA_R * 1.9);
-      swiatlo.addColorStop(0, barwaMotywu("--rgb-flame", "rgba(255,122,24,.34)", 0.34));
-      swiatlo.addColorStop(1, barwaMotywu("--rgb-flame", "rgba(255,122,24,0)", 0));
-      ctx.fillStyle = swiatlo;
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, PILKA_R * 1.9, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.save();
-      ctx.translate(s.x, s.y);
-      ctx.rotate(s.obrot);
-      if (obrazek?.complete && obrazek.naturalWidth) {
-        ctx.drawImage(obrazek, -PILKA_R, -PILKA_R, PILKA_R * 2, PILKA_R * 2);
-      } else {
-        ctx.fillStyle = barwaMotywu("--color-flame", "#ff7a18");
-        ctx.beginPath();
-        ctx.arc(0, 0, PILKA_R, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.restore();
-
-      klatka = requestAnimationFrame(rysuj);
+      klatka = requestAnimationFrame(petla);
     };
 
-    klatka = requestAnimationFrame(rysuj);
+    klatka = requestAnimationFrame(petla);
 
     return () => {
       zywy = false;
       cancelAnimationFrame(klatka);
-      window.removeEventListener("resize", dopasuj);
+      ro.disconnect();
     };
-  }, [zapiszWynik]);
+  }, [onSeria, zapiszWynik]);
 
-  /* ------------------------------------------------------------- sterowanie */
+  /* ------------------------------------------------------------- wskaźnik */
   const naSwiat = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
+    const szer = (r.width / Math.max(r.height, 1)) * WYS;
     return {
-      x: ((e.clientX - r.left) / r.width) * SZER,
+      x: ((e.clientX - r.left) / r.width) * szer,
       y: ((e.clientY - r.top) / r.height) * WYS,
     };
   };
 
   const start = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!zaczeta) return;
     const s = stanRef.current;
-    if (s.faza === "lot") return;
+    if (s.faza === "lot" || s.faza === "rysowanie") return;
 
     if (s.faza === "koniec") {
       s.seria = 0;
-      setSeria(0);
-      setKomunikat(null);
-      resetPilki(s);
+      onSeria(0, null);
+      const r = e.currentTarget.getBoundingClientRect();
+      ustawPilke(s, (r.width / Math.max(r.height, 1)) * WYS);
     }
 
     const p = naSwiat(e);
     s.faza = "celowanie";
-    s.probki = [{ x: p.x, y: p.y, t: performance.now() }];
-    setZagrane(true);
+    s.wskX = p.x;
+    s.wskY = p.y;
+    /* celownik startuje w punkcie dotknięcia, nie w poprzednim - inaczej pierwsza klatka
+       pokazywałaby tor sprzed sekundy i wyglądałoby to jak skok */
+    s.celX = p.x;
+    s.celY = p.y;
     e.currentTarget.setPointerCapture(e.pointerId);
   };
 
   const ciagnij = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const s = stanRef.current;
     if (s.faza !== "celowanie") return;
-
     const p = naSwiat(e);
-    s.probki.push({ x: p.x, y: p.y, t: performance.now() });
-    if (s.probki.length > 8) s.probki.shift();
-
-    /*
-      Piłka idzie za palcem, ale z tłumieniem i w ograniczonym promieniu wokół swojego
-      miejsca. Dzięki temu rzut zawsze startuje mniej więcej stamtąd, skąd gracz się
-      spodziewa - a jednocześnie widać, że ręka piłkę prowadzi.
-    */
-    const dx = (p.x - START_X) * PODAZANIE;
-    const dy = (p.y - START_Y) * PODAZANIE;
-    const d = Math.hypot(dx, dy);
-    const skrot = d > ZASIEG_PODAZANIA ? ZASIEG_PODAZANIA / d : 1;
-    s.x = START_X + dx * skrot;
-    s.y = START_Y + dy * skrot;
+    s.wskX = p.x;
+    s.wskY = p.y;
   };
 
   const puszczaj = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const s = stanRef.current;
     if (s.faza !== "celowanie") return;
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      /* wskaźnik mógł już zniknąć - to nie powód, żeby nie oddać rzutu */
+    }
 
-    e.currentTarget.releasePointerCapture(e.pointerId);
-
-    /*
-      Prędkość liczymy z ostatnich stu milisekund ruchu. Krótsze okno łapie drgnięcia
-      palca tuż przed oderwaniem, dłuższe rozmywa zamach - sto milisekund to mniej więcej
-      tyle, ile trwa samo machnięcie nadgarstkiem.
-    */
-    const teraz = performance.now();
-    const ostatnia = s.probki[s.probki.length - 1];
-    const pierwsza = [...s.probki].reverse().find((p) => teraz - p.t > OKNO_ZAMACHU) ?? s.probki[0];
-
-    s.probki = [];
-
-    if (!ostatnia || !pierwsza || ostatnia === pierwsza) {
+    const rzut = wektorRzutu(s.x, s.y, s.celX, s.celY);
+    if (!rzut) {
       s.faza = "gotowa";
-      resetPilki(s);
       return;
     }
 
-    const dt = Math.max(ostatnia.t - pierwsza.t, 8);
-    /* piksele świata na klatkę - stąd mnożnik przez czas jednej klatki */
-    const vx = ((ostatnia.x - pierwsza.x) / dt) * 16.7;
-    const vy = ((ostatnia.y - pierwsza.y) / dt) * 16.7;
-    const szybkosc = Math.hypot(vx, vy);
-
-    /* machnięcie w dół albo ledwo zauważalne to nie rzut - piłka wraca na miejsce */
-    if (szybkosc < MIN_SZYBKOSC || vy > -1) {
-      s.faza = "gotowa";
-      resetPilki(s);
-      return;
-    }
-
-    const moc = Math.min(szybkosc * SILA, MAKS_SILA);
-    s.vx = (vx / szybkosc) * moc;
-    s.vy = (vy / szybkosc) * moc;
+    s.vx = rzut.vx;
+    s.vy = rzut.vy;
     s.faza = "lot";
     s.nadObreczka = false;
   };
 
-  const poziom = poziomDlaSerii(seria);
-
   return (
-    /*
-      Plansza nie ma własnego tła ani karty: rysunek miasta leży pod całą stroną, a tu
-      zostaje sama gra. Włosowa obwódka mówi tylko, dokąd sięga pole rzutu.
-    */
-    <div className="relative">
-      <div className="relative aspect-[1000/680] w-full rounded-[28px] border border-hairline">
-        <canvas
-          ref={canvasRef}
-          onPointerDown={start}
-          onPointerMove={ciagnij}
-          onPointerUp={puszczaj}
-          onPointerCancel={puszczaj}
-          className="absolute inset-0 h-full w-full touch-none"
-        />
-
-        {/* licznik serii i poziom - nad planszą, nie zasłaniają toru piłki */}
-        <div className="pointer-events-none absolute left-4 top-4 flex items-center gap-2">
-          <span className="szklo-pro rounded-full px-4 py-2 text-[13px] text-ink">
-            seria <b className="text-[16px]">{seria}</b>
-          </span>
-          <span className="szklo-pro rounded-full px-4 py-2 text-[13px] text-muted">
-            rekord <b className="text-ink">{najlepszy}</b>
-          </span>
-        </div>
-
-        <div className="pointer-events-none absolute right-4 top-4">
-          <span className="szklo-pro rounded-full px-4 py-2 text-[12px] uppercase tracking-[0.14em] text-muted">
-            {poziom.nazwa}
-          </span>
-        </div>
-
-        {!zagrane && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center">
-            <span className="szklo-pro rounded-full px-5 py-2.5 text-[13px] text-ink">
-              Machnij palcem albo myszką w stronę kosza
-            </span>
-          </div>
-        )}
-
-        {komunikat && (
-          <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center">
-            <span className="szklo-pro rounded-full px-5 py-2.5 text-[13px] text-ink">
-              {komunikat} &middot; dotknij, żeby zacząć od nowa
-            </span>
-          </div>
-        )}
-      </div>
-
-      {!zalogowany && (
-        <p className="mt-3 text-center text-[12px] text-muted">
-          Grasz bez konta - wynik nie wejdzie do rankingu. Zaloguj się, żeby się w nim
-          znaleźć.
-        </p>
-      )}
-    </div>
+    <canvas
+      ref={canvasRef}
+      onPointerDown={start}
+      onPointerMove={ciagnij}
+      onPointerUp={puszczaj}
+      onPointerCancel={puszczaj}
+      className="absolute inset-0 h-full w-full touch-none"
+      aria-label={zalogowany ? "Plansza gry" : "Plansza gry - grasz bez konta"}
+    />
   );
 }
 
-/* ---------------------------------------------------------------- rysunki */
+/* ---------------------------------------------------------------- stan */
 
-function resetPilki(s: Stan) {
-  s.faza = "gotowa";
-  s.x = START_X;
-  s.y = START_Y;
+function nowyStan(): Stan {
+  return {
+    faza: "gotowa",
+    rysunek: 0,
+    pilka: 0,
+    x: WYS / 2,
+    y: WYS * 0.86,
+    vx: 0,
+    vy: 0,
+    obrot: 0,
+    celX: 0,
+    celY: 0,
+    wskX: 0,
+    wskY: 0,
+    nadObreczka: false,
+    seria: 0,
+    czas: 0,
+    blysk: -99,
+    siatka: [],
+  };
+}
+
+function ustawPilke(s: Stan, szer: number) {
+  const p = pozycjaPilki(szer);
+  s.x = p.x;
+  s.y = p.y;
   s.vx = 0;
   s.vy = 0;
   s.obrot = 0;
   s.nadObreczka = false;
 }
 
+/* ---------------------------------------------------------------- siatka */
+
 /**
- * Kosz widziany z przodu: tablica, kwadrat celowniczy, obręcz i siatka.
+ * Siatka jako tkanina na więzach odległości (verlet).
  *
- * Rysunek trzyma się języka strony - włosowa kreska, pomarańcz na obręczy, nic
- * wypełnionego. Obręcz jest jedynym mocnym akcentem w kadrze, bo to jedyny cel.
+ * Górny rząd wisi na obręczy, resztę ciągnie w dół grawitacja, a więzy trzymają nitki
+ * na stałej długości. Dokładnie to samo zrobiłby silnik fizyki dla tkaniny - tylko że
+ * tutaj mieści się w czterdziestu linijkach i nic więcej nie musi umieć.
+ *
+ * Piłka odpycha punkty promieniowo, więc przelot przez obręcz szarpie siatką w dół i na
+ * boki, a potem więzy same ją składają. Nie ma tu żadnej animacji „po trafieniu" -
+ * siatka rusza się, bo coś przez nią przeszło.
  */
+function zbudujSiatke(x: number, y: number): Punkt[] {
+  const p: Punkt[] = [];
+  for (let r = 0; r < SIATKA_RZED; r++) {
+    const t = r / (SIATKA_RZED - 1);
+    /* stożek: dolny wieniec jest węższy od obręczy */
+    const promien = OBRECZ_R * (1 - t * 0.42);
+    for (let k = 0; k < SIATKA_KOL; k++) {
+      const u = k / (SIATKA_KOL - 1);
+      const px = x - promien + u * promien * 2;
+      const py = y + t * SIATKA_GLEB;
+      p.push({ x: px, y: py, px, py, przypiety: r === 0 });
+    }
+  }
+  return p;
+}
+
+function krokSiatki(s: Stan, dt: number, koszX: number, koszY: number) {
+  const p = s.siatka;
+  if (!p.length) return;
+
+  for (let r = 0; r < SIATKA_RZED; r++) {
+    for (let k = 0; k < SIATKA_KOL; k++) {
+      const i = r * SIATKA_KOL + k;
+      const pkt = p[i];
+
+      if (pkt.przypiety) {
+        /* górny rząd trzyma się obręczy, także wtedy, gdy kosz ucieka na boki */
+        const u = k / (SIATKA_KOL - 1);
+        pkt.x = koszX - OBRECZ_R + u * OBRECZ_R * 2;
+        pkt.y = koszY;
+        pkt.px = pkt.x;
+        pkt.py = pkt.y;
+        continue;
+      }
+
+      /* verlet: nowa pozycja z poprzedniej i przyspieszenia, bez trzymania prędkości */
+      const vx = (pkt.x - pkt.px) * 0.94;
+      const vy = (pkt.y - pkt.py) * 0.94;
+      pkt.px = pkt.x;
+      pkt.py = pkt.y;
+      pkt.x += vx;
+      pkt.y += vy + GRAWITACJA * 0.35 * dt * dt;
+
+      /* piłka rozpycha nitki - stąd szarpnięcie przy przelocie */
+      const dx = pkt.x - s.x;
+      const dy = pkt.y - s.y;
+      const d = Math.hypot(dx, dy);
+      if (d < PILKA_R * 1.15 && d > 0.001) {
+        const push = (PILKA_R * 1.15 - d) * 0.6;
+        pkt.x += (dx / d) * push;
+        pkt.y += (dy / d) * push;
+      }
+    }
+  }
+
+  /* więzy: dwa przebiegi wystarczają, siatka nie musi być sztywna */
+  for (let iter = 0; iter < 2; iter++) {
+    for (let r = 0; r < SIATKA_RZED; r++) {
+      for (let k = 0; k < SIATKA_KOL; k++) {
+        const i = r * SIATKA_KOL + k;
+        if (k < SIATKA_KOL - 1) wiaz(p[i], p[i + 1], dlugoscPoziom(r));
+        if (r < SIATKA_RZED - 1) wiaz(p[i], p[i + SIATKA_KOL], SIATKA_GLEB / (SIATKA_RZED - 1));
+      }
+    }
+  }
+}
+
+function dlugoscPoziom(r: number) {
+  const t = r / (SIATKA_RZED - 1);
+  return (OBRECZ_R * 2 * (1 - t * 0.42)) / (SIATKA_KOL - 1);
+}
+
+function wiaz(a: Punkt, b: Punkt, dl: number) {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const d = Math.hypot(dx, dy);
+  if (d < 0.001) return;
+  const roznica = (d - dl) / d;
+  const ruchA = a.przypiety ? 0 : b.przypiety ? 1 : 0.5;
+  const ruchB = b.przypiety ? 0 : a.przypiety ? 1 : 0.5;
+  a.x += dx * roznica * ruchA;
+  a.y += dy * roznica * ruchA;
+  b.x -= dx * roznica * ruchB;
+  b.y -= dy * roznica * ruchB;
+}
+
+/* ---------------------------------------------------------------- rysunki */
+
 /**
  * Barwa z motywu, wyliczona na liczby.
  *
  * Kanwa 2D nie czyta arkusza: `ctx.fillStyle = "var(--color-flame)"` nie jest błędem,
  * jest ciszą - przeglądarka odrzuca nierozpoznaną wartość i zostawia poprzednią barwę.
- * Efekt trudny do wyśledzenia, bo nic się nie wywala, tylko piłka nagle maluje się tym,
- * czym malowano przed nią. Dlatego tu, w odróżnieniu od całej reszty serwisu, motyw
- * odczytujemy wprost ze stylu wyliczonego.
- *
- * `alfa` dokładamy osobno, bo zmienne trzymają same składowe RGB - z gotowej barwy nie da
- * się zrobić „to samo, ale 34%".
  */
-function barwaMotywu(nazwa: string, awaryjna: string, alfa?: number) {
+function barwa(nazwa: string, awaryjna: string, alfa?: number) {
   const v =
     typeof window === "undefined"
       ? ""
@@ -480,78 +524,235 @@ function barwaMotywu(nazwa: string, awaryjna: string, alfa?: number) {
   return alfa === undefined ? v : `rgb(${v} / ${alfa})`;
 }
 
-function rysujKosz(ctx: CanvasRenderingContext2D, x: number, y: number) {
-  const lewa = x - TABLICA_SZER / 2;
-  const gora = y - TABLICA_WYS;
-
-  /* tablica */
-  ctx.strokeStyle = "rgba(226,228,236,.62)";
-  ctx.lineWidth = 5;
-  ctx.lineJoin = "round";
-  zaokraglony(ctx, lewa, gora, TABLICA_SZER, TABLICA_WYS, 10);
-  ctx.stroke();
-
-  /* kwadrat celowniczy nad obręczą */
-  ctx.lineWidth = 4;
-  ctx.strokeStyle = "rgba(226,228,236,.5)";
-  const kw = TABLICA_SZER * 0.42;
-  ctx.strokeRect(x - kw / 2, y - 76, kw, 66);
-
-  /* wspornik pod tablicą */
-  ctx.fillStyle = "rgba(226,228,236,.42)";
-  ctx.fillRect(x - 22, y + 14, 44, 9);
-
-  /* obręcz - gruba kreska w barwie marki, z poświatą */
+/** Rekord jako wydrążona liczba w tle - ten sam zabieg co numery w rankingu. */
+function rysujRekord(ctx: CanvasRenderingContext2D, szer: number, rekord: number) {
+  if (rekord <= 0) return;
   ctx.save();
-  ctx.shadowColor = barwaMotywu("--rgb-ember", "rgba(255,77,10,.7)", 0.7);
-  ctx.shadowBlur = 18;
-  ctx.strokeStyle = barwaMotywu("--color-ember", "#ff4d0a");
-  ctx.lineWidth = 9;
-  ctx.lineCap = "round";
-  ctx.beginPath();
-  ctx.moveTo(x - OBRECZ_R, y);
-  ctx.lineTo(x + OBRECZ_R, y);
-  ctx.stroke();
+  ctx.font = "800 340px system-ui, -apple-system, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = barwa("--rgb-szyba", "rgba(255,255,255,.07)", 0.07);
+  ctx.strokeText(String(rekord), szer / 2, WYS * 0.58);
   ctx.restore();
-
-  /* siatka - nitki schodzące się ku dołowi */
-  ctx.strokeStyle = "rgba(255,255,255,.4)";
-  ctx.lineWidth = 2;
-  const glebokosc = 62;
-  for (let i = 0; i <= 7; i++) {
-    const t = i / 7;
-    const gx = x - OBRECZ_R + t * OBRECZ_R * 2;
-    const dx = x - OBRECZ_R * 0.42 + t * OBRECZ_R * 0.84;
-    ctx.beginPath();
-    ctx.moveTo(gx, y + 4);
-    ctx.lineTo(dx, y + glebokosc);
-    ctx.stroke();
-  }
-  for (let r = 1; r <= 2; r++) {
-    const t = r / 3;
-    const szer = OBRECZ_R * (1 - t * 0.58);
-    ctx.beginPath();
-    ctx.moveTo(x - szer, y + 4 + glebokosc * t);
-    ctx.lineTo(x + szer, y + 4 + glebokosc * t);
-    ctx.stroke();
-  }
 }
 
-function zaokraglony(
+/**
+ * Kosz rysowany kreską, z postępem 0-1.
+ *
+ * Każdy element ma własne okno w tym postępie, więc rysunek powstaje po kolei: najpierw
+ * tablica, potem kwadrat celowniczy, na końcu obręcz. To ten sam gest, co obrysy na tłach
+ * strony - tylko że tam rysuje go CSS, a tu trzeba było rozłożyć go na ułamki ścieżek.
+ */
+function rysujKosz(ctx: CanvasRenderingContext2D, x: number, y: number, s: Stan) {
+  const p = s.rysunek;
+  if (p <= 0) return;
+
+  const lewa = x - TABLICA_SZER / 2;
+  const gora = y - TABLICA_WYS;
+  const kreda = barwa("--rgb-szyba", "rgba(226,228,236,.6)", 0.55);
+
+  ctx.save();
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+
+  /* tablica: obwód rysowany od górnego lewego narożnika */
+  ctx.strokeStyle = kreda;
+  ctx.lineWidth = 5;
+  obwod(ctx, lewa, gora, TABLICA_SZER, TABLICA_WYS, okno(p, 0, 0.45));
+
+  /* kwadrat celowniczy */
+  ctx.lineWidth = 4;
+  const kw = TABLICA_SZER * 0.42;
+  obwod(ctx, x - kw / 2, y - 74, kw, 62, okno(p, 0.32, 0.62));
+
+  /* wspornik pod obręczą */
+  const w = okno(p, 0.5, 0.62);
+  if (w > 0) {
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.moveTo(x - 20, y + 16);
+    ctx.lineTo(x - 20 + 40 * w, y + 16);
+    ctx.stroke();
+  }
+
+  /* obręcz - jedyny mocny akcent w kadrze, bo jedyny cel */
+  const o = okno(p, 0.58, 1);
+  if (o > 0) {
+    const swieze = Math.max(0, 1 - (s.czas - s.blysk) / 0.5);
+    ctx.save();
+    ctx.shadowColor = barwa("--rgb-ember", "rgba(255,77,10,.7)", 0.55 + swieze * 0.45);
+    ctx.shadowBlur = 16 + swieze * 26;
+    ctx.strokeStyle = barwa("--color-ember", "#ff4d0a");
+    ctx.lineWidth = 9 + swieze * 3;
+    ctx.beginPath();
+    ctx.moveTo(x - OBRECZ_R, y);
+    ctx.lineTo(x - OBRECZ_R + OBRECZ_R * 2 * o, y);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+/** Ułamek postępu w zadanym oknie - 0 przed, 1 po, liniowo w środku. */
+function okno(p: number, od: number, do_: number) {
+  if (p <= od) return 0;
+  if (p >= do_) return 1;
+  return (p - od) / (do_ - od);
+}
+
+/** Obwód prostokąta rysowany częściowo, zaczynając od górnego lewego narożnika. */
+function obwod(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
   w: number,
   h: number,
-  r: number
+  post: number
 ) {
+  if (post <= 0) return;
+  const boki: [number, number, number, number][] = [
+    [x, y, x + w, y],
+    [x + w, y, x + w, y + h],
+    [x + w, y + h, x, y + h],
+    [x, y + h, x, y],
+  ];
+  const dlugosci = boki.map(([ax, ay, bx, by]) => Math.hypot(bx - ax, by - ay));
+  const razem = dlugosci.reduce((a, b) => a + b, 0);
+  let doNarysowania = razem * post;
+
   ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);
-  ctx.closePath();
+  for (let i = 0; i < boki.length && doNarysowania > 0; i++) {
+    const [ax, ay, bx, by] = boki[i];
+    const dl = dlugosci[i];
+    const u = Math.min(1, doNarysowania / dl);
+    ctx.moveTo(ax, ay);
+    ctx.lineTo(ax + (bx - ax) * u, ay + (by - ay) * u);
+    doNarysowania -= dl;
+  }
+  ctx.stroke();
 }
 
+function rysujSiatke(ctx: CanvasRenderingContext2D, s: Stan) {
+  const p = s.siatka;
+  const post = okno(s.rysunek, 0.72, 1);
+  if (!p.length || post <= 0) return;
 
+  ctx.save();
+  ctx.strokeStyle = barwa("--rgb-szyba", "rgba(255,255,255,.4)", 0.42);
+  ctx.lineWidth = 2;
+  ctx.lineCap = "round";
+
+  const rzedy = Math.max(1, Math.round(SIATKA_RZED * post));
+
+  /* nitki pionowe */
+  for (let k = 0; k < SIATKA_KOL; k++) {
+    ctx.beginPath();
+    for (let r = 0; r < rzedy; r++) {
+      const pkt = p[r * SIATKA_KOL + k];
+      if (r === 0) ctx.moveTo(pkt.x, pkt.y);
+      else ctx.lineTo(pkt.x, pkt.y);
+    }
+    ctx.stroke();
+  }
+
+  /* wieńce poziome - bez górnego, bo tam jest już obręcz */
+  for (let r = 1; r < rzedy; r++) {
+    ctx.beginPath();
+    for (let k = 0; k < SIATKA_KOL; k++) {
+      const pkt = p[r * SIATKA_KOL + k];
+      if (k === 0) ctx.moveTo(pkt.x, pkt.y);
+      else ctx.lineTo(pkt.x, pkt.y);
+    }
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+/**
+ * Kropkowany tor rzutu.
+ *
+ * Tor bierzemy z `rozegrajRzut` - z tej samej funkcji, która rozgrywa prawdziwy lot, tym
+ * samym krokiem i z tymi samymi odbiciami od żelaza. To nie oszczędność kodu, a warunek
+ * uczciwości podglądu: gdyby tor liczył się inaczej niż lot, kropki byłyby obietnicą,
+ * której gra nie dotrzymuje - a wtedy lepiej byłoby ich nie rysować wcale.
+ */
+function rysujTor(
+  ctx: CanvasRenderingContext2D,
+  s: Stan,
+  szer: number,
+  koszX: number,
+  koszY: number
+) {
+  const rzut = wektorRzutu(s.x, s.y, s.celX, s.celY);
+  if (!rzut) return;
+
+  const { tor } = rozegrajRzut(s.x, s.y, s.celX, s.celY, koszX, koszY, szer);
+
+  ctx.save();
+  /* pokazujemy początek toru, nie całość: dalej piłka odbija się od obręczy i dokładna
+     dalsza droga zależy już od żelaza, a nie od celowania */
+  const ile = Math.min(tor.length, 30);
+  for (let i = 0; i < ile; i++) {
+    const zanik = 1 - i / ile;
+    ctx.fillStyle = barwa("--rgb-glow", "rgba(255,178,92,.5)", 0.1 + zanik * 0.5);
+    ctx.beginPath();
+    ctx.arc(tor[i].x, tor[i].y, 3 + zanik * 3.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  /* uchwyt celowania: krótka kreska od piłki w stronę ciągnięcia */
+  ctx.strokeStyle = barwa("--rgb-flame", "rgba(255,122,24,.55)", 0.45);
+  ctx.lineWidth = 3;
+  ctx.setLineDash([8, 10]);
+  ctx.beginPath();
+  ctx.moveTo(s.x, s.y);
+  ctx.lineTo(s.celX, s.celY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  /* pierścień siły - rośnie z mocą, więc widać ją bez patrzenia na tor */
+  ctx.strokeStyle = barwa("--rgb-ember", "rgba(255,77,10,.7)", 0.35 + rzut.moc * 0.5);
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.arc(s.x, s.y, PILKA_R + 10 + rzut.moc * 16, 0, Math.PI * 2 * rzut.moc);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function rysujPilke(
+  ctx: CanvasRenderingContext2D,
+  s: Stan,
+  obrazek: HTMLImageElement | undefined
+) {
+  if (s.pilka <= 0) return;
+  /* piłka pojawia się z lekkim przeskalowaniem - stąd „wjazd" po dorysowaniu kosza */
+  const skala = 0.7 + 0.3 * s.pilka;
+  const r = PILKA_R * skala;
+
+  ctx.save();
+  ctx.globalAlpha = s.pilka;
+
+  const swiatlo = ctx.createRadialGradient(s.x, s.y, r * 0.5, s.x, s.y, r * 1.9);
+  swiatlo.addColorStop(0, barwa("--rgb-flame", "rgba(255,122,24,.34)", 0.3));
+  swiatlo.addColorStop(1, barwa("--rgb-flame", "rgba(255,122,24,0)", 0));
+  ctx.fillStyle = swiatlo;
+  ctx.beginPath();
+  ctx.arc(s.x, s.y, r * 1.9, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.translate(s.x, s.y);
+  ctx.rotate(s.obrot);
+  if (obrazek?.complete && obrazek.naturalWidth) {
+    ctx.drawImage(obrazek, -r, -r, r * 2, r * 2);
+  } else {
+    ctx.fillStyle = barwa("--color-flame", "#ff7a18");
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}

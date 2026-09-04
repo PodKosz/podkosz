@@ -17,7 +17,8 @@ import { linkNaMape } from "@/lib/site";
  */
 export function SiteFooter() {
   const path = usePathname();
-  if (path === "/" || path.startsWith("/admin")) return null;
+  /* mapa i minigra zajmują dokładnie wysokość okna - stopka zrobiłaby z nich stronę do przewijania */
+  if (path === "/" || path.startsWith("/admin") || path.startsWith("/gra/")) return null;
 
   return (
     <footer className="border-t border-hairline px-6 pb-10 pt-10">
