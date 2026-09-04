@@ -162,7 +162,7 @@ export function BasketApprovedBadge({ className = "" }: { className?: string }) 
     <span
       title="Basket Approved - rekomendacja twórcy serwisu"
       aria-label="Basket Approved"
-      className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-1.5 py-[3px] text-[10px] font-bold uppercase tracking-[0.16em] text-white basket-gradient basket-ring sm:px-2.5 sm:py-[4px] ${className}`}
+      className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-1.5 py-[3px] text-[10px] font-bold uppercase tracking-[0.16em] text-kadr basket-gradient basket-ring sm:px-2.5 sm:py-[4px] ${className}`}
     >
       <FireBallIcon variant="basket" className="h-3.5 w-3.5" />
       <span className="hidden sm:inline">Basket Approved</span>

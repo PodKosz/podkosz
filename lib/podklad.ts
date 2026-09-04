@@ -22,17 +22,47 @@ import type { StyleSpecification } from "maplibre-gl";
  * własną kopię tej definicji i został z nią przy zmianie zasad CARTO, więc administrator
  * ustawiał pinezkę na mapie zaklejonej znakiem wodnym.
  */
+/**
+ * Adresy kafelków CARTO. Jasne motywy serwisu potrzebują jasnego podkładu - ciemna mapa
+ * pod białym interfejsem wygląda jak dziura wycięta w stronie.
+ *
+ * CARTO ma bliźniacze warstwy `light_*` do `dark_*`, więc wystarczy podmienić przedrostek.
+ */
+export function kafelkiCarto(
+  warstwa: "dark_all" | "dark_nolabels",
+  jasny: boolean,
+  klucz: string
+) {
+  const nazwa = jasny ? warstwa.replace("dark", "light") : warstwa;
+  return ["a", "b", "c"].map(
+    (host) => `https://${host}.basemaps.cartocdn.com/${nazwa}/{z}/{x}/{y}@2x.png?key=${klucz}`
+  );
+}
+
+/** To samo dla zapasowego Esri, które klucza nie wymaga. */
+export function kafelkiEsri(jasny: boolean) {
+  const serwis = jasny ? "World_Light_Gray_Base" : "World_Dark_Gray_Base";
+  return [
+    `https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/${serwis}/MapServer/tile/{z}/{y}/{x}`,
+  ];
+}
+
+/** Adresy kafelków dla aktualnie wybranej jasności - do podmiany bez przebudowy stylu. */
+export function kafelkiPodkladu(warstwa: "dark_all" | "dark_nolabels", jasny: boolean) {
+  const klucz = process.env.NEXT_PUBLIC_CARTO_KEY;
+  return klucz ? kafelkiCarto(warstwa, jasny, klucz) : kafelkiEsri(jasny);
+}
+
 export function podkladMapy(
-  warstwa: "dark_all" | "dark_nolabels" = "dark_nolabels"
+  warstwa: "dark_all" | "dark_nolabels" = "dark_nolabels",
+  jasny = false
 ): StyleSpecification["sources"][string] {
   const klucz = process.env.NEXT_PUBLIC_CARTO_KEY;
 
   if (klucz) {
     return {
       type: "raster",
-      tiles: ["a", "b", "c"].map(
-        (host) => `https://${host}.basemaps.cartocdn.com/${warstwa}/{z}/{x}/{y}@2x.png?key=${klucz}`
-      ),
+      tiles: kafelkiCarto(warstwa, jasny, klucz),
       tileSize: 256,
       maxzoom: 20,
       attribution:
@@ -43,11 +73,7 @@ export function podkladMapy(
   return {
     type: "raster",
     /* uwaga na kolejność: Esri podaje kafelki jako {z}/{y}/{x}, nie {z}/{x}/{y} */
-    tiles: [
-      warstwa === "dark_all"
-        ? "https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
-        : "https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
-    ],
+    tiles: kafelkiEsri(jasny),
     tileSize: 256,
     maxzoom: 16,
     attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · Esri',

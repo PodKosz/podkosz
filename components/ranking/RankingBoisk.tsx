@@ -200,7 +200,7 @@ function KartaBoiska({
           <span className="inline-flex items-center gap-1.5 rounded-full bg-black/45 px-3 py-1.5 text-[13px] font-bold text-glow backdrop-blur">
             <FireBallIcon className="h-4 w-4" /> {court.likes}
           </span>
-          <span className="flex items-center gap-1.5 text-[13px] text-white/70">
+          <span className="flex items-center gap-1.5 text-[13px] text-kadr/70">
             <PinIcon className="h-3.5 w-3.5 text-flame" />
             {court.city}
           </span>
@@ -218,7 +218,7 @@ function KartaBoiska({
           {court.name}
         </span>
 
-        <span className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[12px] text-white/55">
+        <span className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[12px] text-kadr/55">
           <span className="inline-flex items-center gap-1.5">
             <HoopIcon className="h-3.5 w-3.5 text-flame/80" />
             {TYPE_LABEL[court.type]}

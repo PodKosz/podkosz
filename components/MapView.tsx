@@ -8,7 +8,7 @@ import { MapCourt } from "@/lib/types";
 import { CITIES_GEOJSON } from "@/lib/cities";
 import type { LeadPoint } from "@/lib/leads";
 import { HoverCard } from "./HoverCard";
-import { podkladMapy } from "@/lib/podklad";
+import { kafelkiPodkladu, podkladMapy } from "@/lib/podklad";
 import { ZarWojewodztwa, bboxWojewodztwa, stworzZarWojewodztwa } from "@/lib/zarWojewodztwa";
 import { useMotyw } from "@/lib/motyw";
 import { FiltrSzkla } from "./FiltrSzkla";
@@ -29,13 +29,27 @@ import { MIEJSCA_GRY } from "@/lib/minigra";
  * Wartości poniżej to motyw „classic" i zarazem zabezpieczenie: gdyby odczyt zmiennych
  * zawiódł, mapa ma czym się pomalować.
  */
-const BARWY_MAPY = { flame: "#ff7a18", glow: "#ffb25c" };
+const BARWY_MAPY = {
+  flame: "#ff7a18",
+  glow: "#ffb25c",
+  /* tło mapy, kropki miast i podpisy - w motywie jasnym wszystkie idą w drugą stronę */
+  tlo: "#07070a",
+  atrament: "#ffffff",
+};
 
 /** Warstwy mapy, które biorą barwę z motywu: identyfikator i malowana właściwość. */
-const WARSTWY_MOTYWU: [string, "fill-color" | "line-color" | "circle-color", keyof typeof BARWY_MAPY][] = [
+const WARSTWY_MOTYWU: [
+  string,
+  "fill-color" | "line-color" | "circle-color" | "background-color" | "text-color" | "text-halo-color",
+  keyof typeof BARWY_MAPY,
+][] = [
+  ["bg", "background-color", "tlo"],
   ["woj-fill", "fill-color", "flame"],
   ["woj-active", "fill-color", "flame"],
   ["woj-line", "line-color", "glow"],
+  ["miasta-kropka", "circle-color", "atrament"],
+  ["miasta-nazwa", "text-color", "atrament"],
+  ["miasta-nazwa", "text-halo-color", "tlo"],
   ["boiska-klastry", "circle-color", "flame"],
   ["boiska-punkty", "circle-color", "flame"],
 ];
@@ -952,10 +966,36 @@ export function MapView({
     const barwy = {
       flame: zeStylu("--color-flame", BARWY_MAPY.flame),
       glow: zeStylu("--color-glow", BARWY_MAPY.glow),
+      tlo: zeStylu("--color-void", BARWY_MAPY.tlo),
+      atrament: zeStylu("--color-ink", BARWY_MAPY.atrament),
     };
 
     for (const [warstwa, wlasciwosc, barwa] of WARSTWY_MOTYWU) {
       if (map.getLayer(warstwa)) map.setPaintProperty(warstwa, wlasciwosc, barwy[barwa]);
+    }
+
+    /*
+      Podkład też musi iść za motywem: ciemna mapa pod jasnym interfejsem wygląda jak
+      dziura wycięta w stronie. O jasność pytamy `color-scheme`, bo to arkusz wie, który
+      motyw jest jasny - komponent nie musi trzymać drugiej listy.
+
+      Same kafelki podmieniamy przez `setTiles`, bez przebudowy stylu: przebudowa zdejmuje
+      wszystkie warstwy dołożone później (boiska, klastry, żar) i trzeba by je stawiać od
+      nowa razem z ich obsługą zdarzeń.
+    */
+    const jasny = getComputedStyle(document.documentElement).colorScheme === "light";
+    const zrodlo = map.getSource("carto");
+    if (zrodlo && "setTiles" in zrodlo) {
+      (zrodlo as { setTiles: (t: string[]) => void }).setTiles(
+        kafelkiPodkladu("dark_nolabels", jasny)
+      );
+    }
+
+    /* ocieplenie kafelków było dobrane pod ciemny podkład - na jasnym gasi mapę do szarości */
+    if (map.getLayer("carto")) {
+      map.setPaintProperty("carto", "raster-saturation", jasny ? -0.12 : -0.35);
+      map.setPaintProperty("carto", "raster-brightness-max", jasny ? 1 : 0.94);
+      map.setPaintProperty("carto", "raster-hue-rotate", jasny ? 0 : -12);
     }
   }, [motyw, ready, courts]);
 
@@ -1270,7 +1310,10 @@ function markerHtml(court: MapCourt) {
   const core = court.basketApproved
     ? "linear-gradient(135deg,#e9d5ff,#a855f7 55%,#6d28d9)"
     : "linear-gradient(135deg,var(--color-glow-soft),var(--color-flame) 55%,var(--color-ember))";
-  const shadow = court.basketApproved ? "rgba(109,40,217,.9)" : "rgb(var(--rgb-ember) / .9)";
+  /* łuna pod kulą słabnie w motywach jasnych - na bieli 90% barwy to plama, nie światło */
+  const shadow = court.basketApproved
+    ? "rgb(109 40 217 / calc(.9 * var(--moc-poswiaty, 1)))"
+    : "rgb(var(--rgb-ember) / calc(.9 * var(--moc-poswiaty, 1)))";
   const seam = court.basketApproved ? "rgba(35,5,60,.7)" : "rgba(40,10,0,.72)";
   const stem = court.basketApproved ? "#a855f7" : "var(--color-flame)";
   const dot = court.basketApproved ? "rgba(168,85,247,.85)" : "rgb(var(--rgb-flame) / .85)";
@@ -1303,7 +1346,7 @@ function markerHtml(court: MapCourt) {
 
   return `
   <div class="pinezka-korpus relative flex flex-col items-center transition-transform duration-200 ease-out"
-       style="filter: drop-shadow(0 6px 14px rgba(0,0,0,.6));--kula:${size}px;--cien:${cien};--o1:${ogien.o1};--o2:${ogien.o2};--o3:${ogien.o3};--o4:${ogien.o4}">
+       style="filter: drop-shadow(0 6px 14px rgb(0 0 0 / calc(.6 * var(--moc-cienia, 1))));--kula:${size}px;--cien:${cien};--o1:${ogien.o1};--o2:${ogien.o2};--o3:${ogien.o3};--o4:${ogien.o4}">
     <span class="pulse-glow absolute -top-2 left-1/2 -translate-x-1/2 rounded-full"
           style="width:${size * 1.8}px;height:${size * 1.8}px;background:radial-gradient(circle, ${glow})"></span>
     <!--

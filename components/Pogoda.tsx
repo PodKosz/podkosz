@@ -37,7 +37,7 @@ export function Pogoda({ hours, nowHour }: { hours: WeatherHour[]; nowHour: numb
               <div className="absolute inset-0 bg-gradient-to-t from-void/92 via-void/45 to-void/10" />
 
               <div className="relative flex h-[176px] flex-col justify-between p-3 text-center">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-white/70">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-kadr/70">
                   {String(h.hour).padStart(2, "0")}:00
                 </p>
 
@@ -48,10 +48,10 @@ export function Pogoda({ hours, nowHour }: { hours: WeatherHour[]; nowHour: numb
                   >
                     {h.temp}°
                   </p>
-                  <p className="mt-1.5 text-[11px] leading-tight text-white/80">
+                  <p className="mt-1.5 text-[11px] leading-tight text-kadr/80">
                     {SCENE_LABEL[scene]}
                   </p>
-                  <p className="mt-1 text-[10px] leading-tight text-white/55">
+                  <p className="mt-1 text-[10px] leading-tight text-kadr/55">
                     {h.rain >= 0.2 ? `${h.rain.toFixed(1)} mm` : "bez opadów"} · {h.wind} km/h
                   </p>
                 </div>

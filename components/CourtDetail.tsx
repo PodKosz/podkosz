@@ -218,11 +218,11 @@ export function CourtDetail({
                   </p>
                 </div>
 
-                <blockquote className="mt-5 text-[clamp(21px,2.9vw,34px)] font-semibold leading-[1.28] tracking-[-0.015em] text-white">
+                <blockquote className="mt-5 text-[clamp(21px,2.9vw,34px)] font-semibold leading-[1.28] tracking-[-0.015em] text-kadr">
                   {court.basketNote}
                 </blockquote>
 
-                <p className="mt-5 text-[13px] text-white/55">
+                <p className="mt-5 text-[13px] text-kadr/55">
                   - Basket, twórca PodKosza
                 </p>
               </div>

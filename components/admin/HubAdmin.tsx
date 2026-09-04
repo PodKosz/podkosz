@@ -441,7 +441,7 @@ function OstatnieBoiskoKafel({ dane, teraz }: { dane: Kokpit; teraz: number }) {
         </span>
         <div className="absolute inset-x-4 bottom-4">
           <p className="truncate text-[18px] font-semibold leading-tight">{b.name}</p>
-          <p className="mt-1 flex items-center gap-1.5 text-[13px] text-white/70">
+          <p className="mt-1 flex items-center gap-1.5 text-[13px] text-kadr/70">
             <PinIcon className="h-3.5 w-3.5 text-flame" />
             {b.city} · {b.voivodeship}
           </p>

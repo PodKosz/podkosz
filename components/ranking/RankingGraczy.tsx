@@ -235,7 +235,7 @@ function KartaGracza({
               >
                 {odkrywca.courts}
               </b>
-              <span className="text-[11px] uppercase tracking-[0.16em] text-white/45">
+              <span className="text-[11px] uppercase tracking-[0.16em] text-kadr/45">
                 {plural(odkrywca.courts, ["boisko", "boiska", "boisk"])}
               </span>
             </span>

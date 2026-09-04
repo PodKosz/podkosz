@@ -22,7 +22,15 @@
   --color-basket-glow: #e9d5ff;
   --color-lime: #b6ff3d;
   --color-lime-deep: #6fbf00;
-  --color-hairline: rgba(255, 255, 255, 0.09);
+  --color-hairline: rgb(255 255 255 / 0.09);
+  /* biel Tailwinda: `bg-white/6` to „film na powierzchni", a ten w jasnym motywie jest ciemny */
+  --color-white: #ffffff;
+  /*
+    Biel napisów leżących NA zdjęciu albo na barwnej plakietce. Osobna od bieli Tailwinda,
+    bo tamta jest powierzchnią i w motywie jasnym musi się odwrócić - a napis na kadrze
+    boiska zostaje biały w każdym motywie, bo pod nim dalej jest fotografia.
+  */
+  --color-kadr: #ffffff;
 
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
     "Segoe UI Variable Display", "Segoe UI", Inter, system-ui, sans-serif;
@@ -30,39 +38,51 @@
   --radius-panel: 24px;
 }
 
-:root {
-  color-scheme: dark;
-}
-
 /* ---------- motywy graficzne ---------- */
 /*
-  Serwis ma trzy skórki: „classic" (pomarańczowa, ta od początku), „polska" (biało-czerwona,
-  w barwach kadry i PZKosz) i „coconaut" (biało-zielona, w barwach marki Coconaut). Wybiera
-  się je z menu konta, a przełącznik ustawia atrybut `data-motyw` na elemencie `html`.
+  Serwis ma trzy skórki: „classic" (ciemna, pomarańczowa - ta od początku), „polska"
+  (jasna, biało-czerwona, w barwach kadry i PZKosz) i „coconaut" (jasna, biało-zielona,
+  w barwach marki Coconaut). Wybiera się je z menu konta, a przełącznik ustawia atrybut
+  `data-motyw` na elemencie `html`.
 
   Reguła nadrzędna: motyw zmienia WYŁĄCZNIE warstwę barwną. Żaden element, żadna ikona,
-  żaden mechanizm nie wie, który motyw jest włączony - dlatego cała różnica siedzi w tych
-  kilkunastu zmiennych, a nie w komponentach.
+  żaden mechanizm nie wie, który motyw jest włączony - cała różnica siedzi w zmiennych
+  poniżej, a komponenty nie mają o nich pojęcia.
 
-  Stąd też kształt palety. Nie jest to „kolor główny i kilka odcieni", ale drabinka pięciu
-  stopni od najjaśniejszego grzbietu do najgłębszego cienia, plus te same barwy w składowych
-  RGB. Powód jest praktyczny: pół serwisu maluje się gradientami i poświatami, a te potrzebują
-  tej samej barwy z różną przezroczystością (`rgb(var(--rgb-flame) / .3)`). Trzymanie samych
-  gotowych barw nie wystarczyłoby - z `#ff7a18` nie da się zrobić „to samo, ale 30%".
+  Dwa motywy jasne wymagały jednak czegoś więcej niż podmiany akcentu, bo cała stylistyka
+  szkła jest zbudowana na ciemnym tle: powierzchnie to białe filmy o kilku procentach
+  przezroczystości, krawędzie to biel na 9%, a napisy są niemal białe. Na białej stronie
+  wszystko to znika. Dlatego paleta ma trzy warstwy:
 
-  Czego motyw NIE rusza:
-   - ciemnej podstawy. Cała stylistyka szkła stoi na ciemnym tle: każdy cień, każda włosowa
-     krawędź i każdy `backdrop-filter` są pod nie dobrane. Wywrócenie tła na białe nie byłoby
-     zmianą barw, tylko przepisaniem wyglądu od zera. Motywy różnią się akcentem i temperaturą
-     tła, nie jasnością.
-   - drabinki stopni odznaczeń (iskra → żar → płomień → błękit). Tam barwa jest treścią:
-     mówi, jak wysoko ktoś zaszedł. Przemalowanie jej zabrałoby tę informację.
-   - barw obcych marek (Google w przycisku logowania) i wyróżnienia Heat, które ma się
-     odcinać od barwy głównej niezależnie od motywu.
+   1. AKCENT - drabinka pięciu stopni barwy marki plus te same barwy w składowych RGB.
+      Składowe są konieczne, bo pół serwisu maluje się przezroczystością: z `#ff7a18`
+      nie da się zrobić „to samo, ale 30%".
+   2. POWIERZCHNIE - `--rgb-szyba` (film i krawędzie) oraz `--rgb-plyta` (nieprzepuszczalne
+      tła paneli). W motywach jasnych szyba jest ciemna, a płyta biała: dokładnie odwrotnie
+      niż w ciemnym, i to jedno przestawienie odwraca wszystkie kilkadziesiąt powierzchni.
+   3. TEKST I TŁO - `--color-ink`, `--color-muted`, `--color-faint`, `--color-void`.
+
+  Do tego `--color-white`: Tailwind trzyma tu swoją biel, a w kodzie jest jej sto trzynaście
+  wystąpień w postaci `bg-white/6` - „ledwo widoczny film na powierzchni". W motywie jasnym
+  ten film musi być ciemny, więc podmieniamy samą biel Tailwinda. Czerni NIE podmieniamy:
+  `text-black` siedzi na kolorowym gradiencie przycisków, a ten jest kolorowy w każdym
+  motywie.
+
+  Czego motyw nie rusza:
+   - drabinki stopni odznaczeń (iskra → żar → płomień → błękit) - tam barwa jest treścią,
+     mówi, jak wysoko ktoś zaszedł;
+   - barw obcych marek (Google w przycisku logowania);
+   - fioletu wyróżnienia Heat, który ma się odcinać od barwy głównej w każdym motywie;
+   - przygaszeń na zdjęciach. Ciemna zasłona pod napisem na kadrze boiska zostaje ciemna,
+     bo leży na fotografii, nie na powierzchni strony - i napis na niej jest biały
+     niezależnie od motywu.
 */
 
 :root,
 [data-motyw="classic"] {
+  color-scheme: dark;
+
+  /* akcent */
   --color-glow-soft: #ffc47d;
   --color-glow: #ffb25c;
   --color-flame-soft: #ff963c;
@@ -75,76 +95,162 @@
   --color-cien-b: #a8480d;
   --color-cien-c: #8a2f06;
 
+  /*
+    Gradient przycisków ma własne trzy stopnie, a nie bierze ich z drabinki. Powód: w motywie
+    jasnym najjaśniejszy stopień drabinki musi być ciemny (inaczej obrysy giną na bieli),
+    a górny stopień gradientu - dalej jasny, bo leży na barwie, nie na stronie. Jedna
+    zmienna nie może być naraz jednym i drugim.
+  */
+  --grad-1: #ffb25c;
+  --grad-2: #ff7a18;
+  --grad-3: #ff4d0a;
+
   /* te same barwy w składowych - do poświat i przezroczystości */
   --rgb-glow-soft: 255 244 214;
   --rgb-glow: 255 178 92;
   --rgb-flame: 255 122 24;
   --rgb-ember: 255 77 10;
   --rgb-ember-deep: 255 56 0;
+
+  /* powierzchnie: film i krawędzie (szyba) oraz nieprzepuszczalne tła paneli (płyta) */
+  --rgb-szyba: 255 255 255;
+  --rgb-plyta: 12 12 17;
+  --rgb-dymek: 30 30 36;
+  /* mnożnik przezroczystości cieni - na bieli czarny cień o 90% wygląda jak brud */
+  --moc-cienia: 1;
+  /* to samo dla poświat pod pinezkami: czerwona łuna na bieli czyta się jak plama */
+  --moc-poswiaty: 1;
+  /* dwie duże powierzchnie mają własne stopnie, bo w motywie ciemnym są ciepłe, nie neutralne */
+  --panel-1: #161011;
+  --panel-2: #100c0d;
+  --panel-3: #0a0809;
+  --menu-1: #1b1310;
+  --menu-2: #120d0b;
+  --menu-3: #0c0908;
+  --color-hairline: rgb(255 255 255 / 0.09);
+
+  /* tekst i tło */
+  --color-void: #07070a;
+  --color-deep: #0c0c11;
+  --color-ink: #f2f2f5;
+  --color-muted: #9a9aa6;
+  --color-faint: #6b6b76;
+  --color-white: #ffffff;
 }
 
 /*
-  Polska: biel i czerwień kadry. Czerwień jest jaśniejsza od tej z godła, bo leży na
-  czerni - barwa z druku (#e4032e) na ciemnym tle traci kontrast i napisy w niej robią
-  się nieczytelne. Jasny grzbiet drabinki idzie w bardzo bladą biel z czerwonym podbiciem,
-  więc gradienty na przyciskach czytają się jak flaga, a nie jak jeden czerwony placek.
+  Polska: biel i czerwień kadry, na jasnym tle.
+
+  Czerwień jest dobrana tak, żeby działała w dwie strony: leży na bieli strony (małe
+  wersaliki etykiet) i pod czarnym napisem na przycisku. Barwa z druku (#e4032e) wygrywa
+  pierwsze, przegrywa drugie; #e00b26 wychodzi na 4,5 : 1 wobec obu, więc czyta się i tak,
+  i tak.
+
+  Najjaśniejszy stopień drabinki jest tu ciemniejszy od barwy głównej, nie jaśniejszy -
+  odwrotnie niż w motywie ciemnym. To nie pomyłka: `--color-glow` maluje obrysy i poświaty,
+  a te muszą być widoczne NA BIELI. Jasny odcień zostaje w `--grad-1`, czyli tam, gdzie leży
+  na kolorze.
 */
 [data-motyw="polska"] {
-  --color-glow-soft: #fff1f3;
-  --color-glow: #ffd0d6;
-  --color-flame-soft: #ff5566;
-  --color-flame: #f5233a;
-  --color-ember: #cf0f28;
-  --color-ember-deep: #a80a1e;
+  color-scheme: light;
 
-  --color-cien-a: #b8303f;
-  --color-cien-b: #8f1524;
-  --color-cien-c: #6b0d18;
+  --color-glow-soft: #ff8a99;
+  --color-glow: #e6142c;
+  --color-flame-soft: #f5233a;
+  --color-flame: #e00b26;
+  --color-ember: #b00a1e;
+  --color-ember-deep: #8c0717;
 
-  --rgb-glow-soft: 255 241 243;
-  --rgb-glow: 255 208 214;
-  --rgb-flame: 245 35 58;
-  --rgb-ember: 207 15 40;
-  --rgb-ember-deep: 168 10 30;
+  --color-cien-a: #c0324a;
+  --color-cien-b: #94162a;
+  --color-cien-c: #6e0d1b;
 
-  /* tło o ćwierć tonu cieplejsze - tyle, żeby czuć czerwień, a nie żeby ją widzieć */
-  --color-void: #090708;
-  --color-deep: #100c0e;
+  --grad-1: #ff6b7d;
+  --grad-2: #e00b26;
+  --grad-3: #b00a1e;
+
+  --rgb-glow-soft: 255 138 153;
+  --rgb-glow: 230 20 44;
+  --rgb-flame: 224 11 38;
+  --rgb-ember: 176 10 30;
+  --rgb-ember-deep: 140 7 23;
+
+  --rgb-szyba: 22 20 24;
+  --rgb-plyta: 255 255 255;
+  --rgb-dymek: 255 255 255;
+  --moc-cienia: 0.3;
+  --moc-poswiaty: 0.5;
+  --panel-1: #ffffff;
+  --panel-2: #fbf9fa;
+  --panel-3: #f3f1f3;
+  --menu-1: #ffffff;
+  --menu-2: #fdfbfc;
+  --menu-3: #f5f2f4;
+  --color-hairline: rgb(22 20 24 / 0.13);
+
+  --color-void: #f7f6f7;
+  --color-deep: #eceaec;
+  --color-ink: #14121a;
+  --color-muted: #55525c;
+  --color-faint: #86828e;
+  --color-white: #16141a;
 }
 
 /*
-  Coconaut: biel i zieleń z puszki. Zieleń marki (#00b54a) jest na czerni wystarczająco
-  jasna, więc zostaje prawie bez zmian - podnosimy ją o tyle, żeby czarny napis na
-  przycisku miał zapas kontrastu.
+  Coconaut: biel i zieleń z puszki, też na jasnym tle. Ta sama zasada co przy „polska" -
+  zieleń marki (#00b54a) jest za jasna na białą stronę, więc schodzimy o dwa tony, a jasny
+  odcień zostaje w gradiencie przycisków.
 
   „Lime" dostaje tu inną barwę i to jedyne miejsce, gdzie motyw przestawia coś poza własną
   drabinką: limonka znaczy w serwisie „śmieszne boisko" i „ślad GPS w porządku", a obok
-  zielonej barwy głównej przestałaby cokolwiek znaczyć. Idzie więc w cyjan - dalej odcina
-  się od tła i od akcentu.
+  zielonej barwy głównej przestałaby cokolwiek znaczyć. Idzie więc w błękit.
 */
 [data-motyw="coconaut"] {
-  --color-glow-soft: #edfff5;
-  --color-glow: #a8f0c4;
-  --color-flame-soft: #34d97a;
-  --color-flame: #00c04f;
-  --color-ember: #00953c;
-  --color-ember-deep: #007a31;
+  color-scheme: light;
 
-  --color-cien-a: #1f8a4d;
-  --color-cien-b: #0d6636;
-  --color-cien-c: #084d28;
+  --color-glow-soft: #7ce8a8;
+  --color-glow: #06a648;
+  --color-flame-soft: #0bb350;
+  --color-flame: #05913f;
+  --color-ember: #04702f;
+  --color-ember-deep: #035622;
 
-  --rgb-glow-soft: 237 255 245;
-  --rgb-glow: 168 240 196;
-  --rgb-flame: 0 192 79;
-  --rgb-ember: 0 149 60;
-  --rgb-ember-deep: 0 122 49;
+  --color-cien-a: #2b8b55;
+  --color-cien-b: #146638;
+  --color-cien-c: #0b4a26;
 
-  --color-void: #060909;
-  --color-deep: #0b1010;
+  --grad-1: #4ede8d;
+  --grad-2: #05913f;
+  --grad-3: #04702f;
 
-  --color-lime: #3fd6ff;
-  --color-lime-deep: #0090c0;
+  --rgb-glow-soft: 124 232 168;
+  --rgb-glow: 6 166 72;
+  --rgb-flame: 5 145 63;
+  --rgb-ember: 4 112 47;
+  --rgb-ember-deep: 3 86 34;
+
+  --rgb-szyba: 16 22 20;
+  --rgb-plyta: 255 255 255;
+  --rgb-dymek: 255 255 255;
+  --moc-cienia: 0.3;
+  --moc-poswiaty: 0.5;
+  --panel-1: #ffffff;
+  --panel-2: #f9fcfa;
+  --panel-3: #f0f6f2;
+  --menu-1: #ffffff;
+  --menu-2: #fbfdfc;
+  --menu-3: #f2f8f4;
+  --color-hairline: rgb(16 22 20 / 0.13);
+
+  --color-void: #f5f8f6;
+  --color-deep: #e8efea;
+  --color-ink: #0e1512;
+  --color-muted: #4f5a54;
+  --color-faint: #7f8a84;
+  --color-white: #101612;
+
+  --color-lime: #0a84ff;
+  --color-lime-deep: #0060c0;
 }
 html,
 body {
@@ -165,19 +271,19 @@ body {
 .glass {
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.07) 0%,
-    rgba(255, 255, 255, 0.035) 100%
+    rgb(var(--rgb-szyba) / 0.07) 0%,
+    rgb(var(--rgb-szyba) / 0.035) 100%
   );
   backdrop-filter: blur(28px) saturate(160%);
   -webkit-backdrop-filter: blur(28px) saturate(160%);
   border: 1px solid var(--color-hairline);
   box-shadow:
-    0 1px 0 0 rgba(255, 255, 255, 0.07) inset,
-    0 24px 60px -20px rgba(0, 0, 0, 0.9);
+    0 1px 0 0 rgb(var(--rgb-szyba) / 0.07) inset,
+    0 24px 60px -20px rgb(0 0 0 / calc(0.9 * var(--moc-cienia)));
 }
 
 .glass-dim {
-  background: rgba(12, 12, 17, 0.72);
+  background: rgb(var(--rgb-plyta) / 0.72);
   backdrop-filter: blur(32px) saturate(150%);
   -webkit-backdrop-filter: blur(32px) saturate(150%);
   border: 1px solid var(--color-hairline);
@@ -193,7 +299,7 @@ body {
 /* ---------- Liquid warm gradient accents ---------- */
 
 .flame-gradient {
-  background: linear-gradient(135deg, var(--color-glow) 0%, var(--color-flame) 45%, var(--color-ember) 100%);
+  background: linear-gradient(135deg, var(--grad-1) 0%, var(--grad-2) 45%, var(--grad-3) 100%);
 }
 
 /* Przygaszony pomarańcz do akcji drugorzędnych (np. „zgłoś zmianę" w stopce wpisu):
@@ -315,25 +421,25 @@ body {
     /* skośna smuga światła - jak na szkle trzymanym pod lampą */
     linear-gradient(
       128deg,
-      rgba(255, 255, 255, 0.15) 0%,
-      rgba(255, 255, 255, 0.04) 24%,
-      rgba(255, 255, 255, 0) 50%
+      rgb(var(--rgb-szyba) / 0.15) 0%,
+      rgb(var(--rgb-szyba) / 0.04) 24%,
+      rgb(var(--rgb-szyba) / 0) 50%
     ),
     /* ciepły refleks z góry i chłodny od dołu - szkło nigdy nie jest jednobarwne */
     radial-gradient(125% 120% at 14% -12%, rgb(var(--rgb-glow) / 0.15), transparent 58%),
     radial-gradient(115% 130% at 88% 112%, rgba(120, 170, 255, 0.1), transparent 62%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%),
+    linear-gradient(180deg, rgb(var(--rgb-szyba) / 0.06) 0%, rgb(var(--rgb-szyba) / 0.02) 100%),
     /*
       Ciemna podkładka na samym spodzie stosu. Same rozmycie nie wystarcza: mapa pod
       wizytówką bywa jasna (piaski, drogi, podświetlone województwo), a rozmyta jasna
       plama ma dokładnie tę samą jasność co jasna plama ostra - karta rozpływała się w
       tle. Ta warstwa daje szkłu własną gęstość, więc widać, gdzie się zaczyna.
     */
-    linear-gradient(180deg, rgba(9, 8, 11, 0.5) 0%, rgba(9, 8, 11, 0.62) 100%);
+    linear-gradient(180deg, rgb(var(--rgb-plyta) / 0.5) 0%, rgb(var(--rgb-plyta) / 0.62) 100%);
   box-shadow:
-    inset 0 -1px 0 rgba(255, 255, 255, 0.07),
-    0 2px 8px -2px rgba(0, 0, 0, 0.5),
-    0 36px 80px -30px rgba(0, 0, 0, 0.95);
+    inset 0 -1px 0 rgb(var(--rgb-szyba) / 0.07),
+    0 2px 8px -2px rgb(0 0 0 / calc(0.5 * var(--moc-cienia))),
+    0 36px 80px -30px rgb(0 0 0 / calc(0.95 * var(--moc-cienia)));
 }
 
 /*
@@ -406,11 +512,11 @@ body {
   pointer-events: none;
   background: linear-gradient(
     136deg,
-    rgba(255, 255, 255, 0.6) 0%,
-    rgba(255, 255, 255, 0.13) 22%,
-    rgba(255, 255, 255, 0.04) 46%,
+    rgb(var(--rgb-szyba) / 0.6) 0%,
+    rgb(var(--rgb-szyba) / 0.13) 22%,
+    rgb(var(--rgb-szyba) / 0.04) 46%,
     rgb(var(--rgb-glow) / 0.2) 74%,
-    rgba(255, 255, 255, 0.4) 100%
+    rgb(var(--rgb-szyba) / 0.4) 100%
   );
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
@@ -453,17 +559,17 @@ body {
   background:
     linear-gradient(
       180deg,
-      rgba(255, 255, 255, 0.075) 0%,
-      rgba(255, 255, 255, 0.022) 46%,
-      rgba(255, 255, 255, 0.012) 100%
+      rgb(var(--rgb-szyba) / 0.075) 0%,
+      rgb(var(--rgb-szyba) / 0.022) 46%,
+      rgb(var(--rgb-szyba) / 0.012) 100%
     ),
     radial-gradient(130% 150% at 8% -20%, rgb(var(--rgb-flame) / 0.17), transparent 58%);
   backdrop-filter: blur(30px) saturate(165%);
   -webkit-backdrop-filter: blur(30px) saturate(165%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.055),
-    0 30px 70px -34px rgba(0, 0, 0, 0.95);
+    inset 0 1px 0 rgb(var(--rgb-szyba) / 0.1),
+    inset 0 0 0 1px rgb(var(--rgb-szyba) / 0.055),
+    0 30px 70px -34px rgb(0 0 0 / calc(0.95 * var(--moc-cienia)));
 }
 
 /* smuga światła po skosie - to ona sprzedaje „szkło", a nie samo rozmycie */
@@ -478,9 +584,9 @@ body {
   pointer-events: none;
   background: linear-gradient(
     112deg,
-    rgba(255, 255, 255, 0.1) 0%,
-    rgba(255, 255, 255, 0.03) 34%,
-    rgba(255, 255, 255, 0) 62%
+    rgb(var(--rgb-szyba) / 0.1) 0%,
+    rgb(var(--rgb-szyba) / 0.03) 34%,
+    rgb(var(--rgb-szyba) / 0) 62%
   );
 }
 
@@ -492,11 +598,11 @@ body {
 .dymek {
   position: absolute;
   border-radius: 18px;
-  background: linear-gradient(180deg, rgba(30, 30, 36, 0.97) 0%, rgba(15, 15, 19, 0.97) 100%);
+  background: linear-gradient(180deg, rgb(var(--rgb-dymek) / 0.97) 0%, rgb(var(--rgb-plyta) / 0.97) 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
-    0 22px 44px -20px rgba(0, 0, 0, 0.95);
+    inset 0 1px 0 rgb(var(--rgb-szyba) / 0.1),
+    inset 0 0 0 1px rgb(var(--rgb-szyba) / 0.08),
+    0 22px 44px -20px rgb(0 0 0 / calc(0.95 * var(--moc-cienia)));
   backdrop-filter: blur(18px) saturate(150%);
   -webkit-backdrop-filter: blur(18px) saturate(150%);
 }
@@ -511,9 +617,9 @@ body {
   height: 10px;
   translate: -50% 0;
   rotate: 45deg;
-  background: rgba(30, 30, 36, 0.97);
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgb(var(--rgb-dymek) / 0.97);
+  border-left: 1px solid rgb(var(--rgb-szyba) / 0.1);
+  border-top: 1px solid rgb(var(--rgb-szyba) / 0.1);
 }
 
 /* kafelek liczby - to samo szkło, ale reaguje na kursor */
@@ -522,12 +628,12 @@ body {
   overflow: hidden;
   border-radius: 22px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.018) 100%),
+    linear-gradient(180deg, rgb(var(--rgb-szyba) / 0.07) 0%, rgb(var(--rgb-szyba) / 0.018) 100%),
     radial-gradient(120% 130% at 50% -40%, rgb(var(--rgb-flame) / 0.14), transparent 62%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.09),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
-    0 18px 40px -26px rgba(0, 0, 0, 0.9);
+    inset 0 1px 0 rgb(var(--rgb-szyba) / 0.09),
+    inset 0 0 0 1px rgb(var(--rgb-szyba) / 0.05),
+    0 18px 40px -26px rgb(0 0 0 / calc(0.9 * var(--moc-cienia)));
   transition:
     translate 260ms cubic-bezier(0.32, 0.72, 0, 1),
     box-shadow 260ms cubic-bezier(0.32, 0.72, 0, 1);
@@ -536,7 +642,7 @@ body {
 .kafel:hover {
   translate: 0 -3px;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 1px 0 rgb(var(--rgb-szyba) / 0.14),
     inset 0 0 0 1px rgb(var(--rgb-glow) / 0.22),
     0 26px 54px -26px rgb(var(--rgb-flame) / 0.34);
 }
@@ -810,7 +916,7 @@ body {
   height: 46%;
   stroke-width: 1.9;
   color: #fff;
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.85));
+  filter: drop-shadow(0 1px 3px rgb(0 0 0 / calc(0.85 * var(--moc-cienia))));
 }
 
 /*
@@ -851,7 +957,7 @@ body {
   filter: none;
 }
 .medal-popiol svg {
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.9));
+  filter: drop-shadow(0 1px 3px rgb(0 0 0 / calc(0.9 * var(--moc-cienia))));
 }
 
 /* kropki stopnia - ile z czterech zdobyte; zastępują dawną „wypukłość" medalu */
@@ -865,7 +971,7 @@ body {
   width: 4px;
   height: 4px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.13);
+  background: rgb(var(--rgb-szyba) / 0.13);
 }
 .kropka-stopnia-pelna {
   background: rgb(var(--b));
@@ -887,10 +993,10 @@ body {
   position: relative;
   height: 8px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgb(var(--rgb-szyba) / 0.06);
   box-shadow:
-    inset 0 1px 2px rgba(0, 0, 0, 0.55),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+    inset 0 1px 2px rgb(0 0 0 / calc(0.55 * var(--moc-cienia))),
+    inset 0 0 0 1px rgb(var(--rgb-szyba) / 0.04);
   overflow: hidden;
 }
 
@@ -903,7 +1009,7 @@ body {
   background: repeating-linear-gradient(
     90deg,
     transparent 0 calc(25% - 1px),
-    rgba(255, 255, 255, 0.16) calc(25% - 1px) 25%
+    rgb(var(--rgb-szyba) / 0.16) calc(25% - 1px) 25%
   );
 }
 
@@ -937,7 +1043,7 @@ body {
   height: 8px;
   translate: 50% -50%;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgb(var(--rgb-szyba) / 0.92);
   box-shadow: 0 0 10px 2px var(--medal-glow, rgb(var(--rgb-flame) / 0.6));
 }
 
@@ -953,11 +1059,11 @@ body {
   border-radius: 24px;
   background:
     radial-gradient(120% 130% at 6% -20%, var(--karta-tint, transparent) 0%, transparent 62%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.055) 0%, rgba(255, 255, 255, 0.015) 100%);
+    linear-gradient(180deg, rgb(var(--rgb-szyba) / 0.055) 0%, rgb(var(--rgb-szyba) / 0.015) 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 0 0 1px var(--karta-ring, rgba(255, 255, 255, 0.05)),
-    0 22px 50px -32px rgba(0, 0, 0, 0.95);
+    inset 0 1px 0 rgb(var(--rgb-szyba) / 0.08),
+    inset 0 0 0 1px var(--karta-ring, rgb(var(--rgb-szyba) / 0.05)),
+    0 22px 50px -32px rgb(0 0 0 / calc(0.95 * var(--moc-cienia)));
   backdrop-filter: blur(26px) saturate(150%);
   -webkit-backdrop-filter: blur(26px) saturate(150%);
   transition:
@@ -987,9 +1093,9 @@ body {
 .karta-odznaki:hover {
   translate: 0 -3px;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 0 0 1px var(--karta-ring, rgba(255, 255, 255, 0.1)),
-    0 30px 60px -30px rgba(0, 0, 0, 0.95);
+    inset 0 1px 0 rgb(var(--rgb-szyba) / 0.12),
+    inset 0 0 0 1px var(--karta-ring, rgb(var(--rgb-szyba) / 0.1)),
+    0 30px 60px -30px rgb(0 0 0 / calc(0.95 * var(--moc-cienia)));
 }
 
 /* smuga światła po skosie - to ona sprzedaje szkło, nie samo rozmycie */
@@ -1004,9 +1110,9 @@ body {
   pointer-events: none;
   background: linear-gradient(
     112deg,
-    rgba(255, 255, 255, 0.07) 0%,
-    rgba(255, 255, 255, 0.02) 36%,
-    rgba(255, 255, 255, 0) 62%
+    rgb(var(--rgb-szyba) / 0.07) 0%,
+    rgb(var(--rgb-szyba) / 0.02) 36%,
+    rgb(var(--rgb-szyba) / 0) 62%
   );
 }
 
@@ -1055,8 +1161,8 @@ body {
 .karta-bez {
   --karta-fill: linear-gradient(
     152deg,
-    rgba(255, 255, 255, 0.07) 0%,
-    rgba(255, 255, 255, 0.02) 60%,
+    rgb(var(--rgb-szyba) / 0.07) 0%,
+    rgb(var(--rgb-szyba) / 0.02) 60%,
     transparent 100%
   );
 }
@@ -1065,10 +1171,10 @@ body {
 .wyroznienie {
   border-radius: 999px;
   color: var(--color-ink);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.02) 100%);
+  background: linear-gradient(180deg, rgb(var(--rgb-szyba) / 0.07) 0%, rgb(var(--rgb-szyba) / 0.02) 100%);
   box-shadow:
     inset 0 0 0 1px rgb(var(--rgb-glow) / 0.32),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 1px 0 rgb(var(--rgb-szyba) / 0.1),
     0 4px 14px -8px rgb(var(--rgb-flame) / 0.35);
 }
 
@@ -1118,9 +1224,9 @@ body {
   border: 1px solid rgb(var(--b) / 0.32);
   background:
     radial-gradient(120% 120% at 50% -12%, rgb(var(--b) / 0.15) 0%, transparent 66%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.012) 100%);
+    linear-gradient(180deg, rgb(var(--rgb-szyba) / 0.05) 0%, rgb(var(--rgb-szyba) / 0.012) 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 1px 0 rgb(var(--rgb-szyba) / 0.08),
     0 16px 34px -26px rgb(var(--b) / 0.6);
   backdrop-filter: blur(20px) saturate(150%);
   -webkit-backdrop-filter: blur(20px) saturate(150%);
@@ -1142,22 +1248,22 @@ body {
   translate: 0 -3px;
   border-color: rgb(var(--b) / 0.58);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 1px 0 rgb(var(--rgb-szyba) / 0.12),
     0 22px 42px -24px rgb(var(--b) / 0.75);
 }
 
 .stempel-brak {
-  border: 1px dashed rgba(255, 255, 255, 0.1);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.022) 0%, rgba(255, 255, 255, 0.005) 100%);
+  border: 1px dashed rgb(var(--rgb-szyba) / 0.1);
+  background: linear-gradient(180deg, rgb(var(--rgb-szyba) / 0.022) 0%, rgb(var(--rgb-szyba) / 0.005) 100%);
 }
 .stempel-brak .stempel-krazek {
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 0 0 1px rgb(var(--rgb-szyba) / 0.07);
 }
 .stempel-brak .stempel-ikona {
   color: rgba(245, 245, 247, 0.24);
 }
 .stempel-brak:hover {
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgb(var(--rgb-szyba) / 0.2);
 }
 .stempel-brak:hover .stempel-ikona {
   color: rgba(245, 245, 247, 0.4);
@@ -1189,14 +1295,14 @@ body {
 .menu-konta {
   overflow: hidden;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 42%),
-    linear-gradient(180deg, #1b1310 0%, #120d0b 55%, #0c0908 100%);
+    linear-gradient(180deg, rgb(var(--rgb-szyba) / 0.07), rgb(var(--rgb-szyba) / 0) 42%),
+    linear-gradient(180deg, var(--menu-1) 0%, var(--menu-2) 55%, var(--menu-3) 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 1px 0 rgb(var(--rgb-szyba) / 0.12),
     inset 0 0 0 1px rgb(var(--rgb-flame) / 0.22),
     inset 0 -18px 40px -24px rgb(var(--rgb-flame) / 0.35),
-    0 24px 70px -14px rgba(0, 0, 0, 0.95),
-    0 0 0 1px rgba(0, 0, 0, 0.65);
+    0 24px 70px -14px rgb(0 0 0 / calc(0.95 * var(--moc-cienia))),
+    0 0 0 1px rgb(0 0 0 / calc(0.65 * var(--moc-cienia)));
   backdrop-filter: blur(30px) saturate(180%);
   -webkit-backdrop-filter: blur(30px) saturate(180%);
 }
@@ -1304,7 +1410,7 @@ body {
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.22);
+  background: rgb(var(--rgb-szyba) / 0.22);
   flex: none;
 }
 .kropka-live-zywa {
@@ -1742,7 +1848,7 @@ body {
   height: 3px;
   border-radius: 999px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.07);
+  background: rgb(var(--rgb-szyba) / 0.07);
 }
 .pasek-stopnia > span {
   display: block;
@@ -1836,13 +1942,13 @@ body {
   height: 27px;
   border-radius: 999px;
   transition: background 220ms cubic-bezier(0.32, 0.72, 0, 1);
-  background: rgba(255, 255, 255, 0.13);
+  background: rgb(var(--rgb-szyba) / 0.13);
   border: 1px solid var(--color-hairline);
   flex: none;
 }
 
 .switch[data-on="true"] {
-  background: linear-gradient(135deg, var(--color-glow), var(--color-ember));
+  background: linear-gradient(135deg, var(--grad-1), var(--grad-3));
   border-color: transparent;
   box-shadow: 0 4px 16px -4px rgb(var(--rgb-ember) / 0.7);
 }
@@ -1856,7 +1962,7 @@ body {
   height: 21px;
   border-radius: 999px;
   background: #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 2px 6px rgb(0 0 0 / calc(0.4 * var(--moc-cienia)));
   transition: transform 260ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 
@@ -1865,14 +1971,14 @@ body {
 }
 
 .field {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgb(var(--rgb-szyba) / 0.06);
   border: 1px solid var(--color-hairline);
   border-radius: 14px;
   transition: border-color 180ms ease, background 180ms ease;
 }
 .field:focus-within {
   border-color: rgb(var(--rgb-flame) / 0.55);
-  background: rgba(255, 255, 255, 0.08);
+  background: rgb(var(--rgb-szyba) / 0.08);
 }
 
 input[type="range"] {
@@ -1880,7 +1986,7 @@ input[type="range"] {
   appearance: none;
   height: 4px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
+  background: rgb(var(--rgb-szyba) / 0.14);
   outline: none;
 }
 input[type="range"]::-webkit-slider-thumb {
@@ -1890,7 +1996,7 @@ input[type="range"]::-webkit-slider-thumb {
   height: 18px;
   border-radius: 999px;
   background: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 2px 8px rgb(0 0 0 / calc(0.5 * var(--moc-cienia)));
   cursor: pointer;
 }
 
@@ -1916,7 +2022,7 @@ select option {
   width: 6px;
 }
 .scroll-thin::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, var(--color-glow), var(--color-ember));
+  background: linear-gradient(180deg, var(--grad-1), var(--grad-3));
   border-radius: 999px;
 }
 .scroll-thin::-webkit-scrollbar-track {
@@ -1926,7 +2032,7 @@ select option {
 /* ---------- Map ---------- */
 
 .maplibregl-ctrl-attrib {
-  background: rgba(10, 10, 14, 0.7) !important;
+  background: rgb(var(--rgb-plyta) / 0.7) !important;
   color: var(--color-faint) !important;
   font-size: 10px !important;
   border-radius: 8px 0 0 0 !important;
@@ -1951,7 +2057,7 @@ select option {
 .court-marker[data-active="true"] .marker-core {
   transform: scale(1.22);
   box-shadow:
-    0 0 0 2px rgba(255, 255, 255, 0.45) inset,
+    0 0 0 2px rgb(var(--rgb-szyba) / 0.45) inset,
     0 10px 26px -4px rgb(var(--cien, 255 77 10)) !important;
 }
 
@@ -2138,9 +2244,9 @@ select option {
 .karta-rankingu:focus-visible {
   translate: 0 -6px;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 1px 0 rgb(var(--rgb-szyba) / 0.16),
     inset 0 0 0 1px rgb(var(--rgb-flame) / 0.26),
-    0 40px 90px -34px rgba(0, 0, 0, 0.96),
+    0 40px 90px -34px rgb(0 0 0 / calc(0.96 * var(--moc-cienia))),
     0 0 70px -24px rgb(var(--rgb-flame) / 0.5);
 }
 
@@ -2169,10 +2275,10 @@ select option {
   translate: -34% 0;
   background: linear-gradient(
     100deg,
-    rgba(255, 255, 255, 0) 34%,
-    rgba(255, 255, 255, 0.1) 46%,
+    rgb(var(--rgb-szyba) / 0) 34%,
+    rgb(var(--rgb-szyba) / 0.1) 46%,
     rgb(var(--rgb-glow) / 0.14) 52%,
-    rgba(255, 255, 255, 0) 66%
+    rgb(var(--rgb-szyba) / 0) 66%
   );
   transition:
     translate 900ms cubic-bezier(0.16, 1, 0.3, 1),
@@ -2216,14 +2322,14 @@ select option {
 */
 .numer-rankingu {
   color: transparent;
-  -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.46);
+  -webkit-text-stroke: 1.5px rgb(var(--rgb-szyba) / 0.46);
   /*
     Cień pod konturem, bo numer leży na cudzym zdjęciu. Sam biały włos znika nad jasnym
     niebem albo nad słońcem w kadrze - a numer miejsca musi być czytelny na KAŻDYM
     zdjęciu, jakie ktoś wgra. Cień jest miękki i ciemny, więc na ciemnym kadrze nic nie
     zmienia, a na jasnym daje konturowi tło.
   */
-  filter: drop-shadow(0 2px 12px rgba(0, 0, 0, 0.65));
+  filter: drop-shadow(0 2px 12px rgb(0 0 0 / calc(0.65 * var(--moc-cienia))));
   transition:
     color 520ms ease,
     -webkit-text-stroke-color 520ms ease;
@@ -2295,7 +2401,7 @@ select option {
 }
 
 .avatar-rankingu {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgb(var(--rgb-szyba) / 0.05);
   box-shadow:
     0 0 0 1.5px rgb(var(--rgb-glow) / 0.42),
     0 22px 54px -20px rgb(var(--rgb-ember) / 0.62);
@@ -2317,7 +2423,7 @@ select option {
 .wiersz-rankingu {
   position: relative;
   overflow: hidden;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgb(var(--rgb-szyba) / 0.06);
   transition:
     background-color 320ms ease,
     padding-left 420ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -2347,14 +2453,14 @@ select option {
   bottom: 18%;
   width: 2px;
   border-radius: 99px;
-  background: linear-gradient(180deg, var(--color-glow), var(--color-ember));
+  background: linear-gradient(180deg, var(--grad-1), var(--grad-3));
   scale: 1 0;
   transition: scale 420ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .wiersz-rankingu:hover,
 .wiersz-rankingu:focus-visible {
-  background-color: rgba(255, 255, 255, 0.03);
+  background-color: rgb(var(--rgb-szyba) / 0.03);
   padding-left: 12px;
 }
 .wiersz-rankingu:hover::before,
@@ -2764,14 +2870,20 @@ select option {
   }
 }
 
+/*
+  Przezroczystość w klatkach mnożymy przez `--moc-poswiaty`, a nie ustawiamy jej na
+  elemencie: animacja rządzi tą właściwością, więc wartość podana obok niej i tak nie
+  miałaby wpływu. W motywach jasnych mnożnik jest o połowę mniejszy - czerwona łuna
+  wielkości dwóch pinezek czyta się na bieli jak plama, a nie jak światło.
+*/
 @keyframes pulse-glow {
   0%,
   100% {
-    opacity: 0.55;
+    opacity: calc(0.55 * var(--moc-poswiaty, 1));
     transform: scale(1);
   }
   50% {
-    opacity: 0.95;
+    opacity: calc(0.95 * var(--moc-poswiaty, 1));
     transform: scale(1.18);
   }
 }
@@ -2835,7 +2947,7 @@ select option {
     transform 620ms cubic-bezier(0.32, 0.72, 0, 1),
     opacity 460ms ease,
     box-shadow 420ms ease;
-  box-shadow: 0 26px 70px -22px rgba(0, 0, 0, 0.9);
+  box-shadow: 0 26px 70px -22px rgb(0 0 0 / calc(0.9 * var(--moc-cienia)));
 }
 .okladka-aktywna {
   box-shadow:
@@ -2994,8 +3106,8 @@ select option {
 .orbita-kadr {
   position: relative;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    0 8px 22px -10px rgba(0, 0, 0, 0.9);
+    inset 0 1px 0 rgb(var(--rgb-szyba) / 0.18),
+    0 8px 22px -10px rgb(0 0 0 / calc(0.9 * var(--moc-cienia)));
   transition:
     scale 280ms cubic-bezier(0.32, 0.72, 0, 1),
     box-shadow 260ms ease;
@@ -3016,7 +3128,7 @@ select option {
   background: linear-gradient(
     155deg,
     rgba(255, 255, 255, var(--kadr-krawedz, 0.55)) 0%,
-    rgba(255, 255, 255, 0.07) 42%,
+    rgb(var(--rgb-szyba) / 0.07) 42%,
     rgba(255, 150, 60, var(--kadr-cieplo, 0.4)) 100%
   );
   -webkit-mask:
@@ -3036,7 +3148,7 @@ select option {
   --kadr-krawedz: 0.9;
   --kadr-cieplo: 0.95;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.26),
+    inset 0 1px 0 rgb(var(--rgb-szyba) / 0.26),
     0 16px 34px -12px rgb(var(--rgb-ember) / 0.5);
 }
 
@@ -3068,10 +3180,10 @@ select option {
   pointer-events: none;
   background: linear-gradient(
     100deg,
-    rgba(255, 255, 255, 0.14) 0%,
-    rgba(255, 255, 255, 0) 26%,
-    rgba(0, 0, 0, 0.18) 52%,
-    rgba(0, 0, 0, 0.62) 100%
+    rgb(var(--rgb-szyba) / 0.14) 0%,
+    rgb(var(--rgb-szyba) / 0) 26%,
+    rgb(0 0 0 / calc(0.18 * var(--moc-cienia))) 52%,
+    rgb(0 0 0 / calc(0.62 * var(--moc-cienia))) 100%
   );
 }
 
@@ -3102,12 +3214,12 @@ select option {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.45));
+  filter: drop-shadow(0 2px 10px rgb(0 0 0 / calc(0.45 * var(--moc-cienia))));
 }
 
 .orbita-wolne {
   border: 2px dashed rgb(var(--rgb-flame) / 0.28);
-  background: rgba(255, 255, 255, 0.02);
+  background: rgb(var(--rgb-szyba) / 0.02);
 }
 /* zdjęcie stoi prosto: pierścień obraca sam kadr, więc obraz odkręcamy raz i na stałe */
 .orbita-kadr-obraz {
@@ -3156,14 +3268,14 @@ select option {
 .panel-filtrow {
   overflow: hidden;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 38%),
+    linear-gradient(180deg, rgb(var(--rgb-szyba) / 0.06), rgb(var(--rgb-szyba) / 0) 38%),
     radial-gradient(120% 80% at 6% -8%, rgb(var(--rgb-flame) / 0.16), transparent 56%),
-    linear-gradient(180deg, #161011 0%, #100c0d 52%, #0a0809 100%);
+    linear-gradient(180deg, var(--panel-1) 0%, var(--panel-2) 52%, var(--panel-3) 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.11),
+    inset 0 1px 0 rgb(var(--rgb-szyba) / 0.11),
     inset 0 0 0 1px rgb(var(--rgb-flame) / 0.16),
     inset 0 -22px 48px -30px rgb(var(--rgb-flame) / 0.42),
-    0 30px 80px -20px rgba(0, 0, 0, 0.95);
+    0 30px 80px -20px rgb(0 0 0 / calc(0.95 * var(--moc-cienia)));
   backdrop-filter: blur(30px) saturate(175%);
   -webkit-backdrop-filter: blur(30px) saturate(175%);
 }
@@ -3283,9 +3395,9 @@ select option {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.09) 16%,
+    rgb(var(--rgb-szyba) / 0.09) 16%,
     rgb(var(--rgb-glow) / 0.26) 50%,
-    rgba(255, 255, 255, 0.09) 84%,
+    rgb(var(--rgb-szyba) / 0.09) 84%,
     transparent 100%
   );
 }
@@ -3327,7 +3439,7 @@ select option {
 
 .wiersz-filtra:hover,
 .wiersz-filtra:focus-visible {
-  background-color: rgba(255, 255, 255, 0.03);
+  background-color: rgb(var(--rgb-szyba) / 0.03);
   padding-left: 10px;
 }
 
@@ -3342,7 +3454,7 @@ select option {
   overflow: hidden;
   isolation: isolate;
   border: 1px solid var(--color-hairline);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgb(var(--rgb-szyba) / 0.05);
   transition:
     color 220ms ease,
     border-color 220ms ease,
@@ -3368,10 +3480,10 @@ select option {
   translate: -40% 0;
   background: linear-gradient(
     100deg,
-    rgba(255, 255, 255, 0) 32%,
-    rgba(255, 255, 255, 0.16) 48%,
+    rgb(var(--rgb-szyba) / 0) 32%,
+    rgb(var(--rgb-szyba) / 0.16) 48%,
     rgb(var(--rgb-glow) / 0.2) 54%,
-    rgba(255, 255, 255, 0) 68%
+    rgb(var(--rgb-szyba) / 0) 68%
   );
   transition:
     translate 760ms cubic-bezier(0.16, 1, 0.3, 1),
@@ -3385,11 +3497,11 @@ select option {
 
 .pastylka[data-on="true"] {
   border-color: transparent;
-  background: linear-gradient(135deg, var(--color-glow) 0%, var(--color-flame) 46%, var(--color-ember) 100%);
+  background: linear-gradient(135deg, var(--grad-1) 0%, var(--grad-2) 46%, var(--grad-3) 100%);
   color: #08060a;
   font-weight: 600;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 1px 0 rgb(var(--rgb-szyba) / 0.4),
     0 10px 26px -10px rgb(var(--rgb-ember) / 0.75);
 }
 
@@ -3397,7 +3509,7 @@ select option {
 .segmenty {
   border: 1px solid var(--color-hairline);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgb(var(--rgb-szyba) / 0.04);
 }
 
 .segment {
@@ -3412,14 +3524,14 @@ select option {
 .segment[data-on="true"] {
   color: #08060a;
   font-weight: 600;
-  background: linear-gradient(135deg, var(--color-glow-soft) 0%, var(--color-flame-soft) 52%, var(--color-ember) 100%);
+  background: linear-gradient(135deg, var(--grad-1) 0%, var(--grad-2) 52%, var(--grad-3) 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    inset 0 1px 0 rgb(var(--rgb-szyba) / 0.42),
     0 8px 20px -10px rgb(var(--rgb-ember) / 0.7);
 }
 
 .segment:not([data-on="true"]):hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgb(var(--rgb-szyba) / 0.06);
 }
 
 /* ---- suwak podpaleń ---- */
@@ -3437,8 +3549,8 @@ input.suwak-podpalen {
     90deg,
     var(--color-glow) 0%,
     var(--color-ember) var(--wypelnienie, 0%),
-    rgba(255, 255, 255, 0.14) var(--wypelnienie, 0%),
-    rgba(255, 255, 255, 0.14) 100%
+    rgb(var(--rgb-szyba) / 0.14) var(--wypelnienie, 0%),
+    rgb(var(--rgb-szyba) / 0.14) 100%
   );
   transition: background 160ms linear;
 }

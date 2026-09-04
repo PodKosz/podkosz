@@ -63,7 +63,7 @@ export function ShortsPlayer({ url, title }: { url: string; title: string }) {
         </span>
       </span>
 
-      <span className="absolute inset-x-2.5 bottom-2.5 text-left text-[10px] uppercase tracking-[0.1em] text-white/85 sm:text-[11px]">
+      <span className="absolute inset-x-2.5 bottom-2.5 text-left text-[10px] uppercase tracking-[0.1em] text-kadr/85 sm:text-[11px]">
         film z boiska · zagraj
       </span>
     </button>
