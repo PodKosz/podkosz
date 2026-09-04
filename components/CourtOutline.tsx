@@ -13,12 +13,46 @@
  * w SVG są globalne i przy powtórzeniu przeglądarka bierze pierwszy z dokumentu
  * (na tym potknęło się już logo w nagłówku).
  */
+/**
+ * Plamy słabszego nacisku - to one robią ze rysunku szkic.
+ *
+ * Równa kreska na całej długości czyta się jak rysunek techniczny: każda linia ma tę samą
+ * siłę, więc widać, że stawiała ją maszyna. Ręka nie umie tak - naciska mocniej tam, gdzie
+ * patrzy, i puszcza w miejscach, które rysuje mimochodem. Kilka miękkich plam przygaszenia
+ * położonych NIE po linii, a po obrazie, przecina różne linie w różnych miejscach i ta
+ * nierówność wystarcza.
+ *
+ * Plamy są w układzie rysunku (`userSpaceOnUse`), nie w pudełkach poszczególnych linii.
+ * Gdyby siedziały w pudełkach, wszystkie linie przygasałyby na tej samej WZGLĘDNEJ
+ * długości i równoległe linie płyty zgasłyby w jednym pionie - z nierówności zrobiłby się
+ * wzór, czyli znowu maszyna.
+ *
+ * [x, y, promień poziomy, promień pionowy, siła przygaszenia]
+ */
+const PLAMY: [number, number, number, number, number][] = [
+  [120, 84, 230, 120, 0.5],
+  [520, 52, 190, 96, 0.36],
+  [712, 296, 200, 150, 0.52],
+  [330, 408, 250, 108, 0.42],
+  [438, 226, 132, 88, 0.28],
+  [56, 336, 120, 100, 0.34],
+  [800, 96, 130, 84, 0.3],
+  /* mniejsze i mocniejsze - miejsca, w których kreska prawie puszcza */
+  [246, 232, 78, 62, 0.58],
+  [604, 128, 88, 54, 0.5],
+  [672, 420, 96, 70, 0.55],
+  [104, 196, 62, 74, 0.46],
+];
+
 export function CourtOutline({
   uid = "court-outline",
   className = "",
+  szkic = false,
 }: {
   uid?: string;
   className?: string;
+  /** przygasza kreskę miejscami, żeby rysunek wyglądał jak szkic ręką, nie jak plan */
+  szkic?: boolean;
 }) {
   const linia = `url(#line-${uid})`;
 
@@ -62,9 +96,42 @@ export function CourtOutline({
           <stop offset="1" stopColor="rgb(var(--rgb-glow) / var(--kontur-koniec, 0))" />
         </linearGradient>
 
+        {szkic && (
+          <>
+            <radialGradient id={`plama-${uid}`}>
+              <stop offset="0" stopColor="#000" stopOpacity="0.85" />
+              <stop offset="0.55" stopColor="#000" stopOpacity="0.4" />
+              <stop offset="1" stopColor="#000" stopOpacity="0" />
+            </radialGradient>
+            {/*
+              Maska luminancyjna: biel to pełna siła kreski, plamy odejmują. Miękkie brzegi
+              każdej plamy są konieczne - twarda krawędź maski przecięłaby linię w widoczny
+              sposób i wyglądałaby jak wytarcie, nie jak lżejszy nacisk.
+            */}
+            <mask id={`szkic-${uid}`} maskUnits="userSpaceOnUse" x="0" y="0" width="840" height="460">
+              <rect width="840" height="460" fill="#fff" />
+              {PLAMY.map(([cx, cy, rx, ry, moc], i) => (
+                <ellipse
+                  key={i}
+                  cx={cx}
+                  cy={cy}
+                  rx={rx}
+                  ry={ry}
+                  fill={`url(#plama-${uid})`}
+                  opacity={moc}
+                />
+              ))}
+            </mask>
+          </>
+        )}
       </defs>
 
-      <g stroke={linia} strokeLinecap="round" strokeLinejoin="round">
+      <g
+        stroke={linia}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        mask={szkic ? `url(#szkic-${uid})` : undefined}
+      >
         {/* płyta boiska */}
         <rect pathLength={1} x="40" y="40" width="760" height="380" rx="6" strokeWidth="2.4" />
 

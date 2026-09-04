@@ -55,7 +55,7 @@ export default function Wkrotce() {
         className="pointer-events-none absolute left-1/2 top-1/2 h-[102vw] w-[190vw] opacity-[0.55] sm:h-[74vw] sm:w-[136vw] sm:[--kontur-koniec:0.5]"
         style={{ translate: "calc(-50% + 9vw) calc(-50% - 2vh)", rotate: "-11deg" }}
       >
-        <CourtOutline uid="zaslona" />
+        <CourtOutline uid="zaslona" szkic />
       </div>
 
       {/* ciepłe światło dokładnie pod napisem, żeby litery nie leżały na pustce */}
