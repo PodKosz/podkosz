@@ -15,15 +15,15 @@ export function Brand({ compact = false }: { compact?: boolean }) {
     <Link href="/" className="flex items-center gap-3 transition hover:opacity-90">
       <span
         className="grid place-items-center"
-        style={{ filter: "drop-shadow(0 6px 18px rgba(255,90,20,.45))" }}
+        style={{ filter: "drop-shadow(0 6px 18px rgb(var(--rgb-ember) / .45))" }}
       >
         <svg viewBox="0 0 64 64" className={compact ? "h-9 w-9" : "h-13 w-13"}
              style={compact ? undefined : { width: 52, height: 52 }} fill="none">
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0.8" y2="1">
-              <stop offset="0" stopColor="#ffc47d" />
-              <stop offset="0.5" stopColor="#ff7a18" />
-              <stop offset="1" stopColor="#ff3d00" />
+              <stop offset="0" stopColor="var(--color-glow-soft)" />
+              <stop offset="0.5" stopColor="var(--color-flame)" />
+              <stop offset="1" stopColor="var(--color-ember-deep)" />
             </linearGradient>
           </defs>
 

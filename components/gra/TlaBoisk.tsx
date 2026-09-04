@@ -27,22 +27,22 @@ export function TloBoiska({ miejsce }: { miejsce: IdMiejsca }) {
           w konturze boiska - bez niej rysunek kończy się w powietrzu.
         */}
         <linearGradient id="gra-linia" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="rgba(255,122,24,0)" />
-          <stop offset="0.2" stopColor="rgba(255,150,60,0.5)" />
-          <stop offset="0.5" stopColor="rgba(255,186,110,0.78)" />
-          <stop offset="0.8" stopColor="rgba(255,150,60,0.5)" />
-          <stop offset="1" stopColor="rgba(255,122,24,0)" />
+          <stop offset="0" stopColor="rgb(var(--rgb-flame) / 0)" />
+          <stop offset="0.2" stopColor="rgb(var(--rgb-glow) / 0.5)" />
+          <stop offset="0.5" stopColor="rgb(var(--rgb-glow) / 0.78)" />
+          <stop offset="0.8" stopColor="rgb(var(--rgb-glow) / 0.5)" />
+          <stop offset="1" stopColor="rgb(var(--rgb-flame) / 0)" />
         </linearGradient>
         <linearGradient id="gra-linia-pion" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="rgba(255,122,24,0)" />
-          <stop offset="0.28" stopColor="rgba(255,150,60,0.46)" />
-          <stop offset="1" stopColor="rgba(255,186,110,0.62)" />
+          <stop offset="0" stopColor="rgb(var(--rgb-flame) / 0)" />
+          <stop offset="0.28" stopColor="rgb(var(--rgb-glow) / 0.46)" />
+          <stop offset="1" stopColor="rgb(var(--rgb-glow) / 0.62)" />
         </linearGradient>
 
         <radialGradient id="gra-swiatlo" cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0" stopColor="rgba(255,122,24,0.3)" />
-          <stop offset="0.5" stopColor="rgba(255,77,10,0.08)" />
-          <stop offset="1" stopColor="rgba(255,77,10,0)" />
+          <stop offset="0" stopColor="rgb(var(--rgb-flame) / 0.3)" />
+          <stop offset="0.5" stopColor="rgb(var(--rgb-ember) / 0.08)" />
+          <stop offset="1" stopColor="rgb(var(--rgb-ember) / 0)" />
         </radialGradient>
         <radialGradient id="gra-swiatlo-zimne" cx="0.5" cy="0.5" r="0.5">
           <stop offset="0" stopColor="rgba(120,170,255,0.16)" />
@@ -160,7 +160,7 @@ function Manhattan() {
         górnej krawędzi, więc z budynków znikały dachy i zostawały same pionowe kreski
         wiszące w powietrzu.
       */}
-      <g stroke="rgba(255,150,60,.52)" fill="none" strokeLinecap="round" strokeLinejoin="round">
+      <g stroke="rgb(var(--rgb-glow) / .52)" fill="none" strokeLinecap="round" strokeLinejoin="round">
         {domy.map((d, i) => (
           <g key={i}>
             <path d={`M${d.x} 596V${596 - d.h}h${d.w}V596`} strokeWidth="1.8" opacity=".9" />

@@ -34,7 +34,7 @@ export function CourtOutline({
       className={`h-full w-full ${className}`}
       fill="none"
       aria-hidden
-      style={{ filter: "drop-shadow(0 0 18px rgba(255,122,24,.28))" }}
+      style={{ filter: "drop-shadow(0 0 18px rgb(var(--rgb-flame) / .28))" }}
     >
       <defs>
         {/*
@@ -47,11 +47,11 @@ export function CourtOutline({
           więc własny, stały kolor (patrz niżej).
         */}
         <linearGradient id={`line-${uid}`} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="rgba(255,122,24,0)" />
-          <stop offset="0.18" stopColor="rgba(255,150,60,0.65)" />
-          <stop offset="0.5" stopColor="rgba(255,186,110,1)" />
-          <stop offset="0.82" stopColor="rgba(255,150,60,0.65)" />
-          <stop offset="1" stopColor="rgba(255,122,24,0)" />
+          <stop offset="0" stopColor="rgb(var(--rgb-flame) / 0)" />
+          <stop offset="0.18" stopColor="rgb(var(--rgb-glow) / 0.65)" />
+          <stop offset="0.5" stopColor="rgb(var(--rgb-glow))" />
+          <stop offset="0.82" stopColor="rgb(var(--rgb-glow) / 0.65)" />
+          <stop offset="1" stopColor="rgb(var(--rgb-flame) / 0)" />
         </linearGradient>
 
       </defs>
@@ -61,7 +61,7 @@ export function CourtOutline({
         <rect pathLength={1} x="40" y="40" width="760" height="380" rx="6" strokeWidth="2.4" />
 
         {/* linia środkowa - stały kolor, bo gradient per element nie działa na pionowej linii */}
-        <path pathLength={1} d="M420 40v380" strokeWidth="1.6" stroke="rgba(255,178,92,0.5)" />
+        <path pathLength={1} d="M420 40v380" strokeWidth="1.6" stroke="rgb(var(--rgb-glow) / 0.5)" />
         <circle pathLength={1} cx="420" cy="230" r="62" strokeWidth="1.8" />
 
         {/* pola podkoszowe z półkolami rzutów wolnych */}
@@ -77,7 +77,7 @@ export function CourtOutline({
         {/* tablice i obręcze - tablice mają stały, ledwo widoczny kolor, bo leżą dokładnie
             tam, gdzie gradient wygasza rysunek; bez tego nie rysowałyby się wcale */}
         <g strokeWidth="2.6">
-          <path pathLength={1} d="M62 196v68M778 196v68" stroke="rgba(255,150,60,0.26)" />
+          <path pathLength={1} d="M62 196v68M778 196v68" stroke="rgb(var(--rgb-glow) / 0.26)" />
           <circle pathLength={1} cx="76" cy="230" r="9" strokeWidth="1.8" />
           <circle pathLength={1} cx="764" cy="230" r="9" strokeWidth="1.8" />
         </g>

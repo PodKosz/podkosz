@@ -64,21 +64,21 @@ function Tlo() {
           className="liquid-blob left-[-12vw] bottom-[-10rem] h-[600px] w-[760px]"
           style={{
             background:
-              "radial-gradient(circle, rgba(255,122,24,.24) 0%, rgba(255,77,10,.08) 48%, transparent 76%)",
+              "radial-gradient(circle, rgb(var(--rgb-flame) / .24) 0%, rgb(var(--rgb-ember) / .08) 48%, transparent 76%)",
           }}
         />
         <span
           className="liquid-blob right-[-6vw] top-[-6rem] h-[520px] w-[640px]"
           style={{
             background:
-              "radial-gradient(circle, rgba(255,178,92,.15) 0%, rgba(255,122,24,.04) 50%, transparent 78%)",
+              "radial-gradient(circle, rgb(var(--rgb-glow) / .15) 0%, rgb(var(--rgb-flame) / .04) 50%, transparent 78%)",
           }}
         />
         <span
           className="liquid-blob right-[10vw] bottom-[-16rem] h-[500px] w-[620px]"
           style={{
             background:
-              "radial-gradient(circle, rgba(255,77,10,.15) 0%, rgba(255,122,24,.04) 52%, transparent 76%)",
+              "radial-gradient(circle, rgb(var(--rgb-ember) / .15) 0%, rgb(var(--rgb-flame) / .04) 52%, transparent 76%)",
           }}
         />
       </div>

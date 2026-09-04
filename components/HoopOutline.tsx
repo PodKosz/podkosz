@@ -71,32 +71,32 @@ export function HoopOutline({
       className={`h-full w-full ${className}`}
       fill="none"
       aria-hidden
-      style={{ filter: "drop-shadow(0 0 20px rgba(255,122,24,.26))" }}
+      style={{ filter: "drop-shadow(0 0 20px rgb(var(--rgb-flame) / .26))" }}
     >
       <defs>
         {/* gradient liczony per element, więc każda linia gaśnie na swoich końcach */}
         <linearGradient id={`hoop-h-${uid}`} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="rgba(255,122,24,0)" />
-          <stop offset="0.2" stopColor="rgba(255,150,60,0.6)" />
-          <stop offset="0.5" stopColor="rgba(255,186,110,1)" />
-          <stop offset="0.8" stopColor="rgba(255,150,60,0.6)" />
-          <stop offset="1" stopColor="rgba(255,122,24,0)" />
+          <stop offset="0" stopColor="rgb(var(--rgb-flame) / 0)" />
+          <stop offset="0.2" stopColor="rgb(var(--rgb-glow) / 0.6)" />
+          <stop offset="0.5" stopColor="rgb(var(--rgb-glow))" />
+          <stop offset="0.8" stopColor="rgb(var(--rgb-glow) / 0.6)" />
+          <stop offset="1" stopColor="rgb(var(--rgb-flame) / 0)" />
         </linearGradient>
 
         {/* wersja pionowa - splot siatki jest wąski, poziomy gradient by go nie pomalował */}
         <linearGradient id={`hoop-v-${uid}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="rgba(255,186,110,0.9)" />
-          <stop offset="0.72" stopColor="rgba(255,150,60,0.4)" />
-          <stop offset="1" stopColor="rgba(255,122,24,0)" />
+          <stop offset="0" stopColor="rgb(var(--rgb-glow) / 0.9)" />
+          <stop offset="0.72" stopColor="rgb(var(--rgb-glow) / 0.4)" />
+          <stop offset="1" stopColor="rgb(var(--rgb-flame) / 0)" />
         </linearGradient>
 
         {/* symetryczny pionowy - do boków tablicy, żeby gasły u góry i u dołu jednakowo */}
         <linearGradient id={`hoop-s-${uid}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="rgba(255,122,24,0)" />
-          <stop offset="0.22" stopColor="rgba(255,150,60,0.6)" />
-          <stop offset="0.5" stopColor="rgba(255,186,110,1)" />
-          <stop offset="0.78" stopColor="rgba(255,150,60,0.6)" />
-          <stop offset="1" stopColor="rgba(255,122,24,0)" />
+          <stop offset="0" stopColor="rgb(var(--rgb-flame) / 0)" />
+          <stop offset="0.22" stopColor="rgb(var(--rgb-glow) / 0.6)" />
+          <stop offset="0.5" stopColor="rgb(var(--rgb-glow))" />
+          <stop offset="0.78" stopColor="rgb(var(--rgb-glow) / 0.6)" />
+          <stop offset="1" stopColor="rgb(var(--rgb-flame) / 0)" />
         </linearGradient>
       </defs>
 
@@ -142,7 +142,7 @@ export function HoopOutline({
       {/* słupek za tablicą - ledwo widoczny, tylko żeby kosz nie wisiał w powietrzu */}
       <path pathLength={1}
         d="M240 26v-20"
-        stroke="rgba(255,150,60,0.22)"
+        stroke="rgb(var(--rgb-glow) / 0.22)"
         strokeWidth="2.4"
         strokeLinecap="round"
       />

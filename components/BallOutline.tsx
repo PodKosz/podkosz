@@ -32,23 +32,23 @@ export function BallOutline({
       className={`h-full w-full ${className}`}
       fill="none"
       aria-hidden
-      style={{ filter: "drop-shadow(0 0 22px rgba(255,122,24,.22))" }}
+      style={{ filter: "drop-shadow(0 0 22px rgb(var(--rgb-flame) / .22))" }}
     >
       <defs>
         <linearGradient id={`ball-h-${uid}`} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="rgba(255,122,24,0)" />
-          <stop offset="0.22" stopColor="rgba(255,150,60,0.55)" />
-          <stop offset="0.5" stopColor="rgba(255,186,110,0.95)" />
-          <stop offset="0.78" stopColor="rgba(255,150,60,0.55)" />
-          <stop offset="1" stopColor="rgba(255,122,24,0)" />
+          <stop offset="0" stopColor="rgb(var(--rgb-flame) / 0)" />
+          <stop offset="0.22" stopColor="rgb(var(--rgb-glow) / 0.55)" />
+          <stop offset="0.5" stopColor="rgb(var(--rgb-glow) / 0.95)" />
+          <stop offset="0.78" stopColor="rgb(var(--rgb-glow) / 0.55)" />
+          <stop offset="1" stopColor="rgb(var(--rgb-flame) / 0)" />
         </linearGradient>
 
         <linearGradient id={`ball-v-${uid}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="rgba(255,122,24,0)" />
-          <stop offset="0.22" stopColor="rgba(255,150,60,0.55)" />
-          <stop offset="0.5" stopColor="rgba(255,186,110,0.95)" />
-          <stop offset="0.78" stopColor="rgba(255,150,60,0.55)" />
-          <stop offset="1" stopColor="rgba(255,122,24,0)" />
+          <stop offset="0" stopColor="rgb(var(--rgb-flame) / 0)" />
+          <stop offset="0.22" stopColor="rgb(var(--rgb-glow) / 0.55)" />
+          <stop offset="0.5" stopColor="rgb(var(--rgb-glow) / 0.95)" />
+          <stop offset="0.78" stopColor="rgb(var(--rgb-glow) / 0.55)" />
+          <stop offset="1" stopColor="rgb(var(--rgb-flame) / 0)" />
         </linearGradient>
       </defs>
 

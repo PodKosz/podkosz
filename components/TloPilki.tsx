@@ -26,27 +26,27 @@ export function TloPilki({ uid = "profil" }: { uid?: string }) {
           className="liquid-blob -left-32 -top-24 h-[540px] w-[700px]"
           style={{
             background:
-              "radial-gradient(circle, rgba(255,122,24,.28) 0%, rgba(255,77,10,.1) 52%, transparent 74%)",
+              "radial-gradient(circle, rgb(var(--rgb-flame) / .28) 0%, rgb(var(--rgb-ember) / .1) 52%, transparent 74%)",
           }}
         />
         <span
           className="liquid-blob right-[-16vw] top-[18vh] h-[620px] w-[720px]"
           style={{
             background:
-              "radial-gradient(circle, rgba(255,77,10,.24) 0%, rgba(255,122,24,.08) 54%, transparent 76%)",
+              "radial-gradient(circle, rgb(var(--rgb-ember) / .24) 0%, rgb(var(--rgb-flame) / .08) 54%, transparent 76%)",
           }}
         />
         <span
           className="liquid-blob left-[6vw] bottom-[-12rem] h-[520px] w-[680px]"
           style={{
             background:
-              "radial-gradient(circle, rgba(255,178,92,.2) 0%, rgba(255,122,24,.06) 52%, transparent 74%)",
+              "radial-gradient(circle, rgb(var(--rgb-glow) / .2) 0%, rgb(var(--rgb-flame) / .06) 52%, transparent 74%)",
           }}
         />
         <span
           className="liquid-blob right-[8vw] bottom-[-16rem] h-[460px] w-[560px]"
           style={{
-            background: "radial-gradient(circle, rgba(255,122,24,.18) 0%, transparent 72%)",
+            background: "radial-gradient(circle, rgb(var(--rgb-flame) / .18) 0%, transparent 72%)",
           }}
         />
       </div>

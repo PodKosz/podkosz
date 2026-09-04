@@ -25,14 +25,14 @@ export default function Wkrotce() {
         className="liquid-blob left-[6vw] top-[-8rem] h-[560px] w-[720px]"
         style={{
           background:
-            "radial-gradient(circle, rgba(255,122,24,.26) 0%, rgba(255,77,10,.08) 46%, rgba(255,77,10,.02) 68%, transparent 82%)",
+            "radial-gradient(circle, rgb(var(--rgb-flame) / .26) 0%, rgb(var(--rgb-ember) / .08) 46%, rgb(var(--rgb-ember) / .02) 68%, transparent 82%)",
         }}
       />
       <span
         className="liquid-blob bottom-[-10rem] right-[2vw] h-[520px] w-[620px]"
         style={{
           background:
-            "radial-gradient(circle, rgba(255,178,92,.18) 0%, rgba(255,122,24,.05) 50%, transparent 78%)",
+            "radial-gradient(circle, rgb(var(--rgb-glow) / .18) 0%, rgb(var(--rgb-flame) / .05) 50%, transparent 78%)",
         }}
       />
 
@@ -53,7 +53,7 @@ export default function Wkrotce() {
         className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[min(92vw,900px)] -translate-x-1/2 -translate-y-1/2 blur-[80px]"
         style={{
           background:
-            "radial-gradient(closest-side, rgba(255,77,10,.30) 0%, rgba(255,122,24,.12) 48%, transparent 100%)",
+            "radial-gradient(closest-side, rgb(var(--rgb-ember) / .30) 0%, rgb(var(--rgb-flame) / .12) 48%, transparent 100%)",
         }}
       />
 
@@ -64,13 +64,13 @@ export default function Wkrotce() {
           className="h-[96px] w-[96px] sm:h-[136px] sm:w-[136px]"
           fill="none"
           aria-hidden
-          style={{ filter: "drop-shadow(0 10px 34px rgba(255,90,20,.5))" }}
+          style={{ filter: "drop-shadow(0 10px 34px rgb(var(--rgb-ember) / .5))" }}
         >
           <defs>
             <linearGradient id="zaslona-logo" x1="0" y1="0" x2="0.8" y2="1">
-              <stop offset="0" stopColor="#ffc47d" />
-              <stop offset="0.5" stopColor="#ff7a18" />
-              <stop offset="1" stopColor="#ff3d00" />
+              <stop offset="0" stopColor="var(--color-glow-soft)" />
+              <stop offset="0.5" stopColor="var(--color-flame)" />
+              <stop offset="1" stopColor="var(--color-ember-deep)" />
             </linearGradient>
           </defs>
           <g
@@ -118,7 +118,7 @@ export default function Wkrotce() {
           className="mt-10 h-[3px] w-40 rounded-full"
           style={{
             background:
-              "linear-gradient(90deg, transparent 0%, rgba(255,122,24,.85) 50%, transparent 100%)",
+              "linear-gradient(90deg, transparent 0%, rgb(var(--rgb-flame) / .85) 50%, transparent 100%)",
           }}
         />
 

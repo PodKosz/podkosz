@@ -52,9 +52,9 @@ export function WeatherArt({
         <radialGradient id={`sun-${uid}`} cx="0.5" cy="0.5" r="0.5">
           {day ? (
             <>
-              <stop offset="0" stopColor="#ffd08a" />
-              <stop offset="0.45" stopColor="#ff9a2e" />
-              <stop offset="1" stopColor="#ff5a12" />
+              <stop offset="0" stopColor="var(--color-glow-soft)" />
+              <stop offset="0.45" stopColor="var(--color-flame-soft)" />
+              <stop offset="1" stopColor="var(--color-ember)" />
             </>
           ) : (
             <>
@@ -67,7 +67,7 @@ export function WeatherArt({
         <radialGradient id={`glow-${uid}`} cx="0.5" cy="0.5" r="0.5">
           <stop
             offset="0"
-            stopColor={day ? "rgba(255,138,32,.55)" : "rgba(150,150,220,.35)"}
+            stopColor={day ? "rgb(var(--rgb-flame) / .55)" : "rgba(150,150,220,.35)"}
           />
           <stop offset="1" stopColor="transparent" />
         </radialGradient>
@@ -104,7 +104,7 @@ export function WeatherArt({
 
       {scene === "clear" && day && (
         /* promienie - delikatne, tylko przy pełnym słońcu */
-        <g stroke="rgba(255,170,70,.35)" strokeWidth="2.4" strokeLinecap="round">
+        <g stroke="rgb(var(--rgb-glow) / .35)" strokeWidth="2.4" strokeLinecap="round">
           <path d="M128 18v-12M128 138v12M68 72h-12M188 72h12M86 30 78 22M170 30l8-8M86 114l-8 8M170 114l8 8" />
         </g>
       )}
@@ -128,8 +128,8 @@ export function WeatherArt({
           <Rain uid={uid} seed={seed} />
           <path
             d="M104 148l-26 42h20l-8 34 34-48h-20z"
-            fill="#ffd166"
-            stroke="rgba(255,120,20,.9)"
+            fill="var(--color-glow-soft)"
+            stroke="rgb(var(--rgb-flame) / .9)"
             strokeWidth="2"
           />
         </>

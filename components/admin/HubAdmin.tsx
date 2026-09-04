@@ -107,7 +107,7 @@ export function HubAdmin({ onGoTo }: { onGoTo: (widok: string) => void }) {
               className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full blur-[50px]"
               style={{
                 background:
-                  "radial-gradient(closest-side, rgba(255,122,24,.4), transparent 100%)",
+                  "radial-gradient(closest-side, rgb(var(--rgb-flame) / .4), transparent 100%)",
               }}
             />
             <p className="relative text-[11px] uppercase tracking-[0.16em] text-faint">
@@ -354,7 +354,7 @@ function Kafel({
           aria-hidden
           className="pointer-events-none absolute -bottom-12 left-1/2 h-28 w-[80%] -translate-x-1/2 blur-[36px]"
           style={{
-            background: "radial-gradient(closest-side, rgba(255,90,20,.42), transparent 100%)",
+            background: "radial-gradient(closest-side, rgb(var(--rgb-ember) / .42), transparent 100%)",
           }}
         />
       )}

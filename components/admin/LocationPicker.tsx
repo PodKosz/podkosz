@@ -81,7 +81,7 @@ export function LocationPicker({
     mapRef.current = map;
 
     const el = document.createElement("div");
-    el.innerHTML = `<div style="width:26px;height:26px;border-radius:99px;background:linear-gradient(135deg,#ffc27a,#ff4106);box-shadow:0 0 0 3px rgba(255,255,255,.35),0 8px 20px -4px rgba(255,77,10,.9);cursor:grab"></div>`;
+    el.innerHTML = `<div style="width:26px;height:26px;border-radius:99px;background:linear-gradient(135deg,var(--color-glow-soft),var(--color-ember));box-shadow:0 0 0 3px rgba(255,255,255,.35),0 8px 20px -4px rgb(var(--rgb-ember) / .9);cursor:grab"></div>`;
     const marker = new Marker({ element: el, draggable: true })
       .setLngLat([lng || 19.4, lat || 52.0])
       .addTo(map);

@@ -86,7 +86,7 @@ const STYLE: StyleSpecification = {
       id: "woj-fill",
       type: "fill",
       source: "woj",
-      paint: { "fill-color": "#ff7a18", "fill-opacity": 0.06 },
+      paint: { "fill-color": "var(--color-flame)", "fill-opacity": 0.06 },
     },
     {
       id: "woj-active",
@@ -99,14 +99,14 @@ const STYLE: StyleSpecification = {
         a jednocześnie na tyle widoczna, że podświetlenie działa nawet wtedy, gdy
         przeglądarka nie poradzi sobie z warstwą SVG.
       */
-      paint: { "fill-color": "#ff7a18", "fill-opacity": 0.05 },
+      paint: { "fill-color": "var(--color-flame)", "fill-opacity": 0.05 },
     },
     {
       id: "woj-line",
       type: "line",
       source: "woj",
       paint: {
-        "line-color": "#ff9a45",
+        "line-color": "var(--color-glow)",
         "line-width": 0.8,
         "line-opacity": 0.35,
       },
@@ -723,7 +723,7 @@ export function MapView({
         source: "boiska",
         filter: ["has", "point_count"],
         paint: {
-          "circle-color": "#ff7a18",
+          "circle-color": "var(--color-flame)",
           "circle-opacity": 0.9,
           "circle-radius": ["step", ["get", "point_count"], 16, 10, 21, 50, 27, 200, 34],
           "circle-stroke-width": 2,
@@ -754,7 +754,7 @@ export function MapView({
         filter: ["!", ["has", "point_count"]],
         paint: {
           "circle-radius": 6,
-          "circle-color": "#ff7a18",
+          "circle-color": "var(--color-flame)",
           "circle-stroke-width": 1.4,
           "circle-stroke-color": "rgba(8,8,11,0.9)",
         },
@@ -1206,14 +1206,14 @@ function markerHtml(court: MapCourt) {
   // Boiska z wyróżnieniem Heat świecą na fioletowo - mają odróżniać się na pierwszy rzut oka.
   const glow = court.basketApproved
     ? "rgba(168,85,247,.6) 0%, rgba(109,40,217,.2) 45%, transparent 70%"
-    : "rgba(255,122,24,.55) 0%, rgba(255,77,10,.18) 45%, transparent 70%";
+    : "rgb(var(--rgb-flame) / .55) 0%, rgb(var(--rgb-ember) / .18) 45%, transparent 70%";
   const core = court.basketApproved
     ? "linear-gradient(135deg,#e9d5ff,#a855f7 55%,#6d28d9)"
-    : "linear-gradient(135deg,#ffc27a,#ff7a18 55%,#ff4106)";
-  const shadow = court.basketApproved ? "rgba(109,40,217,.9)" : "rgba(255,77,10,.9)";
+    : "linear-gradient(135deg,var(--color-glow-soft),var(--color-flame) 55%,var(--color-ember))";
+  const shadow = court.basketApproved ? "rgba(109,40,217,.9)" : "rgb(var(--rgb-ember) / .9)";
   const seam = court.basketApproved ? "rgba(35,5,60,.7)" : "rgba(40,10,0,.72)";
-  const stem = court.basketApproved ? "#a855f7" : "#ff7a18";
-  const dot = court.basketApproved ? "rgba(168,85,247,.85)" : "rgba(255,122,24,.85)";
+  const stem = court.basketApproved ? "#a855f7" : "var(--color-flame)";
+  const dot = court.basketApproved ? "rgba(168,85,247,.85)" : "rgb(var(--rgb-flame) / .85)";
 
   /*
     Paleta ognia idzie za kolorem pinezki, nie odwrotnie: pomarańczowa pinezka pali się
@@ -1226,7 +1226,12 @@ function markerHtml(court: MapCourt) {
   */
   const ogien = court.basketApproved
     ? { o1: "245 235 255", o2: "192 132 252", o3: "139 92 246", o4: "91 33 182" }
-    : { o1: "255 244 214", o2: "255 176 58", o3: "255 106 14", o4: "255 56 0" };
+    : {
+        o1: "var(--rgb-glow-soft)",
+        o2: "var(--rgb-glow)",
+        o3: "var(--rgb-flame)",
+        o4: "var(--rgb-ember-deep)",
+      };
 
   /*
     Kolor poświaty pod kulą przy najechaniu i na pinezce aktywnej. Wcześniej ten cień był
@@ -1234,7 +1239,7 @@ function markerHtml(court: MapCourt) {
     Heatu dostawała więc pod spodem pomarańczową łunę i wyglądała, jakby ktoś pomylił
     warstwy. Podajemy trójkę RGB, bo arkusz składa z niej kolor z własną przezroczystością.
   */
-  const cien = court.basketApproved ? "139 92 246" : "255 77 10";
+  const cien = court.basketApproved ? "139 92 246" : "var(--rgb-ember)";
 
   return `
   <div class="pinezka-korpus relative flex flex-col items-center transition-transform duration-200 ease-out"

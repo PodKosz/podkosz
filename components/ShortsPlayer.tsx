@@ -55,11 +55,11 @@ export function ShortsPlayer({ url, title }: { url: string; title: string }) {
           className="absolute inset-[-24px] rounded-full opacity-80 blur-md transition group-hover:opacity-100"
           style={{
             background:
-              "radial-gradient(circle, rgba(255,122,24,.45) 0%, rgba(255,77,10,.12) 58%, transparent 74%)",
+              "radial-gradient(circle, rgb(var(--rgb-flame) / .45) 0%, rgb(var(--rgb-ember) / .12) 58%, transparent 74%)",
           }}
         />
         <span className="relative grid h-full w-full place-items-center rounded-full border border-white/30 bg-white/10 shadow-[0_10px_30px_-8px_rgba(0,0,0,.8)] backdrop-blur-md transition duration-300 group-hover:scale-[1.06] group-hover:border-white/45 group-hover:bg-white/16">
-          <PlayIcon className="ml-1.5 h-8 w-8 text-flame drop-shadow-[0_1px_6px_rgba(255,77,10,.55)]" />
+          <PlayIcon className="ml-1.5 h-8 w-8 text-flame drop-shadow-[0_1px_6px_rgb(var(--rgb-ember) / .55)]" />
         </span>
       </span>
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "../globals.css";
+import { SKRYPT_MOTYWU } from "@/lib/motyw";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 
 /**
@@ -18,8 +19,13 @@ export const metadata: Metadata = {
 
 export default function ZaslonaLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pl">
-      <body className="ambient antialiased">{children}</body>
+    /* to samo tłumienie i ten sam skrypt co w układzie serwisu - patrz app/(strona)/layout.tsx */
+    <html lang="pl" suppressHydrationWarning>
+      <body className="ambient antialiased">
+        {/* zasłona trzyma wybrany motyw, żeby pokaz nie zaczynał się od zmiany barw */}
+        <script dangerouslySetInnerHTML={{ __html: SKRYPT_MOTYWU }} />
+        {children}
+      </body>
     </html>
   );
 }

@@ -132,7 +132,7 @@ export function FireBallIcon({
   const stops =
     variant === "basket"
       ? ["#a855f7", "#e9d5ff", "#ffffff"] // jasna, żeby odcinała się na fioletowej odznace
-      : ["#ff3d00", "#ff7a18", "#ffd08a"];
+      : ["var(--color-ember-deep)", "var(--color-flame)", "var(--color-glow-soft)"];
   const seam = variant === "basket" ? "rgba(70,20,120,.6)" : "rgba(60,15,0,.55)";
 
   return (

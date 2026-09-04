@@ -52,33 +52,33 @@ export default async function AboutPage() {
           className="liquid-blob -left-32 -top-28 h-[520px] w-[680px]"
           style={{
             background:
-              "radial-gradient(circle, rgba(255,122,24,.32) 0%, rgba(255,77,10,.12) 52%, transparent 72%)",
+              "radial-gradient(circle, rgb(var(--rgb-flame) / .32) 0%, rgb(var(--rgb-ember) / .12) 52%, transparent 72%)",
           }}
         />
         <span
           className="liquid-blob -right-40 top-[34%] h-[560px] w-[640px]"
           style={{
             background:
-              "radial-gradient(circle, rgba(255,77,10,.26) 0%, rgba(255,122,24,.09) 55%, transparent 74%)",
+              "radial-gradient(circle, rgb(var(--rgb-ember) / .26) 0%, rgb(var(--rgb-flame) / .09) 55%, transparent 74%)",
           }}
         />
         <span
           className="liquid-blob -left-28 bottom-[-9rem] h-[520px] w-[720px]"
           style={{
             background:
-              "radial-gradient(circle, rgba(255,178,92,.24) 0%, rgba(255,122,24,.08) 52%, transparent 72%)",
+              "radial-gradient(circle, rgb(var(--rgb-glow) / .24) 0%, rgb(var(--rgb-flame) / .08) 52%, transparent 72%)",
           }}
         />
         <span
           className="liquid-blob left-1/2 top-[8%] h-[520px] w-[760px] -translate-x-1/2"
           style={{
-            background: "radial-gradient(circle, rgba(255,122,24,.16) 0%, transparent 72%)",
+            background: "radial-gradient(circle, rgb(var(--rgb-flame) / .16) 0%, transparent 72%)",
           }}
         />
         <span
           className="liquid-blob right-[12%] bottom-[-14rem] h-[420px] w-[520px]"
           style={{
-            background: "radial-gradient(circle, rgba(255,122,24,.20) 0%, transparent 70%)",
+            background: "radial-gradient(circle, rgb(var(--rgb-flame) / .20) 0%, transparent 70%)",
           }}
         />
       </div>
@@ -146,7 +146,7 @@ export default async function AboutPage() {
           className="pointer-events-none absolute left-1/2 top-1/2 h-[min(70vw,460px)] w-[min(92vw,760px)] -translate-x-1/2 -translate-y-1/2 blur-[90px]"
           style={{
             background:
-              "radial-gradient(closest-side, rgba(255,77,10,.42) 0%, rgba(255,122,24,.16) 50%, transparent 100%)",
+              "radial-gradient(closest-side, rgb(var(--rgb-ember) / .42) 0%, rgb(var(--rgb-flame) / .16) 50%, transparent 100%)",
           }}
         />
 

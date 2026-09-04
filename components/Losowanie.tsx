@@ -152,14 +152,14 @@ function Kostka({ faza, scianka }: { faza: Faza; scianka: number }) {
               zamiast urywać się przy krawędzi kadru.
             */}
             <linearGradient id="losowanie-linia" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stopColor="rgba(255,122,24,0.25)" />
-              <stop offset="0.35" stopColor="rgba(255,178,92,0.95)" />
-              <stop offset="0.7" stopColor="rgba(255,150,60,0.8)" />
-              <stop offset="1" stopColor="rgba(255,122,24,0.25)" />
+              <stop offset="0" stopColor="rgb(var(--rgb-flame) / 0.25)" />
+              <stop offset="0.35" stopColor="rgb(var(--rgb-glow) / 0.95)" />
+              <stop offset="0.7" stopColor="rgb(var(--rgb-glow) / 0.8)" />
+              <stop offset="1" stopColor="rgb(var(--rgb-flame) / 0.25)" />
             </linearGradient>
             <radialGradient id="losowanie-oczko">
-              <stop offset="0" stopColor="rgba(255,214,150,1)" />
-              <stop offset="1" stopColor="rgba(255,122,24,0.85)" />
+              <stop offset="0" stopColor="rgb(var(--rgb-glow))" />
+              <stop offset="1" stopColor="rgb(var(--rgb-flame) / 0.85)" />
             </radialGradient>
           </defs>
 

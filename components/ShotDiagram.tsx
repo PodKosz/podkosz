@@ -387,7 +387,7 @@ const TILE_INK: Record<Ink, InkStyle> = {
   edge: { stroke: "rgba(255,255,255,0.6)", width: 2.4, fill: "rgba(255,255,255,0.05)" },
   line: { stroke: "rgba(255,255,255,0.32)", width: 1.5 },
   struct: { stroke: "rgba(255,255,255,0.5)", width: 2 },
-  rim: { stroke: "#ff7a18", width: 3.6 },
+  rim: { stroke: "var(--color-flame)", width: 3.6 },
   net: { stroke: "rgba(255,255,255,0.34)", width: 1.2 },
   paint: { stroke: "none", width: 0, fill: "rgba(255,255,255,0.46)" },
   crack: { stroke: "rgba(255,255,255,0.36)", width: 1.7 },
@@ -395,14 +395,14 @@ const TILE_INK: Record<Ink, InkStyle> = {
 };
 
 const OVERLAY_INK: Record<Ink, InkStyle> = {
-  edge: { stroke: "rgba(255,178,92,0.9)", width: 2.6 },
-  line: { stroke: "rgba(255,178,92,0.45)", width: 1.6, dash: "7 7" },
-  struct: { stroke: "rgba(255,178,92,0.85)", width: 2.2 },
-  rim: { stroke: "#ff7a18", width: 3.4 },
-  net: { stroke: "rgba(255,178,92,0.4)", width: 1.2 },
-  paint: { stroke: "none", width: 0, fill: "rgba(255,178,92,0.75)" },
-  crack: { stroke: "rgba(255,178,92,0.4)", width: 1.4 },
-  grain: { stroke: "rgba(255,178,92,0.2)", width: 1 },
+  edge: { stroke: "rgb(var(--rgb-glow) / 0.9)", width: 2.6 },
+  line: { stroke: "rgb(var(--rgb-glow) / 0.45)", width: 1.6, dash: "7 7" },
+  struct: { stroke: "rgb(var(--rgb-glow) / 0.85)", width: 2.2 },
+  rim: { stroke: "var(--color-flame)", width: 3.4 },
+  net: { stroke: "rgb(var(--rgb-glow) / 0.4)", width: 1.2 },
+  paint: { stroke: "none", width: 0, fill: "rgb(var(--rgb-glow) / 0.75)" },
+  crack: { stroke: "rgb(var(--rgb-glow) / 0.4)", width: 1.4 },
+  grain: { stroke: "rgb(var(--rgb-glow) / 0.2)", width: 1 },
 };
 
 export function ShotDiagram({

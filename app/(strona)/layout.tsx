@@ -5,6 +5,7 @@ import { VisitPing } from "@/components/VisitPing";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 import { ZASLONA } from "@/lib/zaslona";
+import { SKRYPT_MOTYWU } from "@/lib/motyw";
 
 const TITLE = "PodKosz - baza boisk do koszykówki w Polsce";
 
@@ -39,8 +40,21 @@ export const metadata: Metadata = {
  */
 export default function StronaLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pl">
+    /*
+      `suppressHydrationWarning` dotyczy jednej rzeczy: atrybutu `data-motyw`, który skrypt
+      niżej dopisuje jeszcze przed hydracją. Serwer nie zna wyboru urządzenia, więc React
+      widzi element z atrybutem, którego sam nie wygenerował, i zgłasza rozbieżność - mimo
+      że to my go tam położyliśmy i ma tam zostać. Tłumienie jest płytkie: obejmuje sam
+      element `html`, nie jego drzewo, więc prawdziwe rozjazdy w treści dalej się zgłoszą.
+    */
+    <html lang="pl" suppressHydrationWarning>
       <body className="ambient antialiased">
+        {/*
+          Motyw nadajemy przed treścią, w trakcie parsowania dokumentu. Wczytany razem
+          z resztą JavaScriptu przestawiałby barwy dopiero po pierwszej klatce, a to przy
+          ciemnym tle widać jak mrugnięcie.
+        */}
+        <script dangerouslySetInnerHTML={{ __html: SKRYPT_MOTYWU }} />
         <TopNav />
         <div className="relative z-10">{children}</div>
         <SiteFooter />

@@ -142,23 +142,29 @@ export function stworzZarWojewodztwa(map: MlMap, przyrostek: string): ZarWojewod
     środku i jasny żółty jako najmniejsza, najszybsza plama. Rozłożone na trzy warstwy,
     bo jedna plama w jednym kolorze czyta się jak reflektor, a nie jak rozgrzana blacha.
   */
+  /*
+    Barwy podajemy jako zmienne motywu, nie jako liczby: skórka „polska" albo „coconaut"
+    ma przemalować także żar województw. Zmienna trafia wprost do `stop-color`, a ten
+    rozwiązuje ją w kontekście dokumentu - warstwa SVG wisi w drzewie strony, więc widzi
+    te same zmienne co reszta arkusza.
+  */
   const barwy: [string, string, number][] = [
-    ["zar-a", "255,122,24", 0.26],
-    ["zar-b", "255,64,10", 0.23],
-    ["zar-c", "255,206,110", 0.26],
+    ["zar-a", "var(--rgb-flame)", 0.26],
+    ["zar-b", "var(--rgb-ember)", 0.23],
+    ["zar-c", "var(--rgb-glow)", 0.26],
   ];
   for (const [nazwa, rgb, alfa] of barwy) {
     const g = el("radialGradient");
     g.setAttribute("id", `${nazwa}-${przyrostek}`);
     const s1 = el("stop");
     s1.setAttribute("offset", "0%");
-    s1.setAttribute("stop-color", `rgba(${rgb},${alfa})`);
+    s1.setAttribute("stop-color", `rgb(${rgb} / ${alfa})`);
     const s2 = el("stop");
     s2.setAttribute("offset", "62%");
-    s2.setAttribute("stop-color", `rgba(${rgb},${(alfa * 0.34).toFixed(3)})`);
+    s2.setAttribute("stop-color", `rgb(${rgb} / ${(alfa * 0.34).toFixed(3)})`);
     const s3 = el("stop");
     s3.setAttribute("offset", "100%");
-    s3.setAttribute("stop-color", `rgba(${rgb},0)`);
+    s3.setAttribute("stop-color", `rgb(${rgb} / 0)`);
     g.append(s1, s2, s3);
     defs.appendChild(g);
   }
@@ -170,9 +176,9 @@ export function stworzZarWojewodztwa(map: MlMap, przyrostek: string): ZarWojewod
   const gFala = el("radialGradient");
   gFala.setAttribute("id", `zar-woj-fala-${przyrostek}`);
   for (const [offset, kolor] of [
-    ["0%", "rgba(255,190,120,0)"],
-    ["54%", "rgba(255,172,92,0.10)"],
-    ["84%", "rgba(255,214,160,0.30)"],
+    ["0%", "rgb(var(--rgb-glow) / 0)"],
+    ["54%", "rgb(var(--rgb-glow) / 0.10)"],
+    ["84%", "rgb(var(--rgb-glow) / 0.30)"],
     ["96%", "rgba(255,244,222,0.44)"],
     ["100%", "rgba(255,255,255,0)"],
   ] as [string, string][]) {

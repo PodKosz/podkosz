@@ -257,8 +257,8 @@ export function RzutDoKosza({
       */
       const obrazek = pilkiRef.current[poziom.pilka];
       const swiatlo = ctx.createRadialGradient(s.x, s.y, PILKA_R * 0.5, s.x, s.y, PILKA_R * 1.9);
-      swiatlo.addColorStop(0, "rgba(255,140,50,.34)");
-      swiatlo.addColorStop(1, "rgba(255,140,50,0)");
+      swiatlo.addColorStop(0, "rgb(var(--rgb-flame) / .34)");
+      swiatlo.addColorStop(1, "rgb(var(--rgb-flame) / 0)");
       ctx.fillStyle = swiatlo;
       ctx.beginPath();
       ctx.arc(s.x, s.y, PILKA_R * 1.9, 0, Math.PI * 2);
@@ -270,7 +270,7 @@ export function RzutDoKosza({
       if (obrazek?.complete && obrazek.naturalWidth) {
         ctx.drawImage(obrazek, -PILKA_R, -PILKA_R, PILKA_R * 2, PILKA_R * 2);
       } else {
-        ctx.fillStyle = "#ff7a18";
+        ctx.fillStyle = "var(--color-flame)";
         ctx.beginPath();
         ctx.arc(0, 0, PILKA_R, 0, Math.PI * 2);
         ctx.fill();
@@ -482,9 +482,9 @@ function rysujKosz(ctx: CanvasRenderingContext2D, x: number, y: number) {
 
   /* obręcz - gruba kreska w barwie marki, z poświatą */
   ctx.save();
-  ctx.shadowColor = "rgba(255,90,20,.7)";
+  ctx.shadowColor = "rgb(var(--rgb-ember) / .7)";
   ctx.shadowBlur = 18;
-  ctx.strokeStyle = "#ff5a14";
+  ctx.strokeStyle = "var(--color-ember)";
   ctx.lineWidth = 9;
   ctx.lineCap = "round";
   ctx.beginPath();

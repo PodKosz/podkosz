@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signInWithGoogle, signOut } from "@/lib/auth";
 import { supabaseEnabled } from "@/lib/supabase/config";
+import { MOTYWY, useMotyw, ustawMotyw } from "@/lib/motyw";
 import { GoogleMark } from "./GoogleMark";
 
 export interface AuthUser {
@@ -82,6 +83,13 @@ export function AuthMenu({ user }: { user: AuthUser | null }) {
           >
             Ulubione boiska
           </Link>
+          {/*
+            Przełącznik motywu - na razie tylko dla administratora, do pokazów. Stoi pod
+            „Ulubionymi boiskami", bo to ustawienie widoku, nie pozycja nawigacji: nie
+            prowadzi nigdzie, zmienia to, na co się właśnie patrzy.
+          */}
+          {user.isAdmin && <PrzelacznikMotywu />}
+
           {user.isAdmin && (
             <Link
               href="/admin"
@@ -99,6 +107,36 @@ export function AuthMenu({ user }: { user: AuthUser | null }) {
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Trzy motywy w jednym rzędzie, jak segmentowany przełącznik.
+ *
+ * Zaznaczony segment dostaje gradient barwy głównej - a ta należy już do wybranego motywu,
+ * więc przełącznik pokazuje sobą to, co włącza. Przy „Coconaut" zaznaczenie jest zielone,
+ * przy „Polska" czerwone; nie trzeba dokładać próbek barw, bo cały interfejs jest próbką.
+ */
+function PrzelacznikMotywu() {
+  const motyw = useMotyw();
+
+  return (
+    <div className="px-3 pb-1.5 pt-2.5">
+      <p className="mb-2 text-[10px] uppercase tracking-[0.16em] text-faint">Motyw</p>
+      <div className="segmenty flex gap-1 p-1">
+        {MOTYWY.map((m) => (
+          <button
+            key={m.id}
+            onClick={() => ustawMotyw(m.id)}
+            data-on={motyw === m.id}
+            title={`Motyw ${m.nazwa}`}
+            className="segment flex-1 px-1 py-1.5 text-[11px] text-muted"
+          >
+            {m.nazwa}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
