@@ -28,6 +28,8 @@ export interface NewSubmission {
   lat: number;
   lng: number;
   accuracy?: number;
+  /** odległość pinezki od odczytu GPS - ślad obecności do oceny w panelu */
+  gpsOdleglosc?: number;
   name: string;
   city: string;
   voivodeship: string;
@@ -59,6 +61,7 @@ export async function submitCourt(input: NewSubmission): Promise<void> {
       lat: input.lat,
       lng: input.lng,
       accuracy: input.accuracy,
+      gpsOdleglosc: input.gpsOdleglosc,
       name: input.name,
       city: input.city,
       voivodeship: input.voivodeship,
@@ -81,7 +84,7 @@ export async function submitCourt(input: NewSubmission): Promise<void> {
   // ID nadajemy z góry: gość nie ma prawa odczytać własnego wiersza po INSERT.
   const id = crypto.randomUUID();
 
-  const { error } = await supabase.from("submissions").insert({
+  const wiersz = {
     id,
     status: "pending",
     author_id: user?.id ?? null,
@@ -93,6 +96,7 @@ export async function submitCourt(input: NewSubmission): Promise<void> {
     lat: input.lat,
     lng: input.lng,
     accuracy: input.accuracy ?? null,
+    gps_odleglosc_m: input.gpsOdleglosc ?? null,
     type: input.type,
     surface: input.surface,
     hoops: input.hoops,
@@ -101,7 +105,26 @@ export async function submitCourt(input: NewSubmission): Promise<void> {
     access: input.access,
     hours: input.hours,
     notes: input.notes,
-  });
+  };
+
+  let { error } = await supabase.from("submissions").insert(wiersz);
+
+  /*
+    Zapas na czas, w którym kod jest już wdrożony, a migracja `migration-slad-gps.sql`
+    jeszcze nie puszczona. Bez tego zgłoszenie leciałoby w błąd „column does not exist",
+    a człowiek tracił sześć zdjęć zrobionych na boisku - za coś, czego nie da mu się
+    wytłumaczyć. Ślad GPS jest wart tyle, że warto go zapisać, i za mało, żeby z jego
+    powodu przepadło zgłoszenie.
+
+    Do usunięcia, gdy kolumna stoi na produkcji. Wtedy ta ścieżka jest już tylko martwym
+    kodem czekającym, żeby zamaskować następny brak migracji.
+  */
+  if (error && /gps_odleglosc_m/i.test(error.message)) {
+    const bezSladu = { ...wiersz, gps_odleglosc_m: undefined };
+    delete bezSladu.gps_odleglosc_m;
+    ({ error } = await supabase.from("submissions").insert(bezSladu));
+  }
+
   if (error) {
     if (/limit zg/i.test(error.message)) {
       throw new Error(
@@ -177,6 +200,7 @@ function rowToSubmission(row: SubmissionRow): Submission {
     lat: row.lat,
     lng: row.lng,
     accuracy: row.accuracy ?? undefined,
+    gpsOdleglosc: row.gps_odleglosc_m ?? undefined,
     name: row.name,
     city: row.city,
     voivodeship: row.voivodeship,

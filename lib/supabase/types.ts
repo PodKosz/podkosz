@@ -51,6 +51,8 @@ export interface SubmissionRow {
   lat: number;
   lng: number;
   accuracy: number | null;
+  /** odległość pinezki od surowego odczytu GPS w metrach - null dla zgłoszeń sprzed pomiaru */
+  gps_odleglosc_m: number | null;
   type: CourtType;
   surface: Surface;
   hoops: number;

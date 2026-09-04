@@ -15,6 +15,7 @@ import {
 } from "@/lib/types";
 import { REJECT_REASONS, Submission, SubmissionStatus } from "@/lib/submissions";
 import { useQueue } from "@/lib/queue";
+import { ocenSlad } from "@/lib/obecnosc";
 import { supabaseEnabled } from "@/lib/supabase/config";
 import { signInWithGoogle } from "@/lib/auth";
 import { BasketApprovedBadge, PinIcon } from "../icons";
@@ -438,6 +439,7 @@ export function AdminPanel({ isAdmin, signedIn }: { isAdmin: boolean; signedIn: 
                     {s.author.email ? ` · ${s.author.email}` : ""}
                   </span>
                   <span>{new Date(s.createdAt).toLocaleString("pl-PL")}</span>
+                  <SladGps s={s} />
                 </span>
                 {s.rejectReason && (
                   <span className="mt-1 block text-[12px] text-ember">Powód: {s.rejectReason}</span>
@@ -595,6 +597,43 @@ function Header({
   );
 }
 
+/**
+ * Plakietka ze stanem śladu GPS - „ślad ok", „podejrzane" albo „bez śladu".
+ *
+ * Kreator wpuszcza dalej tylko wtedy, gdy pinezka stoi najwyżej 25 m od odczytu GPS,
+ * ale sprawdza to przeglądarka - a tej nie da się ufać. Skoro nie da się tego zablokować,
+ * to niech chociaż będzie widać: plakietka zestawia dokładność odczytu z odległością
+ * pinezki i mówi, czy liczby wyglądają jak z telefonu stojącego na boisku.
+ *
+ * „Podejrzane" nie znaczy „odrzuć". Znaczy „popatrz na to zgłoszenie uważniej niż na inne" -
+ * i o tym mówi podpowiedź pod kursorem, żeby po tygodniu nikt nie brał tego za wyrok.
+ */
+function SladGps({ s, pelny = false }: { s: Submission; pelny?: boolean }) {
+  const ocena = ocenSlad(s.accuracy, s.gpsOdleglosc);
+
+  const barwy =
+    ocena.stan === "ok"
+      ? "border-lime/40 bg-lime/10 text-lime"
+      : ocena.stan === "podejrzane"
+        ? "border-ember/50 bg-ember/10 text-ember"
+        : "border-hairline bg-white/5 text-faint";
+
+  const napis =
+    ocena.stan === "ok" ? "ślad ok" : ocena.stan === "podejrzane" ? "podejrzane" : "bez śladu";
+
+  return (
+    <span className={pelny ? "flex flex-wrap items-center gap-2" : "contents"}>
+      <span
+        title={ocena.powod}
+        className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] ${barwy}`}
+      >
+        {napis}
+      </span>
+      {pelny && <span className="text-[12px] leading-snug text-muted">{ocena.powod}</span>}
+    </span>
+  );
+}
+
 function Editor({
   s,
   onPatch,
@@ -745,6 +784,9 @@ function Editor({
             onChange={(e) => onPatch({ hoops: Number(e.target.value) })}
             className="w-full bg-transparent outline-none"
           />
+        </L>
+        <L label="Ślad GPS">
+          <SladGps s={s} pelny />
         </L>
         <L label="Współrzędne">
           <span className="flex gap-2">

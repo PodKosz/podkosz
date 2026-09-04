@@ -44,6 +44,7 @@ część nazwy pliku.
 | 25 | `migration-limit-boisk-dziennie.sql` | najwyżej dwa boiska dziennie, jedno województwo |
 | 26 | `migration-usuwanie-kont.sql` | usuwanie kont przez admina + archiwum na 180 dni |
 | 27 | `migration-panel-glowny.sql` | `panel_glowny()` — liczby do kokpitu |
+| 28 | `migration-slad-gps.sql` | odległość pinezki od odczytu GPS — ocena „ok / podejrzane" w kolejce |
 
 ## Nieuruchomione (świadomie)
 

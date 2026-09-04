@@ -231,6 +231,13 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
         lat: pos?.lat ?? 0,
         lng: pos?.lng ?? 0,
         accuracy: pos?.accuracy,
+        /*
+          Ślad obecności do panelu: ile pinezka odeszła od odczytu GPS. Liczymy to tu, a nie
+          w bazie, bo tylko przeglądarka zna surowy odczyt - do bazy idzie już poprawiona
+          pinezka. Wartość nie jest dowodem (da się ją podstawić razem z pozycją), ale
+          zestawiona z dokładnością pokazuje, czy liczby wyglądają jak z telefonu na miejscu.
+        */
+        gpsOdleglosc: obecnosc.ok ? Math.round(obecnosc.odleglosc) : undefined,
         name: form.name,
         city: form.city,
         voivodeship: form.voivodeship,

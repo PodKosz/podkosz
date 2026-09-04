@@ -31,6 +31,8 @@ export interface Submission {
   lat: number;
   lng: number;
   accuracy?: number;
+  /** odległość pinezki od odczytu GPS w metrach - ślad obecności, patrz lib/obecnosc.ts */
+  gpsOdleglosc?: number;
   name: string;
   city: string;
   voivodeship: string;

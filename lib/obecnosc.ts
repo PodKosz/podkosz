@@ -102,3 +102,85 @@ export function ocenObecnosc(
 
   return { ok: true, odleglosc };
 }
+
+/* ------------------------------------------------------------------ */
+/*  Ocena śladu GPS w panelu moderacji                                 */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Poniżej tylu metrów niepewności odczyt jest zbyt dobry, żeby być prawdziwy.
+ *
+ * Telefon z porządnym widokiem nieba podaje 4-8 m i to jest jego sufit; jednego metra
+ * nie osiąga sprzęt, który ludzie noszą w kieszeni. Za to podmiana pozycji w narzędziach
+ * deweloperskich wpisuje w to pole to, co się jej podało - najczęściej zero albo jedynkę,
+ * bo nikt nie zgaduje, jak wygląda wiarygodna niepewność.
+ */
+const PODEJRZANIE_DOKLADNY_M = 2;
+
+export type StanSladu = "ok" | "podejrzane" | "brak";
+
+export interface OcenaSladu {
+  stan: StanSladu;
+  /** jedno zdanie dla administratora - dlaczego taki stan */
+  powod: string;
+}
+
+/**
+ * Co panel ma powiedzieć o śladzie GPS zgłoszenia.
+ *
+ * To ocena, nie wyrok. Sprawdzenie obecności działa w przeglądarce, więc każdą liczbę,
+ * która tu przychodzi, można było podstawić - żadna wartość niczego nie dowodzi.
+ * Sensowne jest tylko jedno pytanie: czy te liczby wyglądają jak z telefonu stojącego
+ * na boisku, czy jak wpisane ręcznie. Odpowiedź „podejrzane" znaczy „popatrz uważniej",
+ * a nie „odrzuć".
+ *
+ * Brak danych jest osobnym stanem, nie podejrzeniem. Zgłoszenia sprzed wprowadzenia
+ * pomiaru obecności nie mają czego pokazać i nie ma w tym niczyjej winy.
+ */
+export function ocenSlad(dokladnosc?: number, odleglosc?: number): OcenaSladu {
+  if (dokladnosc === undefined && odleglosc === undefined) {
+    return {
+      stan: "brak",
+      powod: "Zgłoszenie bez śladu GPS - sprzed pomiaru obecności albo z pominięciem kreatora.",
+    };
+  }
+
+  if (dokladnosc === undefined) {
+    return { stan: "podejrzane", powod: "Brak dokładności odczytu, choć odległość jest zapisana." };
+  }
+
+  if (dokladnosc > MAKS_NIEPEWNOSC_M) {
+    return {
+      stan: "podejrzane",
+      powod: `Odczyt ±${Math.round(dokladnosc)} m - kreator takiego nie przepuszcza (próg ${MAKS_NIEPEWNOSC_M} m).`,
+    };
+  }
+
+  if (dokladnosc < PODEJRZANIE_DOKLADNY_M) {
+    return {
+      stan: "podejrzane",
+      powod: `Odczyt ±${Math.round(dokladnosc)} m jest zbyt dokładny na telefon - tak wygląda pozycja podstawiona.`,
+    };
+  }
+
+  if (odleglosc !== undefined && odleglosc > PROMIEN_OBECNOSCI_M) {
+    return {
+      stan: "podejrzane",
+      powod: `Pinezka ${Math.round(odleglosc)} m od odczytu - kreator puszcza najwyżej ${PROMIEN_OBECNOSCI_M} m.`,
+    };
+  }
+
+  if (odleglosc === undefined) {
+    return {
+      stan: "brak",
+      powod: "Jest dokładność, nie ma odległości pinezki - zgłoszenie sprzed pomiaru obecności.",
+    };
+  }
+
+  return {
+    stan: "ok",
+    powod:
+      `Odczyt ±${Math.round(dokladnosc)} m, pinezka ${Math.round(odleglosc)} m od niego - ` +
+      "liczby wyglądają jak z telefonu na miejscu.",
+  };
+}
