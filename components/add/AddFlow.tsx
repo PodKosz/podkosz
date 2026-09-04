@@ -17,6 +17,7 @@ import {
   VOIVODESHIPS,
 } from "@/lib/types";
 import { submitCourt } from "@/lib/queue";
+import { PROMIEN_OBECNOSCI_M, type OdczytGps, ocenObecnosc } from "@/lib/obecnosc";
 import { signInWithGoogle } from "@/lib/auth";
 import { supabaseEnabled } from "@/lib/supabase/config";
 import { reverseGeocode } from "@/lib/geo";
@@ -45,6 +46,15 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
   const [photos, setPhotos] = useState<Partial<Record<PhotoKind, string>>>({});
   const [skipped, setSkipped] = useState<PhotoKind[]>([]);
   const [pos, setPos] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null);
+  /**
+   * Surowy odczyt GPS - osobno od pinezki, i to jest sedno warunku obecności.
+   *
+   * Pinezka daje się poprawić ręcznie (stoi się przy siatce, a kosze są na środku płyty),
+   * więc gdyby to ona była jedynym śladem, sprawdzenie „czy jesteś na boisku" porównywałoby
+   * wpisane współrzędne same ze sobą. Odczyt zostaje taki, jaki przyszedł z przeglądarki,
+   * i to od niego liczymy dopuszczalne odejście.
+   */
+  const [odczyt, setOdczyt] = useState<OdczytGps | null>(null);
   /** boiska stojące w tym samym miejscu - ostrzeżenie przed dodaniem duplikatu */
   const [duplicates, setDuplicates] = useState<NearbyMatch[]>([]);
   const [gpsError, setGpsError] = useState<string | null>(null);
@@ -77,6 +87,8 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
     (s) => !photos[s.kind] && !skipped.includes(s.kind)
   );
   const shotsComplete = missing.length === 0;
+  /** czy wolno przejść dalej z lokalizacją - patrz `lib/obecnosc.ts` */
+  const obecnosc = ocenObecnosc(odczyt, pos);
   const extrasTaken = EXTRA_PHOTO_STEPS.filter((s) => photos[s.kind]);
   const nextExtra = EXTRA_PHOTO_STEPS.find((s) => !photos[s.kind]);
 
@@ -139,11 +151,19 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
   const askGps = () => {
     setGpsError(null);
     if (!navigator.geolocation) {
-      setGpsError("Twoja przeglądarka nie udostępnia lokalizacji.");
+      setGpsError(
+        "Twoja przeglądarka nie udostępnia lokalizacji, a bez niej nie da się dodać boiska. " +
+          "Otwórz kreator na telefonie, stojąc na boisku."
+      );
       return;
     }
     navigator.geolocation.getCurrentPosition(
       (p) => {
+        setOdczyt({
+          lat: p.coords.latitude,
+          lng: p.coords.longitude,
+          dokladnosc: p.coords.accuracy,
+        });
         setPos({
           lat: p.coords.latitude,
           lng: p.coords.longitude,
@@ -152,7 +172,11 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
         void fillPlace(p.coords.latitude, p.coords.longitude);
         void checkDuplicates(p.coords.latitude, p.coords.longitude);
       },
-      () => setGpsError("Nie udało się pobrać lokalizacji. Wpisz współrzędne ręcznie."),
+      () =>
+        setGpsError(
+          "Nie udało się pobrać lokalizacji. Bez niej nie da się dodać boiska - sprawdź, " +
+            "czy przeglądarka ma zgodę na dostęp do lokalizacji, i spróbuj ponownie."
+        ),
       { enableHighAccuracy: true, timeout: 12000 }
     );
   };
@@ -252,6 +276,18 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
             ekranie schemat i podpowiedź, jak je ustawić. Potem telefon przypina pinezkę z GPS, a my
             sprawdzamy zgłoszenie i publikujemy. Konto nie jest wymagane - ale z kontem dostaniesz
             powiadomienie o publikacji i punkty w rankingu.
+          </p>
+
+          {/*
+            Warunek obecności mówimy na wstępie, a sprawdzamy dopiero w kroku z lokalizacją.
+            Kolejność kroków jest z innego powodu (zdjęcia najpierw, bo po nie się przyszło),
+            ale nikt nie powinien zrobić sześciu kadrów i dopiero wtedy dowiedzieć się, że
+            z domu tego nie wyśle.
+          */}
+          <p className="mt-4 rounded-2xl border border-flame/35 bg-flame/10 px-4 py-3 text-[14px] leading-relaxed text-glow">
+            Boisko dodaje się na miejscu. Kreator poprosi o lokalizację i sprawdzi, czy stoisz
+            nie dalej niż {PROMIEN_OBECNOSCI_M} m od pinezki - inaczej zgłoszenia nie da się
+            wysłać. Weź telefon na boisko.
           </p>
 
           {/*
@@ -494,6 +530,8 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
           <h2 className="text-[24px] font-semibold tracking-tight">Gdzie stoisz?</h2>
           <p className="mt-2 text-[14px] text-muted">
             Stań na środku boiska i pobierz lokalizację - pinezka trafi dokładnie tam, gdzie jesteś.
+            Boisko dodaje się na miejscu, więc pinezka nie może odejść od Ciebie dalej niż
+            o {PROMIEN_OBECNOSCI_M} m.
           </p>
 
           <div className="glass mt-6 rounded-[24px] p-6 text-center">
@@ -505,10 +543,24 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
                 <p className="mt-4 text-[20px] font-semibold tabular-nums">
                   {pos.lat.toFixed(5)}, {pos.lng.toFixed(5)}
                 </p>
-                <p className="mt-1 text-[13px] text-muted">
-                  dokładność ±{pos.accuracy ?? "?"} m
-                  {(pos.accuracy ?? 0) > 30 && " - spróbuj ponownie na otwartej przestrzeni"}
-                </p>
+                <p className="mt-1 text-[13px] text-muted">dokładność ±{pos.accuracy ?? "?"} m</p>
+
+                {/*
+                  Stan obecności czytamy tu wprost, bo to on decyduje o przycisku „Dalej".
+                  Zielone potwierdzenie jest równie ważne jak odmowa: bez niego człowiek nie
+                  wie, czy stoi wystarczająco blisko, dopóki nie spróbuje przejść dalej.
+                */}
+                {obecnosc.ok ? (
+                  <p className="mt-2 text-[13px] font-medium text-lime">
+                    {obecnosc.odleglosc < 1
+                      ? "Jesteś na pinezce"
+                      : `Jesteś ${Math.round(obecnosc.odleglosc)} m od pinezki`}{" "}
+                    - możesz dodać to boisko.
+                  </p>
+                ) : (
+                  <p className="mt-2 text-[13px] leading-snug text-ember">{obecnosc.komunikat}</p>
+                )}
+
                 {placeNote && <p className="mt-1 text-[13px] text-flame">{placeNote}</p>}
                 <button
                   onClick={askGps}
@@ -563,7 +615,13 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
             </div>
           )}
 
-          {(gpsError || pos) && (
+          {/*
+            Pola ze współrzędnymi zostają, ale wyłącznie jako poprawka odczytu - stąd warunek
+            na `odczyt`, a nie na `gpsError`. Wcześniej pokazywały się także wtedy, gdy GPS
+            w ogóle nie odpowiedział, i były wtedy zwykłą furtką: dwie liczby przepisane
+            z mapy w drugiej karcie wystarczały, żeby dodać boisko z domu.
+          */}
+          {odczyt && (
             <div className="mt-4 grid grid-cols-2 gap-3">
               <Field label="Szerokość (lat)">
                 <input
@@ -594,10 +652,15 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
             </div>
           )}
 
+          {/* przy odsuniętej pinezce powód stoi też tutaj - inaczej wygaszony przycisk milczy */}
+          {odczyt && !obecnosc.ok && obecnosc.powod === "za-daleko" && (
+            <p className="mt-3 text-[13px] leading-snug text-ember">{obecnosc.komunikat}</p>
+          )}
+
           <Nav
             onBack={() => setStage("shots")}
             onNext={() => setStage("details")}
-            nextDisabled={!pos}
+            nextDisabled={!obecnosc.ok}
             nextLabel="Dalej - szczegóły"
           />
         </section>
