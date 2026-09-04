@@ -257,8 +257,8 @@ export function RzutDoKosza({
       */
       const obrazek = pilkiRef.current[poziom.pilka];
       const swiatlo = ctx.createRadialGradient(s.x, s.y, PILKA_R * 0.5, s.x, s.y, PILKA_R * 1.9);
-      swiatlo.addColorStop(0, "rgb(var(--rgb-flame) / .34)");
-      swiatlo.addColorStop(1, "rgb(var(--rgb-flame) / 0)");
+      swiatlo.addColorStop(0, barwaMotywu("--rgb-flame", "rgba(255,122,24,.34)", 0.34));
+      swiatlo.addColorStop(1, barwaMotywu("--rgb-flame", "rgba(255,122,24,0)", 0));
       ctx.fillStyle = swiatlo;
       ctx.beginPath();
       ctx.arc(s.x, s.y, PILKA_R * 1.9, 0, Math.PI * 2);
@@ -270,7 +270,7 @@ export function RzutDoKosza({
       if (obrazek?.complete && obrazek.naturalWidth) {
         ctx.drawImage(obrazek, -PILKA_R, -PILKA_R, PILKA_R * 2, PILKA_R * 2);
       } else {
-        ctx.fillStyle = "var(--color-flame)";
+        ctx.fillStyle = barwaMotywu("--color-flame", "#ff7a18");
         ctx.beginPath();
         ctx.arc(0, 0, PILKA_R, 0, Math.PI * 2);
         ctx.fill();
@@ -459,6 +459,27 @@ function resetPilki(s: Stan) {
  * Rysunek trzyma się języka strony - włosowa kreska, pomarańcz na obręczy, nic
  * wypełnionego. Obręcz jest jedynym mocnym akcentem w kadrze, bo to jedyny cel.
  */
+/**
+ * Barwa z motywu, wyliczona na liczby.
+ *
+ * Kanwa 2D nie czyta arkusza: `ctx.fillStyle = "var(--color-flame)"` nie jest błędem,
+ * jest ciszą - przeglądarka odrzuca nierozpoznaną wartość i zostawia poprzednią barwę.
+ * Efekt trudny do wyśledzenia, bo nic się nie wywala, tylko piłka nagle maluje się tym,
+ * czym malowano przed nią. Dlatego tu, w odróżnieniu od całej reszty serwisu, motyw
+ * odczytujemy wprost ze stylu wyliczonego.
+ *
+ * `alfa` dokładamy osobno, bo zmienne trzymają same składowe RGB - z gotowej barwy nie da
+ * się zrobić „to samo, ale 34%".
+ */
+function barwaMotywu(nazwa: string, awaryjna: string, alfa?: number) {
+  const v =
+    typeof window === "undefined"
+      ? ""
+      : getComputedStyle(document.documentElement).getPropertyValue(nazwa).trim();
+  if (!v) return awaryjna;
+  return alfa === undefined ? v : `rgb(${v} / ${alfa})`;
+}
+
 function rysujKosz(ctx: CanvasRenderingContext2D, x: number, y: number) {
   const lewa = x - TABLICA_SZER / 2;
   const gora = y - TABLICA_WYS;
@@ -482,9 +503,9 @@ function rysujKosz(ctx: CanvasRenderingContext2D, x: number, y: number) {
 
   /* obręcz - gruba kreska w barwie marki, z poświatą */
   ctx.save();
-  ctx.shadowColor = "rgb(var(--rgb-ember) / .7)";
+  ctx.shadowColor = barwaMotywu("--rgb-ember", "rgba(255,77,10,.7)", 0.7);
   ctx.shadowBlur = 18;
-  ctx.strokeStyle = "var(--color-ember)";
+  ctx.strokeStyle = barwaMotywu("--color-ember", "#ff4d0a");
   ctx.lineWidth = 9;
   ctx.lineCap = "round";
   ctx.beginPath();

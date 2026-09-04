@@ -10,10 +10,42 @@ import type { LeadPoint } from "@/lib/leads";
 import { HoverCard } from "./HoverCard";
 import { podkladMapy } from "@/lib/podklad";
 import { ZarWojewodztwa, bboxWojewodztwa, stworzZarWojewodztwa } from "@/lib/zarWojewodztwa";
+import { useMotyw } from "@/lib/motyw";
 import { FiltrSzkla } from "./FiltrSzkla";
 import { czytajWidok, zapiszWidok } from "@/lib/adres";
 import { fetchCheckinyDzisiaj } from "@/lib/checkins";
 import { MIEJSCA_GRY } from "@/lib/minigra";
+
+/**
+ * Barwy dla warstw MapLibre - jedyne miejsce w serwisie, gdzie motyw NIE może iść przez
+ * zmienne CSS.
+ *
+ * MapLibre nie czyta arkusza. Barwy z definicji stylu parsuje sam, własnym parserem, i
+ * `var(--color-flame)` nie jest dla niego kolorem - jest błędem, po którym cały styl idzie
+ * do kosza razem z mapą. Dlatego warstwy dostają gotowe wartości, a motyw dokłada je
+ * później: efekt niżej odczytuje wyliczone zmienne z arkusza i przestawia je przez
+ * `setPaintProperty`.
+ *
+ * Wartości poniżej to motyw „classic" i zarazem zabezpieczenie: gdyby odczyt zmiennych
+ * zawiódł, mapa ma czym się pomalować.
+ */
+const BARWY_MAPY = { flame: "#ff7a18", glow: "#ffb25c" };
+
+/** Warstwy mapy, które biorą barwę z motywu: identyfikator i malowana właściwość. */
+const WARSTWY_MOTYWU: [string, "fill-color" | "line-color" | "circle-color", keyof typeof BARWY_MAPY][] = [
+  ["woj-fill", "fill-color", "flame"],
+  ["woj-active", "fill-color", "flame"],
+  ["woj-line", "line-color", "glow"],
+  ["boiska-klastry", "circle-color", "flame"],
+  ["boiska-punkty", "circle-color", "flame"],
+];
+
+/** Wyliczona wartość zmiennej z arkusza; puste zwraca wartość zapasową. */
+function zeStylu(nazwa: string, awaryjna: string) {
+  if (typeof window === "undefined") return awaryjna;
+  const v = getComputedStyle(document.documentElement).getPropertyValue(nazwa).trim();
+  return v || awaryjna;
+}
 
 const POLAND_BOUNDS: [number, number, number, number] = [13.9, 48.9, 24.3, 55.0];
 
@@ -86,7 +118,7 @@ const STYLE: StyleSpecification = {
       id: "woj-fill",
       type: "fill",
       source: "woj",
-      paint: { "fill-color": "var(--color-flame)", "fill-opacity": 0.06 },
+      paint: { "fill-color": BARWY_MAPY.flame, "fill-opacity": 0.06 },
     },
     {
       id: "woj-active",
@@ -99,14 +131,14 @@ const STYLE: StyleSpecification = {
         a jednocześnie na tyle widoczna, że podświetlenie działa nawet wtedy, gdy
         przeglądarka nie poradzi sobie z warstwą SVG.
       */
-      paint: { "fill-color": "var(--color-flame)", "fill-opacity": 0.05 },
+      paint: { "fill-color": BARWY_MAPY.flame, "fill-opacity": 0.05 },
     },
     {
       id: "woj-line",
       type: "line",
       source: "woj",
       paint: {
-        "line-color": "var(--color-glow)",
+        "line-color": BARWY_MAPY.glow,
         "line-width": 0.8,
         "line-opacity": 0.35,
       },
@@ -207,6 +239,8 @@ export function MapView({
       window.matchMedia("(hover: none), (pointer: coarse)").matches
   );
   const clearCardRef = useRef(() => undefined as void);
+  /** wybrany motyw - warstwy mapy trzeba przy jego zmianie przemalować ręcznie */
+  const motyw = useMotyw();
   /** warstwa z żywym gradientem w obrysie województwa */
   const zarRef = useRef<ZarWojewodztwa | null>(null);
   /**
@@ -723,7 +757,7 @@ export function MapView({
         source: "boiska",
         filter: ["has", "point_count"],
         paint: {
-          "circle-color": "var(--color-flame)",
+          "circle-color": BARWY_MAPY.flame,
           "circle-opacity": 0.9,
           "circle-radius": ["step", ["get", "point_count"], 16, 10, 21, 50, 27, 200, 34],
           "circle-stroke-width": 2,
@@ -754,7 +788,7 @@ export function MapView({
         filter: ["!", ["has", "point_count"]],
         paint: {
           "circle-radius": 6,
-          "circle-color": "var(--color-flame)",
+          "circle-color": BARWY_MAPY.flame,
           "circle-stroke-width": 1.4,
           "circle-stroke-color": "rgba(8,8,11,0.9)",
         },
@@ -898,6 +932,32 @@ export function MapView({
     /* świeży wybór w panelu ma świecić także wtedy, gdy z tego samego regionu się wyszło */
     setPorzuconeWoj(null);
   }
+
+  /*
+    Barwy warstw mapy pod aktualny motyw.
+    
+    MapLibre trzyma własną kopię stylu i nie wie nic o arkuszu, więc przy zmianie skórki
+    trzeba mu je podać wprost. Odczytujemy wyliczone zmienne (czyli już po zadziałaniu
+    `data-motyw`) i przestawiamy malowanie warstwa po warstwie.
+
+    Efekt zależy od `courts`, choć barw z nich nie bierze: warstwy `boiska-*` powstają
+    dopiero razem z danymi, a `setPaintProperty` na nieistniejącej warstwie rzuca wyjątkiem.
+    Stąd też `getLayer` przed każdym wpisem - to nie ostrożność na zapas, tylko jedyny
+    sposób, żeby przemalowanie nie zależało od kolejności efektów.
+  */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+
+    const barwy = {
+      flame: zeStylu("--color-flame", BARWY_MAPY.flame),
+      glow: zeStylu("--color-glow", BARWY_MAPY.glow),
+    };
+
+    for (const [warstwa, wlasciwosc, barwa] of WARSTWY_MOTYWU) {
+      if (map.getLayer(warstwa)) map.setPaintProperty(warstwa, wlasciwosc, barwy[barwa]);
+    }
+  }, [motyw, ready, courts]);
 
   /* ---- podświetlenie województwa ---- */
   useEffect(() => {
