@@ -9,15 +9,34 @@
  * gry potrzebuje nazw i opisów, a baza kluczy `miejsce`.
  */
 
-export type IdMiejsca = "venice" | "manhattan";
+export type IdMiejsca = "venice" | "manhattan" | "chicago";
+
+/**
+ * Która gra stoi pod pinezką.
+ *
+ * Dwie różne gry, nie dwa poziomy jednej: „rzut" mierzy celność, „kozłowanie" rytm.
+ * Rodzaj wybiera komponent planszy i tekst na ekranie tytułowym - poza tym reszta
+ * (pełny ekran, tablica wyników, zapis rekordu) jest wspólna, bo to ta sama oprawa.
+ */
+export type RodzajGry = "rzut" | "kozlowanie";
+
+export const NAZWY_GIER: Record<RodzajGry, { nazwa: string; jak: string }> = {
+  rzut: {
+    nazwa: "Rzut do kosza",
+    jak: "Pociągnij od piłki w stronę kosza - kierunek to kierunek rzutu, długość to siła. Kropki pokazują tor.",
+  },
+  kozlowanie: {
+    nazwa: "Kozłowanie",
+    jak: "Klikaj albo stukaj w ekran w rytm piłki - liczy się uderzenie w chwili, gdy dochodzi do ręki. Masz minutę.",
+  },
+};
 
 export interface MiejsceGry {
   id: IdMiejsca;
+  rodzaj: RodzajGry;
   slug: string;
   nazwa: string;
   miasto: string;
-  /* podpis na pinezce i w nagłówku podstrony */
-  opis: string;
   lat: number;
   lng: number;
 }
@@ -25,23 +44,35 @@ export interface MiejsceGry {
 export const MIEJSCA_GRY: MiejsceGry[] = [
   {
     id: "venice",
+    rodzaj: "rzut",
     slug: "venice-beach",
     nazwa: "Venice Beach",
     miasto: "Los Angeles",
-    opis: "Najsłynniejszy asfalt świata, dwa kroki od oceanu.",
     lat: 33.98663,
     lng: -118.47281,
   },
   {
     id: "manhattan",
+    rodzaj: "rzut",
     slug: "manhattan",
     nazwa: "Manhattan",
     miasto: "Nowy Jork",
-    opis: "Kosz między kamienicami, w cieniu mostu.",
     lat: 40.699555,
     lng: -73.999078,
   },
+  {
+    id: "chicago",
+    rodzaj: "kozlowanie",
+    slug: "chicago",
+    nazwa: "Chicago",
+    miasto: "Chicago",
+    lat: 41.880706,
+    lng: -87.674225,
+  },
 ];
+
+/** Ile sekund trwa runda kozłowania. */
+export const CZAS_KOZLOWANIA = 60;
 
 export function miejsceZeSlugu(slug: string): MiejsceGry | null {
   return MIEJSCA_GRY.find((m) => m.slug === slug) ?? null;

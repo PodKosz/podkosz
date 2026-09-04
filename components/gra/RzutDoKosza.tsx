@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { MAKS_SERIA, poziomDlaSerii, type IdMiejsca } from "@/lib/minigra";
+import { barwa, obwod, okno, rysujLicznik, rysujPilke, zaokraglonaSciezka } from "./rysunki";
 import {
   KOSZ_Y,
   KROK,
@@ -133,14 +134,11 @@ interface Stan {
 
 export function RzutDoKosza({
   miejsce,
-  rekord,
   zaczeta,
   onWynik,
   onSeria,
 }: {
   miejsce: IdMiejsca;
-  /** najlepszy wynik gracza w tym miejscu - stoi w tle planszy */
-  rekord: number;
   /** dopóki false, plansza jest zamglona i nie przyjmuje rzutów (ekran tytułowy) */
   zaczeta: boolean;
   /** po zakończonej serii - odświeża ranking na stronie */
@@ -154,16 +152,6 @@ export function RzutDoKosza({
 
   const sesja = useSesja();
   const zalogowany = Boolean(sesja?.user);
-
-  /*
-    Rekord czytamy przez ref, nie przez stan. Liczba stoi w tle planszy, czyli na kanwie -
-    a pętla rysująca i tak działa poza Reactem. Trzymanie go dodatkowo w stanie tego
-    komponentu dawałoby drugie źródło prawdy obok `EkranGry`, który już nim zarządza.
-  */
-  const rekordRef = useRef(rekord);
-  useEffect(() => {
-    rekordRef.current = rekord;
-  }, [rekord]);
 
   /*
     Rysowanie kosza startuje w chwili zniknięcia ekranu tytułowego, nie przy montowaniu:
@@ -295,7 +283,7 @@ export function RzutDoKosza({
       ctx.setTransform(skala, 0, 0, skala, 0, 0);
       ctx.clearRect(0, 0, szer, WYS);
 
-      rysujRekord(ctx, szer, rekordRef.current);
+      rysujLicznik(ctx, szer, WYS, s.seria, Math.max(0, 1 - (s.czas - s.blysk) / 0.45));
       /*
         Siatka rysuje się PO piłce, żeby przy przelocie przednie nitki przechodziły przed
         nią. Odwrotna kolejność zasłaniała siatkę piłką dokładnie w tej jednej chwili,
@@ -303,7 +291,15 @@ export function RzutDoKosza({
       */
       rysujKosz(ctx, koszX, koszY, s);
       if (s.faza === "celowanie") rysujTor(ctx, s, szer, koszX, koszY);
-      rysujPilke(ctx, s, poziom.pilka);
+      rysujPilke(ctx, {
+        x: s.x,
+        y: s.y,
+        /* piłka pojawia się z lekkim przeskalowaniem - stąd „wjazd" po dorysowaniu kosza */
+        r: PILKA_R * (0.7 + 0.3 * s.pilka),
+        obrot: s.obrot,
+        alfa: s.pilka,
+        stopien: poziom.pilka,
+      });
       rysujSiatke(ctx, s);
 
       klatka = requestAnimationFrame(petla);
@@ -443,47 +439,6 @@ function ustawPilke(s: Stan, szer: number) {
  * Kanwa 2D nie czyta arkusza: `ctx.fillStyle = "var(--color-flame)"` nie jest błędem,
  * jest ciszą - przeglądarka odrzuca nierozpoznaną wartość i zostawia poprzednią barwę.
  */
-/*
-  Wartości zapamiętujemy do czasu zmiany motywu. Rysunek pyta o kilkanaście zmiennych
-  w każdej klatce, a `getComputedStyle` wymusza przeliczenie stylu - przy sześćdziesięciu
-  klatkach to prawie tysiąc takich przeliczeń na sekundę za odpowiedzi, które się nie
-  zmieniają. Pamięć czyścimy po atrybucie `data-motyw`, bo tylko on je zmienia.
-*/
-const pamiecBarw = new Map<string, string>();
-let pamiecMotywu: string | null = null;
-
-function barwa(nazwa: string, awaryjna: string, alfa?: number) {
-  if (typeof window === "undefined") return awaryjna;
-
-  const motyw = document.documentElement.dataset.motyw ?? "";
-  if (motyw !== pamiecMotywu) {
-    pamiecBarw.clear();
-    pamiecMotywu = motyw;
-  }
-
-  let v = pamiecBarw.get(nazwa);
-  if (v === undefined) {
-    v = getComputedStyle(document.documentElement).getPropertyValue(nazwa).trim();
-    pamiecBarw.set(nazwa, v);
-  }
-
-  if (!v) return awaryjna;
-  return alfa === undefined ? v : `rgb(${v} / ${alfa})`;
-}
-
-/** Rekord jako wydrążona liczba w tle - ten sam zabieg co numery w rankingu. */
-function rysujRekord(ctx: CanvasRenderingContext2D, szer: number, rekord: number) {
-  if (rekord <= 0) return;
-  ctx.save();
-  ctx.font = "800 340px system-ui, -apple-system, sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = barwa("--rgb-szyba", "rgba(255,255,255,.07)", 0.07);
-  ctx.strokeText(String(rekord), szer / 2, WYS * 0.62);
-  ctx.restore();
-}
-
 /**
  * Kosz: tablica, kwadrat celowniczy, mocowanie, obręcz w perspektywie i siatka.
  *
@@ -576,63 +531,6 @@ function rysujKosz(ctx: CanvasRenderingContext2D, x: number, y: number, s: Stan)
   }
 
   ctx.restore();
-}
-
-/** Ułamek postępu w zadanym oknie - 0 przed, 1 po, liniowo w środku. */
-function okno(p: number, od: number, do_: number) {
-  if (p <= od) return 0;
-  if (p >= do_) return 1;
-  return (p - od) / (do_ - od);
-}
-
-/** Ścieżka zaokrąglonego prostokąta - bez rysowania, do wypełnienia albo obrysu. */
-function zaokraglonaSciezka(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number
-) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);
-  ctx.closePath();
-}
-
-/** Obwód prostokąta rysowany częściowo, zaczynając od górnego lewego narożnika. */
-function obwod(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  post: number
-) {
-  if (post <= 0) return;
-  const boki: [number, number, number, number][] = [
-    [x, y, x + w, y],
-    [x + w, y, x + w, y + h],
-    [x + w, y + h, x, y + h],
-    [x, y + h, x, y],
-  ];
-  const dlugosci = boki.map(([ax, ay, bx, by]) => Math.hypot(bx - ax, by - ay));
-  const razem = dlugosci.reduce((a, b) => a + b, 0);
-  let doNarysowania = razem * post;
-
-  ctx.beginPath();
-  for (let i = 0; i < boki.length && doNarysowania > 0; i++) {
-    const [ax, ay, bx, by] = boki[i];
-    const dl = dlugosci[i];
-    const u = Math.min(1, doNarysowania / dl);
-    ctx.moveTo(ax, ay);
-    ctx.lineTo(ax + (bx - ax) * u, ay + (by - ay) * u);
-    doNarysowania -= dl;
-  }
-  ctx.stroke();
 }
 
 /**
@@ -747,146 +645,4 @@ function rysujTor(
   ctx.stroke();
 
   ctx.restore();
-}
-
-/**
- * Piłka rysowana kreską i gradientem, bez pliku graficznego.
- *
- * Wcześniej piłką był obrazek z katalogu odznaczeń - ten sam webp, który stoi na profilu
- * przy stopniach. Miało to sens jako skrót, ale kosztowało trzy rzeczy: cztery pobrania
- * przy wejściu do gry, brak jakiegokolwiek światła zgodnego ze sceną i - najgorsze -
- * niewidoczny obrót. Obrócony obrazek piłki wygląda jak obrócony obrazek, bo szwy na nim
- * są namalowane razem z odblaskiem: kręci się cała fotografia, a nie kula.
- *
- * Teraz piłka jest złożona z czterech warstw i to ta kolejność sprzedaje bryłę:
- *
- *   1. ŁUNA pod piłką - w barwie stopnia, żeby na ciemnym tle nie ginęła.
- *   2. KORPUS - gradient promieniowy z ogniskiem przesuniętym w górę i w lewo: jasny
- *      grzbiet, nasycony środek, ciemna krawędź.
- *   3. SZWY - obracane razem z piłką. Cztery kreski w układzie prawdziwej piłki:
- *      równik, południk i dwie klamry po bokach.
- *   4. ODBLASK - NIEOBRACANY. To jedyna warstwa, która stoi w miejscu, i właśnie dlatego
- *      wszystko działa: światło zostaje tam, gdzie było, a kula pod nim się kręci.
- *      Gdyby odblask kręcił się razem ze szwami, wróciłby efekt obracanego obrazka.
- *
- * Barwy idą ze stopni odznaczeń (`--zar-*`, `--iskra-*`, `--plomien-*`, `--niebieski-*`)
- * i to jedyne miejsce w grze, gdzie barwa nie należy do motywu. Powód jest ten sam, co
- * przy samych odznaczeniach: kolor jest tu TREŚCIĄ - mówi, jak długa jest seria. Piłka
- * w barwie motywu wyglądałaby spójniej i nie mówiłaby nic.
- */
-const PALETY: Record<string, [string, string, string]> = {
-  zar: ["#ffc79a", "#ff7a2e", "#6e2405"],
-  iskra: ["#ffe9a8", "#f0b53c", "#6b4204"],
-  plomien: ["#ffa392", "#ec2f2a", "#5c060c"],
-  niebieski: ["#d6f2ff", "#3f9bff", "#0b2170"],
-};
-
-function paletaPilki(nazwa: string): [string, string, string] {
-  const zapas = PALETY[nazwa] ?? PALETY.zar;
-  return [
-    barwa(`--${nazwa}-a`, zapas[0]),
-    barwa(`--${nazwa}-b`, zapas[1]),
-    barwa(`--${nazwa}-c`, zapas[2]),
-  ];
-}
-
-function rysujPilke(ctx: CanvasRenderingContext2D, s: Stan, nazwaPilki: string) {
-  if (s.pilka <= 0) return;
-
-  /* piłka pojawia się z lekkim przeskalowaniem - stąd „wjazd" po dorysowaniu kosza */
-  const skala = 0.7 + 0.3 * s.pilka;
-  const r = PILKA_R * skala;
-  const [jasna, srodek, ciemna] = paletaPilki(nazwaPilki);
-
-  ctx.save();
-  ctx.globalAlpha = s.pilka;
-
-  /* --- 1. łuna pod piłką --- */
-  const luna = ctx.createRadialGradient(s.x, s.y, r * 0.6, s.x, s.y, r * 2.1);
-  luna.addColorStop(0, przezroczysta(srodek, 0.3));
-  luna.addColorStop(1, przezroczysta(srodek, 0));
-  ctx.fillStyle = luna;
-  ctx.beginPath();
-  ctx.arc(s.x, s.y, r * 2.1, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.translate(s.x, s.y);
-
-  /* --- 2. korpus --- */
-  const korpus = ctx.createRadialGradient(-r * 0.34, -r * 0.4, r * 0.08, 0, 0, r * 1.06);
-  korpus.addColorStop(0, jasna);
-  korpus.addColorStop(0.42, srodek);
-  korpus.addColorStop(1, ciemna);
-  ctx.fillStyle = korpus;
-  ctx.beginPath();
-  ctx.arc(0, 0, r, 0, Math.PI * 2);
-  ctx.fill();
-
-  /* krawędź: ciemny pierścień od środka, żeby kula miała obrys bez rysowania obrysu */
-  const brzeg = ctx.createRadialGradient(0, 0, r * 0.72, 0, 0, r);
-  brzeg.addColorStop(0, przezroczysta(ciemna, 0));
-  brzeg.addColorStop(1, przezroczysta(ciemna, 0.55));
-  ctx.fillStyle = brzeg;
-  ctx.beginPath();
-  ctx.arc(0, 0, r, 0, Math.PI * 2);
-  ctx.fill();
-
-  /* --- 3. szwy, obracane razem z piłką --- */
-  ctx.save();
-  ctx.rotate(s.obrot);
-  /*
-    Szwy przycinamy do koła piłki. Bez przycięcia klamry po bokach wychodzą za krawędź
-    przy każdym obrocie, w którym elipsa nie leży dokładnie w osi - i piłka dostaje wąsy.
-  */
-  ctx.beginPath();
-  ctx.arc(0, 0, r * 0.99, 0, Math.PI * 2);
-  ctx.clip();
-
-  ctx.strokeStyle = przezroczysta(ciemna, 0.72);
-  ctx.lineWidth = Math.max(1.2, r * 0.085);
-  ctx.lineCap = "round";
-
-  /* równik i południk */
-  ctx.beginPath();
-  ctx.moveTo(-r, 0);
-  ctx.lineTo(r, 0);
-  ctx.moveTo(0, -r);
-  ctx.lineTo(0, r);
-  ctx.stroke();
-
-  /* dwie klamry - elipsa o zwężonej poziomej półosi daje obie naraz */
-  ctx.beginPath();
-  ctx.ellipse(0, 0, r * 0.6, r, 0, 0, Math.PI * 2);
-  ctx.stroke();
-
-  ctx.restore();
-
-  /* --- 4. odblask, nieobracany --- */
-  const blask = ctx.createRadialGradient(-r * 0.4, -r * 0.46, 0, -r * 0.4, -r * 0.46, r * 0.62);
-  blask.addColorStop(0, "rgba(255,255,255,.5)");
-  blask.addColorStop(0.55, "rgba(255,255,255,.1)");
-  blask.addColorStop(1, "rgba(255,255,255,0)");
-  ctx.fillStyle = blask;
-  ctx.beginPath();
-  ctx.arc(0, 0, r, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.restore();
-}
-
-/**
- * Barwa z dodaną przezroczystością.
- *
- * Zmienne stopni trzymają gotowe barwy w zapisie szesnastkowym, nie składowe RGB, więc
- * nie da się z nich zrobić „to samo, ale 30%" tak, jak z `--rgb-*`. Doklejamy więc dwie
- * cyfry kanału alfa - to jedyny sposób, który działa dla obu zapisów, jakie mogą tu
- * przyjść: `#rrggbb` z arkusza i wartość zapasowa z tego pliku.
- */
-function przezroczysta(kolor: string, alfa: number) {
-  const a = Math.round(Math.max(0, Math.min(1, alfa)) * 255)
-    .toString(16)
-    .padStart(2, "0");
-  if (/^#[0-9a-f]{6}$/i.test(kolor)) return `${kolor}${a}`;
-  /* nieznany zapis - lepiej oddać barwę bez alfy niż nic nie narysować */
-  return alfa <= 0.02 ? "transparent" : kolor;
 }

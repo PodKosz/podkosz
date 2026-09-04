@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { EkranGry, type WpisRankingu } from "@/components/gra/EkranGry";
-import { MIEJSCA_GRY, miejsceZeSlugu } from "@/lib/minigra";
+import { MIEJSCA_GRY, NAZWY_GIER, miejsceZeSlugu } from "@/lib/minigra";
 import { SITE_NAME } from "@/lib/site";
 import { supabasePublic } from "@/lib/supabase/publiczny";
 
@@ -32,10 +32,10 @@ export async function generateMetadata({
   const m = miejsceZeSlugu(miejsce);
   if (!m) return { title: SITE_NAME };
 
-  const title = `Rzut do kosza - ${m.nazwa}`;
+  const title = `Minigra PodKosz - ${m.nazwa}`;
   return {
     title,
-    description: `Minigra ukryta na mapie PodKosza: rzucaj do kosza na ${m.nazwa} i wbij się na tablicę najdłuższych serii.`,
+    description: `Minigra ukryta na mapie PodKosza (${m.nazwa}, ${m.miasto}). ${NAZWY_GIER[m.rodzaj].jak}`,
     alternates: { canonical: `/gra/${m.slug}` },
     /* easter egg nie ma po co siedzieć w wynikach wyszukiwania */
     robots: { index: false, follow: true },

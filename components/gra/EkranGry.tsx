@@ -5,9 +5,10 @@ import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { useSesja } from "@/lib/sesja";
 import { slugifyPlace } from "@/lib/site";
-import type { IdMiejsca, MiejsceGry } from "@/lib/minigra";
-import { ArrowLeftIcon } from "@/components/icons";
+import { NAZWY_GIER, type IdMiejsca, type MiejsceGry } from "@/lib/minigra";
+import { ArrowLeftIcon, FireBallIcon } from "@/components/icons";
 import { RzutDoKosza } from "./RzutDoKosza";
+import { Kozlowanie } from "./Kozlowanie";
 import { TloBoiska } from "./TlaBoisk";
 
 /**
@@ -33,8 +34,18 @@ export interface WpisRankingu {
   seria: number;
 }
 
-/** Błękit pinezki minigry - ten sam, którym świecą oba miejsca na mapie. */
+/** Błękit pinezki minigry - ten sam, którym świecą wszystkie miejsca gier na mapie. */
 const BLEKIT = "#56acff";
+
+/**
+ * Złoto rekordu - te same trzy barwy, co stopień „iskra" w odznaczeniach.
+ *
+ * Rekord dostał osobną barwę, a nie kolejną szybę, bo jest jedyną liczbą na tym ekranie,
+ * która nie mówi o teraz. Wszystko inne (licznik w tle, zegar, komunikaty) opisuje bieżącą
+ * rozgrywkę; rekord jest celem. Złoto odcina go od pomarańczy interfejsu i od błękitu
+ * rankingu, i nie zmienia się z motywem - bo nie jest częścią skórki, tylko nagrodą.
+ */
+const ZLOTO = { jasne: "#ffe9a8", srodek: "#f0b53c", ciemne: "#8a6410" };
 
 export function EkranGry({
   miejsce,
@@ -52,6 +63,10 @@ export function EkranGry({
   const [tablica, setTablica] = useState(false);
   const [lista, setLista] = useState(ranking);
   const [rekord, setRekord] = useState(0);
+  /** sekundy do końca rundy - tylko gry na czas je podają */
+  const [zegar, setZegar] = useState<number | null>(null);
+  /** rekord pobity w tej rozgrywce - złota plakietka ma to pokazać od razu */
+  const [pobity, setPobity] = useState(false);
 
   const sesja = useSesja();
   const zalogowany = Boolean(sesja?.user);
@@ -99,10 +114,17 @@ export function EkranGry({
   const naSerie = useCallback((s: number, k: string | null) => {
     setSeria(s);
     setKomunikat(k);
-    /* rekord rośnie już w trakcie serii - liczba w tle planszy ma być prawdziwa teraz,
-       a nie dopiero po pierwszym pudle */
-    setRekord((r) => Math.max(r, s));
+    /* zerowanie wyniku znaczy nową rozgrywkę - napis „nowy rekord" nie może w niej zostać */
+    if (s === 0) setPobity(false);
+    /* rekord rośnie już w trakcie rozgrywki - plakietka ma mówić prawdę teraz, a nie
+       dopiero po jej końcu */
+    setRekord((r) => {
+      if (s > r && r > 0) setPobity(true);
+      return Math.max(r, s);
+    });
   }, []);
+
+  const naCzas = useCallback((sek: number | null) => setZegar(sek), []);
 
   /* spacja i Enter zaczynają grę - klawiatura nie powinna być tu gorsza od myszki */
   useEffect(() => {
@@ -135,13 +157,27 @@ export function EkranGry({
           <TloBoiska miejsce={miejsce.id} />
         </div>
 
-        <RzutDoKosza
-          miejsce={miejsce.id as IdMiejsca}
-          rekord={rekord}
-          zaczeta={zaczeta}
-          onWynik={(w) => void odswiez(w)}
-          onSeria={naSerie}
-        />
+        {/*
+          Wybór planszy po rodzaju gry. Oprawa - pełny ekran, ekran tytułowy, plakietki
+          w narożnikach, tablica wyników - jest wspólna, bo to ta sama minigra pod różnymi
+          pinezkami. Różni się tylko to, co dzieje się na kanwie.
+        */}
+        {miejsce.rodzaj === "kozlowanie" ? (
+          <Kozlowanie
+            miejsce={miejsce.id as IdMiejsca}
+            zaczeta={zaczeta}
+            onWynik={(w) => void odswiez(w)}
+            onSeria={naSerie}
+            onCzas={naCzas}
+          />
+        ) : (
+          <RzutDoKosza
+            miejsce={miejsce.id as IdMiejsca}
+            zaczeta={zaczeta}
+            onWynik={(w) => void odswiez(w)}
+            onSeria={naSerie}
+          />
+        )}
       </div>
 
       {/* ---------------------------------------------------------- ekran tytułowy */}
@@ -177,13 +213,10 @@ export function EkranGry({
             tego ekranu to typografia i światło wokół niej - dlatego litery są ciasno
             zestawione (`tracking`), a wielkość idzie z szerokości okna.
           */}
-          <h1 className="mt-5 text-[clamp(44px,11vw,132px)] font-semibold leading-[0.94] tracking-[-0.045em] text-ink">
-            Rzut do kosza
+          <h1 className="mt-5 text-[clamp(38px,9vw,116px)] font-semibold uppercase leading-[0.94] tracking-[-0.03em] text-ink">
+            Minigra PodKosz
           </h1>
-          <p className="mx-auto mt-7 max-w-[46ch] text-[15px] leading-relaxed text-muted">
-            {miejsce.opis}
-          </p>
-          <p className="mt-10 text-[12px] uppercase tracking-[0.28em] text-faint">
+          <p className="mt-9 text-[12px] uppercase tracking-[0.28em] text-faint">
             kliknij, żeby zacząć
           </p>
         </div>
@@ -198,24 +231,64 @@ export function EkranGry({
       </Link>
 
       {/*
-        Licznik serii pojawia się dopiero po starcie i tylko wtedy, gdy jest co liczyć.
-        Pusta plakietka „seria 0" nad świeżo narysowanym koszem nie mówi nic, a zabiera
-        ekranowi spokój.
+        W narożniku nie ma już plakietki z bieżącym wynikiem - ten stoi teraz wielką,
+        wydrążoną liczbą w tle planszy. Zostaje zegar (tylko w grach na czas) i rekord.
       */}
       <div
-        className={`absolute right-5 top-5 z-20 flex items-center gap-2 transition-opacity duration-500 ${
+        className={`absolute right-5 top-5 z-20 flex items-center gap-2.5 transition-opacity duration-500 ${
           zaczeta ? "opacity-100" : "opacity-0"
         }`}
       >
-        <span className="szklo-pro rounded-full px-4 py-2.5 text-[13px] text-ink">
-          seria <b className="ml-1 text-[17px] tabular-nums">{seria}</b>
-        </span>
-        {rekord > 0 && (
-          <span className="szklo-pro rounded-full px-4 py-2.5 text-[13px] text-muted">
-            rekord <b className="ml-1 text-ink tabular-nums">{rekord}</b>
+        {zegar !== null && (
+          <span
+            className={`szklo-pro rounded-full px-4 py-2.5 text-[15px] font-semibold tabular-nums ${
+              zegar <= 10 ? "text-ember" : "text-ink"
+            }`}
+          >
+            {Math.ceil(zegar)}s
           </span>
         )}
+
+        {rekord > 0 && (
+          <div
+            className="rounded-[20px] p-[1.5px]"
+            style={{
+              background: `linear-gradient(135deg, ${ZLOTO.jasne}, ${ZLOTO.srodek} 52%, ${ZLOTO.ciemne})`,
+              boxShadow: `0 14px 36px -12px rgb(240 181 60 / calc(.7 * var(--moc-poswiaty, 1)))`,
+            }}
+          >
+            <div className="rounded-[19px] bg-void/88 px-4 py-2 backdrop-blur">
+              <p
+                className="text-[9px] font-semibold uppercase tracking-[0.22em]"
+                style={{ color: ZLOTO.srodek }}
+              >
+                {pobity ? "nowy rekord" : "rekord"}
+              </p>
+              <p
+                className="mt-0.5 flex items-center gap-1.5 text-[20px] font-semibold leading-none tabular-nums"
+                style={{ color: ZLOTO.jasne }}
+              >
+                <FireBallIcon className="h-4 w-4" />
+                {rekord}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/*
+        Jak się gra - jedno zdanie, które gaśnie samo. Na ekranie tytułowym go nie ma,
+        bo tam liczy się nazwa i cisza wokół niej; tutaj pojawia się dokładnie wtedy, gdy
+        człowiek pierwszy raz patrzy na planszę i jeszcze nic nie zrobił.
+      */}
+      {zaczeta && seria === 0 && !komunikat && (
+        <p
+          className="pointer-events-none absolute inset-x-0 top-24 z-10 px-8 text-center text-[13px] leading-relaxed text-muted"
+          style={{ animation: "rise 600ms cubic-bezier(0.16,1,0.3,1) both" }}
+        >
+          {NAZWY_GIER[miejsce.rodzaj].jak}
+        </p>
+      )}
 
       {komunikat && zaczeta && (
         <div className="pointer-events-none absolute inset-x-0 bottom-24 z-20 flex justify-center px-6">

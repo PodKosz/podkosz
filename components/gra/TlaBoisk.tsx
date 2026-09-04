@@ -52,14 +52,19 @@ export function TloBoiska({ miejsce }: { miejsce: IdMiejsca }) {
 
       <rect width="1000" height="680" fill="#07070a" />
 
-      {miejsce === "venice" ? <Venice /> : <Manhattan />}
+      {miejsce === "venice" ? <Venice /> : miejsce === "manhattan" ? <Manhattan /> : <Chicago />}
 
-      {/* podłoga - kilka linii zbiegających się w perspektywie, wspólne dla obu miejsc */}
-      <g stroke="url(#gra-linia)" fill="none" strokeLinecap="round">
-        <path d="M0 596h1000" strokeWidth="1.6" opacity=".5" />
-        <path d="M120 680 360 596M880 680 640 596" strokeWidth="1.4" opacity=".38" />
-        <path d="M310 640h380" strokeWidth="1.4" opacity=".32" />
-      </g>
+      {/*
+        Podłoga jest wspólna dla dwóch miejsc z grą w rzuty. Chicago ma własną - cały
+        parkiet - więc tam by się z nią zderzyła.
+      */}
+      {miejsce !== "chicago" && (
+        <g stroke="url(#gra-linia)" fill="none" strokeLinecap="round">
+          <path d="M0 596h1000" strokeWidth="1.6" opacity=".5" />
+          <path d="M120 680 360 596M880 680 640 596" strokeWidth="1.4" opacity=".38" />
+          <path d="M310 640h380" strokeWidth="1.4" opacity=".32" />
+        </g>
+      )}
     </svg>
   );
 }
@@ -199,6 +204,46 @@ function Manhattan() {
           <path d="M470 322h60M470 360h60" strokeWidth="1.5" />
           <path d="M250 470c110-96 200-150 220-184M750 470c-110-96-200-150-220-184" strokeWidth="1.5" />
         </g>
+      </g>
+    </>
+  );
+}
+
+/* ---------------------------------------------------------------- Chicago */
+
+/**
+ * Parkiet widziany z góry pod kątem - deski zbiegające się w perspektywie i linie boiska.
+ *
+ * To tło pod grę w kozłowanie, więc rysunek musi robić jedną rzecz: mówić, gdzie jest
+ * podłoga. Piłka odbija się od poziomej linii na 82% wysokości planszy i dokładnie tam
+ * kończą się deski - bez tego piłka odskakiwałaby od niczego.
+ *
+ * Deski zbiegają się do punktu wysoko nad kadrem, nie do środka: przy zbiegu w środku
+ * kadru parkiet czyta się jak wachlarz, a nie jak podłoga, po której się chodzi. Poprzeczki
+ * gęstnieją ku górze, bo tak działa perspektywa - i to one, nie same deski, sprzedają tu
+ * wrażenie głębokości.
+ */
+/**
+ * Chicago: samo światło hali i sylwetka miasta.
+ *
+ * Parkietu tu nie ma z rozmysłem - rysuje go kanwa gry, bo od jego linii odbija się piłka.
+ * Ta warstwa skaluje się przez `preserveAspectRatio`, więc przy innych proporcjach okna
+ * jej podłoga rozjeżdżałaby się z fizyką i piłka odbijałaby się od niczego.
+ */
+function Chicago() {
+  return (
+    <>
+      {/* światło z góry, jak nad parkietem w hali */}
+      <ellipse cx="500" cy="300" rx="520" ry="380" fill="url(#gra-swiatlo)" opacity=".5" />
+      <ellipse cx="500" cy="620" rx="640" ry="200" fill="url(#gra-swiatlo)" opacity=".35" />
+
+      {/* sylwetka wieżowców - Chicago poznaje się po niej, nie po parkiecie */}
+      <g stroke="url(#gra-linia-pion)" fill="none" strokeLinecap="round" opacity=".45">
+        <path d="M120 520V300h96v220M150 300V236h36v64" strokeWidth="1.4" />
+        <path d="M250 520V360h74v160" strokeWidth="1.3" />
+        <path d="M700 520V276h104v244M742 276V196h20v80" strokeWidth="1.4" />
+        <path d="M836 520V372h68v148" strokeWidth="1.3" />
+        <path d="M420 520V330h60v190" strokeWidth="1.2" opacity=".7" />
       </g>
     </>
   );
