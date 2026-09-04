@@ -32,7 +32,7 @@ export async function generateMetadata({
   const m = miejsceZeSlugu(miejsce);
   if (!m) return { title: SITE_NAME };
 
-  const title = `Minigra PodKosz - ${m.nazwa}`;
+  const title = `${NAZWY_GIER[m.rodzaj].nazwa} - ${m.nazwa}`;
   return {
     title,
     description: `Minigra ukryta na mapie PodKosza (${m.nazwa}, ${m.miasto}). ${NAZWY_GIER[m.rodzaj].jak}`,

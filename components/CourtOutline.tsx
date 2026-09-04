@@ -46,12 +46,20 @@ export function CourtOutline({
           takiego gradientu rozłożyć i w ogóle się nie rysuje - linia środkowa dostaje
           więc własny, stały kolor (patrz niżej).
         */}
+        {/*
+          Krańce linii są przezroczyste, ale przez zmienną `--kontur-koniec` - i tylko po to,
+          żeby dało się je gdzieś zapalić. Domyślnie zero, czyli jak było: rysunek rozpływa
+          się w tle karty. Zasłona przed premierą ustawia tę zmienną na ekranach szerszych
+          niż telefon, bo tam kontur ma dochodzić do samej krawędzi ekranu pełną kreską -
+          strefa wygaszenia zajmuje skrajne 18% każdej linii i przy tym kadrze wypadała
+          w środku obrazu, więc linie kończyły się w powietrzu.
+        */}
         <linearGradient id={`line-${uid}`} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="rgb(var(--rgb-flame) / 0)" />
+          <stop offset="0" stopColor="rgb(var(--rgb-glow) / var(--kontur-koniec, 0))" />
           <stop offset="0.18" stopColor="rgb(var(--rgb-glow) / 0.65)" />
           <stop offset="0.5" stopColor="rgb(var(--rgb-glow))" />
           <stop offset="0.82" stopColor="rgb(var(--rgb-glow) / 0.65)" />
-          <stop offset="1" stopColor="rgb(var(--rgb-flame) / 0)" />
+          <stop offset="1" stopColor="rgb(var(--rgb-glow) / var(--kontur-koniec, 0))" />
         </linearGradient>
 
       </defs>

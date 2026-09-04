@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { useSesja } from "@/lib/sesja";
 import { slugifyPlace } from "@/lib/site";
 import { NAZWY_GIER, type IdMiejsca, type MiejsceGry } from "@/lib/minigra";
-import { ArrowLeftIcon, FireBallIcon } from "@/components/icons";
+import { ArrowLeftIcon } from "@/components/icons";
 import { RzutDoKosza } from "./RzutDoKosza";
 import { Kozlowanie } from "./Kozlowanie";
 import { TloBoiska } from "./TlaBoisk";
@@ -73,6 +73,34 @@ export function EkranGry({
   const mojNick = sesja?.user?.name ?? null;
 
   /*
+    Rekord boiska i jego posiadacz.
+
+    Wiemy o nim z dwóch źródeł: z rankingu (pierwszy wiersz, bo `minigra_ranking` sortuje
+    malejąco) i z własnego wyniku czytanego niżej z bazy. Wyższa liczba wygrywa; przy
+    remisie zostaje wiersz z rankingu, bo ta osoba stanęła tam pierwsza.
+
+    Dwa źródła, a nie jedno, bo żadne samo nie wystarcza: ranking nie wie o wyniku ubitym
+    przed sekundą (odświeża się po rundzie), a własny rekord nic nie mówi o tym, kto na tym
+    boisku jest najlepszy. Rekord czytany z rankingu ma jeszcze tę zaletę, że plakietka
+    pokazuje się też komuś bez konta - jest po co grać, zanim się cokolwiek zdobędzie.
+  */
+  const lider = lista[0] ?? null;
+  const liderSeria = lider?.seria ?? 0;
+  const mojWiekszy = rekord > liderSeria;
+  const doPobicia = Math.max(rekord, liderSeria);
+  const posiadaczNick = (mojWiekszy ? mojNick : lider?.nick) ?? null;
+  const posiadaczAvatar = (mojWiekszy ? sesja?.user?.avatar : lider?.avatar) ?? null;
+
+  /*
+    Wynik lidera trzymamy też w referencji, bo `naSerie` jest stałym wywołaniem zwrotnym -
+    plansza dostaje je raz i trzymała by w domknięciu liczbę z pierwszego rysowania.
+  */
+  const liderRef = useRef(0);
+  useEffect(() => {
+    liderRef.current = liderSeria;
+  }, [liderSeria]);
+
+  /*
     Własny rekord czytamy raz i tylko dla zalogowanego: tabela wyników jest zamknięta
     politykami, więc pytanie o nią bez sesji kończy się odmową i błędem w konsoli.
   */
@@ -119,7 +147,13 @@ export function EkranGry({
     /* rekord rośnie już w trakcie rozgrywki - plakietka ma mówić prawdę teraz, a nie
        dopiero po jej końcu */
     setRekord((r) => {
-      if (s > r && r > 0) setPobity(true);
+      /*
+        „Nowy rekord" wobec liczby, KTÓRĄ PLAKIETKA POKAZUJE - a ta jest rekordem boiska,
+        nie moim własnym. Inaczej napis zapalałby się przy pobiciu własnych dwunastu, gdy
+        w plakietce stoi czterdzieści kogoś innego, i kłamałby razem z czyjąś twarzą obok.
+      */
+      const prog = Math.max(r, liderRef.current);
+      if (s > prog && prog > 0) setPobity(true);
       return Math.max(r, s);
     });
   }, []);
@@ -149,11 +183,26 @@ export function EkranGry({
       <div
         className="absolute inset-0"
         style={{
-          filter: zaczeta ? "blur(0px)" : "blur(20px)",
+          /*
+            Rozmycie 10 px, nie 20. Scena jest rysowana włosową kreską i przy dwudziestu
+            pikselach po prostu jej nie było: 1,4-pikselowa linia rozmazana na czterdzieści
+            pikseli spada poniżej progu widoczności, a ekran tytułowy stawał się czarną
+            płachtą z napisem. Dziesięć rozmywa dość, żeby napis był na czymś miękkim, i za
+            mało, żeby rysunek zniknął.
+          */
+          filter: zaczeta ? "blur(0px)" : "blur(10px)",
           transition: "filter 700ms cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
-        <div className="pointer-events-none absolute inset-0 opacity-70">
+        {/*
+          Na ekranie tytułowym scena świeci pełnią, w grze schodzi do 70%: wtedy liczy się
+          piłka i kosz na kanwie, a tło ma tylko nie być pustką.
+        */}
+        <div
+          className={`pointer-events-none absolute inset-0 transition-opacity duration-700 ${
+            zaczeta ? "opacity-70" : "opacity-100"
+          }`}
+        >
           <TloBoiska miejsce={miejsce.id} />
         </div>
 
@@ -194,7 +243,7 @@ export function EkranGry({
         style={{ transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)" }}
       >
         {/* przygaszenie planszy pod tytułem - sam blur nie daje dość kontrastu na napis */}
-        <div className="absolute inset-0 bg-void/55" />
+        <div className="absolute inset-0 bg-void/40" />
 
         <div
           className={`relative transition-all duration-700 ${
@@ -214,7 +263,7 @@ export function EkranGry({
             zestawione (`tracking`), a wielkość idzie z szerokości okna.
           */}
           <h1 className="mt-5 text-[clamp(38px,9vw,116px)] font-semibold uppercase leading-[0.94] tracking-[-0.03em] text-ink">
-            Minigra PodKosz
+            {NAZWY_GIER[miejsce.rodzaj].nazwa}
           </h1>
           <p className="mt-9 text-[12px] uppercase tracking-[0.28em] text-faint">
             kliknij, żeby zacząć
@@ -249,7 +298,16 @@ export function EkranGry({
           </span>
         )}
 
-        {rekord > 0 && (
+        {/*
+          Rekord z twarzą tego, kto go trzyma.
+
+          Sama liczba nie mówi, z kim się gra - a gra się z kimś, bo tablica wyników jest
+          wspólna dla całego boiska. Zdjęcie robi z rekordu osobę: widać, kogo trzeba
+          wyprzedzić, i widać, kiedy to już się udało (wtedy w ramce stoi własna twarz
+          i napis „nowy rekord"). Ikona płomienia stąd wyszła - twarz zajmuje jej miejsce
+          i mówi więcej.
+        */}
+        {doPobicia > 0 && (
           <div
             className="rounded-[20px] p-[1.5px]"
             style={{
@@ -257,20 +315,45 @@ export function EkranGry({
               boxShadow: `0 14px 36px -12px rgb(240 181 60 / calc(.7 * var(--moc-poswiaty, 1)))`,
             }}
           >
-            <div className="rounded-[19px] bg-void/88 px-4 py-2 backdrop-blur">
-              <p
-                className="text-[9px] font-semibold uppercase tracking-[0.22em]"
-                style={{ color: ZLOTO.srodek }}
-              >
-                {pobity ? "nowy rekord" : "rekord"}
-              </p>
-              <p
-                className="mt-0.5 flex items-center gap-1.5 text-[20px] font-semibold leading-none tabular-nums"
-                style={{ color: ZLOTO.jasne }}
-              >
-                <FireBallIcon className="h-4 w-4" />
-                {rekord}
-              </p>
+            <div className="flex items-center gap-2.5 rounded-[19px] bg-void/88 py-2 pl-2.5 pr-4 backdrop-blur">
+              {posiadaczAvatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={posiadaczAvatar}
+                  alt=""
+                  className="h-9 w-9 shrink-0 rounded-full object-cover"
+                  style={{ boxShadow: `0 0 0 1.5px ${ZLOTO.srodek}` }}
+                />
+              ) : (
+                <span
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/10 text-[12px] font-semibold"
+                  style={{ color: ZLOTO.jasne, boxShadow: `0 0 0 1.5px ${ZLOTO.srodek}` }}
+                >
+                  {(posiadaczNick ?? "?").slice(0, 1).toUpperCase()}
+                </span>
+              )}
+
+              <div className="min-w-0">
+                <p
+                  className="text-[9px] font-semibold uppercase tracking-[0.22em]"
+                  style={{ color: ZLOTO.srodek }}
+                >
+                  {pobity ? "nowy rekord" : "rekord"}
+                </p>
+                <p className="mt-0.5 flex items-baseline gap-1.5">
+                  <span
+                    className="text-[20px] font-semibold leading-none tabular-nums"
+                    style={{ color: ZLOTO.jasne }}
+                  >
+                    {doPobicia}
+                  </span>
+                  {posiadaczNick && (
+                    <span className="max-w-[104px] truncate text-[11px] leading-none text-muted">
+                      {posiadaczNick}
+                    </span>
+                  )}
+                </p>
+              </div>
             </div>
           </div>
         )}

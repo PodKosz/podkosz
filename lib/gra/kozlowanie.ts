@@ -14,6 +14,21 @@
  * jak mocno ktoś klika. Bez tego przeliczenia każde kozłowanie wychodziłoby na inną
  * wysokość, rytm rozjeżdżałby się po trzech uderzeniach i nie dałoby się go złapać.
  *
+ * ------------------------------------------------------------------ podniesienie
+ *
+ * Piłka odbita od parkietu bez pomocy ręki wraca dużo niżej, niż z niej wyszła: po odbiciu
+ * zostaje 62% prędkości, czyli 38% wysokości. Z linii ręki na 42% wysokości hali swobodne
+ * odbicie wynosi ją na 16% - GŁĘBOKO POD ZASIĘGIEM RĘKI, i już nigdy sama do niej nie
+ * wróci. Bez wyjścia awaryjnego jedno spudłowane stuknięcie kończyło rundę na dobre:
+ * piłka dogasała na parkiecie, a każde następne kliknięcie było pudłem. Gra wyglądała jak
+ * zepsuta, bo w praktyce była.
+ *
+ * Dlatego stuknięcie poza zasięgiem ręki nie jest karą samą w sobie - PODNOSI piłkę
+ * z powrotem na linię ręki. Nie liczy się jako kozłowanie, zeruje serię i włącza karę,
+ * ale rytm da się odzyskać. Kosztem jest czas: podniesienie wraca na linię po pół sekundy,
+ * a przez pierwsze 0,35 s ręka nic nie łapie, więc kto wali bez rytmu, ten tylko bez
+ * końca podnosi piłkę i nie zalicza ani jednego kozłowania.
+ *
  * ------------------------------------------------------------------ jak się zaostrza
  *
  * Linia ręki opada wraz z liczbą kozłowań: z 42% wysokości nad parkietem do 18%. Niższe
@@ -104,10 +119,14 @@ export function liniaReki(ile: number) {
   return WYS * PODLOGA * ulamek;
 }
 
+/** Wysokość dolnej krawędzi piłki nad parkietem. */
+export function wysokosc(s: StanKozlowania) {
+  return WYS * PODLOGA - PILKA_R - s.y;
+}
+
 /** Czy piłka jest w zasięgu ręki - tylko wtedy stuknięcie się liczy. */
 export function wRece(s: StanKozlowania) {
-  const podloga = WYS * PODLOGA;
-  return podloga - PILKA_R - s.y >= liniaReki(s.ile) * 0.85;
+  return wysokosc(s) >= liniaReki(s.ile) * 0.85;
 }
 
 /** Czy ręka jest w tej chwili zablokowana po pudle. */
@@ -140,6 +159,8 @@ export interface WynikUderzenia {
   ok: boolean;
   /** 0-1: jak blisko szczytu odbicia padło uderzenie */
   jakosc: number;
+  /** stuknięcie poza zasięgiem podniosło piłkę z powrotem na linię ręki */
+  podniesienie: boolean;
 }
 
 
@@ -154,14 +175,26 @@ export function uderz(s: StanKozlowania): WynikUderzenia {
   /* w czasie blokady stuknięcie tylko ją odnawia - patrz `KARA` */
   if (zablokowana(s)) {
     s.blokadaDo = s.czas + KARA;
-    return { ok: false, jakosc: 0 };
+    return { ok: false, jakosc: 0, podniesienie: false };
   }
 
   if (!wRece(s)) {
     s.seria = 0;
     s.pudlo = s.czas;
     s.blokadaDo = s.czas + KARA;
-    return { ok: false, jakosc: 0 };
+
+    /*
+      Podniesienie: piłka jedzie W GÓRĘ, dokładnie na linię ręki - patrz opis na górze
+      pliku. Nie liczymy tego jako kozłowania, ale i nie zostawiamy piłki na parkiecie,
+      bo sama się z niego nie podniesie.
+
+      W górę, a nie w dół z przeliczeniem przez odbicie: pchnięcie w dół z parkietu to
+      2158 px/s, czyli błysk w jedną klatkę, i nie widać z niego nic. Uniesienie do ręki
+      czyta się jak podniesienie piłki i trwa tyle, ile ma trwać - pół sekundy.
+    */
+    const brak = Math.max(0, liniaReki(s.ile) - wysokosc(s));
+    s.vy = -Math.sqrt(2 * GRAWITACJA * brak);
+    return { ok: false, jakosc: 0, podniesienie: true };
   }
 
   const jakosc = Math.max(0, 1 - Math.abs(s.vy) / CZYSTE_DO);
@@ -190,5 +223,5 @@ export function uderz(s: StanKozlowania): WynikUderzenia {
   */
   s.obrotV = (s.obrotV > 0 ? -1 : 1) * (5 + jakosc * 5);
 
-  return { ok: true, jakosc };
+  return { ok: true, jakosc, podniesienie: false };
 }

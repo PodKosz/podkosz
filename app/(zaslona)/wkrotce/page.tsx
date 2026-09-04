@@ -40,9 +40,19 @@ export default function Wkrotce() {
         Kontur boiska w tle: większy niż ekran i przekrzywiony, więc widać fragment płyty
         (pole podkoszowe z lewej, koło środkowe przy środku) zamiast całego rysunku. Linie są
         przygaszone, żeby nie konkurowały z napisem.
+
+        Na ekranach szerszych niż telefon rysunek jest jeszcze większy i ma ZAPALONE końce
+        linii (`--kontur-koniec`). Gradient w `CourtOutline` wygasza każdą linię w skrajnych
+        18% długości; przy poprzednim kadrze ta strefa wypadała w środku obrazu, więc linie
+        rozpływały się w powietrzu kilka centymetrów przed krawędzią ekranu. Teraz rysunek
+        wychodzi poza kadr ze wszystkich stron i dochodzi do krawędzi pełną kreską.
+
+        Telefon zostaje przy wygaszanych końcach: przy proporcjach ekranu 9:19,5 żaden
+        sensowny rozmiar tego rysunku nie zakryłby całej wysokości, a zapalone końce
+        kończyłyby się wtedy ostrą kreską w środku ekranu.
       */}
       <div
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[102vw] w-[190vw] opacity-[0.55] sm:h-[58vw] sm:w-[108vw]"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[102vw] w-[190vw] opacity-[0.55] sm:h-[74vw] sm:w-[136vw] sm:[--kontur-koniec:0.5]"
         style={{ translate: "calc(-50% + 9vw) calc(-50% - 2vh)", rotate: "-11deg" }}
       >
         <CourtOutline uid="zaslona" />
@@ -102,8 +112,13 @@ export default function Wkrotce() {
         {/*
           Gradient na literach kładzie background-clip: text, a ten maluje tylko pudełko
           wiersza - stąd luźniejszy leading i zapas z prawej, żeby nie ucinało ostatniej litery.
+
+          Zapas z DOŁU jest z tego samego powodu i jest konieczny: przy `leading` 1,1 pudełko
+          wiersza jest niższe od kroju pisma, więc ogonek „g" wychodzi poza obszar malowania
+          gradientu i po prostu się nie rysuje - litera wygląda jak ucięta. Ujemny margines
+          oddaje ten zapas układowi, żeby akapit pod spodem nie odjechał w dół.
         */}
-        <h1 className="mt-8 flame-text pr-[0.06em] text-[clamp(46px,12vw,116px)] font-bold leading-[1.1] tracking-[-0.035em]">
+        <h1 className="-mb-[0.18em] mt-8 flame-text pb-[0.18em] pr-[0.06em] text-[clamp(46px,12vw,116px)] font-bold leading-[1.1] tracking-[-0.035em]">
           Już niedługo
         </h1>
 

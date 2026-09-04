@@ -51,6 +51,8 @@ interface Stan extends StanKozlowania {
   stuk: number;
   stukX: number;
   stukY: number;
+  /** czy ostatnie stuknięcie było zaliczone - fala ma barwę odpowiedzi */
+  stukOk: boolean;
 }
 
 export function Kozlowanie({
@@ -206,6 +208,7 @@ export function Kozlowanie({
     }
 
     const w = uderz(s);
+    s.stukOk = w.ok;
     if (w.ok) onSeria(s.ile, null);
   };
 
@@ -230,6 +233,7 @@ function nowyStan(): Stan {
     stuk: -99,
     stukX: 0,
     stukY: 0,
+    stukOk: true,
   };
 }
 
@@ -368,7 +372,13 @@ function rysujCien(ctx: CanvasRenderingContext2D, szer: number, s: Stan) {
   ctx.restore();
 }
 
-/** Fala pod palcem - jedyne potwierdzenie, że stuknięcie doszło. */
+/**
+ * Fala pod palcem - potwierdzenie, że stuknięcie doszło, i CZY się zaliczyło.
+ *
+ * Dwie barwy, bo to jedyne miejsce, gdzie gra odpowiada na sam dotyk: ciepła znaczy
+ * kozłowanie, czerwona - stuknięcie poza zasięgiem, po którym ręka podnosi piłkę i traci
+ * serię. Bez rozróżnienia oba wyglądają tak samo i nie da się nauczyć rytmu.
+ */
 function rysujFale(ctx: CanvasRenderingContext2D, s: Stan) {
   const wiek = s.czas - s.stuk;
   if (wiek < 0 || wiek > 0.45) return;
@@ -377,7 +387,9 @@ function rysujFale(ctx: CanvasRenderingContext2D, s: Stan) {
   ctx.save();
   ctx.globalAlpha = 1 - t;
   ctx.lineWidth = 3 * (1 - t) + 1;
-  ctx.strokeStyle = barwa("--rgb-glow", "rgba(255,178,92,.6)", 0.5);
+  ctx.strokeStyle = s.stukOk
+    ? barwa("--rgb-glow", "rgba(255,178,92,.6)", 0.5)
+    : barwa("--rgb-ember", "rgba(255,77,10,.6)", 0.5);
   ctx.beginPath();
   ctx.arc(s.stukX, s.stukY, 12 + t * 54, 0, Math.PI * 2);
   ctx.stroke();

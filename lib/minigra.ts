@@ -20,14 +20,19 @@ export type IdMiejsca = "venice" | "manhattan" | "chicago";
  */
 export type RodzajGry = "rzut" | "kozlowanie";
 
+/*
+  Nazwa jest tym, co stoi na ekranie tytułowym, więc mówi wprost, w co się gra: „Minigra
+  Rzuty" i „Minigra Kozły". Wspólny przedrostek trzyma je razem jako jedną rodzinę, a
+  drugie słowo je rozdziela - i to ono zostaje w pamięci.
+*/
 export const NAZWY_GIER: Record<RodzajGry, { nazwa: string; jak: string }> = {
   rzut: {
-    nazwa: "Rzut do kosza",
+    nazwa: "Minigra Rzuty",
     jak: "Pociągnij od piłki w stronę kosza - kierunek to kierunek rzutu, długość to siła. Kropki pokazują tor.",
   },
   kozlowanie: {
-    nazwa: "Kozłowanie",
-    jak: "Klikaj albo stukaj w ekran w rytm piłki - liczy się uderzenie w chwili, gdy dochodzi do ręki. Masz minutę.",
+    nazwa: "Minigra Kozły",
+    jak: "Stukaj w rytm piłki - liczy się uderzenie, gdy piłka dochodzi do przerywanej linii. Nietrafione stuknięcie podnosi ją z parkietu i zeruje serię. Masz minutę.",
   },
 };
 

@@ -12,7 +12,37 @@ import type { IdMiejsca } from "@/lib/minigra";
  * canvas nad spodem, więc rysunek pod spodem musi być cichy: cienka kreska, żadnych
  * wypełnień i nic jaśniejszego niż piłka.
  */
+/**
+ * Światło sceny w CSS, osobno dla każdego miejsca.
+ *
+ * Rysunek SVG ma stałe proporcje 1000x680 i jest kadrowany przez `slice`, więc na telefonie
+ * (9:19,5) widać ze niego środkowe 31% szerokości - sylwetka Chicago i słońce Venice
+ * zostają za kadrem. Światło musi więc być poza SVG: gradienty CSS liczą się od pudełka
+ * elementu, czyli od EKRANU, i wychodzą tak samo na każdych proporcjach. To one, nie linie,
+ * odpowiadają za to, że ekran tytułowy nie jest czarną płachtą.
+ */
+const SWIATLA: Record<IdMiejsca, string> = {
+  /* zachód nad oceanem - ciepło nisko po prawej */
+  venice:
+    "radial-gradient(58% 44% at 78% 66%, rgb(var(--rgb-flame) / .3), transparent 72%), radial-gradient(52% 40% at 16% 22%, rgb(var(--rgb-ember) / .16), transparent 74%)",
+  /* wieczór między kamienicami - światło z dołu, od ulicy */
+  manhattan:
+    "radial-gradient(70% 40% at 50% 88%, rgb(var(--rgb-ember) / .26), transparent 74%), radial-gradient(46% 34% at 22% 24%, rgb(var(--rgb-flame) / .16), transparent 72%)",
+  /* hala - jedno mocne światło z góry i odblask od parkietu */
+  chicago:
+    "radial-gradient(54% 40% at 50% 26%, rgb(var(--rgb-flame) / .26), transparent 72%), radial-gradient(76% 34% at 50% 86%, rgb(var(--rgb-ember) / .2), transparent 76%)",
+};
+
 export function TloBoiska({ miejsce }: { miejsce: IdMiejsca }) {
+  return (
+    <>
+      <div className="absolute inset-0" style={{ background: SWIATLA[miejsce] }} />
+      <TloRysunek miejsce={miejsce} />
+    </>
+  );
+}
+
+function TloRysunek({ miejsce }: { miejsce: IdMiejsca }) {
   return (
     <svg
       viewBox="0 0 1000 680"
@@ -230,6 +260,13 @@ function Manhattan() {
  * Ta warstwa skaluje się przez `preserveAspectRatio`, więc przy innych proporcjach okna
  * jej podłoga rozjeżdżałaby się z fizyką i piłka odbijałaby się od niczego.
  */
+/**
+ * Chicago: hala, a za nią miasto.
+ *
+ * Belki dachu i rzędy krzeseł idą przez CAŁĄ szerokość rysunku i to one utrzymują scenę
+ * w kadrze telefonu - sylwetka wieżowców stoi po bokach, więc na wąskim ekranie znika
+ * w całości. Parkietu tu nie ma: rysuje go kanwa, żeby podłoga zgadzała się z fizyką.
+ */
 function Chicago() {
   return (
     <>
@@ -237,8 +274,23 @@ function Chicago() {
       <ellipse cx="500" cy="300" rx="520" ry="380" fill="url(#gra-swiatlo)" opacity=".5" />
       <ellipse cx="500" cy="620" rx="640" ry="200" fill="url(#gra-swiatlo)" opacity=".35" />
 
+      {/* belki dachu - zbiegają się do środka, bo patrzymy z boku hali */}
+      <g stroke="url(#gra-linia)" fill="none" strokeLinecap="round">
+        <path d="M0 84h1000M0 132h1000" strokeWidth="1.6" opacity=".55" />
+        <path d="M0 46h1000" strokeWidth="1.4" opacity=".36" />
+        <path d="M160 84V46M340 84V46M500 84V46M660 84V46M840 84V46" strokeWidth="1.3" opacity=".4" />
+        {/* lampy nad parkietem */}
+        <path d="M300 132v34h84v-34M616 132v34h84v-34" strokeWidth="1.5" opacity=".65" />
+      </g>
+
+      {/* linia tylnej ściany hali - biegnie u stóp wieżowców, przez całą szerokość */}
+      <g stroke="url(#gra-linia)" fill="none" strokeLinecap="round">
+        <path d="M0 520h1000" strokeWidth="1.6" opacity=".45" />
+        <path d="M0 548h1000" strokeWidth="1.3" opacity=".24" />
+      </g>
+
       {/* sylwetka wieżowców - Chicago poznaje się po niej, nie po parkiecie */}
-      <g stroke="url(#gra-linia-pion)" fill="none" strokeLinecap="round" opacity=".45">
+      <g stroke="url(#gra-linia-pion)" fill="none" strokeLinecap="round" opacity=".55">
         <path d="M120 520V300h96v220M150 300V236h36v64" strokeWidth="1.4" />
         <path d="M250 520V360h74v160" strokeWidth="1.3" />
         <path d="M700 520V276h104v244M742 276V196h20v80" strokeWidth="1.4" />
