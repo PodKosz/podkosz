@@ -32,7 +32,7 @@ export const NAZWY_GIER: Record<RodzajGry, { nazwa: string; jak: string }> = {
   },
   kozlowanie: {
     nazwa: "Minigra Kozły",
-    jak: "Stukaj w rytm piłki - liczy się uderzenie, gdy piłka dochodzi do przerywanej linii. Nietrafione stuknięcie podnosi ją z parkietu i zeruje serię. Masz minutę.",
+    jak: "Klikaj albo stukaj w dowolnym miejscu ekranu - każde kliknięcie to jedno kozłowanie, a piłka idzie w rytm. Masz minutę.",
   },
 };
 

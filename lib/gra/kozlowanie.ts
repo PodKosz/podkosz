@@ -1,40 +1,31 @@
 /**
- * Zasady minigry „kozłowanie" - bez ani jednego odwołania do przeglądarki.
+ * Zasady minigry „kozły" - bez ani jednego odwołania do przeglądarki.
  *
- * Zadanie: jak najwięcej kozłowań w minutę. Piłka skacze sama, a stuknięcie w ekran liczy
- * się tylko wtedy, gdy dochodzi do ręki - czyli wysoko, blisko szczytu odbicia. Klikanie
- * na oślep nie daje nic, bo nie o to chodzi: to gra o rytm, nie o szybkość palca. Gdyby
- * liczyło każde kliknięcie, najlepszym graczem byłaby mysz z makrem.
+ * Zadanie: jak najwięcej kozłowań w minutę. Kliknięcie W DOWOLNYM MIEJSCU EKRANU to jedno
+ * kozłowanie - zawsze, bez wyjątku. Piłka nie ma własnego rytmu, w który trzeba trafić;
+ * to ONA idzie w rytm klikania.
  *
- * ------------------------------------------------------------------ pchnięcie
+ * ------------------------------------------------------------------ dlaczego tak
  *
- * Siły uderzenia gracz nie ustala. Przy stuknięciu liczymy ją tak, żeby piłka po odbiciu
- * od parkietu wróciła dokładnie do linii ręki - i to jest sedno tej mechaniki. Rytm sam
- * się utrzymuje, dopóki gracz trafia w moment, więc gra mierzy WYCZUCIE CZASU, a nie to,
- * jak mocno ktoś klika. Bez tego przeliczenia każde kozłowanie wychodziłoby na inną
- * wysokość, rytm rozjeżdżałby się po trzech uderzeniach i nie dałoby się go złapać.
+ * Poprzednia wersja liczyła uderzenie tylko wtedy, gdy piłka była w zasięgu ręki, i karała
+ * pudła blokadą. Na papierze to była gra o rytm, w praktyce - o zgadywanie: przy chybionym
+ * stuknięciu gra nie robiła nic widocznego, a każde kolejne nerwowe kliknięcie odnawiało
+ * blokadę, więc im mocniej ktoś próbował, tym pewniej nic się nie działo. Mechanika, która
+ * karze człowieka za to, że myśli, że jest zepsuta, jest zepsuta.
  *
- * ------------------------------------------------------------------ podniesienie
+ * Teraz nie ma czego chybić. Została jedna rzecz do zrobienia i ona zawsze działa.
  *
- * Piłka odbita od parkietu bez pomocy ręki wraca dużo niżej, niż z niej wyszła: po odbiciu
- * zostaje 62% prędkości, czyli 38% wysokości. Z linii ręki na 42% wysokości hali swobodne
- * odbicie wynosi ją na 16% - GŁĘBOKO POD ZASIĘGIEM RĘKI, i już nigdy sama do niej nie
- * wróci. Bez wyjścia awaryjnego jedno spudłowane stuknięcie kończyło rundę na dobre:
- * piłka dogasała na parkiecie, a każde następne kliknięcie było pudłem. Gra wyglądała jak
- * zepsuta, bo w praktyce była.
+ * ------------------------------------------------------------------ rytm
  *
- * Dlatego stuknięcie poza zasięgiem ręki nie jest karą samą w sobie - PODNOSI piłkę
- * z powrotem na linię ręki. Nie liczy się jako kozłowanie, zeruje serię i włącza karę,
- * ale rytm da się odzyskać. Kosztem jest czas: podniesienie wraca na linię po pół sekundy,
- * a przez pierwsze 0,35 s ręka nic nie łapie, więc kto wali bez rytmu, ten tylko bez
- * końca podnosi piłkę i nie zalicza ani jednego kozłowania.
+ * Wysokość kozła bierze się z ODSTĘPU MIĘDZY KLIKNIĘCIAMI. Piłka puszczona z wysokości `h`
+ * wraca do góry po `(1+odbicie)*sqrt(2h/g)` - odwracamy to i liczymy `h` z rytmu, który
+ * gracz właśnie narzucił. Kto klika wolno, kozłuje wysoko i leniwie; kto szybko - nisko
+ * przy parkiecie, jak przy zwodzie. Rytm jest wygładzany, żeby jedno szarpnięcie nie
+ * przestawiało wysokości o pół ekranu.
  *
- * ------------------------------------------------------------------ jak się zaostrza
- *
- * Linia ręki opada wraz z liczbą kozłowań: z 42% wysokości nad parkietem do 18%. Niższe
- * kozłowanie znaczy krótszy lot, czyli szybszy rytm i węższe okno w czasie - ta sama
- * dokładność ręki jest przy setnym kozłowaniu trudniejsza niż przy pierwszym, choć zasada
- * nie zmienia się ani o jotę. Prawdziwe kozłowanie zaostrza się dokładnie tak samo.
+ * Pchnięcie liczymy tak, żeby piłka doszła do parkietu z prędkością, po której odbicie
+ * wyniesie ją dokładnie na tę wysokość. Dzięki temu obraz zgadza się z rytmem sam z siebie
+ * i nigdy nie trzeba piłki nigdzie przestawiać.
  */
 
 /* wysokość świata gry - szerokość dolicza się z proporcji okna */
@@ -48,26 +39,18 @@ export const GRAWITACJA = 2600;
 /** ile prędkości zostaje po odbiciu od parkietu */
 export const ODBICIE = 0.62;
 
-/** linia ręki przy pierwszym i przy setnym kozłowaniu (ułamek wysokości nad parkietem) */
-const RECZNA_START = 0.42;
-const RECZNA_KONIEC = 0.18;
-const ROZPEDZANIE = 90;
+/** najkrótszy i najdłuższy rytm, jaki gra bierze pod uwagę (sekundy między kliknięciami) */
+const RYTM_MIN = 0.16;
+const RYTM_MAX = 1.1;
+/** rytm przyjęty przy pierwszym kliknięciu, zanim jest co mierzyć */
+const RYTM_START = 0.5;
 
-/** jak blisko szczytu trzeba stuknąć, żeby uderzenie było „czyste" (w pikselach na sekundę) */
-const CZYSTE_DO = 260;
+/** najniższy i najwyższy kozioł - żeby piłka nie znikła w parkiecie ani nie wyszła za kadr */
+const KOZIOL_MIN = 26;
+const KOZIOL_MAX = WYS * PODLOGA * 0.62;
 
-/**
- * Ile czasu po spudłowanym stuknięciu ręka nie łapie piłki.
- *
- * To jedyna obrona przed młotkowaniem myszką i jest konieczna. Bez niej gra nagradzała
- * dokładnie to, czym nie miała być: symulowany gracz klikający co 80 ms zdobywał 159
- * kozłowań przy 562 pudłach, a gracz trafiający idealnie w rytm - 105. Pudło nic nie
- * kosztowało, więc opłacało się strzelać na oślep i czekać, aż piłka sama wejdzie w zasięg.
- *
- * Kara odnawia się przy każdym stuknięciu w czasie blokady. Kto wali bez opamiętania, nie
- * zalicza ani jednego kozłowania; kto pomylił rytm raz, czeka trzy dziesiąte sekundy.
- */
-const KARA = 0.35;
+/** minimalne pchnięcie w dół - każde kliknięcie ma być widoczne, nawet gdy piłka jest wysoko */
+const MIN_PCHNIECIE = 260;
 
 export const CZAS_RUNDY = 60;
 
@@ -75,48 +58,38 @@ export interface StanKozlowania {
   /** środek piłki */
   y: number;
   vy: number;
-  /** ile kozłowań zaliczonych */
+  /** ile kozłowań, czyli ile kliknięć */
   ile: number;
-  /** ile pod rząd bez spudłowanego stuknięcia */
-  seria: number;
   /** sekundy od startu rundy */
   czas: number;
-  /** czas ostatniego zaliczonego uderzenia - do animacji */
+  /** czas ostatniego kliknięcia - do animacji i do mierzenia rytmu */
   uderzenie: number;
-  /** czas ostatniego kontaktu z parkietem - do animacji */
+  /** czas ostatniego kontaktu z parkietem - do zgniecenia piłki */
   kontakt: number;
-  /** czas ostatniego pudła - do animacji */
-  pudlo: number;
-  /** do kiedy ręka nie łapie piłki po pudle */
-  blokadaDo: number;
+  /** wygładzony odstęp między kliknięciami */
+  rytm: number;
+  /** wysokość, na jaką piłka wraca przy tym rytmie */
+  wysokoscKozla: number;
   /** obrót piłki w radianach */
   obrot: number;
   obrotV: number;
 }
 
 export function nowaRunda(): StanKozlowania {
-  const podloga = WYS * PODLOGA;
+  const wysokosc = wysokoscZRytmu(RYTM_START);
   return {
-    /* piłka startuje w ręce, żeby pierwsze uderzenie było możliwe od razu */
-    y: podloga - PILKA_R - liniaReki(0),
+    /* piłka czeka w powietrzu na pierwsze kliknięcie */
+    y: WYS * PODLOGA - PILKA_R - wysokosc,
     vy: 0,
     ile: 0,
-    seria: 0,
     czas: 0,
     uderzenie: -99,
     kontakt: -99,
-    pudlo: -99,
-    blokadaDo: -99,
+    rytm: RYTM_START,
+    wysokoscKozla: wysokosc,
     obrot: 0,
     obrotV: 0,
   };
-}
-
-/** Wysokość linii ręki nad parkietem przy danej liczbie kozłowań. */
-export function liniaReki(ile: number) {
-  const t = Math.min(ile / ROZPEDZANIE, 1);
-  const ulamek = RECZNA_START + (RECZNA_KONIEC - RECZNA_START) * t;
-  return WYS * PODLOGA * ulamek;
 }
 
 /** Wysokość dolnej krawędzi piłki nad parkietem. */
@@ -124,14 +97,17 @@ export function wysokosc(s: StanKozlowania) {
   return WYS * PODLOGA - PILKA_R - s.y;
 }
 
-/** Czy piłka jest w zasięgu ręki - tylko wtedy stuknięcie się liczy. */
-export function wRece(s: StanKozlowania) {
-  return wysokosc(s) >= liniaReki(s.ile) * 0.85;
-}
-
-/** Czy ręka jest w tej chwili zablokowana po pudle. */
-export function zablokowana(s: StanKozlowania) {
-  return s.czas < s.blokadaDo;
+/**
+ * Wysokość kozła dla danego rytmu.
+ *
+ * Odwrócony czas lotu: piłka puszczona z wysokości `h` wraca na górę po
+ * `(1 + odbicie) * sqrt(2h/g)`, więc z zadanego okresu wychodzi
+ * `h = g/2 * (okres / (1 + odbicie))^2`.
+ */
+export function wysokoscZRytmu(okres: number) {
+  const t = Math.min(Math.max(okres, RYTM_MIN), RYTM_MAX);
+  const h = (GRAWITACJA * (t / (1 + ODBICIE)) ** 2) / 2;
+  return Math.min(Math.max(h, KOZIOL_MIN), KOZIOL_MAX);
 }
 
 /** Jeden krok: grawitacja, lot i odbicie od parkietu. */
@@ -148,7 +124,7 @@ export function krokKozlowania(s: StanKozlowania, dt: number) {
       s.vy = -s.vy * ODBICIE;
       s.kontakt = s.czas;
     } else {
-      /* piłka doszła do parkietu i już nie ma z czego się odbić - leży */
+      /* piłka doszła do parkietu i nie ma z czego się odbić - leży i czeka na kliknięcie */
       s.vy = 0;
       s.obrotV *= 0.9;
     }
@@ -156,72 +132,50 @@ export function krokKozlowania(s: StanKozlowania, dt: number) {
 }
 
 export interface WynikUderzenia {
+  /** zawsze prawda - w tej grze nie da się chybić; zostaje dla czytelności wywołań */
   ok: boolean;
-  /** 0-1: jak blisko szczytu odbicia padło uderzenie */
-  jakosc: number;
-  /** stuknięcie poza zasięgiem podniosło piłkę z powrotem na linię ręki */
-  podniesienie: boolean;
+  /** wysokość, na jaką piłka pójdzie po tym kozłowaniu */
+  wysokosc: number;
 }
 
-
-
 /**
- * Stuknięcie w ekran.
+ * Kliknięcie: jedno kozłowanie.
  *
- * Zalicza się tylko wtedy, gdy piłka jest w zasięgu ręki. Pchnięcie liczymy z tego, jak
- * wysoko ma wrócić po odbiciu - patrz opis na górze pliku.
+ * Zawsze się liczy i zawsze coś widać - piłka dostaje pchnięcie w dół (albo podbicie
+ * w górę, jeśli leży na parkiecie) dobrane tak, żeby wróciła na wysokość wynikającą
+ * z rytmu klikania.
  */
 export function uderz(s: StanKozlowania): WynikUderzenia {
-  /* w czasie blokady stuknięcie tylko ją odnawia - patrz `KARA` */
-  if (zablokowana(s)) {
-    s.blokadaDo = s.czas + KARA;
-    return { ok: false, jakosc: 0, podniesienie: false };
-  }
-
-  if (!wRece(s)) {
-    s.seria = 0;
-    s.pudlo = s.czas;
-    s.blokadaDo = s.czas + KARA;
-
-    /*
-      Podniesienie: piłka jedzie W GÓRĘ, dokładnie na linię ręki - patrz opis na górze
-      pliku. Nie liczymy tego jako kozłowania, ale i nie zostawiamy piłki na parkiecie,
-      bo sama się z niego nie podniesie.
-
-      W górę, a nie w dół z przeliczeniem przez odbicie: pchnięcie w dół z parkietu to
-      2158 px/s, czyli błysk w jedną klatkę, i nie widać z niego nic. Uniesienie do ręki
-      czyta się jak podniesienie piłki i trwa tyle, ile ma trwać - pół sekundy.
-    */
-    const brak = Math.max(0, liniaReki(s.ile) - wysokosc(s));
-    s.vy = -Math.sqrt(2 * GRAWITACJA * brak);
-    return { ok: false, jakosc: 0, podniesienie: true };
-  }
-
-  const jakosc = Math.max(0, 1 - Math.abs(s.vy) / CZYSTE_DO);
+  const odstep = s.ile > 0 ? s.czas - s.uderzenie : RYTM_START;
+  /*
+    Wygładzanie: nowy rytm w 55%, poprzedni w 45%. Bez tego jedno spóźnione kliknięcie
+    wyrzucałoby piłkę pod sufit, a jedno za szybkie wbijało ją w parkiet - wysokość skakałaby
+    przy każdym kozłowaniu i rysunek przestałby przypominać kozłowanie.
+  */
+  s.rytm = s.ile === 0 ? RYTM_START : s.rytm * 0.45 + Math.min(Math.max(odstep, RYTM_MIN), RYTM_MAX) * 0.55;
+  s.wysokoscKozla = wysokoscZRytmu(s.rytm);
 
   s.ile += 1;
-  s.seria += 1;
   s.uderzenie = s.czas;
 
-  /*
-    Prędkość pchnięcia w dół dobrana tak, żeby po odbiciu piłka wróciła na linię ręki.
-    Z zachowania energii: żeby wznieść się na `h`, po odbiciu trzeba mieć `sqrt(2gh)`,
-    a odbicie zabiera część prędkości - więc do parkieta trzeba dojechać z `v/ODBICIE`.
-    Odejmujemy to, co i tak da grawitacja na drodze do parkietu.
-  */
-  const doceloweWzniesienie = liniaReki(s.ile);
-  const poOdbiciu = Math.sqrt(2 * GRAWITACJA * doceloweWzniesienie);
-  const przyParkiecie = poOdbiciu / ODBICIE;
-  const droga = Math.max(0, WYS * PODLOGA - PILKA_R - s.y);
-  const potrzebne = przyParkiecie * przyParkiecie - 2 * GRAWITACJA * droga;
+  const h = wysokosc(s);
+  const doParkietu = Math.sqrt(2 * GRAWITACJA * s.wysokoscKozla) / ODBICIE;
 
-  s.vy = potrzebne > 0 ? Math.sqrt(potrzebne) : 60;
+  if (h <= 8) {
+    /* piłka leży albo jest tuż nad parkietem - nie ma jej czym pchać w dół, więc podbijamy */
+    s.vy = -Math.sqrt(2 * GRAWITACJA * s.wysokoscKozla);
+  } else {
+    const potrzebne = doParkietu * doParkietu - 2 * GRAWITACJA * h;
+    s.vy = Math.max(potrzebne > 0 ? Math.sqrt(potrzebne) : 0, MIN_PCHNIECIE);
+  }
 
   /*
-    Obrót idzie za pchnięciem, ale w drugą stronę niż poprzednie - kozłująca piłka wraca do
-    ręki obracając się z powrotem, a nie kręci się bez końca w jedną stronę.
+    Obrót idzie za pchnięciem i przy każdym kozłowaniu w drugą stronę - kozłująca piłka wraca
+    do ręki obracając się z powrotem, a nie kręci się bez końca w jedną stronę. Szybki rytm
+    znaczy mocniejszy obrót.
   */
-  s.obrotV = (s.obrotV > 0 ? -1 : 1) * (5 + jakosc * 5);
+  const zwinnosc = 1 - Math.min(s.rytm / RYTM_MAX, 1);
+  s.obrotV = (s.obrotV > 0 ? -1 : 1) * (4 + 7 * zwinnosc);
 
-  return { ok: true, jakosc, podniesienie: false };
+  return { ok: true, wysokosc: s.wysokoscKozla };
 }

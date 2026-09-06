@@ -8,11 +8,9 @@ import {
   PODLOGA,
   WYS,
   krokKozlowania,
-  liniaReki,
   nowaRunda,
   uderz,
-  wRece,
-  zablokowana,
+  wysokosc,
   type StanKozlowania,
 } from "@/lib/gra/kozlowanie";
 import { supabaseBrowser } from "@/lib/supabase/client";
@@ -20,18 +18,16 @@ import { useSesja } from "@/lib/sesja";
 import { barwa, okno, przezroczysta, rysujLicznik, rysujPilke } from "./rysunki";
 
 /**
- * Minigra „kozłowanie": jak najwięcej kozłowań w minutę.
+ * Minigra „kozły": jak najwięcej kozłowań w minutę.
  *
- * Piłka skacze sama, a stuknięcie w ekran liczy się tylko wtedy, gdy dochodzi do ręki.
- * Wszystkie zasady - okno ręki, siła pchnięcia, kara za młotkowanie, przyspieszanie rytmu -
- * siedzą w `lib/gra/kozlowanie.ts` i dają się rozegrać bez przeglądarki. Tutaj zostaje
- * rysowanie i jedno zdarzenie wejścia.
+ * Kliknięcie w dowolnym miejscu ekranu to jedno kozłowanie, a piłka idzie w rytm klikania -
+ * wszystkie zasady siedzą w `lib/gra/kozlowanie.ts` i dają się rozegrać bez przeglądarki.
+ * Tutaj zostaje rysowanie i wejście.
  *
- * Cała nauka tej gry idzie przez JEDEN element rysunku: linię ręki. To przerywana kreska
- * na wysokości, do której piłka musi dojść, żeby uderzenie się liczyło - rozjaśnia się,
- * kiedy piłka wjeżdża w zasięg, i przygasa razem z karą po pudle. Bez niej gracz nie ma
- * skąd wiedzieć, czego gra od niego chce, i zostaje mu klikanie na oślep - czyli dokładnie
- * to, przed czym zasady mają go bronić.
+ * Wejście jest na CAŁYM OKNIE, nie na kanwie. Kanwa i tak leży na całym ekranie, ale
+ * nasłuch na oknie znaczy, że żadna warstwa nad nią - napis, komunikat, poświata - nie może
+ * zjeść kliknięcia. Wyjątkiem są przyciski i odnośniki: powrót na mapę i ranking mają
+ * działać jak przyciski, a nie kozłować piłką.
  *
  * Parkiet rysuje się kreską przy starcie, tak samo jak kosz w drugiej grze, i kończy się
  * DOKŁADNIE na linii, od której odbija się piłka. Rysunek podłogi w tle SVG nie mógłby
@@ -51,19 +47,20 @@ interface Stan extends StanKozlowania {
   stuk: number;
   stukX: number;
   stukY: number;
-  /** czy ostatnie stuknięcie było zaliczone - fala ma barwę odpowiedzi */
-  stukOk: boolean;
 }
 
 export function Kozlowanie({
   miejsce,
   zaczeta,
+  aktywna = true,
   onWynik,
   onSeria,
   onCzas,
 }: {
   miejsce: IdMiejsca;
   zaczeta: boolean;
+  /** fałsz, gdy na wierzchu stoi tablica wyników - wtedy kliknięcia nie kozłują */
+  aktywna?: boolean;
   onWynik: (wynik: number) => void;
   onSeria: (wynik: number, komunikat: string | null) => void;
   onCzas?: (sekundy: number | null) => void;
@@ -71,6 +68,13 @@ export function Kozlowanie({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const stanRef = useRef<Stan>(nowyStan());
   const zaczetaRef = useRef(zaczeta);
+  const aktywnaRef = useRef(aktywna);
+  /** kiedy zaczęła się runda - żeby kliknięcie startowe nie policzyło się jako kozłowanie */
+  const startRef = useRef(0);
+
+  useEffect(() => {
+    aktywnaRef.current = aktywna;
+  }, [aktywna]);
 
   const sesja = useSesja();
   const zalogowany = Boolean(sesja?.user);
@@ -81,6 +85,7 @@ export function Kozlowanie({
       const s = stanRef.current;
       Object.assign(s, nowyStan());
       s.faza = "rysowanie";
+      startRef.current = performance.now();
     }
   }, [zaczeta]);
 
@@ -167,7 +172,6 @@ export function Kozlowanie({
       const swieze = Math.max(0, 1 - (s.czas - s.uderzenie) / 0.45);
       rysujLicznik(ctx, szer, WYS, s.ile, swieze);
       rysujParkiet(ctx, szer, s);
-      rysujLinieReki(ctx, szer, s);
       rysujCien(ctx, szer, s);
       rysujFale(ctx, s);
       rysujPilkeGry(ctx, szer, s);
@@ -185,37 +189,69 @@ export function Kozlowanie({
   }, [onCzas, onSeria, zapiszWynik]);
 
   /* ------------------------------------------------------------- wejście */
-  const stuknij = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!zaczeta) return;
-    const s = stanRef.current;
-    if (s.faza === "rysowanie") return;
+  /*
+    Nasłuch na oknie, nie na kanwie - patrz opis na górze pliku. Współrzędne kliknięcia są
+    potrzebne tylko do fali pod palcem, więc liczymy je względem kanwy.
+  */
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    const r = e.currentTarget.getBoundingClientRect();
-    const szer = (r.width / Math.max(r.height, 1)) * WYS;
-    s.stuk = s.czas;
-    s.stukX = ((e.clientX - r.left) / r.width) * szer;
-    s.stukY = ((e.clientY - r.top) / r.height) * WYS;
+    const naDol = (e: PointerEvent) => {
+      if (!zaczetaRef.current || !aktywnaRef.current) return;
+      /*
+        Kliknięcie, którym zaczyna się grę, nie jest jeszcze kozłowaniem. Nasłuch siedzi na
+        oknie, więc to samo kliknięcie, które zdejmuje ekran tytułowy, doszłoby i tutaj -
+        i od razu przeskoczyłoby intro, którego nikt by nie zobaczył. Liczymy w czasie
+        rzeczywistym, nie w czasie gry, bo zegar gry rusza dopiero po intrze.
+      */
+      if (performance.now() - startRef.current < 200) return;
+      /* przyciski i odnośniki zostają przyciskami */
+      if ((e.target as HTMLElement | null)?.closest("button, a, input, textarea")) return;
 
-    if (s.faza === "koniec") {
-      /* nowa runda - stuknięcie po końcu zaczyna od zera */
-      Object.assign(s, nowyStan());
-      s.faza = "gra";
-      s.rysunek = 1;
-      s.widok = 1;
-      onSeria(0, null);
-      onCzas?.(CZAS_RUNDY);
-      return;
-    }
+      const s = stanRef.current;
+      /*
+        Kliknięcie w trakcie rysowania planszy pomija intro. Rysowanie trwa 1,25 s i przez
+        ten czas kliknięcia po prostu przepadały - a to jest dokładnie ta chwila, w której
+        człowiek, który przed sekundą kliknął „zacznij", klika jeszcze raz. Pierwsze
+        wrażenie z gry nie może brzmieć „nie działa".
+      */
+      if (s.faza === "rysowanie") {
+        s.rysunek = 1;
+        s.widok = 1;
+        s.faza = "gra";
+        s.czas = 0;
+        onCzas?.(CZAS_RUNDY);
+      }
 
-    const w = uderz(s);
-    s.stukOk = w.ok;
-    if (w.ok) onSeria(s.ile, null);
-  };
+      const r = canvas.getBoundingClientRect();
+      const szer = (r.width / Math.max(r.height, 1)) * WYS;
+      s.stuk = s.czas;
+      s.stukX = ((e.clientX - r.left) / r.width) * szer;
+      s.stukY = ((e.clientY - r.top) / r.height) * WYS;
+
+      if (s.faza === "koniec") {
+        /* nowa runda - kliknięcie po końcu zaczyna od zera */
+        Object.assign(s, nowyStan());
+        s.faza = "gra";
+        s.rysunek = 1;
+        s.widok = 1;
+        onSeria(0, null);
+        onCzas?.(CZAS_RUNDY);
+        return;
+      }
+
+      uderz(s);
+      onSeria(s.ile, null);
+    };
+
+    window.addEventListener("pointerdown", naDol);
+    return () => window.removeEventListener("pointerdown", naDol);
+  }, [onCzas, onSeria]);
 
   return (
     <canvas
       ref={canvasRef}
-      onPointerDown={stuknij}
       className="absolute inset-0 h-full w-full touch-none"
       aria-label={zalogowany ? "Plansza gry" : "Plansza gry - grasz bez konta"}
     />
@@ -233,7 +269,6 @@ function nowyStan(): Stan {
     stuk: -99,
     stukX: 0,
     stukY: 0,
-    stukOk: true,
   };
 }
 
@@ -324,44 +359,12 @@ function rysujParkiet(ctx: CanvasRenderingContext2D, szer: number, s: Stan) {
   ctx.restore();
 }
 
-/**
- * Linia ręki - jedyna instrukcja tej gry.
- *
- * Przerywana kreska na wysokości, do której piłka musi dojść. Rozjaśnia się, kiedy piłka
- * wjeżdża w zasięg (wtedy uderzenie się liczy), i robi się czerwona w czasie kary po pudle.
- * Bez niej gra jest zagadką: piłka skacze, stuknięcia raz się liczą, raz nie, i nie ma
- * z czego wywnioskować, dlaczego.
- */
-function rysujLinieReki(ctx: CanvasRenderingContext2D, szer: number, s: Stan) {
-  if (s.widok <= 0) return;
-
-  const y = WYS * PODLOGA - PILKA_R - liniaReki(s.ile);
-  const gotowa = wRece(s);
-  const kara = zablokowana(s);
-
-  ctx.save();
-  ctx.globalAlpha = s.widok;
-  ctx.setLineDash([16, 14]);
-  ctx.lineWidth = gotowa ? 3 : 2;
-  ctx.strokeStyle = kara
-    ? barwa("--rgb-ember", "rgba(255,77,10,.5)", 0.45)
-    : gotowa
-      ? barwa("--rgb-glow", "rgba(255,178,92,.75)", 0.75)
-      : barwa("--rgb-szyba", "rgba(255,255,255,.22)", 0.22);
-  ctx.beginPath();
-  ctx.moveTo(szer * 0.16, y);
-  ctx.lineTo(szer * 0.84, y);
-  ctx.stroke();
-  ctx.restore();
-}
-
 /** Cień piłki na parkiecie - im wyżej piłka, tym mniejszy i słabszy. */
 function rysujCien(ctx: CanvasRenderingContext2D, szer: number, s: Stan) {
   if (s.widok <= 0) return;
 
   const linia = WYS * PODLOGA;
-  const wysokosc = Math.max(0, linia - PILKA_R - s.y);
-  const blisko = 1 - Math.min(wysokosc / (WYS * 0.5), 1);
+  const blisko = 1 - Math.min(Math.max(0, wysokosc(s)) / (WYS * 0.5), 1);
 
   ctx.save();
   ctx.globalAlpha = s.widok * (0.12 + blisko * 0.4);
@@ -372,13 +375,7 @@ function rysujCien(ctx: CanvasRenderingContext2D, szer: number, s: Stan) {
   ctx.restore();
 }
 
-/**
- * Fala pod palcem - potwierdzenie, że stuknięcie doszło, i CZY się zaliczyło.
- *
- * Dwie barwy, bo to jedyne miejsce, gdzie gra odpowiada na sam dotyk: ciepła znaczy
- * kozłowanie, czerwona - stuknięcie poza zasięgiem, po którym ręka podnosi piłkę i traci
- * serię. Bez rozróżnienia oba wyglądają tak samo i nie da się nauczyć rytmu.
- */
+/** Fala pod palcem - potwierdzenie, że kliknięcie doszło. */
 function rysujFale(ctx: CanvasRenderingContext2D, s: Stan) {
   const wiek = s.czas - s.stuk;
   if (wiek < 0 || wiek > 0.45) return;
@@ -387,9 +384,7 @@ function rysujFale(ctx: CanvasRenderingContext2D, s: Stan) {
   ctx.save();
   ctx.globalAlpha = 1 - t;
   ctx.lineWidth = 3 * (1 - t) + 1;
-  ctx.strokeStyle = s.stukOk
-    ? barwa("--rgb-glow", "rgba(255,178,92,.6)", 0.5)
-    : barwa("--rgb-ember", "rgba(255,77,10,.6)", 0.5);
+  ctx.strokeStyle = barwa("--rgb-glow", "rgba(255,178,92,.6)", 0.5);
   ctx.beginPath();
   ctx.arc(s.stukX, s.stukY, 12 + t * 54, 0, Math.PI * 2);
   ctx.stroke();
@@ -417,9 +412,9 @@ function rysujPilkeGry(ctx: CanvasRenderingContext2D, szer: number, s: Stan) {
     stopien: poziomDlaSerii(s.ile).pilka,
   });
 
-  /* czyste uderzenie zostawia na chwilę pierścień - to jedyna nagroda za dokładność */
+  /* każde kozłowanie zostawia na chwilę pierścień - stąd wiadomo, że kliknięcie się liczy */
   const swieze = s.czas - s.uderzenie;
-  if (swieze >= 0 && swieze < 0.3 && s.seria > 0) {
+  if (swieze >= 0 && swieze < 0.3 && s.ile > 0) {
     const t = swieze / 0.3;
     ctx.save();
     ctx.globalAlpha = 1 - t;

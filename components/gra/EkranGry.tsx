@@ -6,7 +6,7 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 import { useSesja } from "@/lib/sesja";
 import { slugifyPlace } from "@/lib/site";
 import { NAZWY_GIER, type IdMiejsca, type MiejsceGry } from "@/lib/minigra";
-import { ArrowLeftIcon } from "@/components/icons";
+import { ArrowLeftIcon, FireBallIcon } from "@/components/icons";
 import { RzutDoKosza } from "./RzutDoKosza";
 import { Kozlowanie } from "./Kozlowanie";
 import { TloBoiska } from "./TlaBoisk";
@@ -92,13 +92,19 @@ export function EkranGry({
   const posiadaczAvatar = (mojWiekszy ? sesja?.user?.avatar : lider?.avatar) ?? null;
 
   /*
-    Wynik lidera trzymamy też w referencji, bo `naSerie` jest stałym wywołaniem zwrotnym -
-    plansza dostaje je raz i trzymała by w domknięciu liczbę z pierwszego rysowania.
+    Rekord DO POBICIA W TEJ RUNDZIE, ustalany w chwili, gdy wynik wraca do zera.
+
+    Napis „nowy rekord" ma znaczyć, że padł rekord, który stał przed tą rozgrywką - a nie
+    że wynik jest wyższy niż przed sekundą. Bez tego progu gracz bez konta widział „nowy
+    rekord" już przy drugim kozłowaniu, bo bił własny wynik sprzed chwili.
+
+    Referencja, a nie stan, bo `naSerie` jest stałym wywołaniem zwrotnym: plansza dostaje
+    je raz i trzymałaby w domknięciu liczbę z pierwszego rysowania.
   */
-  const liderRef = useRef(0);
+  const progRef = useRef(0);
   useEffect(() => {
-    liderRef.current = liderSeria;
-  }, [liderSeria]);
+    if (seria === 0) progRef.current = Math.max(rekord, liderSeria);
+  }, [seria, rekord, liderSeria]);
 
   /*
     Własny rekord czytamy raz i tylko dla zalogowanego: tabela wyników jest zamknięta
@@ -148,12 +154,12 @@ export function EkranGry({
        dopiero po jej końcu */
     setRekord((r) => {
       /*
-        „Nowy rekord" wobec liczby, KTÓRĄ PLAKIETKA POKAZUJE - a ta jest rekordem boiska,
-        nie moim własnym. Inaczej napis zapalałby się przy pobiciu własnych dwunastu, gdy
-        w plakietce stoi czterdzieści kogoś innego, i kłamałby razem z czyjąś twarzą obok.
+        „Nowy rekord" wobec liczby, KTÓRA STAŁA NA STARCIE TEJ RUNDY - a ta jest rekordem
+        boiska, nie moim własnym. Inaczej napis zapalałby się przy pobiciu własnych
+        dwunastu, gdy w plakietce stoi czterdzieści kogoś innego, i kłamałby razem z czyjąś
+        twarzą obok.
       */
-      const prog = Math.max(r, liderRef.current);
-      if (s > prog && prog > 0) setPobity(true);
+      if (s > progRef.current && progRef.current > 0) setPobity(true);
       return Math.max(r, s);
     });
   }, []);
@@ -215,6 +221,7 @@ export function EkranGry({
           <Kozlowanie
             miejsce={miejsce.id as IdMiejsca}
             zaczeta={zaczeta}
+            aktywna={!tablica}
             onWynik={(w) => void odswiez(w)}
             onSeria={naSerie}
             onCzas={naCzas}
@@ -325,11 +332,20 @@ export function EkranGry({
                   style={{ boxShadow: `0 0 0 1.5px ${ZLOTO.srodek}` }}
                 />
               ) : (
+                /*
+                  Bez zdjęcia zostaje inicjał, a bez nicku - piłka. Trzeci przypadek zdarza
+                  się częściej, niż się wydaje: gracz bez konta bije własny wynik z tej
+                  samej sesji, więc rekord jest jego, ale nie ma się czym podpisać.
+                */
                 <span
                   className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/10 text-[12px] font-semibold"
                   style={{ color: ZLOTO.jasne, boxShadow: `0 0 0 1.5px ${ZLOTO.srodek}` }}
                 >
-                  {(posiadaczNick ?? "?").slice(0, 1).toUpperCase()}
+                  {posiadaczNick ? (
+                    posiadaczNick.slice(0, 1).toUpperCase()
+                  ) : (
+                    <FireBallIcon className="h-4 w-4" />
+                  )}
                 </span>
               )}
 
