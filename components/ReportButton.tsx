@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { REPORT_REASONS, ReportReason, sendReport } from "@/lib/reports";
 import { supabaseEnabled } from "@/lib/supabase/config";
+import { useBramka } from "./BramkaLogowania";
 
 /**
  * „Zgłoś błąd" na karcie boiska - dostępne również bez konta.
@@ -23,6 +24,17 @@ export function ReportButton({
   const [comment, setComment] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "sent">("idle");
   const [error, setError] = useState<string | null>(null);
+  const { wymagaj } = useBramka();
+
+  /*
+    Zgłoszenie błędu zmienia to, co inni widzą na mapie (moderacja bierze je pod uwagę),
+    więc idzie za bramką jak podpalanie i ulubione. Anonimowe zgłoszenia dawały się też
+    puszczać hurtem z jednego urządzenia.
+  */
+  const otworz = async () => {
+    if (!(await wymagaj("zgłosić poprawkę do boiska"))) return;
+    setOpen(true);
+  };
 
   const submit = async () => {
     setState("sending");
@@ -39,7 +51,7 @@ export function ReportButton({
   return (
     <>
       <button
-        onClick={() => setOpen(true)}
+        onClick={otworz}
         className={
           prominent
             ? "flame-gradient-dim rounded-2xl px-8 py-4 text-[15px] font-bold text-ink transition hover:brightness-110"

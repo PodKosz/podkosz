@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "../globals.css";
 import { TopNav } from "@/components/TopNav";
+import { BramkaLogowania } from "@/components/BramkaLogowania";
 import { VisitPing } from "@/components/VisitPing";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
@@ -55,9 +56,16 @@ export default function StronaLayout({ children }: Readonly<{ children: React.Re
           ciemnym tle widać jak mrugnięcie.
         */}
         <script dangerouslySetInnerHTML={{ __html: SKRYPT_MOTYWU }} />
-        <TopNav />
-        <div className="relative z-10">{children}</div>
-        <SiteFooter />
+        {/*
+          Bramka logowania obejmuje CAŁĄ stronę, razem z paskiem nawigacji i stopką: okno
+          „musisz się zalogować" pojawia się na środku ekranu i rozmywa wszystko pod sobą,
+          więc musi stać nad wszystkim, a każdy przycisk w środku musi móc je wywołać.
+        */}
+        <BramkaLogowania>
+          <TopNav />
+          <div className="relative z-10">{children}</div>
+          <SiteFooter />
+        </BramkaLogowania>
         <VisitPing />
       </body>
     </html>

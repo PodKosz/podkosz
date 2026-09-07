@@ -47,6 +47,7 @@ część nazwy pliku.
 | 28 | `migration-slad-gps.sql` | odległość pinezki od odczytu GPS — ocena „ok / podejrzane" w kolejce |
 | 29 | `migration-minigra-chicago.sql` | trzecie miejsce minigry (Chicago, kozłowanie) — zawarte w `migration-tarcza.sql`, więc jeśli uruchamiasz tarczę, tej pomiń |
 | 30 | `migration-tarcza.sql` | limity i sufity na tym, co otwarte dla świata: zapisy na otwarcie tylko przez funkcję z licznikiem na IP, sufity na statystykach i obecności, wyniki minigry podpięte pod czas rundy. **Najpierw wdróż kod, potem uruchom migrację** — zapis wyniku wymaga od tej pory otwartej rundy (`minigra_start`) |
+| 31 | `migration-brama-i-polska.sql` | zgłoszenia boisk i poprawek wymagają konta (koniec z anonimowymi), a boiska wolno dodawać tylko w prostokącie Polski - z wyjątkiem administratora |
 
 ## Nieuruchomione (świadomie)
 

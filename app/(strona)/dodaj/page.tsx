@@ -1,6 +1,7 @@
 ﻿import type { Metadata } from "next";
 import { AddFlow } from "@/components/add/AddFlow";
 import { getSessionUser } from "@/lib/supabase/server";
+import { PrzyciskLogowania } from "@/components/PrzyciskLogowania";
 
 export const metadata: Metadata = {
   title: "Dodaj boisko - PodKosz",
@@ -32,9 +33,35 @@ export default async function AddPage() {
     );
   }
 
+  /*
+    Bez konta nie ma kreatora - i to jest właściwe miejsce na tę odmowę.
+
+    Okno „musisz się zalogować" (`BramkaLogowania`) łapie kliknięcia w przyciski, ale pod
+    ten adres da się wejść wprost - z zakładki, z linku, z historii. Wtedy okno nie ma nad
+    czym stanąć: nie ma czynności, którą ktoś przerwał, jest cała strona. Odmowa jest więc
+    stroną, nie oknem, i mówi to samo co okno, plus przycisk logowania.
+  */
+  if (!user) {
+    return (
+      <main className="mx-auto min-h-dvh max-w-2xl px-6 pb-24 pt-28">
+        <p className="text-[12px] uppercase tracking-[0.2em] text-flame">Dodaj boisko</p>
+        <h1 className="mt-2 text-[clamp(28px,5vw,42px)] font-semibold tracking-[-0.02em]">
+          Najpierw zaloguj się
+        </h1>
+        <p className="mt-6 max-w-[52ch] text-[15px] leading-relaxed text-muted">
+          Dodawanie boisk wymaga konta - inaczej nie ma jak odróżnić zgłoszenia od pomyłki,
+          ani komu przyznać dodane boisko. Przeglądanie mapy zostaje otwarte dla wszystkich.
+        </p>
+        <div className="mt-8">
+          <PrzyciskLogowania />
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-dvh px-5 pb-24 pt-28">
-      <AddFlow user={user ? { name: user.name, email: user.email } : null} />
+      <AddFlow user={{ name: user.name, email: user.email }} admin={Boolean(user.isAdmin)} />
     </main>
   );
 }

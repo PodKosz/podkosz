@@ -1,36 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import { usePathname } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
-import { supabaseEnabled } from "@/lib/supabase/config";
-import { signInWithGoogle } from "@/lib/auth";
+import { useBramka } from "./BramkaLogowania";
 
 /** Ulubione boiska zalogowanego użytkownika. */
 export function FavoriteButton({
   courtId,
   initiallyFavorite = false,
-  signedIn = false,
   compact = false,
 }: {
   courtId: string;
   initiallyFavorite?: boolean;
-  signedIn?: boolean;
   /** mniejsza wersja - na telefonie stoi w jednym rzędzie ze współrzędnymi */
   compact?: boolean;
 }) {
-  const path = usePathname();
   const [fav, setFav] = useState(initiallyFavorite);
   const [hint, setHint] = useState<string | null>(null);
+  const { wymagaj } = useBramka();
 
   const toggle = async () => {
+    if (!(await wymagaj("dodać boisko do ulubionych"))) return;
+
     const supabase = await supabaseBrowser();
-    if (!supabase || !signedIn) {
-      if (supabaseEnabled) {
-        signInWithGoogle(path).catch((e: Error) => setHint(e.message));
-      } else {
-        setHint("Ulubione ruszą po podpięciu bazy.");
-      }
+    if (!supabase) {
+      setHint("Ulubione ruszą po podpięciu bazy.");
       return;
     }
 

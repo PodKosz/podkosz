@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { usePathname } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
-import { supabaseEnabled } from "@/lib/supabase/config";
-import { signInWithGoogle } from "@/lib/auth";
+import { useBramka } from "./BramkaLogowania";
 import { FireBallIcon } from "./icons";
 
 /** Lajk = płonąca piłka. Bez podpiętej bazy działa lokalnie (tryb testowy). */
@@ -12,16 +10,14 @@ export function LikeButton({
   courtId,
   initial,
   initiallyLiked = false,
-  signedIn = false,
   size = "lg",
 }: {
   courtId: string;
   initial: number;
   initiallyLiked?: boolean;
-  signedIn?: boolean;
   size?: "lg" | "sm";
 }) {
-  const path = usePathname();
+  const { wymagaj } = useBramka();
   const [liked, setLiked] = useState(initiallyLiked);
   const [count, setCount] = useState(initial);
   const [hint, setHint] = useState<string | null>(null);
@@ -33,10 +29,11 @@ export function LikeButton({
     if (busy) return;
     const supabase = await supabaseBrowser();
 
-    if (supabaseEnabled && !signedIn) {
-      setHint("Podpalanie boisk wymaga konta - kliknij, żeby zalogować się przez Google.");
-      return;
-    }
+    /*
+      Jedno pytanie, jedno okno - patrz `BramkaLogowania`. Wcześniej stała tu podpowiedź
+      pod przyciskiem, którą przy podpalaniu z mapy najczęściej się nie widziało.
+    */
+    if (!(await wymagaj("podpalić boisko"))) return;
 
     const next = !liked;
     setLiked(next);
@@ -60,7 +57,7 @@ export function LikeButton({
   return (
     <div className="relative">
       <button
-        onClick={hint && supabaseEnabled && !signedIn ? () => signInWithGoogle(path) : toggle}
+        onClick={toggle}
         aria-pressed={liked}
         className={`group flex items-center gap-2 rounded-full border transition active:scale-95 ${
           big

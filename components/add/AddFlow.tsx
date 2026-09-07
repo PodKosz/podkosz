@@ -18,6 +18,7 @@ import {
 } from "@/lib/types";
 import { submitCourt } from "@/lib/queue";
 import { PROMIEN_OBECNOSCI_M, type OdczytGps, ocenObecnosc } from "@/lib/obecnosc";
+import { komunikatPozaPolska, ocenMiejsce } from "@/lib/polska";
 import { signInWithGoogle } from "@/lib/auth";
 import { supabaseEnabled } from "@/lib/supabase/config";
 import { reverseGeocode } from "@/lib/geo";
@@ -37,7 +38,7 @@ type Stage = "intro" | "shots" | "gps" | "details" | "author" | "done";
 
 const STAGE_ORDER: Stage[] = ["intro", "shots", "gps", "details", "author", "done"];
 
-export function AddFlow({ user }: { user: AddFlowUser | null }) {
+export function AddFlow({ user, admin = false }: { user: AddFlowUser; admin?: boolean }) {
   const [stage, setStage] = useState<Stage>("intro");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -58,6 +59,15 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
   /** boiska stojące w tym samym miejscu - ostrzeżenie przed dodaniem duplikatu */
   const [duplicates, setDuplicates] = useState<NearbyMatch[]>([]);
   const [gpsError, setGpsError] = useState<string | null>(null);
+  /**
+   * Miejsce poza Polską - komunikat zamiast przejścia dalej.
+   *
+   * Rozstrzyga kod kraju z geokodera, nie prostokąt na współrzędnych: Polska nie jest
+   * prostokątem i przy granicy wpadałyby w niego Czechy, Słowacja czy obwód
+   * kaliningradzki (patrz `lib/polska.ts`). Administrator dodaje wszędzie - na mapie
+   * i tak stoją już punkty spoza kraju.
+   */
+  const [pozaPolska, setPozaPolska] = useState<string | null>(null);
   /** co udało się odczytać z lokalizacji - pokazujemy to przy pinezce */
   const [placeNote, setPlaceNote] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -189,6 +199,10 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
     setPlaceNote("sprawdzam adres…");
     try {
       const found = await reverseGeocode(lat, lng);
+
+      const ocena = ocenMiejsce(lat, lng, found?.kraj);
+      setPozaPolska(!ocena.wolno && !admin ? komunikatPozaPolska(ocena.kraj) : null);
+
       const region = VOIVODESHIPS.includes(found?.voivodeship as (typeof VOIVODESHIPS)[number])
         ? (found?.voivodeship as string)
         : "";
@@ -206,6 +220,9 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
       );
     } catch {
       setPlaceNote("nie udało się odczytać adresu - wpisz miasto w kolejnym kroku");
+      /* bez odpowiedzi geokodera zostaje prostokąt - zapas, nie rozstrzygnięcie */
+      const ocena = ocenMiejsce(lat, lng, null);
+      setPozaPolska(!ocena.wolno && !admin ? komunikatPozaPolska(null) : null);
     }
   };
 
@@ -664,10 +681,22 @@ export function AddFlow({ user }: { user: AddFlowUser | null }) {
             <p className="mt-3 text-[13px] leading-snug text-ember">{obecnosc.komunikat}</p>
           )}
 
+          {/*
+            Poza Polską: małe powiadomienie przy pinezce, nie okno na całą stronę. To nie
+            jest błąd człowieka ani nic, co da się naprawić kliknięciem - to zasięg serwisu,
+            więc informacja ma być spokojna i stać dokładnie tam, gdzie powstała.
+          */}
+          {pozaPolska && (
+            <p className="mt-3 flex items-start gap-2 rounded-[18px] border border-ember/40 bg-ember/10 px-4 py-3 text-[13px] leading-snug text-ember">
+              <span aria-hidden>🇵🇱</span>
+              <span>{pozaPolska}</span>
+            </p>
+          )}
+
           <Nav
             onBack={() => setStage("shots")}
             onNext={() => setStage("details")}
-            nextDisabled={!obecnosc.ok}
+            nextDisabled={!obecnosc.ok || Boolean(pozaPolska)}
             nextLabel="Dalej - szczegóły"
           />
         </section>

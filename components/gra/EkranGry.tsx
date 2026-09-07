@@ -7,6 +7,7 @@ import { useSesja } from "@/lib/sesja";
 import { slugifyPlace } from "@/lib/site";
 import { NAZWY_GIER, type IdMiejsca, type MiejsceGry } from "@/lib/minigra";
 import { ArrowLeftIcon, FireBallIcon } from "@/components/icons";
+import { PrzyciskLogowania } from "@/components/PrzyciskLogowania";
 import { RzutDoKosza } from "./RzutDoKosza";
 import { Kozlowanie } from "./Kozlowanie";
 import { TloBoiska } from "./TlaBoisk";
@@ -67,9 +68,19 @@ export function EkranGry({
   const [zegar, setZegar] = useState<number | null>(null);
   /** rekord pobity w tej rozgrywce - złota plakietka ma to pokazać od razu */
   const [pobity, setPobity] = useState(false);
+  /** wynik, po którym pokazujemy grającemu bez konta, że da się go zapisać */
+  const [zachetaPo, setZachetaPo] = useState<number | null>(null);
+  /** zachęta raz na wizytę - w rzutach seria kończy się przy każdym pudle */
+  const zachetaByla = useRef(false);
 
   const sesja = useSesja();
   const zalogowany = Boolean(sesja?.user);
+
+  /* `naSerie` jest stałym wywołaniem zwrotnym, więc stan logowania czyta z referencji */
+  const zalogowanyRef = useRef(zalogowany);
+  useEffect(() => {
+    zalogowanyRef.current = zalogowany;
+  }, [zalogowany]);
   const mojNick = sesja?.user?.name ?? null;
 
   /*
@@ -148,6 +159,17 @@ export function EkranGry({
   const naSerie = useCallback((s: number, k: string | null) => {
     setSeria(s);
     setKomunikat(k);
+
+    /*
+      Koniec rundy bez konta: pokazujemy, że wynik da się zapisać - ale tylko RAZ na wizytę
+      i tylko przy wyniku, który coś znaczy. W rzutach do kosza seria kończy się przy każdym
+      pudle, więc okno po każdym z nich byłoby natrętne i uczyłoby zamykania okien,
+      nie logowania.
+    */
+    if (k !== null && s >= 3 && !zalogowanyRef.current && !zachetaByla.current) {
+      zachetaByla.current = true;
+      setZachetaPo(s);
+    }
     /* zerowanie wyniku znaczy nową rozgrywkę - napis „nowy rekord" nie może w niej zostać */
     if (s === 0) setPobity(false);
     /* rekord rośnie już w trakcie rozgrywki - plakietka ma mówić prawdę teraz, a nie
@@ -417,6 +439,10 @@ export function EkranGry({
         Ranking
       </button>
 
+      {zachetaPo !== null && (
+        <ZachetaLogowania wynik={zachetaPo} onZamknij={() => setZachetaPo(null)} />
+      )}
+
       {tablica && (
         <TablicaWynikow
           miejsce={miejsce}
@@ -427,6 +453,71 @@ export function EkranGry({
         />
       )}
     </main>
+  );
+}
+
+/**
+ * Zachęta do logowania po rundzie zagranej bez konta.
+ *
+ * Grać może każdy - to była decyzja i zostaje. Ale wynik bez konta nie ma czyj być, więc
+ * do tabeli nie wchodzi, i lepiej powiedzieć to WPROST w chwili, gdy komuś właśnie wyszła
+ * dobra runda, niż zostawić drobny napis na dole ekranu. Okno mówi też rzecz niewygodną:
+ * ta konkretna runda już nie wejdzie do tabeli. Udawanie, że po zalogowaniu wynik się
+ * dopisze, byłoby ładniejsze i nieprawdziwe - po powrocie z Google plansza zaczyna od zera.
+ */
+function ZachetaLogowania({ wynik, onZamknij }: { wynik: number; onZamknij: () => void }) {
+  useEffect(() => {
+    const naKlawisz = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onZamknij();
+    };
+    window.addEventListener("keydown", naKlawisz);
+    return () => window.removeEventListener("keydown", naKlawisz);
+  }, [onZamknij]);
+
+  return (
+    <div className="absolute inset-0 z-40 grid place-items-center px-5">
+      <div
+        onClick={onZamknij}
+        className="absolute inset-0 bg-void/50 backdrop-blur-xl"
+        style={{ animation: "rise 260ms cubic-bezier(0.16, 1, 0.3, 1)" }}
+      />
+
+      <div
+        role="dialog"
+        aria-modal="true"
+        className="szklo-pro relative w-full max-w-[400px] overflow-hidden rounded-[30px] px-7 py-8 text-center"
+        style={{ animation: "rise 380ms cubic-bezier(0.16, 1, 0.3, 1)" }}
+      >
+        <p className="text-[11px] uppercase tracking-[0.3em]" style={{ color: BLEKIT }}>
+          twój wynik
+        </p>
+        <p
+          className="mt-3 text-[56px] font-semibold leading-none tabular-nums"
+          style={{ color: ZLOTO.jasne }}
+        >
+          {wynik}
+        </p>
+
+        <h2 className="mt-6 text-[20px] font-semibold leading-tight tracking-[-0.02em]">
+          Zaloguj się, aby zapisać wynik
+        </h2>
+        <p className="mt-3 text-[13px] leading-relaxed text-muted">
+          Tabela wyników jest wspólna dla wszystkich, więc wynik musi mieć czyj być. Tej
+          rundy już nie dopiszemy - po zalogowaniu zagraj jeszcze raz, plansza jest ta sama.
+        </p>
+
+        <div className="mt-7 flex justify-center">
+          <PrzyciskLogowania etykieta="Zaloguj się i zagraj" />
+        </div>
+
+        <button
+          onClick={onZamknij}
+          className="mt-3 w-full rounded-full px-6 py-3 text-[13px] text-faint transition hover:text-muted"
+        >
+          Graj dalej bez konta
+        </button>
+      </div>
+    </div>
   );
 }
 

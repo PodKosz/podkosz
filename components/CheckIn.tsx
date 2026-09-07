@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
 import {
   CheckinSlot,
   cancelToday,
@@ -13,7 +12,7 @@ import {
   opisGodzin,
 } from "@/lib/checkins";
 import { supabaseEnabled } from "@/lib/supabase/config";
-import { signInWithGoogle } from "@/lib/auth";
+import { useBramka } from "./BramkaLogowania";
 import { plural } from "@/lib/site";
 import { ClockIcon } from "./icons";
 
@@ -32,7 +31,6 @@ const HOURS = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
  * trzy osoby grające razem od 18:00 do 21:00 wyglądały jak trzy osobne pojedynki.
  */
 export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: boolean }) {
-  const path = usePathname();
   const [slots, setSlots] = useState<CheckinSlot[]>([]);
   const [osoby, setOsoby] = useState(0);
   const [mine, setMine] = useState<number[]>([]);
@@ -43,6 +41,7 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
   const [podKursorem, setPodKursorem] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
+  const { wymagaj } = useBramka();
   /** dlaczego dziś nie da się tu zapisać (dwa boiska dziennie, jedno województwo) */
   const [blokada, setBlokada] = useState<string | null>(null);
 
@@ -87,12 +86,9 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
   }, [courtId, signedIn]);
 
   const zapisz = async (start: number, koniec = start) => {
-    if (!signedIn) {
-      if (supabaseEnabled) {
-        signInWithGoogle(path).catch((e: Error) => setHint(e.message));
-      } else {
-        setHint("Deklaracje ruszą po podpięciu bazy.");
-      }
+    if (!(await wymagaj("zadeklarować, że dziś tu zagrasz"))) return;
+    if (!supabaseEnabled) {
+      setHint("Deklaracje ruszą po podpięciu bazy.");
       return;
     }
     setBusy(true);

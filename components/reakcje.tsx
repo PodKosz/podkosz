@@ -27,7 +27,6 @@ export function Podpalenie({ courtId, likes }: { courtId: string; likes: number 
       courtId={courtId}
       initial={likes}
       initiallyLiked={sesja?.likes.includes(courtId) ?? false}
-      signedIn={Boolean(sesja?.user)}
     />
   );
 }
@@ -40,7 +39,6 @@ export function Ulubione({ courtId, compact = false }: { courtId: string; compac
       key={sesja ? `wiem-${sesja.favorites.includes(courtId)}` : "czekam"}
       courtId={courtId}
       initiallyFavorite={sesja?.favorites.includes(courtId) ?? false}
-      signedIn={Boolean(sesja?.user)}
       compact={compact}
     />
   );

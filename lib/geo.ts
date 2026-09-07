@@ -50,7 +50,7 @@ const cleanVoivodeship = (state?: string) =>
 export async function reverseGeocode(
   lat: number,
   lng: number
-): Promise<{ city: string; voivodeship: string } | null> {
+): Promise<{ city: string; voivodeship: string; kraj: string } | null> {
   const json = await pytaj<{ address?: Record<string, string> }>("reverse", {
     lat: String(lat),
     lon: String(lng),
@@ -60,7 +60,17 @@ export async function reverseGeocode(
   const a = json.address ?? {};
   const city = a.city ?? a.town ?? a.village ?? a.municipality ?? a.county ?? "";
 
-  return { city, voivodeship: cleanVoivodeship(a.state) };
+  /*
+    Kod kraju („pl", „de", „cz") jest potrzebny do jednej rzeczy: dodawać boiska wolno
+    tylko w Polsce. Prostokąt na współrzędnych tego nie rozstrzygnie - Polska nie jest
+    prostokątem i przy granicy wpadałyby w niego Czechy, Słowacja i obwód kaliningradzki.
+    Odpowiedź geokodera wie, po której stronie granicy stoi człowiek.
+  */
+  return {
+    city,
+    voivodeship: cleanVoivodeship(a.state),
+    kraj: (a.country_code ?? "").toLowerCase(),
+  };
 }
 
 /**
