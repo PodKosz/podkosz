@@ -54,8 +54,17 @@ export function htmlWydarzenia(d: DaneWydarzenia) {
     ${naglowek(powitanie, esc(d.nazwa))}
 
     ${akapit(
-      `Na boisku <strong style="color:${KREDA};">${esc(d.boisko)}</strong> w ${esc(d.miasto)} ` +
-        `odbędzie się wydarzenie. Termin: <strong style="color:${KREDA};">${esc(d.kiedy)}</strong>.`
+      /*
+        Miejsce i termin jako dwa podpisane wiersze, a nie zdanie.
+
+        Zdanie wymagałoby odmiany nazwy miasta („w Warszawie", „w Łodzi", „w Katowicach")
+        - a miasto przychodzi z bazy w mianowniku i żadna reguła tego nie odmieni bez
+        słownika. Pierwsza wersja tego listu pisała „w Warszawa" i to jedno słowo
+        wystarczało, żeby cały list wyglądał na wysłany przez maszynę. Podpisane wiersze
+        czyta się szybciej niż zdanie i nie mają przypadków.
+      */
+      `Miejsce: <strong style="color:${KREDA};">${esc(d.boisko)}</strong>, ${esc(d.miasto)}.` +
+        `<br />Termin: <strong style="color:${KREDA};">${esc(d.kiedy)}</strong>.`
     )}
 
     ${d.opis ? akapit(esc(d.opis).replace(/\n+/g, "<br />")) : ""}
