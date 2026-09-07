@@ -216,10 +216,31 @@ function WizytowkaWydarzenia({
         }}
       />
 
+      {/*
+        Kadr o stałych proporcjach, a w nim DWIE kopie plakatu: rozmyta z przycięciem
+        w tle i cała na wierzchu. Tak samo jak w boxie na karcie boiska (`BoxWydarzenia`)
+        i z tego samego powodu: plakaty są w pionie, a `object-cover` ucinał im tytuł
+        i godziny - czyli dokładnie to, po co ktoś na tę wizytówkę patrzy.
+      */}
       <div className="relative aspect-[16/9] w-full overflow-hidden bg-white/5">
         {zdjecie ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={zdjecie} alt="" className="h-full w-full object-cover" decoding="async" />
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={zdjecie}
+              alt=""
+              aria-hidden
+              className="absolute inset-0 h-full w-full scale-110 object-cover opacity-45 blur-lg"
+              decoding="async"
+            />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={zdjecie}
+              alt=""
+              className="absolute inset-0 h-full w-full object-contain p-1.5"
+              decoding="async"
+            />
+          </>
         ) : (
           <PhotoPlaceholder kind="narożnik" seed={court.seed} />
         )}
