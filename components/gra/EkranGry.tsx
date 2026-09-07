@@ -222,7 +222,7 @@ export function EkranGry({
             miejsce={miejsce.id as IdMiejsca}
             zaczeta={zaczeta}
             aktywna={!tablica}
-            onWynik={(w) => void odswiez(w)}
+            onWynik={odswiez}
             onSeria={naSerie}
             onCzas={naCzas}
           />
@@ -230,7 +230,7 @@ export function EkranGry({
           <RzutDoKosza
             miejsce={miejsce.id as IdMiejsca}
             zaczeta={zaczeta}
-            onWynik={(w) => void odswiez(w)}
+            onWynik={odswiez}
             onSeria={naSerie}
           />
         )}

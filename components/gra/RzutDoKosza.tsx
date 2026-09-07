@@ -182,12 +182,28 @@ export function RzutDoKosza({
 
   const zapisz = useCallback(
     async (wynik: number) => {
+      /*
+        Najpierw baza, potem `onWynik` - bo to ono pobiera tablicę wyników. Odwrotnie
+        ranking odświeżał się przed zapisem i świeży rekord wchodził do niego dopiero po
+        odświeżeniu strony.
+      */
+      if (zalogowany) await zapiszWynik(miejsce, wynik);
       onWynik(wynik);
-      if (!zalogowany) return;
-      await zapiszWynik(miejsce, wynik);
     },
     [miejsce, onWynik, zalogowany]
   );
+
+  /*
+    Wywołania zwrotne w referencji, żeby pętla animacji NIE zależała od ich tożsamości.
+    `onWynik` przychodzi z `EkranGry` i przy każdym renderze bywało nową funkcją, co
+    restartowało efekt z pętlą - a restart zeruje czas i zapas kroków fizyki. W kozłach ten
+    sam błąd zatrzymał zegar całkowicie (zmierzone: 10,26 s realnie, 0 s na zegarze); tutaj
+    renderów jest mniej, więc objawiał się rzadziej, ale mechanizm jest ten sam.
+  */
+  const zwrotne = useRef({ onSeria, zapisz });
+  useEffect(() => {
+    zwrotne.current = { onSeria, zapisz };
+  }, [onSeria, zapisz]);
 
   /* ---------------------------------------------------------------- pętla */
   useEffect(() => {
@@ -275,12 +291,12 @@ export function RzutDoKosza({
           s.blysk = s.czas;
           s.przelot = 0;
           s.faza = "wpadla";
-          onSeria(s.seria, null);
+          zwrotne.current.onSeria(s.seria, null);
         } else if (s.y > WYS + 160 || s.x < -200 || s.x > szer + 200) {
           const wynik = s.seria;
           s.faza = "koniec";
-          onSeria(wynik, wynik > 0 ? `Seria przerwana na ${wynik}` : "Pudło");
-          void zapisz(wynik);
+          zwrotne.current.onSeria(wynik, wynik > 0 ? `Seria przerwana na ${wynik}` : "Pudło");
+          void zwrotne.current.zapisz(wynik);
         }
       }
 
@@ -318,7 +334,7 @@ export function RzutDoKosza({
       cancelAnimationFrame(klatka);
       ro.disconnect();
     };
-  }, [onSeria, zapisz]);
+  }, []);
 
   /* ------------------------------------------------------------- wskaźnik */
   const naSwiat = (e: React.PointerEvent<HTMLCanvasElement>) => {

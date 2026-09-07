@@ -43,6 +43,16 @@ interface Stan extends StanKozlowania {
   rysunek: number;
   /** postęp pojawiania się piłki, 0-1 */
   widok: number;
+  /**
+   * Kiedy zaczęła się runda, w czasie zegara przeglądarki (`performance.now`).
+   *
+   * Zegar rundy liczymy z RÓŻNICY CZASU RZECZYWISTEGO, a nie z sumowania kroków fizyki,
+   * i to jest naprawa zgłoszonego błędu: „licznik idzie za wolno - to nie 60 s". Suma
+   * kroków fizyki jest tyle warta, ile płynność pętli - gubi się przy każdej zgubionej
+   * klatce, przy każdym restarcie efektu i przy każdym uśpieniu karty w tle. Minuta
+   * rundy ma być minutą na zegarku gracza, więc bierzemy ją z zegarka.
+   */
+  startWall: number;
   /** czas ostatniego stuknięcia - do fali pod palcem */
   stuk: number;
   stukX: number;
@@ -103,12 +113,42 @@ export function Kozlowanie({
 
   const zapisz = useCallback(
     async (wynik: number) => {
+      /*
+        Kolejność: NAJPIERW wpis do bazy, potem `onWynik`, bo to ono odświeża tablicę
+        wyników. Odwrotnie - jak było - ranking pobierał się sekundę przed zapisem, więc
+        świeży wynik pojawiał się w nim dopiero po odświeżeniu strony albo po wygaśnięciu
+        pamięci podręcznej. Wyglądało to na opóźnienie bazy, a było wyścigiem
+        w naszym kodzie.
+
+        Plakietka rekordu nie czeka na nic - liczbę zna z `onSeria`, na bieżąco.
+      */
+      if (zalogowany) await zapiszWynik(miejsce, wynik);
       onWynik(wynik);
-      if (!zalogowany) return;
-      await zapiszWynik(miejsce, wynik);
     },
     [miejsce, onWynik, zalogowany]
   );
+
+  /*
+    Wywołania zwrotne w referencji - TO NIE JEST OZDOBA, TO NAPRAWA.
+
+    Pętla animacji siedzi w efekcie, a jego lista zależności wymieniała `onCzas`, `onSeria`
+    i `zapisz`. `zapisz` zależy od `onWynik`, a `onWynik` przychodziło z `EkranGry` jako
+    funkcja tworzona przy każdym renderze - więc efekt uruchamiał się od nowa po KAŻDYM
+    renderze. A renderów było sześćdziesiąt na sekundę, bo pętla co klatkę podawała
+    zegarowi nową wartość.
+
+    Skutek zmierzony w przeglądarce: 10,26 s realnego czasu, 0 sekund na zegarze gry.
+    Każdy restart zerował `poprzednia` i `zapas`, a skoro do kroku fizyki trzeba 8,3 ms
+    uzbieranego czasu, a między restartami mijały 1-2 ms, to próg nie był przekraczany
+    NIGDY. Gra stała: zegar nie schodził, piłka nie spadała, liczyły się tylko kliknięcia.
+
+    Referencja rozwiązuje to u źródła: pętla czyta najświeższe wywołania zwrotne, ale nie
+    zależy od ich tożsamości, więc efekt rusza raz i chodzi do końca.
+  */
+  const zwrotne = useRef({ onSeria, onCzas, zapisz });
+  useEffect(() => {
+    zwrotne.current = { onSeria, onCzas, zapisz };
+  }, [onSeria, onCzas, zapisz]);
 
   /* ---------------------------------------------------------------- pętla */
   useEffect(() => {
@@ -122,6 +162,8 @@ export function Kozlowanie({
     let poprzednia = performance.now();
     let zapas = 0;
     let szer = WYS;
+    /* ostatnia pokazana sekunda - zegar odświeżamy raz na sekundę, nie raz na klatkę */
+    let pokazanaSekunda = -1;
 
     const dopasuj = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -147,7 +189,9 @@ export function Kozlowanie({
         if (s.widok >= 1) {
           s.faza = "gra";
           s.czas = 0;
-          onCzas?.(CZAS_RUNDY);
+          s.startWall = teraz;
+          pokazanaSekunda = CZAS_RUNDY;
+          zwrotne.current.onCzas?.(CZAS_RUNDY);
         }
       }
 
@@ -160,13 +204,25 @@ export function Kozlowanie({
           krokKozlowania(s, KROK);
         }
 
-        const zostalo = Math.max(0, CZAS_RUNDY - s.czas);
-        onCzas?.(zostalo);
+        const zostalo = Math.max(0, CZAS_RUNDY - (teraz - s.startWall) / 1000);
+        /*
+          Zegar podajemy w górę tylko wtedy, gdy zmienia się pokazywana sekunda. Co klatkę
+          znaczyło sześćdziesiąt renderów całej oprawy na sekundę - i to one, przez
+          zależności efektu, restartowały tę pętlę.
+        */
+        const sekunda = Math.ceil(zostalo);
+        if (sekunda !== pokazanaSekunda) {
+          pokazanaSekunda = sekunda;
+          zwrotne.current.onCzas?.(zostalo);
+        }
 
         if (zostalo <= 0) {
           s.faza = "koniec";
-          onSeria(s.ile, s.ile > 0 ? `Koniec - ${s.ile} ${odmiana(s.ile)}` : "Koniec - bez kozłowania");
-          void zapisz(s.ile);
+          zwrotne.current.onSeria(
+            s.ile,
+            s.ile > 0 ? `Koniec - ${s.ile} ${odmiana(s.ile)}` : "Koniec - bez kozłowania"
+          );
+          void zwrotne.current.zapisz(s.ile);
         }
       }
 
@@ -192,7 +248,7 @@ export function Kozlowanie({
       cancelAnimationFrame(klatka);
       ro.disconnect();
     };
-  }, [onCzas, onSeria, zapisz]);
+  }, []);
 
   /* ------------------------------------------------------------- wejście */
   /*
@@ -227,7 +283,8 @@ export function Kozlowanie({
         s.widok = 1;
         s.faza = "gra";
         s.czas = 0;
-        onCzas?.(CZAS_RUNDY);
+        s.startWall = performance.now();
+        zwrotne.current.onCzas?.(CZAS_RUNDY);
       }
 
       const r = canvas.getBoundingClientRect();
@@ -242,18 +299,19 @@ export function Kozlowanie({
         s.faza = "gra";
         s.rysunek = 1;
         s.widok = 1;
-        onSeria(0, null);
-        onCzas?.(CZAS_RUNDY);
+        s.startWall = performance.now();
+        zwrotne.current.onSeria(0, null);
+        zwrotne.current.onCzas?.(CZAS_RUNDY);
         return;
       }
 
       uderz(s);
-      onSeria(s.ile, null);
+      zwrotne.current.onSeria(s.ile, null);
     };
 
     window.addEventListener("pointerdown", naDol);
     return () => window.removeEventListener("pointerdown", naDol);
-  }, [onCzas, onSeria]);
+  }, []);
 
   return (
     <canvas
@@ -272,6 +330,7 @@ function nowyStan(): Stan {
     faza: "gra",
     rysunek: 0,
     widok: 0,
+    startWall: 0,
     stuk: -99,
     stukX: 0,
     stukY: 0,
