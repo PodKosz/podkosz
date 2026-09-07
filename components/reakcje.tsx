@@ -65,6 +65,31 @@ export function LinkEdycji({ slug }: { slug: string }) {
 }
 
 /**
+ * Skrót do założenia wydarzenia na tym boisku - tylko dla administratora.
+ *
+ * Stoi obok „edytuj", bo to ta sama sytuacja: patrzę na boisko i chcę coś z nim zrobić.
+ * Wejście z karty boiska zabiera ze sobą slug, więc w kreatorze boisko jest już wybrane -
+ * kto kliknął przycisk NA boisku, wybrał boisko i nie ma powodu wpisywać jego nazwy
+ * drugi raz. Barwa biało-czerwona, ta sama, co pinezka wydarzenia na mapie i box na tej
+ * stronie: kolor jest w tej funkcji identyfikatorem, nie ozdobą.
+ */
+export function LinkWydarzenia({ slug }: { slug: string }) {
+  const sesja = useSesja();
+  if (!sesja?.user?.isAdmin) return null;
+
+  return (
+    <Link
+      href={`/admin?wydarzenie=${slug}`}
+      className="inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-white transition hover:brightness-110 sm:gap-2 sm:px-4 sm:py-2 sm:text-[12px] sm:tracking-[0.14em]"
+      style={{ background: "linear-gradient(135deg,#ffffff,#ffd3d8 30%,#e8112d 72%,#a60c1e)" }}
+    >
+      <span aria-hidden className="text-[13px] leading-none text-black">+</span>
+      <span className="text-black">dodaj wydarzenie</span>
+    </Link>
+  );
+}
+
+/**
  * Pasek „losuj dalej" pojawia się po wejściu z losowania.
  *
  * Parametr adresu czytamy w efekcie, po zamontowaniu - a nie hakiem `useSearchParams`.

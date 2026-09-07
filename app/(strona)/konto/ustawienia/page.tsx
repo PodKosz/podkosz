@@ -5,6 +5,7 @@ import { pobierzNickZmieniony } from "@/lib/konto";
 import { statystykiGracza } from "@/lib/profil";
 import { ZmianaNicku } from "@/components/konto/ZmianaNicku";
 import { UsunKonto } from "@/components/konto/UsunKonto";
+import { PowiadomieniaPrzelacznik } from "@/components/konto/PowiadomieniaPrzelacznik";
 import { TloPilki } from "@/components/TloPilki";
 import { dataOpisowa } from "@/lib/site";
 import { ArrowLeftIcon } from "@/components/icons";
@@ -78,6 +79,9 @@ export default async function UstawieniaPage() {
           zablokowane={user.isBanned}
         />
       </section>
+
+      {/* ---------- powiadomienia ---------- */}
+      <PowiadomieniaPrzelacznik userId={user.id} />
 
       {/* ---------- dane konta ---------- */}
       <section className="szklo-pro mt-6 rounded-[28px] p-6 sm:p-7">

@@ -4,7 +4,14 @@ import { czyAutorAnonimowy, formatDistance, slugifyPlace } from "@/lib/site";
 import type { NearbyCourt } from "@/lib/repo";
 import type { WeatherHour } from "@/lib/pogoda";
 import { CourtPhoto } from "./CourtPhoto";
-import { LinkEdycji, PasekLosowania, Podpalenie, Ulubione, ZagramDzis } from "./reakcje";
+import {
+  LinkEdycji,
+  LinkWydarzenia,
+  PasekLosowania,
+  Podpalenie,
+  Ulubione,
+  ZagramDzis,
+} from "./reakcje";
 import { Pogoda } from "./Pogoda";
 import { Gallery } from "./Gallery";
 import { ShortsPlayer } from "./ShortsPlayer";
@@ -75,6 +82,7 @@ export function CourtDetail({
               <ArrowLeftIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> mapa
             </Link>
             <LinkEdycji slug={court.slug} />
+            <LinkWydarzenia slug={court.slug} />
             <PasekLosowania slug={court.slug} />
           </div>
 
@@ -175,7 +183,17 @@ export function CourtDetail({
           razem z przyciskiem. Szerokość kafelków wylicza siatka - panel bierze co najmniej
           300 px, a parametry dzielą resztę równo między siebie.
         */}
-        <section className="relative z-10 -mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-[repeat(6,minmax(0,1fr))_minmax(300px,1.2fr)]">
+        {/*
+          Ujemny margines podciąga kafelki 24 px na zdjęcie w hero - ale TYLKO wtedy, gdy
+          kafelki są pierwsze. Z boxem wydarzenia nad nimi ten sam margines wjeżdżał na
+          box i ścinał mu dolną krawędź razem z ramką. Podciągnięcie należy do elementu,
+          który stoi najwyżej, nie do konkretnej sekcji.
+        */}
+        <section
+          className={`relative z-10 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-[repeat(6,minmax(0,1fr))_minmax(300px,1.2fr)] ${
+            wydarzenie ? "mt-3" : "-mt-6"
+          }`}
+        >
           <Spec icon={<HoopIcon className="h-7 w-7" />} label="Kosze" value={String(court.hoops)} />
           <Spec
             icon={<SurfaceIcon className="h-7 w-7" />}

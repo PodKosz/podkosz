@@ -1372,7 +1372,7 @@ function markerHtml(court: MapCourt, wydarzenie = false) {
     poniżej - poza rozmiarem struktura pinezki jest ta sama, więc wszystko, co już działa
     (najechanie, dotyk, wizytówka, ogień), działa dalej bez ani jednej gałęzi więcej.
   */
-  const size = wydarzenie ? 96 : big ? 46 : 38;
+  const size = wydarzenie ? 67 : big ? 46 : 38;
 
   // Boiska z wyróżnieniem Heat świecą na fioletowo - mają odróżniać się na pierwszy rzut oka.
   const glow = wydarzenie
@@ -1380,9 +1380,14 @@ function markerHtml(court: MapCourt, wydarzenie = false) {
     : court.basketApproved
       ? "rgba(168,85,247,.6) 0%, rgba(109,40,217,.2) 45%, transparent 70%"
       : "rgb(var(--rgb-flame) / .55) 0%, rgb(var(--rgb-ember) / .18) 45%, transparent 70%";
-  /* biel u góry, czerwień u dołu - flaga, a nie „czerwona kulka w białej obwódce" */
+  /*
+    Gradient biel-czerwień, nie flaga. Ostry podział na pół czytał się jak wklejona
+    chorągiewka i gubił kulę: kula ma światło i cień, a flaga jest płaska. Ten sam
+    kierunek (135 stopni), co w pozostałych pinezkach, więc wszystkie wyglądają jak
+    jedna rodzina w różnych barwach.
+  */
   const core = wydarzenie
-    ? "linear-gradient(180deg,#ffffff 0%,#ffffff 48%,#e8112d 52%,#b40d22 100%)"
+    ? "linear-gradient(135deg,#ffffff,#ffd3d8 32%,#e8112d 72%,#a60c1e)"
     : court.basketApproved
       ? "linear-gradient(135deg,#e9d5ff,#a855f7 55%,#6d28d9)"
       : "linear-gradient(135deg,var(--color-glow-soft),var(--color-flame) 55%,var(--color-ember))";

@@ -103,25 +103,44 @@ export async function wydarzenieBoiska(courtId: string): Promise<Wydarzenie | nu
 
 export type StanWydarzenia = "trwa" | "dzis" | "wkrotce" | "minelo";
 
+/*
+  WSZYSTKO LICZYMY W CZASIE WARSZAWSKIM, jawnie.
+
+  Te same funkcje wołane są na serwerze (karta boiska, treść listu) i w przeglądarce
+  (wizytówka na mapie, panel). Serwer Vercela chodzi w UTC, więc bez wskazania strefy
+  turniej od 18:00 pojawiłby się w mailu jako „16:00", a wydarzenie zaczynające się
+  o 1:00 w nocy wypadałoby w mailu na dzień wcześniej. Strefa jest tu więc częścią
+  poprawności, nie ustawieniem regionalnym.
+*/
+const STREFA = "Europe/Warsaw";
+
+const DATA = new Intl.DateTimeFormat("pl-PL", { day: "numeric", month: "long", timeZone: STREFA });
+const GODZINA = new Intl.DateTimeFormat("pl-PL", {
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: STREFA,
+});
+const DZIEN_TYGODNIA = new Intl.DateTimeFormat("pl-PL", { weekday: "long", timeZone: STREFA });
+/** „2026-10-12" w czasie warszawskim - do porównywania dni bez pomyłki o strefę */
+const DZIEN = new Intl.DateTimeFormat("sv-SE", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  timeZone: STREFA,
+});
+
+function dzien(t: number) {
+  return DZIEN.format(new Date(t));
+}
+
 export function stanWydarzenia(w: Wydarzenie, teraz = Date.now()): StanWydarzenia {
   const od = Date.parse(w.poczatek);
   const do_ = Date.parse(w.koniec);
   if (teraz >= do_) return "minelo";
   if (teraz >= od) return "trwa";
 
-  const dzisiaj = new Date(teraz);
-  const start = new Date(od);
-  const tenSamDzien =
-    dzisiaj.getFullYear() === start.getFullYear() &&
-    dzisiaj.getMonth() === start.getMonth() &&
-    dzisiaj.getDate() === start.getDate();
-
-  return tenSamDzien ? "dzis" : "wkrotce";
+  return dzien(od) === dzien(teraz) ? "dzis" : "wkrotce";
 }
-
-const DATA = new Intl.DateTimeFormat("pl-PL", { day: "numeric", month: "long" });
-const GODZINA = new Intl.DateTimeFormat("pl-PL", { hour: "2-digit", minute: "2-digit" });
-const DZIEN_TYGODNIA = new Intl.DateTimeFormat("pl-PL", { weekday: "long" });
 
 /** Godziny trwania: „18:00-21:00". */
 export function godziny(w: Wydarzenie) {
@@ -138,17 +157,12 @@ export function kiedy(w: Wydarzenie, teraz = Date.now()) {
   const stan = stanWydarzenia(w, teraz);
   if (stan === "trwa") return `trwa teraz, do ${GODZINA.format(new Date(w.koniec))}`;
   if (stan === "minelo") return "już się skończyło";
-
-  const start = new Date(w.poczatek);
   if (stan === "dzis") return `dziś ${godziny(w)}`;
 
-  const jutro = new Date(teraz + 86_400_000);
-  const tenSam =
-    jutro.getFullYear() === start.getFullYear() &&
-    jutro.getMonth() === start.getMonth() &&
-    jutro.getDate() === start.getDate();
-  if (tenSam) return `jutro ${godziny(w)}`;
+  const od = Date.parse(w.poczatek);
+  if (dzien(od) === dzien(teraz + 86_400_000)) return `jutro ${godziny(w)}`;
 
+  const start = new Date(od);
   return `${DZIEN_TYGODNIA.format(start)}, ${DATA.format(start)}, ${godziny(w)}`;
 }
 

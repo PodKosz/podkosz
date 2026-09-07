@@ -80,9 +80,11 @@ export function AdminPanel({ isAdmin, signedIn }: { isAdmin: boolean; signedIn: 
   const editSlug = params.get("edytuj");
   // ?nowe=<id kandydata> - skrót z szarej pinezki na mapie
   const newLeadId = params.get("nowe");
+  // ?wydarzenie=<slug> - skrót z przycisku „dodaj wydarzenie” na karcie boiska
+  const wydarzenieSlug = params.get("wydarzenie");
   const queue = useQueue();
   const [view, setView] = useState<View>(
-    editSlug ? "courts" : newLeadId ? "new" : "hub"
+    editSlug ? "courts" : wydarzenieSlug ? "wydarzenia" : newLeadId ? "new" : "hub"
   );
   const [tab, setTab] = useState<SubmissionStatus>("pending");
   const [openId, setOpenId] = useState<string | null>(null);
@@ -280,7 +282,7 @@ export function AdminPanel({ isAdmin, signedIn }: { isAdmin: boolean; signedIn: 
         ) : view === "leads" ? (
           <LeadsAdmin />
         ) : view === "wydarzenia" ? (
-          <WydarzeniaAdmin />
+          <WydarzeniaAdmin slugBoiska={wydarzenieSlug} />
         ) : view === "beta" ? (
           <BetaAdmin />
         ) : view === "zapisy" ? (

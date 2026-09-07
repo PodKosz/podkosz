@@ -31,6 +31,11 @@ const ZAWSZE_DOSTEPNE = [
   "/api/obecnosc",
   "/api/utrzymanie",
   /*
+    Podgląd listów. Trasa i tak odpowiada 404 w produkcji (patrz `NODE_ENV` w środku),
+    więc za zasłoną blokowała tylko mnie przy pracy nad treścią maili.
+  */
+  "/api/podglad-maila",
+  /*
     Sesja też, i to nie z wygody: zasłona musi umieć powiedzieć zalogowanemu, że jego
     adresu nie ma na liście testerów. Bez tego wpisu odpowiedź o sesji przechodziła przez
     przepisanie na „Już niedługo", wracała jako HTML i strona uznawała każdego za

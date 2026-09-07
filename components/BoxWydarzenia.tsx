@@ -75,18 +75,36 @@ export function BoxWydarzenia({ wydarzenie }: { wydarzenie: Wydarzenie }) {
             </div>
 
             {plakat && (
-              <div className="relative min-h-[180px] sm:min-h-full">
+              /*
+                Plakat pokazujemy CAŁY, nie wykadrowany.
+
+                Wcześniej stało tu `object-cover` w polu o stałej wysokości - i przy
+                zdjęciu w pionie (a plakaty są w pionie) ucinało mu górę i dół, czyli
+                zwykle tytuł i godziny. Plakat wykadrowany to plakat bez informacji.
+                Teraz `object-contain`: całość zawsze widoczna, a puste miejsce po bokach
+                wypełnia rozmyta kopia tego samego zdjęcia - kadr jest pełny przy każdych
+                proporcjach, bez czarnych pasów i bez zgadywania formatu z góry.
+              */
+              <div className="relative overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={plakat}
+                  alt=""
+                  aria-hidden
+                  className="absolute inset-0 h-full w-full scale-110 object-cover opacity-35 blur-2xl"
+                />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={plakat}
                   alt={`Plakat wydarzenia: ${wydarzenie.nazwa}`}
-                  className="absolute inset-0 h-full w-full object-cover"
+                  className="relative mx-auto block max-h-[300px] w-full object-contain sm:h-full sm:max-h-none"
                 />
                 {/*
-                  Zdjęcie wchodzi w treść od lewej - bez tego przejścia plakat kończy się
-                  ostrą krawędzią w środku boxu i wygląda jak wklejka z innego układu.
+                  Miękkie przejście w treść tylko na szerokim ekranie, gdzie plakat stoi
+                  OBOK tekstu. Na telefonie stoi POD nim i gradient z lewej nie miałby
+                  czego zszywać - przygaszałby sam plakat.
                 */}
-                <div className="absolute inset-0 bg-gradient-to-r from-void/95 via-void/25 to-transparent sm:from-void/90" />
+                <div className="absolute inset-y-0 left-0 hidden w-20 bg-gradient-to-r from-void/90 to-transparent sm:block" />
               </div>
             )}
           </div>

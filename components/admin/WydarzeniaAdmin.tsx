@@ -29,6 +29,9 @@ interface Boisko {
 
 interface WpisZBoiskiem extends Wydarzenie {
   boisko: Boisko | null;
+  /** kiedy poszły powiadomienia - null znaczy „jeszcze nie" */
+  powiadomionoAt: string | null;
+  powiadomionoIle: number | null;
 }
 
 const CZERWIEN = "#e8112d";
@@ -61,6 +64,8 @@ type Wiersz = {
   poczatek: string;
   koniec: string;
   zdjecie: string | null;
+  powiadomiono_at: string | null;
+  powiadomiono_ile: number | null;
   courts: { name: string; city: string; slug: string } | null;
 };
 
@@ -77,7 +82,9 @@ async function pobierzListe(): Promise<{ items: WpisZBoiskiem[]; error: string |
 
   const { data, error } = await supabase
     .from("wydarzenia")
-    .select("id, court_id, nazwa, opis, poczatek, koniec, zdjecie, courts(name, city, slug)")
+    .select(
+      "id, court_id, nazwa, opis, poczatek, koniec, zdjecie, powiadomiono_at, powiadomiono_ile, courts(name, city, slug)"
+    )
     .order("poczatek", { ascending: true });
 
   const items = ((data ?? []) as unknown as Wiersz[]).map((w) => ({
@@ -88,13 +95,15 @@ async function pobierzListe(): Promise<{ items: WpisZBoiskiem[]; error: string |
     poczatek: w.poczatek,
     koniec: w.koniec,
     zdjecie: w.zdjecie,
+    powiadomionoAt: w.powiadomiono_at,
+    powiadomionoIle: w.powiadomiono_ile,
     boisko: w.courts ? { id: w.court_id, ...w.courts } : null,
   }));
 
   return { items, error: error ? error.message : null };
 }
 
-export function WydarzeniaAdmin() {
+export function WydarzeniaAdmin({ slugBoiska }: { slugBoiska?: string | null }) {
   const [lista, setLista] = useState<WpisZBoiskiem[]>([]);
   const [laduje, setLaduje] = useState(true);
   const [blad, setBlad] = useState<string | null>(null);
@@ -112,6 +121,33 @@ export function WydarzeniaAdmin() {
   const [koniec, setKoniec] = useState(domyslnyKoniec);
   const [plik, setPlik] = useState<File | null>(null);
   const [zapisuje, setZapisuje] = useState(false);
+  /** identyfikator wydarzenia, dla którego właśnie idą powiadomienia */
+  const [powiadamiam, setPowiadamiam] = useState<string | null>(null);
+
+  /*
+    Wejście z karty boiska: `/admin?wydarzenie=<slug>` z przycisku „dodaj wydarzenie".
+    Boisko jest wtedy wybrane od razu - kto kliknął przycisk NA boisku, już wybrał boisko
+    i nie ma powodu wpisywać jego nazwy drugi raz.
+  */
+  useEffect(() => {
+    if (!slugBoiska) return;
+    let aktualne = true;
+
+    void (async () => {
+      const supabase = await supabaseBrowser();
+      if (!supabase) return;
+      const { data } = await supabase
+        .from("courts")
+        .select("id, name, city, slug")
+        .eq("slug", slugBoiska)
+        .maybeSingle();
+      if (aktualne && data) setBoisko(data as Boisko);
+    })();
+
+    return () => {
+      aktualne = false;
+    };
+  }, [slugBoiska]);
 
   useEffect(() => {
     let aktualne = true;
@@ -215,6 +251,8 @@ export function WydarzeniaAdmin() {
       await fetch("/api/odswiez", { method: "POST" });
 
       setKomunikat((k) => k ?? "Wydarzenie dodane. Pinezka zapali się w ciągu minuty.");
+      /* powiadomienia zaraz po zapisie - to jedna czynność z punktu widzenia człowieka */
+      void powiadom(id);
       setNazwa("");
       setOpis("");
       setPlik(null);
@@ -225,6 +263,36 @@ export function WydarzeniaAdmin() {
       setBlad((e as Error).message);
     } finally {
       setZapisuje(false);
+    }
+  };
+
+  /**
+   * Powiadomienia mailem.
+   *
+   * Wychodzą OSOBNYM ŻĄDANIEM po zapisie, a nie razem z nim, i to jest przemyślane:
+   * wydarzenie musi istnieć w bazie, zanim serwer zapyta ją o odbiorców, a i sam list
+   * ma prawo nie wyjść (brak konfiguracji poczty, awaria dostawcy) bez cofania
+   * wydarzenia. Wydarzenie bez powiadomienia jest wydarzeniem; powiadomienie bez
+   * wydarzenia jest błędem.
+   */
+  const powiadom = async (idWydarzenia: string) => {
+    setPowiadamiam(idWydarzenia);
+    try {
+      const res = await fetch("/api/mail-wydarzenie", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id: idWydarzenia }),
+      });
+      const dane = (await res.json()) as { wyslane?: number; odbiorcow?: number; powod?: string; blad?: string };
+
+      if (dane.blad) setBlad(dane.blad);
+      else if (dane.wyslane) setKomunikat(`Powiadomienia poszły do ${dane.wyslane} osób.`);
+      else setKomunikat(`Nie wysłano nic${dane.powod ? `: ${dane.powod}` : "."}`);
+    } catch (e) {
+      setBlad((e as Error).message);
+    } finally {
+      setPowiadamiam(null);
+      setOdswiezenie((n) => n + 1);
     }
   };
 
@@ -424,6 +492,27 @@ export function WydarzeniaAdmin() {
                 >
                   {stan === "minelo" ? "po czasie" : plakietka(w)}
                 </span>
+
+                {/*
+                  Stan powiadomień jest przy wydarzeniu, nie w osobnym widoku: to jedyne
+                  miejsce, gdzie ma znaczenie. Wysłane pokazujemy liczbą, bo „wysłano"
+                  bez liczby nie mówi, czy poszło do trzech osób, czy do trzystu.
+                */}
+                {w.powiadomionoAt ? (
+                  <span className="shrink-0 text-[11px] uppercase tracking-[0.12em] text-faint">
+                    {`powiadomiono ${w.powiadomionoIle ?? 0}`}
+                  </span>
+                ) : (
+                  stan !== "minelo" && (
+                    <button
+                      onClick={() => void powiadom(w.id)}
+                      disabled={powiadamiam === w.id}
+                      className="shrink-0 rounded-full border border-hairline px-4 py-2 text-[12px] text-muted transition hover:border-flame/50 hover:text-flame disabled:opacity-60"
+                    >
+                      {powiadamiam === w.id ? "wysyłam…" : "powiadom mailem"}
+                    </button>
+                  )
+                )}
 
                 <button
                   onClick={() => void usun(w)}

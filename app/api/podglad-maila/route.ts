@@ -9,6 +9,12 @@ import {
 import { htmlOtwarcia, tekstOtwarcia, tematOtwarcia } from "@/lib/mail/otwarcie";
 import { htmlPotwierdzenia, tekstPotwierdzenia, tematPotwierdzenia } from "@/lib/mail/potwierdzenie";
 import { htmlPowitania, tekstPowitania, tematPowitania } from "@/lib/mail/powitanie";
+import {
+  PRZYKLAD_WYDARZENIA,
+  htmlWydarzenia,
+  tekstWydarzenia,
+  tematWydarzenia,
+} from "@/lib/mail/wydarzenie";
 
 /**
  * Podgląd listów w przeglądarce - narzędzie robocze, nie funkcja serwisu.
@@ -78,6 +84,22 @@ const LISTY: Record<string, Wpis> = {
     temat: () => tematPotwierdzenia(),
     html: () => htmlPotwierdzenia(),
     tekst: () => tekstPotwierdzenia(),
+  },
+  wydarzenie: {
+    nazwa: "Zaproszenie na wydarzenie",
+    opis:
+      "Idzie do osób, które podpaliły to boisko, oraz do tych, które podpaliły boisko " +
+      "w okolicy - jeden list na wydarzenie.",
+    temat: () => tematWydarzenia(PRZYKLAD_WYDARZENIA),
+    html: () => htmlWydarzenia(PRZYKLAD_WYDARZENIA),
+    tekst: () => tekstWydarzenia(PRZYKLAD_WYDARZENIA),
+  },
+  "wydarzenie-okolica": {
+    nazwa: "Zaproszenie na wydarzenie (okolica)",
+    opis: "Ta sama treść, ale z powodem „podpaliłeś boisko w okolicy”.",
+    temat: () => tematWydarzenia(PRZYKLAD_WYDARZENIA),
+    html: () => htmlWydarzenia({ ...PRZYKLAD_WYDARZENIA, powod: "okolica", nick: undefined }),
+    tekst: () => tekstWydarzenia({ ...PRZYKLAD_WYDARZENIA, powod: "okolica", nick: undefined }),
   },
   otwarcie: {
     nazwa: "Serwis otwarty",

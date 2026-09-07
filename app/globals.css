@@ -2105,15 +2105,23 @@ select option {
   animation: wydarzenie-luna 2.6s ease-in-out infinite;
 }
 
+/*
+  Tylko `scale` w transformie, ani śladu `translate`.
+  BŁĄD, KTÓRY TU BYŁ: wyśrodkowanie łuny robi Tailwind przez własność `translate`
+  (`-translate-x-1/2`), a nie przez `transform`. Dopisanie `translate(-50%, 0)` do
+  transformy nie nadpisywało tamtego, tylko się z nim SKŁADAŁO - łuna odjeżdżała
+  o własną szerokość w lewo i wyglądała jak druga, zbugowana plama obok pinezki.
+  Wzór jest ten sam, co w `pulse-glow` niżej: skala i przezroczystość, nic więcej.
+*/
 @keyframes wydarzenie-luna {
   0%,
   100% {
     opacity: 0.75;
-    transform: translate(-50%, 0) scale(1);
+    transform: scale(1);
   }
   50% {
     opacity: 1;
-    transform: translate(-50%, 0) scale(1.09);
+    transform: scale(1.09);
   }
 }
 
