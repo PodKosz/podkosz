@@ -45,7 +45,8 @@ część nazwy pliku.
 | 26 | `migration-usuwanie-kont.sql` | usuwanie kont przez admina + archiwum na 180 dni |
 | 27 | `migration-panel-glowny.sql` | `panel_glowny()` — liczby do kokpitu |
 | 28 | `migration-slad-gps.sql` | odległość pinezki od odczytu GPS — ocena „ok / podejrzane" w kolejce |
-| 29 | `migration-minigra-chicago.sql` | trzecie miejsce minigry (Chicago, kozłowanie) |
+| 29 | `migration-minigra-chicago.sql` | trzecie miejsce minigry (Chicago, kozłowanie) — zawarte w `migration-tarcza.sql`, więc jeśli uruchamiasz tarczę, tej pomiń |
+| 30 | `migration-tarcza.sql` | limity i sufity na tym, co otwarte dla świata: zapisy na otwarcie tylko przez funkcję z licznikiem na IP, sufity na statystykach i obecności, wyniki minigry podpięte pod czas rundy. **Najpierw wdróż kod, potem uruchom migrację** — zapis wyniku wymaga od tej pory otwartej rundy (`minigra_start`) |
 
 ## Nieuruchomione (świadomie)
 

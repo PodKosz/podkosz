@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { adresKlienta } from "@/lib/adres-ip";
+import { przepustka } from "@/lib/limity";
 import { SUPABASE_ANON_KEY, SUPABASE_URL, supabaseEnabled } from "@/lib/supabase/config";
 import {
   PAMIEC_IP_WOLNY,
@@ -39,6 +41,13 @@ const ZAWSZE_DOSTEPNE = [
 ];
 
 /** Wynik sprawdzenia adresu IP - żeby nie pytać bazy przy każdym żądaniu. */
+/*
+  Sufit na obie mapy. Klucze to adresy IP i identyfikatory kont, więc realnie jest ich
+  garść - ale mapa bez sufitu jest dziurą samą w sobie, a odpowiedź na przepełnienie
+  (wyczyścić i zapytać bazę na nowo) kosztuje tylko jedno pytanie więcej.
+*/
+const MAKS_PAMIECI = 20_000;
+
 const pamiecIP = new Map<string, { zbanowany: boolean; do: number }>();
 
 /**
@@ -51,16 +60,33 @@ const pamiecIP = new Map<string, { zbanowany: boolean; do: number }>();
 const pamiecWejscia = new Map<string, { wpuszczony: boolean; do: number }>();
 
 /** Adres klienta: za Cloudflare i Vercelem prawdziwy adres siedzi w tych nagłówkach. */
-function adresKlienta(request: NextRequest): string | null {
-  return (
-    request.headers.get("cf-connecting-ip") ??
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    request.headers.get("x-real-ip") ??
-    null
-  );
+/**
+ * Ile żądań na minutę z jednego adresu przechodzi przez proxy.
+ *
+ * Wcześniej nie było żadnego limitu, więc każda strona i każda trasa dawały się walić
+ * w pętli - a każde żądanie kosztuje tu pytanie do Supabase o sesję, czyli podróż po
+ * sieci. Trzysta na minutę to więcej, niż zrobi człowiek klikający bez opamiętania
+ * (pliki statyczne i obrazki nawet tu nie zaglądają - patrz `config.matcher` na końcu),
+ * i dużo mniej, niż potrzebuje ktoś, kto chce nas zająć.
+ *
+ * Licznik jest w pamięci instancji, więc przy kilku instancjach limit jest kilka razy
+ * luźniejszy. To świadomy kompromis: darmowy i wystarczy na jedno źródło w pętli.
+ * Twardej zapory na poziomie sieci ta warstwa nie zastąpi.
+ */
+const LIMIT_NA_MINUTE = 300;
+
+function stronaZaDuzo() {
+  return new NextResponse("Za dużo żądań. Spróbuj za chwilę.", {
+    status: 429,
+    headers: {
+      "content-type": "text/plain; charset=utf-8",
+      "cache-control": "no-store",
+      "retry-after": "30",
+      "X-Robots-Tag": "noindex, nofollow",
+    },
+  });
 }
 
-/** Strona dla zablokowanego adresu - bez nawigacji i bez linków w głąb serwisu. */
 function stronaBlokady() {
   const html = `<!doctype html><html lang="pl"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -97,6 +123,15 @@ napisz na opinie@podkosz.pl.</p>
 export async function proxy(request: NextRequest) {
   const sciezka = request.nextUrl.pathname;
 
+  /*
+    Adres liczymy PRZED czymkolwiek innym i od razu sprawdzamy limit: pytanie o sesję
+    niżej to podróż do Supabase, więc gdyby limit stał za nim, każde odrzucone żądanie
+    i tak kosztowałoby tyle, ile normalne.
+  */
+  const ip = adresKlienta(request.headers);
+  const przepust = przepustka("proxy", ip, LIMIT_NA_MINUTE, 60);
+  if (!przepust.ok) return stronaZaDuzo();
+
   let response = NextResponse.next({ request });
   let idUzytkownika: string | null = null;
   let klient: ReturnType<typeof createServerClient> | null = null;
@@ -125,7 +160,6 @@ export async function proxy(request: NextRequest) {
     wysyłać bez logowania, więc samo zablokowanie konta nie zawsze wystarcza. Wynik
     trzymamy w pamięci procesu, żeby nie pytać bazy przy każdym żądaniu.
   */
-  const ip = adresKlienta(request);
   if (ip && klient) {
     const znane = pamiecIP.get(ip);
     if (znane && znane.do > Date.now()) {
@@ -133,6 +167,7 @@ export async function proxy(request: NextRequest) {
     } else {
       const { data } = await klient.rpc("czy_ip_zbanowane", { p_ip: ip });
       const zbanowany = data === true;
+      if (pamiecIP.size > MAKS_PAMIECI) pamiecIP.clear();
       pamiecIP.set(ip, {
         zbanowany,
         do: Date.now() + (zbanowany ? PAMIEC_IP_ZBANOWANY : PAMIEC_IP_WOLNY),
@@ -165,6 +200,7 @@ export async function proxy(request: NextRequest) {
     } else {
       const { data } = await klient.rpc("czy_wpuscic");
       wpuszczony = data === true;
+      if (pamiecWejscia.size > MAKS_PAMIECI) pamiecWejscia.clear();
       pamiecWejscia.set(idUzytkownika, {
         wpuszczony,
         do: Date.now() + (wpuszczony ? PAMIEC_WEJSCIA_TAK : PAMIEC_WEJSCIA_NIE),

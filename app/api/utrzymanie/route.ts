@@ -20,8 +20,22 @@ import { supabasePublic } from "@/lib/supabase/publiczny";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  /*
+    Zamknięte na klucz, a bez klucza zamknięte na głucho.
+
+    Wcześniej warunek brzmiał „jeśli sekret JEST ustawiony, sprawdź go" - czyli dopóki
+    `CRON_SECRET` nie był ustawiony (a nie był), sprzątanie archiwum mógł uruchomić
+    ktokolwiek, w pętli. Zadanie chodzi po całej bazie, więc to była gotowa dźwignia do
+    obciążenia jej cudzym kosztem. Brak konfiguracji nie może otwierać drzwi.
+  */
   const sekret = process.env.CRON_SECRET;
-  if (sekret && request.headers.get("authorization") !== `Bearer ${sekret}`) {
+  if (!sekret) {
+    return Response.json(
+      { ok: false, powod: "brak CRON_SECRET - zadanie jest wyłączone" },
+      { status: 503 }
+    );
+  }
+  if (request.headers.get("authorization") !== `Bearer ${sekret}`) {
     return Response.json({ ok: false, powod: "brak uprawnień" }, { status: 401 });
   }
 

@@ -1,5 +1,6 @@
 import { ACCESS_LABEL, Court, TYPE_LABEL, surfaceLabel } from "@/lib/types";
 import { PROFILE_SPOLECZNOSCIOWE, SITE_DESCRIPTION, SITE_NAME, SITE_URL, absolute, slugifyPlace } from "@/lib/site";
+import { jsonDoSkryptu } from "@/lib/json-ld";
 
 /**
  * Dane strukturalne (JSON-LD) - ten sam opis boiska, ale w formacie, który wyszukiwarki
@@ -142,7 +143,7 @@ function Json({ data }: { data: unknown }) {
     <script
       type="application/ld+json"
       // JSON.stringify pomija pola undefined, więc w wyniku nie ma pustych kluczy
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      dangerouslySetInnerHTML={{ __html: jsonDoSkryptu(data) }}
     />
   );
 }

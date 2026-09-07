@@ -1,3 +1,5 @@
+import { adresKlienta } from "@/lib/adres-ip";
+import { przepustka, zaDuzo } from "@/lib/limity";
 import { nadawca } from "@/lib/mail/nadawca";
 import { supabaseServer } from "@/lib/supabase/server";
 import {
@@ -13,11 +15,18 @@ import {
  * klucz do wysyłki nie ma prawa wyjść na front. Sam wpis i tak pilnuje baza (RLS pozwala
  * na `insert`, ale nie na odczyt listy), więc endpoint nie daje tu żadnej nowej władzy.
  *
- * Endpoint, który wysyła maila na dowolny podany adres, to potencjalna maszynka do
- * zasypywania cudzej skrzynki. Chroni przed tym klucz główny tabeli: list leci TYLKO
- * wtedy, gdy wiersz naprawdę powstał. Powtórzony adres dostaje spokojne „już jesteś
- * na liście" i żadnej wiadomości - a że adres da się zapisać tylko raz, to samo dotyczy
- * listu. Zablokowane adresy IP odsiewa wcześniej proxy (dawne middleware).
+ * Endpoint, który wysyła maila na dowolny podany adres, to maszynka do zasypywania cudzej
+ * skrzynki - i tak właśnie było. Klucz główny tabeli chronił tylko przed POWTÓRZENIEM tego
+ * samego adresu: list leci wyłącznie wtedy, gdy wiersz naprawdę powstał, więc jednego
+ * człowieka nie da się zalać. Ale tysiąc RÓŻNYCH adresów to tysiąc listów z naszej domeny
+ * do tysiąca obcych ludzi, bez żadnego licznika po drodze.
+ *
+ * Teraz zapis idzie przez funkcję `zapis_na_otwarcie`, która liczy adresy IP: pięć na
+ * godzinę, dwadzieścia na dobę, sześćset na godzinę w całym serwisie. Licznik jest w bazie,
+ * a nie tutaj, z dwóch powodów: instancji tej funkcji Vercel trzyma kilka naraz (każda
+ * z własną pamięcią), a wpis do tabeli i tak dawał się zrobić kluczem publicznym wprost
+ * z konsoli - więc jedyne miejsce, gdzie limit ma sens, jest przy samych danych.
+ * Zablokowane adresy IP odsiewa wcześniej proxy (dawne middleware).
  */
 export const dynamic = "force-dynamic";
 
@@ -36,15 +45,40 @@ export async function POST(request: Request) {
     return Response.json({ zapisany: false, powod: "adres" }, { status: 400 });
   }
 
+  /* pierwsze sito, darmowe: jedna instancja funkcji, jeden adres, pięć próśb na minutę */
+  const ip = adresKlienta(request.headers);
+  const przepust = przepustka("zapis", ip, 5, 60);
+  if (!przepust.ok) return zaDuzo(przepust.poczekaj, "Za dużo prób. Spróbuj za chwilę.");
+
   const supabase = await supabaseServer();
   if (!supabase) {
     return Response.json({ zapisany: false, powod: "brak bazy" }, { status: 500 });
   }
 
-  const { error } = await supabase.from("launch_signups").insert({ email });
+  let { data, error } = await supabase.rpc("zapis_na_otwarcie", {
+    p_email: email,
+    p_ip: ip,
+  });
 
-  /* powtórka to nie błąd - człowiek ma usłyszeć, że jest na liście */
+  /*
+    Funkcji nie ma w bazie, bo migracja `migration-tarcza.sql` jeszcze nie poszła.
+
+    Wtedy zapisujemy po staremu, wprost do tabeli - bez licznika, ale działając. Kod
+    wdraża się sam przy każdym pchnięciu do gałęzi, a migrację uruchamia człowiek ręcznie,
+    więc między jednym i drugim zawsze jest okno. Formularz na zasłonie nie może w tym
+    oknie przestać przyjmować adresów: to jedyna rzecz, którą gość może tam zrobić.
+  */
+  if (error && /Could not find the function|does not exist|PGRST202/i.test(error.message)) {
+    const zapasowo = await supabase.from("launch_signups").insert({ email });
+    error = zapasowo.error;
+    data = error ? null : "nowy";
+    if (error && /duplicate key/i.test(error.message)) {
+      return Response.json({ zapisany: true, nowy: false });
+    }
+  }
+
   if (error) {
+    /* powtórka to nie błąd - człowiek ma usłyszeć, że jest na liście */
     if (/duplicate key/i.test(error.message)) {
       return Response.json({ zapisany: true, nowy: false });
     }
@@ -52,6 +86,18 @@ export async function POST(request: Request) {
       { zapisany: false, powod: /adres e-mail/i.test(error.message) ? "adres" : "baza" },
       { status: 400 }
     );
+  }
+
+  if (data === "limit") {
+    return Response.json(
+      { zapisany: false, powod: "Za dużo zapisów z tego miejsca. Spróbuj później." },
+      { status: 429 }
+    );
+  }
+
+  /* adres już był - żadnego listu, spokojna odpowiedź */
+  if (data !== "nowy") {
+    return Response.json({ zapisany: true, nowy: false });
   }
 
   /*

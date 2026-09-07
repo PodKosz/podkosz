@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
-import { MAKS_SERIA, poziomDlaSerii, type IdMiejsca } from "@/lib/minigra";
+import { poziomDlaSerii, type IdMiejsca } from "@/lib/minigra";
+import { rozpocznijRunde, zapiszWynik } from "@/lib/gra/wynik";
 import {
   CZAS_RUNDY,
   PILKA_R,
@@ -13,7 +14,6 @@ import {
   wysokosc,
   type StanKozlowania,
 } from "@/lib/gra/kozlowanie";
-import { supabaseBrowser } from "@/lib/supabase/client";
 import { useSesja } from "@/lib/sesja";
 import { barwa, okno, przezroczysta, rysujLicznik, rysujPilke } from "./rysunki";
 
@@ -89,17 +89,23 @@ export function Kozlowanie({
     }
   }, [zaczeta]);
 
-  const zapiszWynik = useCallback(
+  /*
+    Runda w bazie, bez której wynik nie ma jak się zapisać (patrz `lib/gra/wynik.ts`).
+
+    Osobny efekt, nie jedna linijka w tym powyżej, i to nie z upodobania do porządku:
+    tamten zeruje stan gry, a `zalogowany` robi się prawdziwy dopiero po odpowiedzi
+    o sesji - czyli zwykle sekundę PO starcie. Wspólny efekt kasowałby wtedy trwającą
+    już rozgrywkę.
+  */
+  useEffect(() => {
+    if (zaczeta && zalogowany) rozpocznijRunde(miejsce);
+  }, [zaczeta, zalogowany, miejsce]);
+
+  const zapisz = useCallback(
     async (wynik: number) => {
       onWynik(wynik);
-      if (!zalogowany || wynik <= 0) return;
-
-      const supabase = await supabaseBrowser();
-      if (!supabase) return;
-      await supabase.rpc("minigra_zapisz", {
-        p_miejsce: miejsce,
-        p_seria: Math.min(wynik, MAKS_SERIA),
-      });
+      if (!zalogowany) return;
+      await zapiszWynik(miejsce, wynik);
     },
     [miejsce, onWynik, zalogowany]
   );
@@ -160,7 +166,7 @@ export function Kozlowanie({
         if (zostalo <= 0) {
           s.faza = "koniec";
           onSeria(s.ile, s.ile > 0 ? `Koniec - ${s.ile} ${odmiana(s.ile)}` : "Koniec - bez kozłowania");
-          void zapiszWynik(s.ile);
+          void zapisz(s.ile);
         }
       }
 
@@ -186,7 +192,7 @@ export function Kozlowanie({
       cancelAnimationFrame(klatka);
       ro.disconnect();
     };
-  }, [onCzas, onSeria, zapiszWynik]);
+  }, [onCzas, onSeria, zapisz]);
 
   /* ------------------------------------------------------------- wejście */
   /*

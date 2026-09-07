@@ -1,3 +1,5 @@
+import { adresKlienta } from "@/lib/adres-ip";
+import { przepustka, zaDuzo } from "@/lib/limity";
 import { SITE_URL } from "@/lib/site";
 
 /**
@@ -32,6 +34,20 @@ const CACHE_S = 86_400;
 */
 let ostatnie = 0;
 
+/**
+ * Ile najwyżej wolno czekać w kolejce.
+ *
+ * TU BYŁA NAJTAŃSZA DZIURA W CAŁYM SERWISIE. Kolejka nie miała końca: każde żądanie
+ * przesuwało `ostatnie` o 1,1 s w przyszłość i czekało, aż przyjdzie jego pora. Setne
+ * żądanie czekało sto dziesięć sekund - a przez ten czas zajmowało instancję funkcji.
+ * Kilkaset żądań w pętli (jedna linijka w bashu) zajmowało wszystkie instancje na
+ * kilka minut i wyszukiwarka adresów przestawała działać dla wszystkich naraz.
+ *
+ * Teraz kolejka ma sufit: kto trafi na zatłoczoną, dostaje 429 i wie, kiedy wrócić.
+ * Odmowa w ćwierć sekundy jest zawsze lepsza niż odpowiedź po dwóch minutach.
+ */
+const MAKS_KOLEJKA_MS = 2_500;
+
 async function poczekaj() {
   const teraz = Date.now();
   const dlug = ostatnie + ODSTEP_MS - teraz;
@@ -42,6 +58,26 @@ async function poczekaj() {
 /** Tylko te ścieżki Nominatim, których naprawdę używamy - reszta to otwarty pośrednik. */
 const DOZWOLONE = new Set(["search", "reverse"]);
 
+/**
+ * Parametry, które wolno podać dalej.
+ *
+ * Wcześniej przepisywaliśmy WSZYSTKIE parametry zapytania. To znaczy, że przez nasz serwer
+ * dało się wołać Nominatim z dowolnymi parametrami - z naszym adresem IP i naszą
+ * identyfikacją w nagłówku. Cudzy ruch, nasza kara. Lista poniżej to dokładnie to, czego
+ * używa `lib/geo.ts`.
+ */
+const PARAMETRY: Record<string, number> = {
+  q: 160,
+  city: 120,
+  lat: 24,
+  lon: 24,
+  limit: 2,
+  addressdetails: 1,
+  countrycodes: 32,
+  featureType: 16,
+  zoom: 2,
+};
+
 export async function GET(request: Request) {
   const wejscie = new URL(request.url);
   const tryb = wejscie.searchParams.get("tryb") ?? "";
@@ -49,11 +85,26 @@ export async function GET(request: Request) {
     return Response.json({ blad: "nieznany tryb" }, { status: 400 });
   }
 
+  /*
+    Trzydzieści zapytań na minutę z jednego adresu. Pole wyszukiwania pyta z opóźnieniem
+    po każdej pauzie w pisaniu, więc człowiek szukający adresu zmieści się w tym z zapasem;
+    pętla w bashu nie zmieści się nigdy.
+  */
+  const ip = adresKlienta(request.headers);
+  const przepust = przepustka("geo", ip, 30, 60);
+  if (!przepust.ok) return zaDuzo(przepust.poczekaj, "Za dużo zapytań o adresy.");
+
   const cel = new URL(`https://nominatim.openstreetmap.org/${tryb}`);
   cel.searchParams.set("format", "jsonv2");
   for (const [klucz, wartosc] of wejscie.searchParams) {
-    if (klucz === "tryb" || klucz === "format") continue;
+    const maks = PARAMETRY[klucz];
+    if (!maks || wartosc.length > maks) continue;
     cel.searchParams.set(klucz, wartosc);
+  }
+
+  /* kolejka zatłoczona - odmawiamy od razu, zamiast trzymać instancję funkcji */
+  if (ostatnie - Date.now() > MAKS_KOLEJKA_MS) {
+    return zaDuzo(2, "Wyszukiwarka adresów jest chwilowo zajęta.");
   }
 
   await poczekaj();

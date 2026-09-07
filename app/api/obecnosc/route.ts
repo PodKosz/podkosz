@@ -1,3 +1,5 @@
+import { adresKlienta } from "@/lib/adres-ip";
+import { przepustka, zaDuzo } from "@/lib/limity";
 import { supabasePublic } from "@/lib/supabase/publiczny";
 
 /**
@@ -12,12 +14,12 @@ import { supabasePublic } from "@/lib/supabase/publiczny";
  * funkcji, a nie odwiedzającego. W bazie zapisuje się wyłącznie skrót md5 z solą.
  */
 export async function POST(request: Request) {
-  const fwd =
-    request.headers.get("cf-connecting-ip") ??
-    request.headers.get("x-forwarded-for") ??
-    "";
-  const ip = fwd.split(",")[0].trim();
+  const ip = adresKlienta(request.headers);
   if (!ip) return Response.json({ ok: true, skipped: "brak adresu" });
+
+  /* puls idzie co 45 s, więc sześć na minutę to zapas na kilka kart w jednej przeglądarce */
+  const przepust = przepustka("obecnosc", ip, 6, 60);
+  if (!przepust.ok) return zaDuzo(przepust.poczekaj);
 
   const supabase = supabasePublic();
   if (!supabase) return Response.json({ ok: true, skipped: "brak bazy" });
