@@ -9,6 +9,8 @@ import { Pogoda } from "./Pogoda";
 import { Gallery } from "./Gallery";
 import { ShortsPlayer } from "./ShortsPlayer";
 import { ReportButton } from "./ReportButton";
+import type { Wydarzenie } from "@/lib/wydarzenia";
+import { BoxWydarzenia } from "./BoxWydarzenia";
 import {
   ArrowLeftIcon,
   BulbIcon,
@@ -39,8 +41,11 @@ export function CourtDetail({
   nearby = [],
   weather = [],
   nowHour = 12,
+  wydarzenie = null,
 }: {
   court: Court;
+  /** wydarzenie na tym boisku - dostaje własny box nad wszystkim innym */
+  wydarzenie?: Wydarzenie | null;
   nearby?: NearbyCourt[];
   /** prognoza godzinowa - pusta dla boisk krytych i gdy open-meteo nie odpowiada */
   weather?: WeatherHour[];
@@ -152,6 +157,14 @@ export function CourtDetail({
       </section>
 
       <div className={SHELL}>
+        {/*
+          Wydarzenie stoi NAD parametrami boiska i to jest cała hierarchia tej strony
+          w jednym miejscu: jeśli na boisku coś się dzieje, to jest najważniejsza rzecz
+          o tym boisku. Nawierzchnia i liczba koszy nie zmieniły się od miesięcy i nie
+          zmienią przez najbliższą godzinę.
+        */}
+        {wydarzenie && <BoxWydarzenia wydarzenie={wydarzenie} />}
+
         {/*
           z-10 jest konieczne: kafelki wchodzą 24 px na sekcję hero, a przyciemniające
           warstwy hero są pozycjonowane absolutnie, więc bez tego malowałyby się NAD

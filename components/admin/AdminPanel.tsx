@@ -29,6 +29,7 @@ import { LeadsAdmin } from "./LeadsAdmin";
 import { BrakiAdmin } from "./BrakiAdmin";
 import { StatsAdmin } from "./StatsAdmin";
 import { BetaAdmin } from "./BetaAdmin";
+import { WydarzeniaAdmin } from "./WydarzeniaAdmin";
 import { ZapisyAdmin } from "./ZapisyAdmin";
 import { LicznikOnline } from "./LicznikOnline";
 import { UsersAdmin } from "./UsersAdmin";
@@ -51,6 +52,7 @@ type View =
   | "courts"
   | "leads"
   | "beta"
+  | "wydarzenia"
   | "zapisy"
   | "users"
   | "new";
@@ -63,6 +65,7 @@ const VIEWS: [View, string][] = [
   ["braki", "Braki w danych"],
   ["feedback", "Opinie"],
   ["courts", "Boiska na mapie"],
+  ["wydarzenia", "Wydarzenia"],
   ["leads", "Kandydaci OSM"],
   ["beta", "Beta testerzy"],
   ["zapisy", "Zapisy na otwarcie"],
@@ -276,6 +279,8 @@ export function AdminPanel({ isAdmin, signedIn }: { isAdmin: boolean; signedIn: 
           <FeedbackAdmin />
         ) : view === "leads" ? (
           <LeadsAdmin />
+        ) : view === "wydarzenia" ? (
+          <WydarzeniaAdmin />
         ) : view === "beta" ? (
           <BetaAdmin />
         ) : view === "zapisy" ? (
@@ -512,6 +517,10 @@ function Header({
     courts: [
       "Boiska na mapie",
       "Wszystko, co jest już opublikowane. Możesz poprawić opis, wymienić zdjęcia albo skasować wpis.",
+    ],
+    wydarzenia: [
+      "Wydarzenia",
+      "Turnieje i treningi otwarte. Wydarzenie zapala na mapie biało-czerwoną pinezkę kilka razy większą od pozostałych - i gaśnie samo, gdy minie godzina końca.",
     ],
     reports: [
       "Błędy w danych",

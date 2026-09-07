@@ -3,6 +3,8 @@
 import { MapCourt, TYPE_LABEL, surfaceLabel } from "@/lib/types";
 import { thumbUrl, thumbWidth, useCourtPhotos } from "@/lib/galeria";
 import { PhotoPlaceholder } from "./CourtPhoto";
+import { photoUrl } from "@/lib/supabase/config";
+import { godziny, kiedy, plakietka, type Wydarzenie } from "@/lib/wydarzenia";
 import { ClockIcon, FireBallIcon, HoopIcon, BasketApprovedBadge, SurfaceIcon } from "./icons";
 
 /**
@@ -17,10 +19,13 @@ import { ClockIcon, FireBallIcon, HoopIcon, BasketApprovedBadge, SurfaceIcon } f
  */
 export function HoverCard({
   court,
+  wydarzenie,
   tapHint = false,
   stan = "wchodzi",
 }: {
   court: MapCourt;
+  /** wydarzenie na tym boisku - wtedy wizytówka pokazuje je, a nie parametry boiska */
+  wydarzenie?: Wydarzenie;
   tapHint?: boolean;
   /** „wchodzi" - karta się pojawia, „znika" - gaśnie i zaraz zostanie zdjęta z drzewa */
   stan?: "wchodzi" | "znika";
@@ -28,6 +33,25 @@ export function HoverCard({
   // zdjęcia nie przychodzą razem z listą boisk - dociągamy je dla tej jednej pinezki
   const thumbs = useCourtPhotos(court.id, 3);
   const kadry = thumbs.length ? thumbs : [null, null, null];
+
+  /*
+    Wydarzenie ma własną wizytówkę, a nie plakietkę doklejoną do zwykłej.
+    Kto najeżdża na płonącą, biało-czerwoną pinezkę, pyta o jedno: co i kiedy. Nawierzchnia,
+    liczba koszy i godziny otwarcia boiska są w tym momencie szumem - zostają na karcie
+    boiska, dokąd prowadzi kliknięcie.
+  */
+  if (wydarzenie) {
+    return (
+      <WizytowkaWydarzenia
+        court={court}
+        wydarzenie={wydarzenie}
+        tapHint={tapHint}
+        stan={stan}
+        zapasoweZdjecie={kadry[0]?.url ?? null}
+      />
+    );
+  }
+
   return (
     <div
       className={`szklo-plynne overflow-hidden rounded-[22px] ${
@@ -150,6 +174,102 @@ function Fact({
         className={`uppercase tracking-wider text-faint ${compact ? "text-[9px]" : "text-[10px]"}`}
       >
         {label}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- wydarzenie */
+
+/** Biało-czerwone barwy wydarzenia - te same, co pinezka na mapie i box na karcie boiska. */
+const BIALO_CZERWONA = { biel: "#ffffff", czerwien: "#e8112d", ciemna: "#8a0614" };
+
+function WizytowkaWydarzenia({
+  court,
+  wydarzenie,
+  tapHint,
+  stan,
+  zapasoweZdjecie,
+}: {
+  court: MapCourt;
+  wydarzenie: Wydarzenie;
+  tapHint: boolean;
+  stan: "wchodzi" | "znika";
+  /** gdy wydarzenie nie ma plakatu, bierzemy pierwsze zdjęcie boiska - pusta rama jest gorsza */
+  zapasoweZdjecie: string | null;
+}) {
+  const zdjecie = wydarzenie.zdjecie ? photoUrl(wydarzenie.zdjecie) : zapasoweZdjecie;
+  const trwa = plakietka(wydarzenie) === "trwa teraz";
+
+  return (
+    <div
+      className={`szklo-plynne overflow-hidden rounded-[22px] ${
+        stan === "znika" ? "karta-mapy-znika" : "karta-mapy"
+      } ${tapHint ? "w-full" : "w-[320px]"}`}
+      style={{ boxShadow: `0 18px 50px -18px ${BIALO_CZERWONA.czerwien}` }}
+    >
+      {/* pasek u góry w barwach flagi - stąd wiadomo, że to inna karta, przed czytaniem */}
+      <div
+        className="h-[6px] w-full"
+        style={{
+          background: `linear-gradient(90deg, ${BIALO_CZERWONA.biel} 0%, ${BIALO_CZERWONA.biel} 50%, ${BIALO_CZERWONA.czerwien} 50%, ${BIALO_CZERWONA.czerwien} 100%)`,
+        }}
+      />
+
+      <div className="relative aspect-[16/9] w-full overflow-hidden bg-white/5">
+        {zdjecie ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={zdjecie} alt="" className="h-full w-full object-cover" decoding="async" />
+        ) : (
+          <PhotoPlaceholder kind="narożnik" seed={court.seed} />
+        )}
+
+        <span
+          className="absolute left-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white"
+          style={{
+            background: BIALO_CZERWONA.czerwien,
+            boxShadow: trwa ? `0 0 0 3px rgb(232 17 45 / .35)` : undefined,
+            animation: trwa ? "kropka-puls 1.8s ease-in-out infinite" : undefined,
+          }}
+        >
+          {plakietka(wydarzenie)}
+        </span>
+      </div>
+
+      <div className={tapHint ? "p-2.5" : "p-3.5"}>
+        <p
+          className="text-[10px] font-semibold uppercase tracking-[0.2em]"
+          style={{ color: BIALO_CZERWONA.czerwien }}
+        >
+          wydarzenie
+        </p>
+        <h3
+          className={`mt-1 font-semibold leading-tight tracking-tight ${
+            tapHint ? "text-[14px]" : "text-[16px]"
+          }`}
+        >
+          {wydarzenie.nazwa}
+        </h3>
+
+        <p className={`mt-1.5 text-muted ${tapHint ? "text-[11px]" : "text-[12px]"}`}>
+          {court.name} · {court.city}
+        </p>
+
+        <div
+          className={`mt-2.5 flex items-center gap-2 rounded-[14px] border px-3 py-2 ${
+            tapHint ? "text-[11px]" : "text-[12px]"
+          }`}
+          style={{ borderColor: "rgb(232 17 45 / .35)", background: "rgb(232 17 45 / .08)" }}
+        >
+          <ClockIcon className="h-3.5 w-3.5 shrink-0" />
+          <span className="min-w-0 truncate">{kiedy(wydarzenie)}</span>
+        </div>
+
+        {!tapHint && (
+          <p className="mt-2 text-[11px] text-faint">
+            {`Godziny: ${godziny(wydarzenie)} · kliknij, żeby zobaczyć szczegóły`}
+          </p>
+        )}
       </div>
     </div>
   );

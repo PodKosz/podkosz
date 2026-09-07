@@ -2075,6 +2075,56 @@ select option {
   z-index: 5;
 }
 
+/*
+  Pinezka wydarzenia.
+
+  Rozmiar i barwy przychodzą z treści pinezki (patrz `markerHtml`), tutaj zostają trzy
+  rzeczy, których w treści zrobić nie można:
+
+  1. Warstwa. Pinezka wydarzenia jest 2,5 raza większa, więc bez tego wchodziłaby pod
+     sąsiednie zwykłe pinezki - a przy większym obiekcie widać to od razu.
+  2. Ogień ponad proporcję. Płomień skaluje się z kulą, czyli i tak jest 2,5 raza większy,
+     ale to wciąż ten sam płomień. Dodatkowe rozciągnięcie w pionie robi z niego pochodnię -
+     a o to właśnie chodzi: pinezka ma krzyczeć z drugiego końca mapy.
+  3. Spokojne pulsowanie łuny. Nie migotanie - mapa ma zostać czytelna, a nie mrugać.
+*/
+.court-marker[data-wydarzenie] {
+  z-index: 6;
+}
+
+.court-marker[data-wydarzenie][data-active="true"] {
+  z-index: 7;
+}
+
+.court-marker[data-wydarzenie] .pinezka-ogien {
+  transform-origin: 50% 100%;
+  scale: 1.15 1.35;
+}
+
+.court-marker[data-wydarzenie] .pulse-glow {
+  animation: wydarzenie-luna 2.6s ease-in-out infinite;
+}
+
+@keyframes wydarzenie-luna {
+  0%,
+  100% {
+    opacity: 0.75;
+    transform: translate(-50%, 0) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1.09);
+  }
+}
+
+/* na telefonie tak duża pinezka zjadałaby kadr - schodzimy do dwóch trzecich */
+@media (max-width: 640px) {
+  .court-marker[data-wydarzenie] .pinezka-korpus {
+    transform-origin: 50% 100%;
+    scale: 0.72;
+  }
+}
+
 /* ---------- Motion ---------- */
 
 @keyframes rise {

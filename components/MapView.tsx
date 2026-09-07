@@ -14,6 +14,7 @@ import { useMotyw } from "@/lib/motyw";
 import { FiltrSzkla } from "./FiltrSzkla";
 import { czytajWidok, zapiszWidok } from "@/lib/adres";
 import { fetchCheckinyDzisiaj } from "@/lib/checkins";
+import { pobierzWydarzenia, type Wydarzenie } from "@/lib/wydarzenia";
 import { MIEJSCA_GRY } from "@/lib/minigra";
 
 /**
@@ -583,8 +584,32 @@ export function MapView({
   */
   const checkinyRef = useRef<Record<string, number>>({});
 
+  /*
+    Wydarzenia trzymamy INACZEJ niż deklaracje: w stanie, nie tylko w referencji. Deklaracje
+    zmieniają wyłącznie wygląd pinezki, a wydarzenie zmienia też treść wizytówki nad nią -
+    a tę rysuje React i musi się o zmianie dowiedzieć. Referencja obok stanu jest po to, żeby
+    `oznaczPinezke` (stałe wywołanie zwrotne) czytało najświeższe dane bez przebudowy mapy.
+  */
+  const [wydarzenia, setWydarzenia] = useState<Record<string, Wydarzenie>>({});
+  const wydarzeniaRef = useRef<Record<string, Wydarzenie>>({});
+
   const oznaczPinezke = useCallback((el: HTMLElement, id: string) => {
     const osoby = checkinyRef.current[id] ?? 0;
+    const swieto = Boolean(wydarzeniaRef.current[id]);
+
+    /*
+      Pinezka wydarzenia płonie ZAWSZE i najmocniej, niezależnie od tego, czy ktoś się
+      zapisał. Ogień jest tu zaproszeniem, nie licznikiem ludzi - a pusty licznik przy
+      wydarzeniu, które dopiero będzie, to najgorsza możliwa informacja.
+    */
+    if (swieto) {
+      el.dataset.wydarzenie = "1";
+      el.dataset.osoby = String(Math.max(osoby, 1));
+      el.style.setProperty("--zar", "6");
+      return;
+    }
+
+    delete el.dataset.wydarzenie;
     if (osoby > 0) {
       el.dataset.osoby = String(osoby);
       /* trzy stopnie „gorąca": jedna osoba, kilka, tłum - wyżej i tak nie widać różnicy */
@@ -614,6 +639,45 @@ export function MapView({
     };
   }, [oznaczPinezke]);
 
+  /*
+    Wydarzenia. Osobne pobranie od boisk (lista boisk siedzi w pamięci podręcznej na
+    godziny, a wydarzenie ma być widoczne od razu po założeniu) i rzadsze niż deklaracje -
+    turnieju nie dopisuje się w ciągu minuty.
+
+    Pinezki wydarzeń przerysowujemy w całości, a nie tylko oznaczamy atrybutem: biało-
+    czerwona kula i jej rozmiar siedzą w treści pinezki, nie w arkuszu. Przerysowanie
+    dotyczy wyłącznie tych kilku, których to dotyczy.
+  */
+  useEffect(() => {
+    let aktualne = true;
+
+    const odswiez = async () => {
+      const dane = await pobierzWydarzenia();
+      if (!aktualne) return;
+
+      const bylo = wydarzeniaRef.current;
+      wydarzeniaRef.current = dane;
+      setWydarzenia(dane);
+
+      const zmienione = new Set([...Object.keys(bylo), ...Object.keys(dane)]);
+      for (const [id, { el }] of Object.entries(markersRef.current)) {
+        if (zmienione.has(id)) {
+          const boisko = courts.find((c) => c.id === id);
+          if (boisko) el.innerHTML = markerHtml(boisko, Boolean(dane[id]));
+        }
+        oznaczPinezke(el, id);
+      }
+    };
+
+    void odswiez();
+    const zegar = window.setInterval(() => void odswiez(), 600_000);
+
+    return () => {
+      aktualne = false;
+      window.clearInterval(zegar);
+    };
+  }, [oznaczPinezke, courts]);
+
   /* ---- pinezki i klastry ----
      Przy kilkunastu boiskach każde dostaje własną pinezkę HTML - tak jak dotąd.
      Powyżej CLUSTER_FROM wpisów tysiące elementów DOM zabiłyby przeglądarkę, więc punkty
@@ -634,7 +698,7 @@ export function MapView({
 
       const el = document.createElement("div");
       el.className = "court-marker";
-      el.innerHTML = markerHtml(court);
+      el.innerHTML = markerHtml(court, Boolean(wydarzeniaRef.current[court.id]));
       // Zdarzenia myszy tylko tam, gdzie jest prawdziwe najeżdżanie. Na dotyku przeglądarka
       // wysyła po kliknięciu sztuczne mouseenter i zaraz mouseleave - to gasiło wizytówkę
       // po chwili od dotknięcia pinezki.
@@ -1167,7 +1231,7 @@ export function MapView({
               className="pointer-events-auto fixed inset-x-3 bottom-[158px] z-[35] mx-auto max-w-[266px]"
             >
               <Link href={`/boisko/${karta.court.slug}`} className="block">
-                <HoverCard court={karta.court} tapHint stan={stan} />
+                <HoverCard court={karta.court} wydarzenie={wydarzenia[karta.court.id]} tapHint stan={stan} />
               </Link>
             </div>
           ) : (
@@ -1175,7 +1239,7 @@ export function MapView({
               className="pointer-events-none absolute z-20"
               style={{ left: karta.x, top: karta.y - 58, transform: "translate(-50%,-100%)" }}
             >
-              <HoverCard court={karta.court} stan={stan} />
+              <HoverCard court={karta.court} wydarzenie={wydarzenia[karta.court.id]} stan={stan} />
             </div>
           );
         })()}
@@ -1299,24 +1363,46 @@ function przyrostekZaru() {
   return String(licznikZaru);
 }
 
-function markerHtml(court: MapCourt) {
+function markerHtml(court: MapCourt, wydarzenie = false) {
   const big = court.likes >= 200;
-  const size = big ? 46 : 38;
+  /*
+    Pinezka wydarzenia jest 2,5 raza większa od zwykłej i to jest jej cała robota: ma być
+    widoczna z pierwszego spojrzenia na mapę, zanim ktokolwiek zacznie czegoś szukać.
+    Reszta różnic (biało-czerwona kula, biało-czerwony ogień, zawsze zapalony) idzie
+    poniżej - poza rozmiarem struktura pinezki jest ta sama, więc wszystko, co już działa
+    (najechanie, dotyk, wizytówka, ogień), działa dalej bez ani jednej gałęzi więcej.
+  */
+  const size = wydarzenie ? 96 : big ? 46 : 38;
 
   // Boiska z wyróżnieniem Heat świecą na fioletowo - mają odróżniać się na pierwszy rzut oka.
-  const glow = court.basketApproved
-    ? "rgba(168,85,247,.6) 0%, rgba(109,40,217,.2) 45%, transparent 70%"
-    : "rgb(var(--rgb-flame) / .55) 0%, rgb(var(--rgb-ember) / .18) 45%, transparent 70%";
-  const core = court.basketApproved
-    ? "linear-gradient(135deg,#e9d5ff,#a855f7 55%,#6d28d9)"
-    : "linear-gradient(135deg,var(--color-glow-soft),var(--color-flame) 55%,var(--color-ember))";
+  const glow = wydarzenie
+    ? "rgba(255,255,255,.62) 0%, rgba(232,17,45,.4) 42%, transparent 72%"
+    : court.basketApproved
+      ? "rgba(168,85,247,.6) 0%, rgba(109,40,217,.2) 45%, transparent 70%"
+      : "rgb(var(--rgb-flame) / .55) 0%, rgb(var(--rgb-ember) / .18) 45%, transparent 70%";
+  /* biel u góry, czerwień u dołu - flaga, a nie „czerwona kulka w białej obwódce" */
+  const core = wydarzenie
+    ? "linear-gradient(180deg,#ffffff 0%,#ffffff 48%,#e8112d 52%,#b40d22 100%)"
+    : court.basketApproved
+      ? "linear-gradient(135deg,#e9d5ff,#a855f7 55%,#6d28d9)"
+      : "linear-gradient(135deg,var(--color-glow-soft),var(--color-flame) 55%,var(--color-ember))";
   /* łuna pod kulą słabnie w motywach jasnych - na bieli 90% barwy to plama, nie światło */
-  const shadow = court.basketApproved
-    ? "rgb(109 40 217 / calc(.9 * var(--moc-poswiaty, 1)))"
-    : "rgb(var(--rgb-ember) / calc(.9 * var(--moc-poswiaty, 1)))";
-  const seam = court.basketApproved ? "rgba(35,5,60,.7)" : "rgba(40,10,0,.72)";
-  const stem = court.basketApproved ? "#a855f7" : "var(--color-flame)";
-  const dot = court.basketApproved ? "rgba(168,85,247,.85)" : "rgb(var(--rgb-flame) / .85)";
+  const shadow = wydarzenie
+    ? "rgb(232 17 45 / calc(.95 * var(--moc-poswiaty, 1)))"
+    : court.basketApproved
+      ? "rgb(109 40 217 / calc(.9 * var(--moc-poswiaty, 1)))"
+      : "rgb(var(--rgb-ember) / calc(.9 * var(--moc-poswiaty, 1)))";
+  const seam = wydarzenie
+    ? "rgba(150,8,24,.55)"
+    : court.basketApproved
+      ? "rgba(35,5,60,.7)"
+      : "rgba(40,10,0,.72)";
+  const stem = wydarzenie ? "#e8112d" : court.basketApproved ? "#a855f7" : "var(--color-flame)";
+  const dot = wydarzenie
+    ? "rgba(232,17,45,.9)"
+    : court.basketApproved
+      ? "rgba(168,85,247,.85)"
+      : "rgb(var(--rgb-flame) / .85)";
 
   /*
     Paleta ognia idzie za kolorem pinezki, nie odwrotnie: pomarańczowa pinezka pali się
@@ -1327,7 +1413,9 @@ function markerHtml(court: MapCourt) {
     odcień z zerową przezroczystością - `rgb(var(--o3) / 0)`. Wygaszanie do `transparent`
     idzie w sRGB przez czerń i zostawiało na końcu języka szary muł.
   */
-  const ogien = court.basketApproved
+  const ogien = wydarzenie
+    ? { o1: "255 255 255", o2: "255 210 214", o3: "232 17 45", o4: "138 6 20" }
+    : court.basketApproved
     ? { o1: "245 235 255", o2: "192 132 252", o3: "139 92 246", o4: "91 33 182" }
     : {
         o1: "var(--rgb-glow-soft)",
@@ -1342,7 +1430,7 @@ function markerHtml(court: MapCourt) {
     Heatu dostawała więc pod spodem pomarańczową łunę i wyglądała, jakby ktoś pomylił
     warstwy. Podajemy trójkę RGB, bo arkusz składa z niej kolor z własną przezroczystością.
   */
-  const cien = court.basketApproved ? "139 92 246" : "var(--rgb-ember)";
+  const cien = wydarzenie ? "232 17 45" : court.basketApproved ? "139 92 246" : "var(--rgb-ember)";
 
   return `
   <div class="pinezka-korpus relative flex flex-col items-center transition-transform duration-200 ease-out"
