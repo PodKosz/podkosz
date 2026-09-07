@@ -1,4 +1,5 @@
 import { supabaseBrowser } from "./supabase/client";
+import type { Wydarzenie } from "./wydarzenia-czas";
 import { supabasePublic } from "./supabase/publiczny";
 
 /**
@@ -11,18 +12,6 @@ import { supabasePublic } from "./supabase/publiczny";
  * jeszcze pół roku.
  */
 
-export interface Wydarzenie {
-  id: string;
-  courtId: string;
-  nazwa: string;
-  opis: string;
-  /** ISO */
-  poczatek: string;
-  /** ISO */
-  koniec: string;
-  /** ścieżka w buckecie zdjęć albo null */
-  zdjecie: string | null;
-}
 
 /** Na ile dni przed startem wydarzenie zapala pinezkę. */
 export const WIDOCZNE_OD_DNI = 30;
@@ -99,79 +88,6 @@ export async function wydarzenieBoiska(courtId: string): Promise<Wydarzenie | nu
   return data ? zWiersza(data as Wiersz) : null;
 }
 
-/* ---------------------------------------------------------------- czas */
-
-export type StanWydarzenia = "trwa" | "dzis" | "wkrotce" | "minelo";
-
-/*
-  WSZYSTKO LICZYMY W CZASIE WARSZAWSKIM, jawnie.
-
-  Te same funkcje wołane są na serwerze (karta boiska, treść listu) i w przeglądarce
-  (wizytówka na mapie, panel). Serwer Vercela chodzi w UTC, więc bez wskazania strefy
-  turniej od 18:00 pojawiłby się w mailu jako „16:00", a wydarzenie zaczynające się
-  o 1:00 w nocy wypadałoby w mailu na dzień wcześniej. Strefa jest tu więc częścią
-  poprawności, nie ustawieniem regionalnym.
-*/
-const STREFA = "Europe/Warsaw";
-
-const DATA = new Intl.DateTimeFormat("pl-PL", { day: "numeric", month: "long", timeZone: STREFA });
-const GODZINA = new Intl.DateTimeFormat("pl-PL", {
-  hour: "2-digit",
-  minute: "2-digit",
-  timeZone: STREFA,
-});
-const DZIEN_TYGODNIA = new Intl.DateTimeFormat("pl-PL", { weekday: "long", timeZone: STREFA });
-/** „2026-10-12" w czasie warszawskim - do porównywania dni bez pomyłki o strefę */
-const DZIEN = new Intl.DateTimeFormat("sv-SE", {
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-  timeZone: STREFA,
-});
-
-function dzien(t: number) {
-  return DZIEN.format(new Date(t));
-}
-
-export function stanWydarzenia(w: Wydarzenie, teraz = Date.now()): StanWydarzenia {
-  const od = Date.parse(w.poczatek);
-  const do_ = Date.parse(w.koniec);
-  if (teraz >= do_) return "minelo";
-  if (teraz >= od) return "trwa";
-
-  return dzien(od) === dzien(teraz) ? "dzis" : "wkrotce";
-}
-
-/** Godziny trwania: „18:00-21:00". */
-export function godziny(w: Wydarzenie) {
-  return `${GODZINA.format(new Date(w.poczatek))}-${GODZINA.format(new Date(w.koniec))}`;
-}
-
-/**
- * Kiedy, po ludzku: „trwa teraz", „dziś 18:00-21:00", „sobota, 12 października, 10:00-14:00".
- *
- * Godzina bez daty jest bezużyteczna („18:00" - dziś? w piątek?), a data bez dnia tygodnia
- * wymaga sprawdzenia w kalendarzu. Dzień tygodnia jest tym, po czym ludzie planują.
- */
-export function kiedy(w: Wydarzenie, teraz = Date.now()) {
-  const stan = stanWydarzenia(w, teraz);
-  if (stan === "trwa") return `trwa teraz, do ${GODZINA.format(new Date(w.koniec))}`;
-  if (stan === "minelo") return "już się skończyło";
-  if (stan === "dzis") return `dziś ${godziny(w)}`;
-
-  const od = Date.parse(w.poczatek);
-  if (dzien(od) === dzien(teraz + 86_400_000)) return `jutro ${godziny(w)}`;
-
-  const start = new Date(od);
-  return `${DZIEN_TYGODNIA.format(start)}, ${DATA.format(start)}, ${godziny(w)}`;
-}
-
-/** Krótka plakietka stanu - na wizytówkę nad pinezką. */
-export function plakietka(w: Wydarzenie, teraz = Date.now()) {
-  const stan = stanWydarzenia(w, teraz);
-  if (stan === "trwa") return "trwa teraz";
-  if (stan === "dzis") return "dziś";
-  const dni = Math.ceil((Date.parse(w.poczatek) - teraz) / 86_400_000);
-  if (dni <= 1) return "jutro";
-  return `za ${dni} dni`;
-}
+/* Reguły czasu stoją osobno (dają się sprawdzić w Node) - tu je tylko podajemy dalej,
+   żeby reszta kodu miała jedno miejsce, z którego bierze wszystko o wydarzeniach. */
+export * from "./wydarzenia-czas";

@@ -789,9 +789,31 @@ export function MapView({
         map.setPaintProperty("boiska-punkty", "circle-stroke-opacity", widoczne ? 1 : 0);
       };
 
-      if (map.getZoom() < PIN_ZOOM) {
+      /*
+        WYDARZENIA SĄ WYJĄTKIEM OD OBU PROGÓW NIŻEJ i to jest cała ich sensowność.
+
+        W trybie dużej bazy pinezki HTML pojawiają się dopiero od przybliżenia 11, a przy
+        więcej niż 160 punktach w kadrze znikają z powrotem w kropki - i słusznie, bo
+        tysiąc pinezek to plama. Ale pinezka wydarzenia ma być widoczna z pierwszego
+        spojrzenia na mapę CAŁEJ POLSKI, zanim ktokolwiek zacznie przybliżać. Bez tego
+        wyjątku biało-czerwona pochodnia pokazywała się dopiero temu, kto już wiedział,
+        gdzie patrzeć - czyli nikomu.
+
+        Kosztu nie ma: wydarzeń jest naraz kilka, nie kilkaset.
+      */
+      const zWydarzeniem = courts.filter((c) => wydarzeniaRef.current[c.id]);
+      const idWydarzen = new Set(zWydarzeniem.map((c) => c.id));
+
+      const tylkoWydarzenia = () => {
         pokazKropki(true);
-        pruneMarkers(new Set());
+        pruneMarkers(idWydarzen);
+        for (const court of zWydarzeniem) {
+          ensureMarker(court).el.dataset.active = String(court.id === activeId);
+        }
+      };
+
+      if (map.getZoom() < PIN_ZOOM) {
+        tylkoWydarzenia();
         return;
       }
 
@@ -800,13 +822,12 @@ export function MapView({
 
       // przy zbyt wielu punktach na ekranie zostawiamy kropki - pinezki byłyby kaszą
       if (widoczne.length > PIN_LIMIT) {
-        pokazKropki(true);
-        pruneMarkers(new Set());
+        tylkoWydarzenia();
         return;
       }
 
       pokazKropki(false);
-      const wybrane = new Set(widoczne.map((c) => c.id));
+      const wybrane = new Set([...widoczne.map((c) => c.id), ...idWydarzen]);
       pruneMarkers(wybrane);
       for (const court of widoczne) {
         ensureMarker(court).el.dataset.active = String(court.id === activeId);
@@ -911,7 +932,13 @@ export function MapView({
       map.off("moveend", syncPins);
       map.off("idle", syncPins);
     };
-  }, [courts, ready, activeId, onHoverCourt, onSelectCourt, reposition, centerPin, coarse, oznaczPinezke, schowajKarte]);
+    /*
+      `wydarzenia` w zależnościach: bez tego pinezka wydarzenia nie powstałaby wcale
+      w trybie klastrowym. Wydarzenia dociągają się osobnym zapytaniem, już PO pierwszym
+      rysowaniu pinezek - a przy niskim przybliżeniu nie ma wtedy żadnego znacznika, na
+      którym można by tylko podmienić treść.
+    */
+  }, [courts, ready, activeId, onHoverCourt, onSelectCourt, reposition, centerPin, coarse, oznaczPinezke, schowajKarte, wydarzenia]);
 
   /* ---- podświetlenie aktywnej pinezki ---- */
   useEffect(() => {
