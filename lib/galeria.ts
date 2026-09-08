@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { CourtPhotoRef, PHOTO_KIND_LABEL, PhotoKind } from "./types";
 import { orderPhotos } from "./photos";
 import { photoUrl } from "./supabase/config";
+import { adresMiniatury } from "./obrazy";
 import { supabaseBrowser } from "./supabase/client";
 import { COURTS } from "./data";
 
@@ -44,13 +45,15 @@ export const thumbWidth = (index: number) => {
 };
 
 /**
- * Adres miniatury przez optymalizator Next. Budujemy go sami (a nie przez next/image),
- * bo tylko wtedy wiemy z góry, co rozgrzać w pamięci przeglądarki - srcset zależy od
- * gęstości ekranu i przy rozgrzewaniu strzelalibyśmy w inny plik niż ten wyświetlany.
+ * Adres miniatury.
+ *
+ * Skalowanie robi Supabase (patrz `lib/obrazy.ts`), a nie optymalizator Vercela, który
+ * po przekroczeniu limitu w planie odpowiada `402 Payment Required`. Adres składamy sami,
+ * bo tylko wtedy wiadomo z góry, co rozgrzać w pamięci przeglądarki - a rozgrzewanie jest
+ * po to, żeby wizytówka nad pinezką pojawiała się bez ani jednej klatki czekania.
  */
 export function thumbUrl(url: string, w: number = 320) {
-  // jakość 55 musi być wymieniona w `images.qualities` w next.config - inaczej 400
-  return `/_next/image?url=${encodeURIComponent(url)}&w=${w}&q=55`;
+  return adresMiniatury(url, w, 55);
 }
 
 /** Adresy już rozgrzane - żeby nie tworzyć drugi raz tego samego obrazka. */

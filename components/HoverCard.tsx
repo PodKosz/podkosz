@@ -2,10 +2,36 @@
 
 import { MapCourt, TYPE_LABEL, surfaceLabel, type CourtPhotoRef } from "@/lib/types";
 import { thumbUrl, thumbWidth, useCourtPhotos } from "@/lib/galeria";
+import { zapasowyAdres } from "@/lib/obrazy";
 import { PhotoPlaceholder } from "./CourtPhoto";
 import { photoUrl } from "@/lib/supabase/config";
 import { godziny, kiedy, plakietka, wysokiPlakat, type Wydarzenie } from "@/lib/wydarzenia";
 import { ClockIcon, FireBallIcon, HoopIcon, BasketApprovedBadge, SurfaceIcon } from "./icons";
+
+/**
+ * Miniatura kadru z zapasem.
+ *
+ * Skalowaniem zajmuje się Supabase (patrz `lib/obrazy.ts`), ale gdyby kiedyś odmówiło -
+ * wyłączone przekształcenia, inny plan, awaria - `onError` sięga po surowy plik. Jest
+ * cięższy, ale WIDOCZNY, a puste kadry w wizytówce wyglądają jak zepsuta strona. Dokładnie
+ * to zdarzyło się na produkcji, gdy limit przekształceń wyczerpał się po stronie Vercela.
+ */
+function Miniatura({ url, opis, szerokosc }: { url: string; opis: string; szerokosc: number }) {
+  return (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src={thumbUrl(url, szerokosc)}
+      alt={opis}
+      className="h-full w-full object-cover"
+      decoding="async"
+      onError={(e) => {
+        const img = e.currentTarget;
+        const zapas = zapasowyAdres(img.src);
+        if (zapas && zapas !== img.src) img.src = zapas;
+      }}
+    />
+  );
+}
 
 /**
  * Podgląd po najechaniu na pinezkę (na dotyku: po jej dotknięciu) - miniaturki i szybkie info.
@@ -78,13 +104,7 @@ export function HoverCard({
                 rozgrzewamy z góry (patrz prefetchCourtPhotos), więc obrazek jest już
                 w pamięci przeglądarki i wizytówka pojawia się bez migania.
               */
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={thumbUrl(p.url, thumbWidth(i))}
-                alt={p.caption}
-                className="h-full w-full object-cover"
-                decoding="async"
-              />
+              <Miniatura url={p.url} opis={p.caption} szerokosc={thumbWidth(i)} />
             ) : (
               // póki zdjęcia lecą z serwera, stoi grafika zastępcza - nic nie przeskakuje
               <PhotoPlaceholder kind={i === 0 ? "narożnik" : "kosz-a"} seed={court.seed + i} />
@@ -219,8 +239,49 @@ function WizytowkaWydarzenia({
     w barwach flagi i po plakietce, nie po zdjęciu.
   */
   const pion = wysokiPlakat(wydarzenie);
-  const ileWypelniaczy = plakat ? (pion ? 4 : 2) : 3;
-  const wypelniacze = Array.from({ length: ileWypelniaczy }, (_, i) => kadry[i] ?? null);
+
+  /*
+    SIATKA UKŁADA SIĘ Z TEGO, CO JEST - nigdy nie zostawia dziur.
+
+    Boiska dodawane ręcznie mają zdjęcia w dowolnych rodzajach i w dowolnej liczbie: to
+    siedem „ogólnych", tamto trzy plus detal kosza. Poprzednia wersja rezerwowała stałą
+    liczbę kafli i brakujące wypełniała grafiką zastępczą - a przy zdjęciach, których nie
+    dało się przeskalować, wyglądało to jak zepsuta wizytówka.
+
+    Teraz liczba i rozpiętość kafli wynika z liczby zdjęć, które naprawdę są. Sześć komórek
+    (trzy na dwa) rozdzielamy tak, żeby zawsze były zajęte w całości:
+
+      plakat pionowy (2 komórki):  4 zdjęcia -> po jednej; 3 -> jedno szerokie i dwa małe;
+                                   2 -> dwa szerokie; 1 -> jedno na całe pole; 0 -> plakat
+                                   rozciąga się na całą szerokość.
+      plakat poziomy (4 komórki):  2 zdjęcia -> po jednej; 1 -> jedno na dwa rzędy;
+                                   0 -> plakat na całą szerokość.
+  */
+  const dostepne = kadry.filter((k): k is { kind: typeof k.kind; url: string; caption: string } =>
+    Boolean(k.url)
+  );
+  const miejsc = plakat ? (pion ? 4 : 2) : 3;
+  const wypelniacze = dostepne.slice(0, miejsc);
+  const ile = wypelniacze.length;
+
+  const spanyPlakatu =
+    ile === 0 ? "col-span-3 row-span-2" : pion ? "col-span-1 row-span-2" : "col-span-2 row-span-2";
+
+  const spanyKadru = (i: number): string => {
+    if (!plakat) {
+      /* bez plakatu zostaje układ zwykłej wizytówki: duży kadr i dwa małe obok */
+      if (ile === 1) return "col-span-3 row-span-2";
+      if (ile === 2) return i === 0 ? "col-span-2 row-span-2" : "col-span-1 row-span-2";
+      return i === 0 ? "col-span-2 row-span-2" : "col-span-1 row-span-1";
+    }
+    if (pion) {
+      if (ile === 1) return "col-span-2 row-span-2";
+      if (ile === 2) return "col-span-2 row-span-1";
+      if (ile === 3) return i === 0 ? "col-span-2 row-span-1" : "col-span-1 row-span-1";
+      return "col-span-1 row-span-1";
+    }
+    return ile === 1 ? "col-span-1 row-span-2" : "col-span-1 row-span-1";
+  };
 
   return (
     <div
@@ -237,13 +298,17 @@ function WizytowkaWydarzenia({
         }}
       />
 
-      <div className="relative grid grid-cols-3 grid-rows-2 gap-[2px] bg-white/5">
+      {/*
+        Wysokość pasa zdjęć jest STAŁA, a nie liczona z proporcji kafli - przy zmiennej
+        rozpiętości komórek (patrz wyżej) proporcje dawałyby za każdym razem inną wysokość
+        wizytówki, a ta pojawia się nad pinezką i nie może skakać.
+      */}
+      <div
+        className="grid grid-cols-3 grid-rows-2 gap-[2px] bg-white/5"
+        style={{ height: tapHint ? 132 : 162 }}
+      >
         {plakat && (
-          <div
-            className={`relative overflow-hidden ${
-              pion ? "col-span-1 row-span-2" : "col-span-2 row-span-2"
-            }`}
-          >
+          <div className={`relative overflow-hidden ${spanyPlakatu}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={plakat}
@@ -265,26 +330,17 @@ function WizytowkaWydarzenia({
         )}
 
         {wypelniacze.map((p, i) => (
-          <div
-            key={i}
-            className={`relative overflow-hidden ${
-              /* bez plakatu pierwszy kadr boiska bierze duży kafel - jak w zwykłej wizytówce */
-              !plakat && i === 0 ? "col-span-2 row-span-2" : "aspect-[4/3]"
-            }`}
-          >
-            {p?.url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={thumbUrl(p.url, thumbWidth(plakat ? 1 : i))}
-                alt={p.caption}
-                className="h-full w-full object-cover"
-                decoding="async"
-              />
-            ) : (
-              <PhotoPlaceholder kind={i === 0 ? "narożnik" : "kosz-a"} seed={court.seed + i} />
-            )}
+          <div key={i} className={`relative overflow-hidden ${spanyKadru(i)}`}>
+            <Miniatura url={p.url} opis={p.caption} szerokosc={i === 0 && !plakat ? 320 : 200} />
           </div>
         ))}
+
+        {/* nie ma ani plakatu, ani zdjęć - wtedy jedna grafika zastępcza na całe pole */}
+        {!plakat && ile === 0 && (
+          <div className="col-span-3 row-span-2 overflow-hidden">
+            <PhotoPlaceholder kind="narożnik" seed={court.seed} />
+          </div>
+        )}
       </div>
 
       <div className={tapHint ? "p-2.5" : "p-3.5"}>

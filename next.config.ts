@@ -70,6 +70,23 @@ const nextConfig: NextConfig = {
     // szerokości dobrane pod nasze kadry: miniatury w liście, kafelki galerii, zdjęcie tytułowe
     imageSizes: [96, 200, 320, 480],
     deviceSizes: [640, 828, 1080, 1440, 1920, 2560],
+    /*
+      SKALOWANIE ZDJĘĆ IDZIE PRZEZ SUPABASE, NIE PRZEZ VERCELA.
+
+      Optymalizator Vercela przestał przetwarzać obrazy po przekroczeniu limitu w planie:
+      każde nowe żądanie wraca z `402 Payment Required` i nagłówkiem
+      `x-vercel-error: OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED`. Objaw był podstępny -
+      zdjęcia raz przetworzone dalej się wyświetlały (leżą w pamięci brzegowej), więc
+      wyglądało to na „dwa zdjęcia w wizytówce, które się nie ładują", a nie na wyczerpany
+      limit dotyczący każdego nowego kadru i każdego nowego rozmiaru.
+
+      Supabase, na którym i tak leżą pliki, skaluje je pod `/storage/v1/render/image/...`.
+      Sprawdzone na tym projekcie: 320 px z pliku 494 kB waży 60 kB. `remotePatterns`,
+      `formats` i `qualities` wyżej zostają bez znaczenia dla zdjęć z Supabase (adres składa
+      loader), ale zostawiam je - wracają, jeśli kiedykolwiek wrócimy do optymalizatora.
+    */
+    loader: "custom",
+    loaderFile: "./lib/obrazy-loader.ts",
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
