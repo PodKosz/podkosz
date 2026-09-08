@@ -207,8 +207,8 @@ function Fact({
 
 /* ---------------------------------------------------------------- wydarzenie */
 
-/** Biało-czerwone barwy wydarzenia - te same, co pinezka na mapie i box na karcie boiska. */
-const BIALO_CZERWONA = { biel: "#ffffff", czerwien: "#e8112d", ciemna: "#8a0614" };
+/** Czerwień wydarzenia - ta sama, co pinezka na mapie i box na karcie boiska. */
+const CZERWIEN = "#e8112d";
 
 function WizytowkaWydarzenia({
   court,
@@ -288,16 +288,8 @@ function WizytowkaWydarzenia({
       className={`szklo-plynne overflow-hidden rounded-[22px] ${
         stan === "znika" ? "karta-mapy-znika" : "karta-mapy"
       } ${tapHint ? "w-full" : "w-[320px]"}`}
-      style={{ boxShadow: `0 18px 50px -18px ${BIALO_CZERWONA.czerwien}` }}
+      style={{ boxShadow: `0 18px 50px -18px ${CZERWIEN}` }}
     >
-      {/* pasek u góry w barwach flagi - stąd wiadomo, że to inna karta, przed czytaniem */}
-      <div
-        className="h-[6px] w-full"
-        style={{
-          background: `linear-gradient(90deg, ${BIALO_CZERWONA.biel} 0%, ${BIALO_CZERWONA.biel} 50%, ${BIALO_CZERWONA.czerwien} 50%, ${BIALO_CZERWONA.czerwien} 100%)`,
-        }}
-      />
-
       {/*
         Wysokość pasa zdjęć jest STAŁA, a nie liczona z proporcji kafli - przy zmiennej
         rozpiętości komórek (patrz wyżej) proporcje dawałyby za każdym razem inną wysokość
@@ -323,7 +315,7 @@ function WizytowkaWydarzenia({
             <span
               className="absolute left-2 top-2 rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-white"
               style={{
-                background: BIALO_CZERWONA.czerwien,
+                background: CZERWIEN,
                 boxShadow: trwa ? "0 0 0 3px rgb(232 17 45 / .35)" : undefined,
                 animation: trwa ? "kropka-puls 1.8s ease-in-out infinite" : undefined,
               }}
@@ -350,7 +342,7 @@ function WizytowkaWydarzenia({
       <div className={tapHint ? "p-2.5" : "p-3.5"}>
         <p
           className="text-[10px] font-semibold uppercase tracking-[0.2em]"
-          style={{ color: BIALO_CZERWONA.czerwien }}
+          style={{ color: CZERWIEN }}
         >
           wydarzenie
         </p>
