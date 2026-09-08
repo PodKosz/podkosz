@@ -20,7 +20,10 @@ import {
   krokLotu,
   krokSiatki,
   predkoscObrotu,
+  nastepneStanowisko,
+  pierwszeStanowisko,
   pozycjaPilki,
+  ziarnoRundy,
   type PunktSiatki,
   zbudujSiatke,
   rozegrajRzut,
@@ -125,6 +128,27 @@ interface Stan {
   nadObreczka: boolean;
   /** czas od trafienia - odlicza przelot przez siatkę */
   przelot: number;
+  /**
+   * Ziarno rundy - z niego liczą się wszystkie stanowiska tej serii.
+   *
+   * Losowane raz, przy starcie rundy, więc dwie rundy pod rząd nigdy nie ustawią piłki
+   * w tej samej kolejności. Wcześniej stanowisko brało się wprost z numeru trafienia
+   * i każda runda zaczynała się identycznie.
+   */
+  ziarno: number;
+  /** stanowisko, na którym stoi piłka */
+  stanowisko: number;
+  /** poprzednie stanowisko - `nastepneStanowisko` pilnuje po nim strony (-1 na starcie) */
+  poprzednieStanowisko: number;
+  /**
+   * Prośba o przestawienie piłki na jej stanowisko, do spełnienia w pętli.
+   *
+   * Stanowisko wybiera się poza pętlą (nowa runda zaczyna się w efekcie i w obsłudze
+   * dotknięcia), a przeliczenie go na piksele wymaga szerokości świata, którą zna tylko
+   * pętla - bierze się ona z rozmiaru kanwy. Stąd flaga, a nie mierzenie elementu
+   * w dwóch miejscach po swojemu.
+   */
+  przenies: boolean;
   seria: number;
   czas: number;
   /** klatka ostatniego trafienia - do błysku obręczy */
@@ -165,6 +189,7 @@ export function RzutDoKosza({
       s.faza = "rysowanie";
       s.rysunek = 0;
       s.pilka = 0;
+      zacznijRunde(s);
     }
   }, [zaczeta]);
 
@@ -244,6 +269,12 @@ export function RzutDoKosza({
       poprzednia = teraz;
       s.czas += dt;
 
+      /* nowa runda wybrała stanowisko - dopiero tu wiadomo, ile to pikseli */
+      if (s.przenies) {
+        ustawPilke(s, szer);
+        s.przenies = false;
+      }
+
       const poziom = poziomDlaSerii(s.seria);
       const t = s.czas * poziom.tempo;
       const koszX = szer / 2 + Math.sin(t * 1.1) * poziom.bok * szer;
@@ -280,6 +311,18 @@ export function RzutDoKosza({
         /* piłka przelatuje przez siatkę - dopiero potem wraca na następne stanowisko */
         s.przelot += dt;
         if (s.przelot >= CZAS_PRZELOTU) {
+          /*
+            Stanowisko zmienia się TU, a nie w `ustawPilke`: tamto woła też zmiana rozmiaru
+            okna, a obrót telefonu nie jest powodem, żeby przenieść piłkę gdzie indziej.
+          */
+          const nastepne = nastepneStanowisko(
+            s.ziarno,
+            s.seria,
+            s.stanowisko,
+            s.poprzednieStanowisko
+          );
+          s.poprzednieStanowisko = s.stanowisko;
+          s.stanowisko = nastepne;
           ustawPilke(s, szer);
           s.faza = "gotowa";
         }
@@ -354,8 +397,8 @@ export function RzutDoKosza({
     if (s.faza === "koniec") {
       s.seria = 0;
       onSeria(0, null);
-      const r = e.currentTarget.getBoundingClientRect();
-      ustawPilke(s, (r.width / Math.max(r.height, 1)) * WYS);
+      /* nowa runda to nowe ziarno - inaczej po każdym pudle wracałaby ta sama kolejność */
+      zacznijRunde(s);
     }
 
     const p = naSwiat(e);
@@ -417,6 +460,20 @@ export function RzutDoKosza({
 
 /* ---------------------------------------------------------------- stan */
 
+/**
+ * Ustawia rundę na start: nowe ziarno i pierwsze stanowisko z niego.
+ *
+ * Osobno od `nowyStan`, bo runda zaczyna się w trzech miejscach - przy zniknięciu ekranu
+ * tytułowego, po dotknięciu planszy po przerwanej serii i przy pierwszym montowaniu.
+ * Trzy kopie tych dwóch linijek to trzy miejsca, w których można zapomnieć o ziarnie.
+ */
+function zacznijRunde(s: Stan) {
+  s.ziarno = ziarnoRundy();
+  s.stanowisko = pierwszeStanowisko(s.ziarno);
+  s.poprzednieStanowisko = -1;
+  s.przenies = true;
+}
+
 function nowyStan(): Stan {
   return {
     faza: "gotowa",
@@ -434,6 +491,10 @@ function nowyStan(): Stan {
     wskY: 0,
     nadObreczka: false,
     przelot: 0,
+    ziarno: 0,
+    stanowisko: 0,
+    poprzednieStanowisko: -1,
+    przenies: false,
     seria: 0,
     czas: 0,
     blysk: -99,
@@ -442,8 +503,7 @@ function nowyStan(): Stan {
 }
 
 function ustawPilke(s: Stan, szer: number) {
-  /* stanowisko wybiera numer trafienia: każde trafienie przenosi na następne */
-  const p = pozycjaPilki(szer, s.seria);
+  const p = pozycjaPilki(szer, s.stanowisko);
   s.x = p.x;
   s.y = p.y;
   s.vx = 0;

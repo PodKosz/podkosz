@@ -106,20 +106,17 @@ export const MAKS_PREDKOSC = 1650;
 export const KROK = 1 / 120;
 
 /**
- * Miejsca, z których się rzuca - dwanaście stanowisk objeżdżanych po kolei.
- *
- * Do tej pory piłka wracała zawsze w to samo miejsce, więc pierwsze dwadzieścia trafień
- * było dwudziestoma powtórzeniami jednego ruchu: raz wyćwiczony gest wystarczał, dopóki
- * kosz nie zaczynał uciekać. Teraz każde trafienie przenosi na następne stanowisko, więc
- * ten sam odcinek gry uczy CELOWANIA, a nie zapamiętywania jednego przeciągnięcia.
+ * Miejsca, z których się rzuca - dwanaście stanowisk wokół kosza.
  *
  * `dx` to odsunięcie w bok od kosza w pikselach świata (znak wyznacza stronę), `y` to
- * wysokość w ułamku wysokości świata. Kolejność jest ułożona, nie losowa: strony zmieniają
- * się naprzemiennie, a odległość rośnie i maleje falami - dwa kolejne rzuty nigdy nie są
- * tym samym rzutem, ale nigdy też nie przeskakują z najbliższego na najdalszy.
+ * wysokość w ułamku wysokości świata.
  *
- * Po dwudziestym trafieniu stanowiska zaczynają się powtarzać, a różnicę robi już ruchomy
- * kosz (patrz `POZIOMY_GRY` w `lib/minigra.ts`).
+ * TABLICA JEST ZBIOREM, NIE KOLEJNOŚCIĄ. Wcześniej stanowiska objeżdżane były po kolei
+ * i to był błąd, którego nie widać w kodzie, tylko w grze: strony zmieniały się co rzut,
+ * więc pierwszy poziom był po prostu „prawo, lewo, prawo, lewo". A skoro numer stanowiska
+ * brał się z numeru trafienia, to każda kolejna runda zaczynała się tą samą trójką rzutów -
+ * po dwóch, trzech seriach ręka znała je na pamięć. Kolejność rozstrzyga teraz
+ * `nastepneStanowisko`, a jej ziarno jest losowane raz na rundę.
  */
 export const POZYCJE_RZUTU: { dx: number; y: number }[] = [
   { dx: -340, y: 0.86 },
@@ -137,7 +134,88 @@ export const POZYCJE_RZUTU: { dx: number; y: number }[] = [
 ];
 
 /**
- * Gdzie stoi piłka przy danym numerze rzutu i szerokości planszy.
+ * Największa dopuszczalna zmiana odległości od kosza między dwoma kolejnymi rzutami.
+ *
+ * Losowanie bez tego progu potrafi rzucić z najbliższego stanowiska na najdalsze i z
+ * powrotem, a to nie jest „różnorodnie", tylko chaotycznie: siła rzutu musiałaby skakać
+ * o połowę zakresu i celowanie przestaje się czegokolwiek uczyć. Sto sześćdziesiąt
+ * pikseli świata przy rozrzucie stanowisk 230-420 znaczy „następne stanowisko może być
+ * wyraźnie inne, ale nie z drugiego końca skali".
+ */
+const SKOK_MAKS = 160;
+
+/**
+ * Deterministyczne „losowanie" z dwóch liczb - ziarna rundy i numeru rzutu.
+ *
+ * `Math.random` w tym miejscu byłby nie do sprawdzenia: nie da się powtórzyć rundy, która
+ * ułożyła się dziwnie, ani zmierzyć rozkładu stron w teście. Ziarno losuje się raz, na
+ * początku rundy, i od niego cała reszta jest policzalna - a dla grającego wygląda
+ * identycznie, bo ziarna nigdy nie widzi. Mieszanie bitów jak w `splitmix32`: samo
+ * mnożenie ziarna przez numer rzutu dawałoby serie sąsiadujących wyników.
+ */
+function losowa(ziarno: number, krok: number) {
+  let h = (ziarno ^ Math.imul(krok + 1, 0x9e3779b9)) >>> 0;
+  h ^= h >>> 16;
+  h = Math.imul(h, 0x21f0aaad) >>> 0;
+  h ^= h >>> 15;
+  h = Math.imul(h, 0x735a2d97) >>> 0;
+  h ^= h >>> 15;
+  return (h >>> 0) / 4294967296;
+}
+
+/** Ziarno rundy. Jedyne miejsce z prawdziwą losowością - reszta liczy się z niego. */
+export function ziarnoRundy() {
+  return Math.floor(Math.random() * 0xffffffff) >>> 0;
+}
+
+/** Stanowisko pierwszego rzutu w rundzie - dowolne z dwunastu. */
+export function pierwszeStanowisko(ziarno: number) {
+  return Math.floor(losowa(ziarno, -1) * POZYCJE_RZUTU.length) % POZYCJE_RZUTU.length;
+}
+
+/**
+ * Stanowisko następnego rzutu.
+ *
+ * Losowe, ale z trzema warunkami - i każdy z nich jest tu po to, żeby losowość dała się
+ * grać, a nie tylko była losowa:
+ *
+ *   1. nie to samo stanowisko dwa razy pod rząd - inaczej „losowo" znaczyłoby czasem
+ *      „stój, gdzie stoisz", czyli dokładnie to, od czego uciekamy;
+ *   2. nie trzy rzuty pod rząd z tej samej strony - przy czystym losowaniu zdarza się to
+ *      co czwarty rzut i wygląda jak zepsuta gra, a nie jak przypadek;
+ *   3. bez skoku z najbliższego stanowiska na najdalsze (`SKOK_MAKS`).
+ *
+ * Gdyby warunki nie zostawiły żadnego stanowiska, odpada trzeci - dwa pierwsze są
+ * ważniejsze, a przy dwunastu stanowiskach i tak jest z czego wybierać.
+ */
+export function nastepneStanowisko(
+  ziarno: number,
+  nrRzutu: number,
+  poprzednie: number,
+  przedtem: number
+) {
+  const prev = POZYCJE_RZUTU[poprzednie];
+  const bok = Math.sign(prev.dx);
+  const dwaZTejSamej = przedtem >= 0 && Math.sign(POZYCJE_RZUTU[przedtem].dx) === bok;
+
+  const wybor = (zProgiem: boolean) => {
+    const lista: number[] = [];
+    for (let i = 0; i < POZYCJE_RZUTU.length; i += 1) {
+      const p = POZYCJE_RZUTU[i];
+      if (i === poprzednie) continue;
+      if (dwaZTejSamej && Math.sign(p.dx) === bok) continue;
+      if (zProgiem && Math.abs(Math.abs(p.dx) - Math.abs(prev.dx)) > SKOK_MAKS) continue;
+      lista.push(i);
+    }
+    return lista;
+  };
+
+  const lista = wybor(true).length ? wybor(true) : wybor(false);
+  return lista[Math.floor(losowa(ziarno, nrRzutu) * lista.length) % lista.length];
+}
+
+/**
+ * Gdzie stoi piłka na danym stanowisku, przy danej szerokości planszy.
  *
  * Odsunięcie jest przycinane do szerokości okna z dwóch stron. Górne ograniczenie jest
  * oczywiste - piłka nie może wyjść za krawędź. Dolne jest ważniejsze: przy bardzo wąskim
@@ -145,9 +223,12 @@ export const POZYCJE_RZUTU: { dx: number; y: number }[] = [
  * samą linią i trafia wyłącznie pełną mocą (zmierzone: 0,4% skuteczności). Dlatego piłka
  * nigdy nie stoi bliżej niż 14% szerokości od pionu kosza.
  */
-export function pozycjaPilki(szer: number, nrRzutu = 0) {
+export function pozycjaPilki(szer: number, stanowisko = 0) {
   const koszX = szer / 2;
-  const poz = POZYCJE_RZUTU[((nrRzutu % POZYCJE_RZUTU.length) + POZYCJE_RZUTU.length) % POZYCJE_RZUTU.length];
+  const poz =
+    POZYCJE_RZUTU[
+      ((stanowisko % POZYCJE_RZUTU.length) + POZYCJE_RZUTU.length) % POZYCJE_RZUTU.length
+    ];
 
   const gora = szer * 0.36;
   const dol = szer * 0.14;
