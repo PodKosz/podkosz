@@ -60,11 +60,10 @@ export function HoverCard({
   /*
     Cztery kadry, nie trzy: przy wydarzeniu z pionowym plakatem siatka ma inny kształt
     (wąski plakat po lewej, cztery zdjęcia boiska po prawej) i potrzebuje o jedno więcej.
-    Zwykła wizytówka bierze z tego pierwsze trzy - nadmiarowy kadr nic nie kosztuje, bo
-    zapytanie i tak idzie po całą galerię tego boiska.
+    Nadmiarowy kadr nic nie kosztuje, bo zapytanie i tak idzie po całą galerię boiska -
+    ale zwykła wizytówka MUSI go odciąć, i robi to niżej, przy `kadry`.
   */
   const thumbs = useCourtPhotos(court.id, 4);
-  const kadry = thumbs.length ? thumbs : [null, null, null];
 
   /*
     Wydarzenie ma własną wizytówkę, a nie plakietkę doklejoną do zwykłej.
@@ -83,6 +82,21 @@ export function HoverCard({
       />
     );
   }
+
+  /*
+    DOKŁADNIE TRZY KADRY, ani mniej, ani więcej.
+
+    Siatka zwykłej wizytówki ma trzy kolumny i dwa rzędy: jeden kafel 2x2 po lewej i dwa
+    po prawej, czyli sześć komórek zajętych w całości. Czwarty kadr zaczynał trzeci rząd
+    i zostawiał obok siebie DWA PUSTE MIEJSCA - tak wyglądała ta wizytówka po tym, jak
+    pobieranie podniosłem z trzech kadrów na cztery dla siatki wydarzenia (ta potrzebuje
+    czterech przy pionowym plakacie).
+
+    Dopełnienie `null` załatwia drugi kierunek: boisko z jednym albo dwoma zdjęciami
+    i moment, w którym zdjęcia jeszcze lecą z serwera, dostają grafikę zastępczą na
+    brakujących miejscach - a nie dziurę.
+  */
+  const kadry = [thumbs[0] ?? null, thumbs[1] ?? null, thumbs[2] ?? null];
 
   return (
     <div
