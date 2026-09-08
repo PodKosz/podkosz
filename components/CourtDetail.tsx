@@ -66,9 +66,6 @@ export function CourtDetail({
   */
   const wydarzenieObok = wydarzenie !== null && wysokiPlakat(wydarzenie);
 
-  /* ten sam punkt prowadzi przycisk w hero i współrzędne w opisie */
-  const nawigacja = `https://www.google.com/maps/dir/?api=1&destination=${court.lat},${court.lng}`;
-
   return (
     <main className="min-h-dvh pb-24">
       <section className="relative h-[62vh] max-h-[780px] min-h-[420px] w-full overflow-hidden">
@@ -101,10 +98,12 @@ export function CourtDetail({
             Wszystko trzyma się dołu zdjęcia, w obszarze gradientu, żeby nie zasłaniać
             kadru. Na telefonie linia zawija się sama.
 
-            WSPÓŁRZĘDNE ZESZŁY STĄD DO OPISU. Pod nazwą boiska stały obok miasta jako druga
-            liczba w tej samej linii i konkurowały o uwagę z tytułem - a są informacją
-            techniczną, potrzebną raz: przy przepisywaniu punktu do nawigacji. Miasto zostaje,
-            bo ono odpowiada na pytanie „gdzie to jest".
+            WSPÓŁRZĘDNYCH TU NIE MA i nie ma ich nigdzie na stronie. Stały pod nazwą jako
+            druga liczba w tej samej linii, potem zeszły do opisu - i w obu miejscach były
+            tym samym: parą liczb, na którą nikt nie patrzy, bo w nawigację prowadzi przycisk
+            „Prowadź do boiska" obok. Miasto zostaje, bo ono odpowiada na pytanie „gdzie to
+            jest"; punkt na mapie zostaje w danych strukturalnych karty (`GeoCoordinates`),
+            więc wyszukiwarki dalej wiedzą, gdzie to boisko leży.
           */}
           <div className="flex flex-col">
             <h1 className="text-[22px] font-semibold leading-[1.1] tracking-[-0.02em] sm:mt-3 sm:text-[clamp(34px,6vw,64px)] sm:leading-[1.02]">
@@ -144,7 +143,7 @@ export function CourtDetail({
               <Ulubione courtId={court.id} />
             </span>
             <a
-              href={nawigacja}
+              href={`https://www.google.com/maps/dir/?api=1&destination=${court.lat},${court.lng}`}
               target="_blank"
               rel="noreferrer"
               className="glass rounded-full px-4 py-2.5 text-[13px] font-medium text-ink transition hover:bg-white/10 sm:px-5 sm:py-3 sm:text-[14px]"
@@ -370,45 +369,17 @@ export function CourtDetail({
           szerokość - na telefonie kolumna 300 px obok opisu zostawiłaby opisowi 60 px.
         */}
         <section className="mt-16 grid items-stretch gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(260px,320px)]">
-          <div className="glass relative overflow-hidden rounded-[28px] px-6 py-8 sm:px-10 sm:py-10">
+          {/*
+            `justify-center` na wypadek krótkiego opisu. Wysokość rzędu wyznacza podpis
+            autora obok (avatar 92 px z etykietą i datą to około 240 px), więc jedno zdanie
+            opisu zostawiało pod sobą pas pustki - wcześniej wypełniały go współrzędne.
+            Przy dłuższym opisie ta reguła nie robi nic: box i tak jest wyższy od podpisu.
+          */}
+          <div className="glass relative flex flex-col justify-center overflow-hidden rounded-[28px] px-6 py-8 sm:px-10 sm:py-10">
             <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">O boisku</h2>
             <p className="mt-4 flame-text text-[clamp(24px,3.4vw,40px)] font-semibold leading-[1.25] tracking-[-0.01em]">
               {court.description}
             </p>
-
-            {/*
-              Stopka boxa: współrzędne, które zeszły tu z nagłówka. Jedna rzecz, więc nie
-              plakietka w rzędzie plakietek, a wiersz oddzielony włosową linią - taki sam
-              zabieg, jaki na tej stronie oddziela sekcje. Klik prowadzi w nawigację, więc
-              liczb nie trzeba przepisywać ręcznie; są w wersaliku o stałej szerokości cyfr
-              (`tabular-nums`), bo to jedyne miejsce na stronie, gdzie czyta się liczbę
-              cyfra po cyfrze.
-
-              Odnośniki „Więcej boisk" (miasto, województwo) stały tu obok i zniknęły -
-              trzy plakietki w jednym wierszu robiły z tego pasek nawigacyjny pod opisem.
-              Podstrony miejsc zostają w mapie witryny i w danych strukturalnych karty,
-              więc nie tracą ścieżki indeksowania.
-            */}
-            <div className="mt-8 border-t border-hairline pt-5">
-              <a
-                href={nawigacja}
-                target="_blank"
-                rel="noreferrer"
-                className="group inline-flex items-center gap-3 text-muted transition-colors hover:text-ink"
-              >
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-hairline bg-white/6 transition group-hover:border-flame/45 group-hover:bg-white/10">
-                  <PinIcon className="h-[18px] w-[18px] text-flame" />
-                </span>
-                <span className="flex flex-col leading-tight">
-                  <span className="text-[10px] uppercase tracking-[0.16em] text-faint">
-                    Współrzędne
-                  </span>
-                  <span className="text-[clamp(16px,1.5vw,19px)] font-semibold tabular-nums tracking-[-0.01em] text-ink">
-                    {court.lat.toFixed(4)}, {court.lng.toFixed(4)}
-                  </span>
-                </span>
-              </a>
-            </div>
           </div>
 
           <AutorWpisu
