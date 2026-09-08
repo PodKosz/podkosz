@@ -1,3 +1,4 @@
+import { SzkicKafla, type RodzajSzkicu } from "./SzkicKafla";
 import Link from "next/link";
 import { ACCESS_LABEL, Court, TYPE_LABEL, surfaceLabel } from "@/lib/types";
 import { czyAutorAnonimowy, formatDistance, slugifyPlace } from "@/lib/site";
@@ -20,16 +21,10 @@ import { wysokiPlakat, type Wydarzenie } from "@/lib/wydarzenia";
 import { BoxWydarzenia } from "./BoxWydarzenia";
 import {
   ArrowLeftIcon,
-  BulbIcon,
-  ClockIcon,
-  CourtIcon,
-  FenceIcon,
   FireBallIcon,
-  HoopIcon,
   BasketApprovedBadge,
   FunnyBadge,
   PinIcon,
-  SurfaceIcon,
 } from "./icons";
 
 /**
@@ -250,11 +245,13 @@ export function CourtDetail({
             pyta się o szerokość kontenera (`@container` wyżej), a nie okna.
 
             Skąd te dwie liczby. Najdłuższe słowo, jakie może tu trafić, to „Ograniczony"
-            z `ACCESS_LABEL` - 120 px przy 21 px półgrubą, 148 px przy 26 px (tyle ma
-            czcionka od 1536 px okna). Z wyściółką 2 x 20 px wychodzi 188 px na kafelek:
+            z `ACCESS_LABEL`. Zmierzone w przeglądarce: 120 px przy 21 px półgrubą i 148 px
+            przy 26 px. Wartość w kafelku ma teraz 22 i 28 px (napis jest na wierzchu
+            rysunku i musi być czytelny z daleka), czyli 126 i 160 px, a z wyściółką
+            2 x 16 i 2 x 20 px - 158 i 200 px na kafelek:
 
-              6 kafelków po 152 px + 5 przerw po 12 px             =  972  ->  @min-[1000px]
-              6 kafelków po 188 px + panel 300 px + 6 przerw       = 1500  ->  @min-[1500px]
+              6 kafelków po 158 px + 5 przerw po 12 px             = 1008  ->  @min-[1020px]
+              6 kafelków po 200 px + panel 300 px + 6 przerw       = 1572  ->  @min-[1580px]
 
             CZCIONKA I WYŚCIÓŁKA IDĄ TYM SAMYM PROGIEM co kolumny (patrz `Spec` na dole
             pliku), a nie progiem okna `2xl`. Inaczej te dwie liczby by się rozjechały:
@@ -262,37 +259,22 @@ export function CourtDetail({
             z węższą kolumną kafelki dostawałyby sześć kolumn policzonych dla czcionki
             21 px, a napis rysowałby się czcionką 26 px.
 
-            Poniżej 1000 px kafelki idą po trzy w rzędzie, a na telefonie po dwa - i tam
-            mają po 165 px, czyli nadal ponad wymagane 152 px.
+            Poniżej 1020 px kafelki idą po trzy w rzędzie, a na telefonie po dwa - i tam
+            mają po 165 px, czyli tyle, ile trzeba (158 px), z zapasem siedmiu pikseli.
+            Gdyby wartość miała jeszcze urosnąć, to jest miejsce, które pęknie pierwsze.
 
             Panel „kto dziś gra" siedzi obok kafelków tylko w układzie siedmiokolumnowym;
             niżej bierze cały rząd, bo w węższej kolumnie jego przycisk nie ma się gdzie
             zmieścić.
           */
-          className="relative z-10 grid grid-cols-2 gap-3 sm:grid-cols-3 @min-[1000px]:grid-cols-6 @min-[1500px]:grid-cols-[repeat(6,minmax(0,1fr))_minmax(300px,1.2fr)]"
+          className="relative z-10 grid grid-cols-2 gap-3 sm:grid-cols-3 @min-[1020px]:grid-cols-6 @min-[1580px]:grid-cols-[repeat(6,minmax(0,1fr))_minmax(300px,1.2fr)]"
         >
-          <Spec icon={<HoopIcon className="h-7 w-7" />} label="Kosze" value={String(court.hoops)} />
-          <Spec
-            icon={<SurfaceIcon className="h-7 w-7" />}
-            label="Nawierzchnia"
-            value={surfaceLabel(court.surface)}
-          />
-          <Spec icon={<ClockIcon className="h-7 w-7" />} label="Godziny" value={court.hours} />
-          <Spec
-            icon={<CourtIcon className="h-7 w-7" />}
-            label="Dostęp"
-            value={ACCESS_LABEL[court.access]}
-          />
-          <Spec
-            icon={<BulbIcon className="h-7 w-7" />}
-            label="Oświetlenie"
-            value={court.lit ? "Tak" : "Brak"}
-          />
-          <Spec
-            icon={<FenceIcon className="h-7 w-7" />}
-            label="Ogrodzenie"
-            value={court.fenced ? "Tak" : "Brak"}
-          />
+          <Spec rodzaj="kosze" label="Kosze" value={String(court.hoops)} />
+          <Spec rodzaj="nawierzchnia" label="Nawierzchnia" value={surfaceLabel(court.surface)} />
+          <Spec rodzaj="godziny" label="Godziny" value={court.hours} />
+          <Spec rodzaj="dostep" label="Dostęp" value={ACCESS_LABEL[court.access]} />
+          <Spec rodzaj="oswietlenie" label="Oświetlenie" value={court.lit ? "Tak" : "Brak"} />
+          <Spec rodzaj="ogrodzenie" label="Ogrodzenie" value={court.fenced ? "Tak" : "Brak"} />
 
           {/*
             Panel „kto dziś gra" zajmuje cały rząd, dopóki kafelki nie ustawią się w siedem
@@ -300,7 +282,7 @@ export function CourtDetail({
             kolumn zmienia się teraz zapytaniem kontenerowym, więc żadna stała liczba nie
             byłaby dobra we wszystkich układach - a „cały rząd" jest dobra w każdym.
           */}
-          <div className="col-span-full @min-[1500px]:col-span-1">
+          <div className="col-span-full @min-[1580px]:col-span-1">
             <ZagramDzis courtId={court.id} />
           </div>
         </section>
@@ -458,34 +440,50 @@ export function CourtDetail({
   );
 }
 
+/**
+ * Kafelek z jednym parametrem boiska.
+ *
+ * Pod napisem leży rysunek w tym samym języku, co obrysy w tle rankingu, graczy i „o nas"
+ * (`SzkicKafla`): włosowa kreska w barwie marki, przygaszona i miejscami puszczona, jakby
+ * stawiała ją ręka. Wcześniej stała tu mała pomarańczowa ikonka w lewym górnym narożniku
+ * i wartość przy lewej krawędzi - kafelek wyglądał jak wiersz tabeli.
+ *
+ * Kolejność jest tu odwrócona względem tego, co zwykle: NAPIS JEST TREŚCIĄ, rysunek tłem.
+ * Dlatego rysunek ma 22% widoczności i nie dotyka krawędzi (86% pola), a wartość dostała
+ * 22 px zamiast 21 i stoi na środku. Gdyby rysunek był mocniejszy, konkurowałby z liczbą,
+ * po którą się na ten kafelek patrzy.
+ *
+ * Rozmiary rosną progiem KONTENERA (`@min-[1580px]`), nie okna: to ten sam próg, którym
+ * siatka wyżej przechodzi na siedem kolumn, i dokładnie dla tych rozmiarów policzono tam
+ * szerokość kafelka. Rozjazd tych dwóch progów oznaczałby napis policzony dla innej
+ * czcionki, niż się rysuje.
+ */
 function Spec({
-  icon,
+  rodzaj,
   label,
   value,
 }: {
-  icon: React.ReactNode;
+  rodzaj: RodzajSzkicu;
   label: string;
   value: string;
 }) {
   return (
-    /* wysokość równa panelowi „kto dziś gra" w tym samym rzędzie, więc wartość i podpis
-       spychamy do dolnej krawędzi - inaczej kafelki miałyby puste dno */
-    /* Kafelki równają się do wysokości panelu „kto dziś gra" (h-full), a wartość z podpisem
-       siedzi pośrodku wolnej przestrzeni pod ikoną - nie przy dolnej krawędzi. */
-    /* Rozmiary rosną progiem KONTENERA (`@min-[1500px]`), nie okna: to ten sam próg,
-       którym siatka wyżej przechodzi na siedem kolumn, i dokładnie dla tych rozmiarów
-       policzono tam szerokość kafelka. Rozjazd tych dwóch progów oznaczałby napis
-       policzony dla innej czcionki, niż się rysuje. */
-    <div className="glass kafel-zywy flex h-full min-h-[150px] flex-col rounded-[20px] p-4 @min-[1500px]:p-5">
-      <span className="text-flame">{icon}</span>
-      <span className="flex flex-1 flex-col justify-center">
+    <div className="glass kafel-zywy relative flex h-full min-h-[150px] flex-col items-center justify-center rounded-[20px] p-4 @min-[1580px]:p-5">
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 grid place-items-center opacity-[0.22]"
+      >
+        <SzkicKafla rodzaj={rodzaj} className="h-[86%] w-[86%]" />
+      </span>
+
+      <span className="relative flex flex-col items-center text-center">
         {/* `break-words` to bezpiecznik: gdyby kiedyś trafiła tu wartość dłuższa niż
             „Ograniczony" (na podstawie którego dobrane są progi kolumn wyżej), złamie
             się w środku słowa zamiast wyjść na sąsiedni kafelek */}
-        <p className="text-[21px] font-semibold leading-[1.15] break-words @min-[1500px]:text-[26px]">
+        <p className="text-[22px] font-semibold leading-[1.15] break-words @min-[1580px]:text-[28px]">
           {value}
         </p>
-        <p className="mt-1.5 text-[10px] uppercase tracking-[0.14em] text-faint @min-[1500px]:text-[11px]">
+        <p className="mt-1.5 text-[10px] uppercase tracking-[0.14em] text-faint @min-[1580px]:text-[11px]">
           {label}
         </p>
       </span>
