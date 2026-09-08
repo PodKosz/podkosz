@@ -97,9 +97,9 @@ export function CourtDetail({
           </div>
 
           {/*
-            Tytuł, a pod nim jedna linia: miasto i zaraz obok plakietki (typ boiska,
-            województwo, wyróżnienia). Wszystko trzyma się dołu zdjęcia, w obszarze
-            gradientu, żeby nie zasłaniać kadru. Na telefonie linia zawija się sama.
+            Tytuł, a pod nim jedna linia: miasto i zaraz obok plakietki wyróżnień.
+            Wszystko trzyma się dołu zdjęcia, w obszarze gradientu, żeby nie zasłaniać
+            kadru. Na telefonie linia zawija się sama.
 
             WSPÓŁRZĘDNE ZESZŁY STĄD DO OPISU. Pod nazwą boiska stały obok miasta jako druga
             liczba w tej samej linii i konkurowały o uwagę z tytułem - a są informacją
@@ -117,16 +117,20 @@ export function CourtDetail({
                 <span className="truncate">{court.city}</span>
               </p>
 
-              <span className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                <span className="rounded-full border border-hairline bg-white/8 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] text-muted sm:px-3 sm:py-1 sm:text-[11px] sm:tracking-[0.14em]">
-                  {TYPE_LABEL[court.type]}
+              {/*
+                Zostają tu TYLKO wyróżnienia. Typ boiska („otwarty") i województwo stały
+                obok nich w takich samych szarych plakietkach i przez to wyglądały na
+                równie ważne, choć obie te rzeczy są już na stronie: po odkrytym boisku
+                poznaje się prognoza pogody niżej, a województwo jest odnośnikiem w opisie
+                („Więcej boisk"). Trzy plakietki pod nazwą sprowadzały wyróżnienie -
+                jedyną rzecz, którą warto tu zauważyć - do jednej z listy.
+              */}
+              {(court.basketApproved || court.funny) && (
+                <span className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                  {court.basketApproved && <BasketApprovedBadge />}
+                  {court.funny && <FunnyBadge />}
                 </span>
-                <span className="rounded-full border border-hairline bg-white/8 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] text-muted sm:px-3 sm:py-1 sm:text-[11px] sm:tracking-[0.14em]">
-                  {court.voivodeship}
-                </span>
-                {court.basketApproved && <BasketApprovedBadge />}
-                {court.funny && <FunnyBadge />}
-              </span>
+              )}
               {/* na telefonie ulubione siedzą przy mieście, na dużym ekranie w rzędzie akcji */}
               <span className="ml-auto shrink-0 sm:hidden">
                 <Ulubione courtId={court.id} compact />
@@ -373,34 +377,37 @@ export function CourtDetail({
             </p>
 
             {/*
-              Jeden rząd drobnych plakietek pod opisem: współrzędne (zeszły tu z nagłówka
-              - kliknięcie prowadzi w nawigację, więc liczby nie trzeba przepisywać ręcznie)
-              i odnośniki do podstron miejsca, czyli nawigacja dla ludzi i ścieżka dla
-              wyszukiwarek.
+              Stopka boxa: współrzędne, które zeszły tu z nagłówka. Jedna rzecz, więc nie
+              plakietka w rzędzie plakietek, a wiersz oddzielony włosową linią - taki sam
+              zabieg, jaki na tej stronie oddziela sekcje. Klik prowadzi w nawigację, więc
+              liczb nie trzeba przepisywać ręcznie; są w wersaliku o stałej szerokości cyfr
+              (`tabular-nums`), bo to jedyne miejsce na stronie, gdzie czyta się liczbę
+              cyfra po cyfrze.
+
+              Odnośniki „Więcej boisk" (miasto, województwo) stały tu obok i zniknęły -
+              trzy plakietki w jednym wierszu robiły z tego pasek nawigacyjny pod opisem.
+              Podstrony miejsc zostają w mapie witryny i w danych strukturalnych karty,
+              więc nie tracą ścieżki indeksowania.
             */}
-            <div className="mt-7 flex flex-wrap items-center gap-2 text-[13px] text-muted">
+            <div className="mt-8 border-t border-hairline pt-5">
               <a
                 href={nawigacja}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-white/6 px-3 py-1 tabular-nums transition hover:text-ink"
+                className="group inline-flex items-center gap-3 text-muted transition-colors hover:text-ink"
               >
-                <PinIcon className="h-3.5 w-3.5 text-flame" />
-                {court.lat.toFixed(4)}, {court.lng.toFixed(4)}
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-hairline bg-white/6 transition group-hover:border-flame/45 group-hover:bg-white/10">
+                  <PinIcon className="h-[18px] w-[18px] text-flame" />
+                </span>
+                <span className="flex flex-col leading-tight">
+                  <span className="text-[10px] uppercase tracking-[0.16em] text-faint">
+                    Współrzędne
+                  </span>
+                  <span className="text-[clamp(16px,1.5vw,19px)] font-semibold tabular-nums tracking-[-0.01em] text-ink">
+                    {court.lat.toFixed(4)}, {court.lng.toFixed(4)}
+                  </span>
+                </span>
               </a>
-              <span className="ml-1 text-faint">Więcej boisk:</span>
-              <Link
-                href={`/miasto/${slugifyPlace(court.city)}`}
-                className="rounded-full border border-hairline bg-white/6 px-3 py-1 transition hover:text-ink"
-              >
-                {court.city}
-              </Link>
-              <Link
-                href={`/wojewodztwo/${slugifyPlace(court.voivodeship)}`}
-                className="rounded-full border border-hairline bg-white/6 px-3 py-1 transition hover:text-ink"
-              >
-                {court.voivodeship}
-              </Link>
             </div>
           </div>
 
