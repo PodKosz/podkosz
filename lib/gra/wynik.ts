@@ -18,6 +18,9 @@ import { supabaseBrowser } from "@/lib/supabase/client";
  * obietnicę otwarcia i zapis się na niej zatrzymuje.
  */
 
+/** Sufit, który obowiązywał przed migracją `migration-minigra-sufit.sql`. */
+const STARY_SUFIT = 500;
+
 let otwieranie: Promise<void> | null = null;
 
 /** Otwiera rundę. Wołać przy każdym starcie rozgrywki - nie szkodzi wołać częściej. */
@@ -50,10 +53,33 @@ export async function zapiszWynik(miejsce: IdMiejsca, wynik: number): Promise<nu
     }
   }
 
-  const { data, error } = await supabase.rpc("minigra_zapisz", {
+  const doZapisu = Math.min(wynik, MAKS_SERIA);
+  let { data, error } = await supabase.rpc("minigra_zapisz", {
     p_miejsce: miejsce,
-    p_seria: Math.min(wynik, MAKS_SERIA),
+    p_seria: doZapisu,
   });
+
+  /*
+    ZAPASOWA PRÓBA NA STARY SUFIT.
+
+    Górna granica wyniku stoi w trzech miejscach: tutaj, w warunku kolumny i w funkcji
+    bazy. Podniesienie jej wymaga więc i wydania nowej wersji strony, i uruchomienia
+    migracji - a to dwie osobne czynności, między którymi jest okno. W tym oknie nowa
+    strona wysyłałaby wynik, którego stara baza nie przyjmie, i wynik przepadałby
+    W CAŁOŚCI - czyli gorzej niż przed poprawką, gdzie zapisywał się przycięty.
+
+    Runda przeżywa odmowę (funkcja bazy zdejmuje ją dopiero przy udanym zapisie, a wyjątek
+    wycofuje całą transakcję), więc druga próba ma z czego korzystać. Po uruchomieniu
+    migracji ta gałąź przestaje się wykonywać sama z siebie.
+  */
+  if (error && doZapisu > STARY_SUFIT) {
+    const zapas = await supabase.rpc("minigra_zapisz", {
+      p_miejsce: miejsce,
+      p_seria: STARY_SUFIT,
+    });
+    data = zapas.data;
+    error = zapas.error;
+  }
 
   /*
     Zapis zużył rundę, a gra idzie dalej - w rzutach seria zaczyna się od nowa

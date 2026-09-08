@@ -475,7 +475,7 @@ function Spec({
         z marginesem wokół (patrz nota w `SzkicKafla`). Przycięcie robi `overflow-hidden`
         na kafelku, a zaokrąglenie narożników bierze się z jego `rounded-[20px]`.
       */}
-      <span aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.18]">
+      <span aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.3]">
         <SzkicKafla rodzaj={rodzaj} />
       </span>
 

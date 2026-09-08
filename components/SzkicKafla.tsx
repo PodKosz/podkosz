@@ -33,6 +33,15 @@
  * i jest przygaszony - ma dawać kafelkowi charakter i podpowiadać temat rzutem oka, nie
  * zastępować treści. Dlatego `aria-hidden` i dlatego przezroczystość jest niska.
  *
+ * ------------------------------------------------------------------ kreska i barwa
+ *
+ * Kreska jest CIENKA, a barwa NASYCONA - i to jest zamiana świadoma. Pierwsza wersja
+ * miała grubą kreskę w bladym złocie (`--rgb-glow`, #ffb25c): rysunek był wyraźny, ale
+ * ciężki, a jego barwa siadała gdzieś między szarością kafelka a pomarańczem marki
+ * i nie należała do żadnego z nich. Teraz grubości zeszły o 38%, a barwa idzie
+ * z `--rgb-flame` do `--rgb-ember` - czyli tam, gdzie serwis ma swój ogień. Ubytek
+ * grubości nadrabia poświata pod kreską, nie sama kreska.
+ *
  * ------------------------------------------------------------------ dwie pułapki SVG
  *
  * GRADIENT W UKŁADZIE RYSUNKU (`userSpaceOnUse`), nie w pudełkach elementów. Domyślny
@@ -96,15 +105,15 @@ const RYSUNKI: Record<RodzajSzkicu, { obrot: number; kreski: React.ReactNode }> 
     obrot: -8,
     kreski: (
       <>
-        <rect x="-34" y="-22" width="112" height="78" rx="2" strokeWidth="3.2" />
-        <rect x="-2" y="8" width="48" height="40" strokeWidth="1.9" />
-        <path d="M22 56v11" strokeWidth="2.8" />
-        <ellipse cx="22" cy="72" rx="35" ry="8.5" strokeWidth="3.4" />
+        <rect x="-34" y="-22" width="112" height="78" rx="2" strokeWidth="1.98" />
+        <rect x="-2" y="8" width="48" height="40" strokeWidth="1.18" />
+        <path d="M22 56v11" strokeWidth="1.74" />
+        <ellipse cx="22" cy="72" rx="35" ry="8.5" strokeWidth="2.11" />
         {/* sploty siatki zbiegają się do węzła daleko pod kafelkiem */}
-        <path d="M-11 74 6 150M22 80.5v70M55 74 38 150" strokeWidth="1.7" />
-        <path d="M-7 92q29 11 58 0M2 116q20 8 40 0" strokeWidth="1.4" />
+        <path d="M-11 74 6 150M22 80.5v70M55 74 38 150" strokeWidth="1.05" />
+        <path d="M-7 92q29 11 58 0M2 116q20 8 40 0" strokeWidth="0.87" />
         {/* słup - wychodzi prawą krawędzią i dołem */}
-        <path d="M78 2h20v160" strokeWidth="2.6" />
+        <path d="M78 2h20v160" strokeWidth="1.61" />
       </>
     ),
   },
@@ -114,15 +123,15 @@ const RYSUNKI: Record<RodzajSzkicu, { obrot: number; kreski: React.ReactNode }> 
     obrot: -11,
     kreski: (
       <>
-        <path d="M-40 98h200" strokeWidth="3.2" />
-        <path d="M16 -40v200" strokeWidth="3.2" />
-        <path d="M16 20a78 78 0 0 1 78 78" strokeWidth="2.6" />
-        <path d="M16 48h42v40H16" strokeWidth="1.8" />
-        <path d="M58 48a20 20 0 0 1 0 40" strokeWidth="1.8" />
+        <path d="M-40 98h200" strokeWidth="1.98" />
+        <path d="M16 -40v200" strokeWidth="1.98" />
+        <path d="M16 20a78 78 0 0 1 78 78" strokeWidth="1.61" />
+        <path d="M16 48h42v40H16" strokeWidth="1.12" />
+        <path d="M58 48a20 20 0 0 1 0 40" strokeWidth="1.12" />
         {/* faktura - krótkie kreski, nierówno, jak ziarno betonu */}
         <path
           d="M28 112h13M52 120h10M74 108h15M96 124h11M40 132h11M84 138h13M62 104h9M108 112h11"
-          strokeWidth="1.5"
+          strokeWidth="0.93"
         />
       </>
     ),
@@ -133,15 +142,15 @@ const RYSUNKI: Record<RodzajSzkicu, { obrot: number; kreski: React.ReactNode }> 
     obrot: 5,
     kreski: (
       <>
-        <circle cx="20" cy="104" r="92" strokeWidth="3.2" />
-        <circle cx="20" cy="104" r="74" strokeWidth="1.5" />
+        <circle cx="20" cy="104" r="92" strokeWidth="1.98" />
+        <circle cx="20" cy="104" r="74" strokeWidth="0.93" />
         {/* wskazówki - jedna w górę, druga w prawo, obie wychodzą poza tarczę */}
-        <path d="M20 104V16" strokeWidth="3.4" />
-        <path d="M20 104 96 128" strokeWidth="2.8" />
+        <path d="M20 104V16" strokeWidth="2.11" />
+        <path d="M20 104 96 128" strokeWidth="1.74" />
         {/* podziałka na łuku */}
         <path
           d="M20 12v14M89 39l-10 10M112 104h-14M76 32l-7 12M100 66l-12 7M104 142l-13-5"
-          strokeWidth="1.7"
+          strokeWidth="1.05"
         />
       </>
     ),
@@ -152,14 +161,14 @@ const RYSUNKI: Record<RodzajSzkicu, { obrot: number; kreski: React.ReactNode }> 
     obrot: -6,
     kreski: (
       <>
-        <path d="M4 -40v200" strokeWidth="3.4" />
-        <path d="M116 -40v200" strokeWidth="3.4" />
-        <path d="M4 118h112" strokeWidth="2" />
+        <path d="M4 -40v200" strokeWidth="2.11" />
+        <path d="M116 -40v200" strokeWidth="2.11" />
+        <path d="M4 118h112" strokeWidth="1.24" />
         {/* skrzydło pod kątem - to ono mówi „otwarte" */}
-        <path d="M116 -4 50 26v96l66-30V-4" strokeWidth="2.7" />
-        <path d="M50 58 116 28M50 90 116 60" strokeWidth="1.6" />
+        <path d="M116 -4 50 26v96l66-30V-4" strokeWidth="1.67" />
+        <path d="M50 58 116 28M50 90 116 60" strokeWidth="0.99" />
         {/* zawiasy */}
-        <path d="M112 8h12M112 76h12" strokeWidth="2.2" />
+        <path d="M112 8h12M112 76h12" strokeWidth="1.36" />
       </>
     ),
   },
@@ -169,13 +178,13 @@ const RYSUNKI: Record<RodzajSzkicu, { obrot: number; kreski: React.ReactNode }> 
     obrot: 0,
     kreski: (
       <>
-        <path d="M104 160 66 4" strokeWidth="3.6" />
-        <path d="M18 -14h84l-13 24H31L18 -14Z" strokeWidth="3.2" />
-        <path d="M42 -14v24M64 -14v24M86 -14v24" strokeWidth="1.6" />
+        <path d="M104 160 66 4" strokeWidth="2.23" />
+        <path d="M18 -14h84l-13 24H31L18 -14Z" strokeWidth="1.98" />
+        <path d="M42 -14v24M64 -14v24M86 -14v24" strokeWidth="0.99" />
         {/* snop - promienie rozchodzą się i wychodzą krawędziami */}
-        <path d="M28 14-30 104M60 14 44 150M92 14 150 96" strokeWidth="1.9" />
-        <path d="M20 16-40 54M100 16 160 50" strokeWidth="1.5" />
-        <path d="M-16 74q68 30 136 0" strokeWidth="1.5" />
+        <path d="M28 14-30 104M60 14 44 150M92 14 150 96" strokeWidth="1.18" />
+        <path d="M20 16-40 54M100 16 160 50" strokeWidth="0.93" />
+        <path d="M-16 74q68 30 136 0" strokeWidth="0.93" />
       </>
     ),
   },
@@ -185,11 +194,11 @@ const RYSUNKI: Record<RodzajSzkicu, { obrot: number; kreski: React.ReactNode }> 
     obrot: -9,
     kreski: (
       <>
-        <path d={oczka(1)} strokeWidth="1.5" />
-        <path d={oczka(-1)} strokeWidth="1.5" />
-        <path d="M-40 16h200" strokeWidth="3.4" />
-        <path d="M-40 104h200" strokeWidth="2.8" />
-        <path d="M12 -40v200M100 -40v200" strokeWidth="2.6" />
+        <path d={oczka(1)} strokeWidth="0.93" />
+        <path d={oczka(-1)} strokeWidth="0.93" />
+        <path d="M-40 16h200" strokeWidth="2.11" />
+        <path d="M-40 104h200" strokeWidth="1.74" />
+        <path d="M12 -40v200M100 -40v200" strokeWidth="1.61" />
       </>
     ),
   },
@@ -215,8 +224,12 @@ export function SzkicKafla({
       className={`h-full w-full ${className}`}
       fill="none"
       aria-hidden
-      /* poświata jak przy obrysach na innych stronach - bez niej kreska jest sucha */
-      style={{ filter: "drop-shadow(0 0 12px rgb(var(--rgb-flame) / .3))" }}
+      /*
+        Poświata jak przy obrysach na innych stronach - bez niej kreska jest sucha.
+        Przy cieńszej kresce robi więcej niż wcześniej: to ona daje rysunkowi obecność,
+        której nie ma już z samej grubości linii.
+      */
+      style={{ filter: "drop-shadow(0 0 11px rgb(var(--rgb-ember) / .42))" }}
     >
       <defs>
         <linearGradient
@@ -227,10 +240,10 @@ export function SzkicKafla({
           x2="120"
           y2="120"
         >
-          <stop offset="0" stopColor="rgb(var(--rgb-glow) / 0.45)" />
-          <stop offset="0.35" stopColor="rgb(var(--rgb-glow))" />
-          <stop offset="0.7" stopColor="rgb(var(--rgb-glow) / 0.8)" />
-          <stop offset="1" stopColor="rgb(var(--rgb-glow) / 0.3)" />
+          <stop offset="0" stopColor="rgb(var(--rgb-flame) / 0.5)" />
+          <stop offset="0.32" stopColor="rgb(var(--rgb-flame))" />
+          <stop offset="0.66" stopColor="rgb(var(--rgb-ember) / 0.92)" />
+          <stop offset="1" stopColor="rgb(var(--rgb-ember) / 0.38)" />
         </linearGradient>
 
         <radialGradient id={`plama-${uid}`}>

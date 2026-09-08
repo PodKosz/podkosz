@@ -124,5 +124,17 @@ export function poziomDlaSerii(seria: number): Poziom {
   return wynik;
 }
 
-/** Górna granica wyniku przyjmowanego przez bazę - zwykły bezpiecznik. */
-export const MAKS_SERIA = 500;
+/**
+ * Górna granica wyniku przyjmowanego przez bazę.
+ *
+ * Było 500 i to obcinało uczciwe wyniki. Założenie stało w komentarzu do gry w kozły:
+ * „nawet przy trzech kozłowaniach na sekundę minuta daje 180". Na telefonie to nieprawda -
+ * w kozłach LICZY SIĘ KAŻDE KLIKNIĘCIE (patrz `uderz` w `lib/gra/kozlowanie.ts`), a ekran
+ * dotykowy przyjmuje dziesięć palców naraz. Zgłoszony przypadek: ponad tysiąc kozłowań
+ * w minucie, czyli około siedemnastu na sekundę. Gra pokazywała tysiąc, przeglądarka
+ * obcinała do pięciuset i tyle trafiało do tabeli - bez słowa.
+ *
+ * Pięć tysięcy to już nie wynik z palca, a próg wiarygodności w bazie liczy dokładniej,
+ * bo zna czas rundy. Ta liczba jest tylko ostatnią zaporą przed liczbą z księżyca.
+ */
+export const MAKS_SERIA = 5000;
