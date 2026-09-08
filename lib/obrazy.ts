@@ -36,9 +36,22 @@ function naszePlikiSupabase(adres: string) {
 /**
  * Adres przeskalowanego zdjęcia.
  *
- * `resize=cover` dobrane pod kafle o stałych proporcjach - obcina, ale nigdy nie zostawia
- * pustych pasów. Wysokości nie podajemy: szerokość wystarcza, a przy podanych obu
- * wymiarach trzeba by znać proporcje każdego pliku.
+ * ------------------------------------------------------------------ dlaczego `contain`
+ *
+ * Sprawdzone na plikach tego serwisu, plik źródłowy 1440 x 1920:
+ *
+ *   width=320                    -> 320 x 1920,  59 kB   <- SPŁASZCZONE
+ *   width=320&resize=cover       -> 320 x 1920,  59 kB   <- SPŁASZCZONE
+ *   width=320&resize=fill        ->  75 x 1920,  19 kB   <- SPŁASZCZONE
+ *   width=320&resize=contain     -> 320 x  427,  19 kB   <- proporcje zachowane
+ *
+ * Bez `resize=contain` Supabase zwęża obrazek do podanej szerokości, ale ZOSTAWIA
+ * pierwotną wysokość - zdjęcie wychodzi rozciągnięte w pionie i na dodatek trzy razy
+ * cięższe, niż powinno. `contain` z samą szerokością dolicza wysokość z proporcji pliku.
+ *
+ * Kadrowanie zostaje tam, gdzie było od początku: w CSS (`object-cover`). Kafle mają
+ * różne proporcje i zmieniają je przy każdej szerokości okna, więc adres obrazka nie
+ * jest miejscem, w którym da się o kadrze zdecydować.
  */
 export function adresMiniatury(adres: string, szerokosc: number, jakosc = 60) {
   if (!adres) return "";
@@ -47,7 +60,19 @@ export function adresMiniatury(adres: string, szerokosc: number, jakosc = 60) {
   const sciezka = adres.slice(`${SUPABASE_URL}${PREFIKS_OBIEKTU}`.length);
   return `${SUPABASE_URL}${PREFIKS_RENDERA}${sciezka}?width=${Math.round(
     szerokosc
-  )}&quality=${jakosc}&resize=cover`;
+  )}&quality=${jakosc}&resize=contain`;
+}
+
+/**
+ * Zestaw szerokości do `srcSet` - dla zdjęć wstawianych zwykłym `<img>`, poza `next/image`.
+ *
+ * Przeglądarka bierze z listy wariant pasujący do miejsca, jakie zdjęcie zajmuje na
+ * ekranie, i do gęstości ekranu. Bez tego telefon ściąga plik przygotowany pod duży
+ * monitor - plakat wydarzenia ważył tak 883 kB, w każdym układzie i na każdym urządzeniu.
+ */
+export function zestawMiniatur(adres: string, szerokosci: number[], jakosc = 60) {
+  if (!adres || adres.startsWith("data:")) return undefined;
+  return szerokosci.map((w) => `${adresMiniatury(adres, w, jakosc)} ${w}w`).join(", ");
 }
 
 /** Surowy plik - zapas, gdy przeskalowany adres odmówi. */

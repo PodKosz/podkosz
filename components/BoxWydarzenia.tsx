@@ -8,6 +8,7 @@ import {
   type Wydarzenie,
 } from "@/lib/wydarzenia";
 import { ClockIcon } from "./icons";
+import { PlakatTla } from "./PlakatTla";
 
 /**
  * Box wydarzenia na karcie boiska - w dwóch układach, wybieranych proporcją plakatu.
@@ -155,10 +156,13 @@ function KartaPionowa({
     <div className="relative h-full min-h-[420px] overflow-hidden rounded-[24px] bg-void">
       {plakat && (
         <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={plakat}
-            alt={`Plakat wydarzenia: ${wydarzenie.nazwa}`}
+          {/* na dużym ekranie karta stoi w wąskiej kolumnie, na telefonie zajmuje całą szerokość */}
+          <PlakatTla
+            plakat={plakat}
+            nazwa={wydarzenie.nazwa}
+            bazowa={720}
+            szerokosci={[480, 720, 1080]}
+            sizes="(min-width: 1024px) 360px, 100vw"
             className="absolute inset-0 h-full w-full object-cover object-top"
           />
           <span
@@ -223,10 +227,12 @@ function PasPoziomy({
             Zdjęcie zaczyna się od 34% szerokości - lewa część pasa zostaje na tekst.
             Na telefonie zajmuje całe tło, bo tam nie ma miejsca na dwie kolumny obok siebie.
           */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={plakat}
-            alt={`Plakat wydarzenia: ${wydarzenie.nazwa}`}
+          <PlakatTla
+            plakat={plakat}
+            nazwa={wydarzenie.nazwa}
+            bazowa={960}
+            szerokosci={[640, 960, 1440]}
+            sizes="(min-width: 640px) 66vw, 100vw"
             className="absolute inset-y-0 right-0 h-full w-full object-cover object-center sm:w-[66%]"
           />
           <span
