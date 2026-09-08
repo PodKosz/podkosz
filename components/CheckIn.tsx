@@ -143,7 +143,7 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
       gradientu, bez ruszania tego, co wychodzi poza panel.
     */
     <section
-      className={`glass relative flex h-full min-h-[150px] flex-col rounded-[20px] p-4 ${
+      className={`glass kafel-zywy relative flex h-full min-h-[150px] flex-col rounded-[20px] p-4 ${
         osoby > 0 ? "panel-goracy" : ""
       }`}
       style={osoby > 0 ? { ["--zar" as string]: Math.min(osoby, 6) } : undefined}

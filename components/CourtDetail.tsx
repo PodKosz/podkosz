@@ -197,7 +197,23 @@ export function CourtDetail({
               : ""
           }
         >
-          <div className={wydarzenieObok ? "min-w-0" : ""}>
+          {/*
+            `@container` czyni z tego miejsca punkt odniesienia dla zapytań `@min-[...]`
+            na siatce kafelków niżej. Kafelki muszą zmieścić się W TEJ KOLUMNIE, a nie
+            w oknie: gdy obok stoi karta wydarzenia, zabiera z prawej 360 px, więc
+            szerokość okna nic o miejscu dla kafelków nie mówi. To pierwsze zapytanie
+            kontenerowe w tym projekcie; Tailwind 4 ma je wbudowane.
+
+            Podciągnięcie kafelków na zdjęcie w hero przeniosło się tutaj z samej siatki.
+            `container-type` włącza `contain: layout`, a to WYŁĄCZA scalanie marginesów:
+            ujemny margines zostawiony na siatce podciągałby ją wewnątrz tego bloku
+            i zostawiał pod nią 24 px pustki, zamiast przesunąć całość na zdjęcie.
+          */}
+          <div
+            className={`@container min-w-0 ${
+              wydarzenieObok ? "" : `relative z-10 ${wydarzenie ? "mt-3" : "-mt-6"}`
+            }`}
+          >
 
         {/*
           z-10 jest konieczne: kafelki wchodzą 24 px na sekcję hero, a przyciemniające
@@ -217,17 +233,43 @@ export function CourtDetail({
         */}
         <section
           /*
-            Siedem kolumn (sześć parametrów plus panel „kto dziś gra") wchodzi od 1024 px -
-            ale NIE wtedy, gdy obok stoi karta wydarzenia. Wtedy lewa kolumna jest o 360 px
-            węższa i te same siedem kolumn dawało kafelki po 95 px, w których „Całodobowo"
-            łamie się na trzy wiersze. Przy karcie obok próg idzie więc na 1280 px, a niżej
-            kafelki układają się po trzy w rzędzie - czytelnie, choć w dwóch rzędach.
+            LICZBA KOLUMN ZALEŻY OD SZEROKOŚCI KOLUMNY, NIE OKNA.
+
+            Wcześniej stały tu progi okna (`lg`, a przy karcie wydarzenia `xl`) i oba
+            były za małe. Zmierzone w przeglądarce przy oknie 1440 px:
+
+              boisko z kartą wydarzenia obok - kolumna 732 px, siedem kolumn dawało
+              kafelki po 67 px; „Poliuretan" i „Całodobowo" wystawały z nich i nachodziły
+              na sąsiadów, na ekranie było „CałodobTaklo",
+
+              boisko bez wydarzenia - sekcja 1104 px, kafelki po 122 px, a „Poliuretan"
+              (97 px) i „Ograniczony" (120 px) mają tylko 88 px na treść.
+
+            Progu okna nie da się tu dobrze ustawić, bo karta wydarzenia zabiera z prawej
+            360 px: przy tym samym oknie kafelki mają raz 1104 px, raz 732 px. Dlatego
+            pyta się o szerokość kontenera (`@container` wyżej), a nie okna.
+
+            Skąd te dwie liczby. Najdłuższe słowo, jakie może tu trafić, to „Ograniczony"
+            z `ACCESS_LABEL` - 120 px przy 21 px półgrubą, 148 px przy 26 px (tyle ma
+            czcionka od 1536 px okna). Z wyściółką 2 x 20 px wychodzi 188 px na kafelek:
+
+              6 kafelków po 152 px + 5 przerw po 12 px             =  972  ->  @min-[1000px]
+              6 kafelków po 188 px + panel 300 px + 6 przerw       = 1500  ->  @min-[1500px]
+
+            CZCIONKA I WYŚCIÓŁKA IDĄ TYM SAMYM PROGIEM co kolumny (patrz `Spec` na dole
+            pliku), a nie progiem okna `2xl`. Inaczej te dwie liczby by się rozjechały:
+            próg kolumn pytałby o kontener, a rozmiar napisu o okno, i przy oknie 1600 px
+            z węższą kolumną kafelki dostawałyby sześć kolumn policzonych dla czcionki
+            21 px, a napis rysowałby się czcionką 26 px.
+
+            Poniżej 1000 px kafelki idą po trzy w rzędzie, a na telefonie po dwa - i tam
+            mają po 165 px, czyli nadal ponad wymagane 152 px.
+
+            Panel „kto dziś gra" siedzi obok kafelków tylko w układzie siedmiokolumnowym;
+            niżej bierze cały rząd, bo w węższej kolumnie jego przycisk nie ma się gdzie
+            zmieścić.
           */
-          className={`relative z-10 grid grid-cols-2 gap-3 sm:grid-cols-3 ${
-            wydarzenieObok
-              ? "xl:grid-cols-[repeat(6,minmax(0,1fr))_minmax(260px,1fr)]"
-              : "lg:grid-cols-[repeat(6,minmax(0,1fr))_minmax(300px,1.2fr)]"
-          } ${wydarzenieObok ? "" : wydarzenie ? "mt-3" : "-mt-6"}`}
+          className="relative z-10 grid grid-cols-2 gap-3 sm:grid-cols-3 @min-[1000px]:grid-cols-6 @min-[1500px]:grid-cols-[repeat(6,minmax(0,1fr))_minmax(300px,1.2fr)]"
         >
           <Spec icon={<HoopIcon className="h-7 w-7" />} label="Kosze" value={String(court.hoops)} />
           <Spec
@@ -254,14 +296,11 @@ export function CourtDetail({
 
           {/*
             Panel „kto dziś gra" zajmuje cały rząd, dopóki kafelki nie ustawią się w siedem
-            kolumn - a ten próg zależy od tego, czy obok stoi karta wydarzenia (patrz wyżej).
-            Bez tego warunku panel dostawał jedną trzecią rzędu i przycisk się w nim nie mieścił.
+            kolumn. `col-span-full` zamiast wyliczanych `col-span-2 sm:col-span-3`: liczba
+            kolumn zmienia się teraz zapytaniem kontenerowym, więc żadna stała liczba nie
+            byłaby dobra we wszystkich układach - a „cały rząd" jest dobra w każdym.
           */}
-          <div
-            className={`col-span-2 sm:col-span-3 ${
-              wydarzenieObok ? "xl:col-span-1" : "lg:col-span-1"
-            }`}
-          >
+          <div className="col-span-full @min-[1500px]:col-span-1">
             <ZagramDzis courtId={court.id} />
           </div>
         </section>
@@ -433,11 +472,20 @@ function Spec({
        spychamy do dolnej krawędzi - inaczej kafelki miałyby puste dno */
     /* Kafelki równają się do wysokości panelu „kto dziś gra" (h-full), a wartość z podpisem
        siedzi pośrodku wolnej przestrzeni pod ikoną - nie przy dolnej krawędzi. */
-    <div className="glass flex h-full min-h-[150px] flex-col rounded-[20px] p-4 2xl:p-5">
+    /* Rozmiary rosną progiem KONTENERA (`@min-[1500px]`), nie okna: to ten sam próg,
+       którym siatka wyżej przechodzi na siedem kolumn, i dokładnie dla tych rozmiarów
+       policzono tam szerokość kafelka. Rozjazd tych dwóch progów oznaczałby napis
+       policzony dla innej czcionki, niż się rysuje. */
+    <div className="glass kafel-zywy flex h-full min-h-[150px] flex-col rounded-[20px] p-4 @min-[1500px]:p-5">
       <span className="text-flame">{icon}</span>
       <span className="flex flex-1 flex-col justify-center">
-        <p className="text-[21px] font-semibold leading-[1.15] 2xl:text-[26px]">{value}</p>
-        <p className="mt-1.5 text-[10px] uppercase tracking-[0.14em] text-faint 2xl:text-[11px]">
+        {/* `break-words` to bezpiecznik: gdyby kiedyś trafiła tu wartość dłuższa niż
+            „Ograniczony" (na podstawie którego dobrane są progi kolumn wyżej), złamie
+            się w środku słowa zamiast wyjść na sąsiedni kafelek */}
+        <p className="text-[21px] font-semibold leading-[1.15] break-words @min-[1500px]:text-[26px]">
+          {value}
+        </p>
+        <p className="mt-1.5 text-[10px] uppercase tracking-[0.14em] text-faint @min-[1500px]:text-[11px]">
           {label}
         </p>
       </span>
