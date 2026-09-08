@@ -81,6 +81,31 @@ const PIN_ZOOM = 11;
 const PIN_LIMIT = 160;
 /** Ile trwa gaśnięcie wizytówki - musi być zgodne z `.karta-mapy-znika` w globals.css. */
 const CZAS_ZNIKANIA = 180;
+
+/*
+  Pinezka wydarzenia maleje przy oddalaniu mapy.
+
+  Pinezki mają stały rozmiar w pikselach, więc im dalej odjedziemy, tym większe są
+  WZGLĘDEM kraju. Zwykłej pinezki (38-46 px) to nie psuje, ale pinezka wydarzenia ma
+  67 px, mnożnik tłumu i płomień wyższy od kuli - na widoku całej Europy zasłaniała pół
+  Polski. Skala nie idzie liniowo z przybliżeniem, bo nie musi: powyżej `WYD_ZOOM_PELNY`
+  pinezka ma być dokładnie taka, jaka jest teraz, i nic się dla niej nie zmienia.
+
+  Progi z widoku, nie z wzoru. Polska mieści się w oknie przy przybliżeniu około 5,9
+  i tam pinezka ma zostać dokładnie taka, jaka jest - to domyślny kadr serwisu i nikt
+  się na niego nie skarżył. Zgłoszenie dotyczyło widoku całej Europy, czyli przybliżenia
+  około 3: tam pinezka schodzi do jednej trzeciej i przestaje zasłaniać kraj.
+*/
+const WYD_ZOOM_PELNY = 6;
+const WYD_ZOOM_MALY = 3;
+const WYD_SKALA_MIN = 0.34;
+
+function skalaPinezkiWydarzenia(zoom: number) {
+  if (zoom >= WYD_ZOOM_PELNY) return 1;
+  if (zoom <= WYD_ZOOM_MALY) return WYD_SKALA_MIN;
+  const t = (zoom - WYD_ZOOM_MALY) / (WYD_ZOOM_PELNY - WYD_ZOOM_MALY);
+  return WYD_SKALA_MIN + (1 - WYD_SKALA_MIN) * t;
+}
 /**
  * Gaśnięcie żaru przy oddalaniu kamery, w stopniach przybliżenia.
  *
@@ -492,6 +517,21 @@ export function MapView({
       Próg gasimy od razu po wykryciu, żeby sam powrót (który przecież zmienia
       przybliżenie) nie wywołał tej samej ścieżki drugi raz.
     */
+    /*
+      Skalę pinezki wydarzenia podajemy arkuszowi zmienną własną na KONTENERZE mapy,
+      a nie stylem na każdej pinezce: zmienne dziedziczą się w dół, więc jedno ustawienie
+      trafia do wszystkich pinezek naraz i nie musimy ich przy zoomie obchodzić. Poza tym
+      pinezki są przebudowywane przy każdej zmianie danych - styl wpisany na element
+      zniknąłby razem z nimi, a zmienna na kontenerze zostaje.
+    */
+    const odswiezSkaleWydarzen = () => {
+      map
+        .getContainer()
+        .style.setProperty("--skala-zoom-wyd", String(skalaPinezkiWydarzenia(map.getZoom())));
+    };
+    odswiezSkaleWydarzen();
+    map.on("zoom", odswiezSkaleWydarzen);
+
     map.on("zoom", () => {
       const wejscie = zoomWejsciaRef.current;
       if (wejscie === null) return;

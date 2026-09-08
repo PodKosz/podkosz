@@ -1729,6 +1729,28 @@ body {
   scale: var(--skala-pinezki, 1);
 }
 
+/*
+  TRZECI, NIEZALEŻNY POWÓD zmiany rozmiaru - i tak samo jak dwa poprzednie MNOŻY SIĘ
+  z nimi, a nie nadpisuje ich.
+
+  Pinezka ma stały rozmiar w pikselach, więc przy oddalaniu mapy rośnie WZGLĘDEM kraju.
+  Przy zwykłych pinezkach (38-46 px) nie przeszkadza to nikomu, ale pinezka wydarzenia
+  ma 67 px, mnożnik tłumu 1,21 i płomień wyższy od kuli - na widoku całej Europy
+  zasłaniała pół Polski i wyglądała jak awaria, nie jak zaproszenie.
+
+  `--skala-zoom-wyd` ustawia mapa na swoim kontenerze przy każdej zmianie przybliżenia
+  (patrz `MapView`), a zmienne własne dziedziczą się w dół, więc trafia do wszystkich
+  pinezek bez dotykania ich pojedynczo. Domyślna jedynka znaczy „nie zmieniaj" - gdyby
+  skrypt nigdy jej nie ustawił, pinezka zachowuje się dokładnie jak wcześniej.
+
+  Reguła stoi PO regule z `[data-osoby]` i ma tę samą wagę, więc wygrywa kolejnością.
+*/
+.court-marker[data-wydarzenie] .pinezka-korpus {
+  scale: calc(
+    (1 + var(--zar, 1) * 0.035) * var(--skala-pinezki, 1) * var(--skala-zoom-wyd, 1)
+  );
+}
+
 /* ramka odniesienia dla warstw ognia: dolna krawędź = spód kuli (nóżka ma 10 + 3 px) */
 .court-marker[data-osoby] .pinezka-ogien {
   position: absolute;
