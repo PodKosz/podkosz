@@ -553,3 +553,21 @@ export function zdaniaOBoisku(court: DaneOpisu): string[] {
 
   return zdania;
 }
+
+/**
+ * Cały opis boiska: zdanie autora zgłoszenia i zdania z danych, jednym ciągiem.
+ *
+ * Jeden akapit, jedna czcionka, jeden rozmiar - dopisek jest ROZWINIĘCIEM zdania autora,
+ * nie przypisem pod nim. Wcześniej stał niżej, mniejszym i przygaszonym tekstem, i wyglądał
+ * jak metryczka doklejona do opisu; tak też się go czytało, czyli wcale.
+ *
+ * Kropka po zdaniu autora dokładana jest tutaj, jeśli jej nie postawił. Bez tego dwa zdania
+ * zbiegają się w jedno („...oraz Milicić Sześć koszy w komplecie") - a pole opisu wypełnia
+ * człowiek w kreatorze i nie ma powodu wymagać od niego interpunkcji.
+ */
+export function opisBoiska(court: DaneOpisu & { description: string }): string {
+  const wlasny = (court.description ?? "").trim();
+  const dopisek = zdaniaOBoisku(court).join(" ");
+  if (!wlasny) return dopisek;
+  return `${/[.!?…]$/.test(wlasny) ? wlasny : `${wlasny}.`} ${dopisek}`;
+}
