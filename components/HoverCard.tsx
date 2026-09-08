@@ -309,12 +309,16 @@ function WizytowkaWydarzenia({
       >
         {plakat && (
           <div className={`relative overflow-hidden ${spanyPlakatu}`}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={plakat}
-              alt={`Plakat wydarzenia: ${wydarzenie.nazwa}`}
-              className="h-full w-full object-cover"
-              decoding="async"
+            {/*
+              Plakat idzie tą samą drogą co kadry boiska - przez `Miniatura`, czyli przez
+              skalowanie w Supabase. Wcześniej wstawialiśmy tu surowy plik: 862 kB na
+              wizytówkę szeroką na 320 px, ściągane przy każdym najechaniu na pinezkę.
+              Szerokość zależy od tego, ile pola plakat zajmuje w siatce.
+            */}
+            <Miniatura
+              url={plakat}
+              opis={`Plakat wydarzenia: ${wydarzenie.nazwa}`}
+              szerokosc={ile === 0 ? 640 : pion ? 240 : 440}
             />
             <span
               className="absolute left-2 top-2 rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-white"
