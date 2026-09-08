@@ -18,8 +18,14 @@ import { SITE_URL } from "@/lib/site";
   dotarłaby do nikogo, kto już raz go pobrał. Zmiana numeru po każdej przeróbce grafiki
   gwarantuje, że nowe listy dostają nową wersję.
 */
-export const TLO = `${SITE_URL}/mail/tlo.png?v=2`;
-export const LOGO = `${SITE_URL}/mail/logo.png?v=2`;
+export const TLO = `${SITE_URL}/mail/tlo.png?v=3`;
+export const LOGO = `${SITE_URL}/mail/logo.png?v=3`;
+/*
+  Pas zejścia treści w czerń - kładziony na samym dole komórki z treścią. Od góry
+  przezroczysty, na dole pełna czerń. Dlaczego obrazek, a nie gradient CSS: patrz nota
+  o Outlooku wyżej. Dlaczego w ogóle - patrz `szkielet` na dole pliku.
+*/
+export const ZEJSCIE = `${SITE_URL}/mail/zejscie.png?v=3`;
 
 /* Kolory z app/globals.css - trzymamy je tu osobno, bo mail nie widzi arkusza strony. */
 export const CZERN = "#07070a";
@@ -28,7 +34,6 @@ export const PRZYGASZONY = "#a7a6ad";
 export const SLABY = "#77767d";
 export const PLOMIEN = "#ff7a18";
 export const ZAR = "#ffb25c";
-export const KRESKA = "#241a13";
 export const CZCIONKA =
   "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif";
 
@@ -58,14 +63,44 @@ export function nadtytul(tekst: string) {
     text-transform:uppercase;color:${PLOMIEN};padding-bottom:14px;">${tekst}</div>`;
 }
 
-/** Kafelek z akcentem po lewej - w mailu to najprostszy sposób na „wyróżnioną ramkę". */
+/**
+ * Kafelek z akcentem po lewej - w mailu to najprostszy sposób na „wyróżniony blok".
+ *
+ * Wypełnienie GAŚNIE, nie kończy się krawędzią. Wcześniej był tu płaski prostokąt
+ * `#0e0d10` w ramce `#241a13` i to jego obrys odcinał się od tła twardą kreską z każdej
+ * strony - najbardziej widoczną tam, gdzie za kafelkiem przechodziła jasna linia konturu
+ * boiska.
+ *
+ * Gradient jest PROMIENISTY i zaczepiony przy lewej krawędzi, a nie liniowy. Liniowy
+ * gasnący w prawo zostawiłby twarde krawędzie na górze i na dole lewej połowy kafelka -
+ * promienisty gaśnie we wszystkich kierunkach od tego samego punktu, więc jedyną wyraźną
+ * granicą zostaje pomarańczowy pasek, a on jest tu z rozmysłu.
+ *
+ * Przystanki leżą na krzywej (1 - t)², tak samo jak poświata wiersza w rankingu boisk:
+ * przy trzech przystankach widać ZAŁAMEK tempa i oko czyta go jako krawędź, choć żadnej
+ * tam nie ma.
+ *
+ * Pasek został wypełniony na płasko (`bgcolor`), a nie gradientem, świadomie: gradienty
+ * CSS wycina Outlook, więc gasnący pasek zniknąłby tam w całości. Płaski przetrwa
+ * wszędzie, a to on mówi „ten fragment jest ważny". W Outlooku kafelek to pasek i tekst -
+ * bez wypełnienia, ale nadal wyróżniony.
+ */
 export function kafelek(zawartosc: string) {
+  const wypelnienie =
+    "radial-gradient(135% 155% at 0% 50%," +
+    "rgba(255,122,24,0.13) 0%," +
+    "rgba(255,122,24,0.096) 16%," +
+    "rgba(255,122,24,0.066) 32%," +
+    "rgba(255,122,24,0.041) 48%," +
+    "rgba(255,122,24,0.021) 64%," +
+    "rgba(255,122,24,0.007) 82%," +
+    "rgba(255,122,24,0) 100%)";
+
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
     style="margin:6px 0 24px;">
     <tr>
       <td width="3" bgcolor="${PLOMIEN}" style="width:3px;background-color:${PLOMIEN};"></td>
-      <td bgcolor="#0e0d10" style="padding:18px 20px;background-color:#0e0d10;
-        border:1px solid ${KRESKA};border-left:0;">${zawartosc}</td>
+      <td style="padding:18px 22px;background-image:${wypelnienie};">${zawartosc}</td>
     </tr>
   </table>`;
 }
@@ -169,18 +204,52 @@ export function szkielet({
     <td background="${TLO}" bgcolor="${CZERN}" valign="top"
       style="background-color:${CZERN};background-image:url('${TLO}');
       background-repeat:no-repeat;background-position:top center;background-size:600px auto;
-      padding:40px 28px 28px;">
+      padding:0;">
       ${vmlTlo}
-      <div style="position:relative;">
-        ${tresc}
-      </div>
+      <!--
+        WYŚCIÓŁKA ZESZŁA Z TEJ KOMÓRKI DO ŚRODKA, a pod treść wszedł pas zejścia w czerń.
+
+        Tło jest jedno dla wszystkich listów, a wysokość treści jest za każdym razem inna:
+        potwierdzenie zapisu ma trzy akapity, powitanie beta testera - osiem punktów.
+        Kontur boiska gaśnie u własnego dołu, ale przy krótkim liście komórka kończyła się
+        znacznie wyżej i przycinała go w miejscu, gdzie linie mają pełną jasność. To
+        właśnie ta kreska nad logiem.
+
+        Wygaszenie musi więc jechać z TREŚCIĄ, a nie być wypalone w tle. Pas leży na dole
+        komórki i przykrywa tło dokładnie tam, gdzie się ono urywało; niżej jest już
+        jednolita czerń stopki.
+
+        Dlatego wyściółka nie może zostać na tej komórce: pas jest obrazkiem, a przy
+        wyściółce 28 px zostawiałby po bokach i pod sobą paski nieprzykrytego tła, czyli
+        tę samą kreskę, tylko krótszą. Wewnętrzna tabela daje wyściółkę samej treści,
+        a pas dostaje pełne 600 px.
+      -->
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td style="padding:40px 28px 0;">
+          <div style="position:relative;">
+            ${tresc}
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0;font-size:0;line-height:0;">
+          <img src="${ZEJSCIE}" width="600" height="160" alt=""
+            style="display:block;border:0;outline:none;width:100%;height:auto;">
+        </td>
+      </tr>
+      </table>
     </td>
   </tr>
 
-  <!-- stopka: logo na środku pod treścią -->
+  <!--
+    Stopka: logo na środku pod treścią. Bez kreski oddzielającej - „border-top" był drugą
+    twardą krawędzią w tym liście, a pas zejścia robi to samo lepiej: oddziela stopkę
+    zmianą jasności, a nie linią.
+  -->
   <tr>
     <td align="center" bgcolor="${CZERN}" style="background-color:${CZERN};
-      padding:32px 28px 40px;border-top:1px solid ${KRESKA};">
+      padding:8px 28px 40px;">
       <a href="${SITE_URL}" style="text-decoration:none;">
         <img src="${LOGO}" alt="PodKosz" width="200" height="61"
           style="display:block;border:0;outline:none;width:200px;height:auto;">
