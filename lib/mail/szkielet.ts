@@ -97,15 +97,22 @@ export function nadtytul(tekst: string) {
  *   1. CIEPŁY BLASK od górnego lewego narożnika - jakby padało tam światło. Promienisty,
  *      więc gaśnie we wszystkich kierunkach i nigdzie nie tworzy krawędzi.
  *   2. SPADEK JASNOŚCI z góry na dół - szyba jaśnieje tam, gdzie łapie światło.
- *   3. ŚWIATŁO NA GÓRNEJ KRAWĘDZI - włos jednego piksela, GASNĄCY NA OBU KOŃCACH.
- *      Prawdziwa szyba świeci na krawędzi tylko tam, gdzie jest zwrócona do światła;
- *      włos na całą szerokość byłby kreską, a nie odblaskiem. Gaśnięcie do zera ma też
- *      skutek praktyczny: na zaokrąglonych narożnikach włos nie wystaje poza obrys.
+ *   3. ŚWIATŁO NA GÓRNEJ KRAWĘDZI - pasek wysokości jednego piksela, GASNĄCY NA OBU
+ *      KOŃCACH. Prawdziwa szyba świeci na krawędzi tylko tam, gdzie jest zwrócona do
+ *      światła; pasek na całą szerokość byłby kreską, a nie odblaskiem.
  *
- * Obrazek i gradienty siedzą w OSOBNYCH komórkach, choć CSS pozwala je złożyć w jedną
- * deklarację. Powód jest praktyczny: klient poczty, który nie umie przeczytać listy kilku
- * teł naraz, wyrzuca CAŁĄ deklarację - i wtedy panel traci i szybę, i światła. Rozbite na
- * dwie komórki tracą się osobno.
+ * Wszystkie trzy światła są warstwami tła JEDNEJ komórki - i to jest istotne, bo wcześniej
+ * krawędź siedziała w osobnym wierszu tabeli, nad komórką z treścią. Wtedy warstwa świateł
+ * zaczynała się o piksel niżej niż szyba i miała własne, OSTRE narożniki. Przy zaokrągleniu
+ * 18 px obrys szyby na wysokości jednego piksela zaczyna się dopiero 12 px od lewej
+ * krawędzi, więc kwadratowy kant świateł wystawał poza zaokrąglenie - najmocniej w lewym
+ * górnym narożniku, gdzie ciepły blask jest najjaśniejszy. Teraz komórka świateł pokrywa
+ * się z szybą co do piksela i ma to samo zaokrąglenie.
+ *
+ * Obrazek został jednak w KOMÓRCE NADRZĘDNEJ, osobno od gradientów, i to nie z lenistwa:
+ * klient poczty, który nie umie przeczytać listy kilku teł naraz, wyrzuca CAŁĄ deklarację.
+ * Trzymając adres obrazka poza listą gradientów, panel może stracić światła albo szybę,
+ * ale nie oba naraz.
  *
  * ------------------------------------------------------------------ co widzi Outlook
  *
@@ -116,9 +123,20 @@ export function nadtytul(tekst: string) {
  * `[if mso]` jest zwykłym komentarzem HTML, a dla Outlooka - odwrotnie.
  */
 export function kafelek(zawartosc: string) {
-  /* Blask z narożnika i spadek jasności. Pierwsza warstwa leży na wierzchu, więc ciepły
-     blask jest NAD chłodnym rozjaśnieniem. */
+  /*
+    Trzy warstwy w kolejności malowania: pierwsza leży na wierzchu. Krawędź jest więc nad
+    blaskiem, a blask nad chłodnym rozjaśnieniem szyby.
+
+    Krawędź dostaje `background-size: 100% 1px` i pozycję u góry - stąd pasek wysokości
+    jednego piksela bez osobnego wiersza tabeli. Pozostałe dwie wypełniają całą komórkę.
+  */
   const swiatla =
+    "linear-gradient(90deg," +
+    "rgba(255,178,92,0) 0%," +
+    "rgba(255,178,92,0.26) 14%," +
+    "rgba(255,196,130,0.58) 50%," +
+    "rgba(255,178,92,0.26) 86%," +
+    "rgba(255,178,92,0) 100%)," +
     "radial-gradient(115% 85% at 0% 0%," +
     "rgba(255,138,42,0.17) 0%," +
     "rgba(255,138,42,0.112) 18%," +
@@ -132,14 +150,6 @@ export function kafelek(zawartosc: string) {
     "rgba(255,255,255,0.024) 50%," +
     "rgba(255,255,255,0.009) 76%," +
     "rgba(255,255,255,0) 100%)";
-
-  const krawedz =
-    "linear-gradient(90deg," +
-    "rgba(255,178,92,0) 0%," +
-    "rgba(255,178,92,0.26) 14%," +
-    "rgba(255,196,130,0.58) 50%," +
-    "rgba(255,178,92,0.26) 86%," +
-    "rgba(255,178,92,0) 100%)";
 
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
     style="margin:10px 0 26px;">
@@ -158,12 +168,11 @@ export function kafelek(zawartosc: string) {
           style="border-radius:18px;background-image:url('${SZYBA}');background-size:cover;
           background-position:center center;background-repeat:no-repeat;">
           <tr>
-            <td height="1" style="height:1px;line-height:1px;font-size:0;
-              background-image:${krawedz};">&nbsp;</td>
-          </tr>
-          <tr>
-            <td style="padding:20px 24px 22px;border-radius:0 0 18px 18px;
-              background-image:${swiatla};">${zawartosc}</td>
+            <td style="padding:20px 24px 22px;border-radius:18px;
+              background-image:${swiatla};
+              background-size:100% 1px,auto,auto;
+              background-position:left top,left top,left top;
+              background-repeat:no-repeat,no-repeat,no-repeat;">${zawartosc}</td>
           </tr>
         </table>
 <!--<![endif]-->
