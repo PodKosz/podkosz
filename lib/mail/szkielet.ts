@@ -26,6 +26,12 @@ export const LOGO = `${SITE_URL}/mail/logo.png?v=3`;
   o Outlooku wyżej. Dlaczego w ogóle - patrz `szkielet` na dole pliku.
 */
 export const ZEJSCIE = `${SITE_URL}/mail/zejscie.png?v=3`;
+/*
+  Szyba paneli - rozmyty kadr tego samego tła, wypalony w obrazku. Poczta nie zna
+  `backdrop-filter`, więc rozmycia tego, co leży pod panelem, nie da się policzyć na
+  miejscu; trzeba je przynieść gotowe. Szczegóły przy `kafelek` niżej.
+*/
+export const SZYBA = `${SITE_URL}/mail/szyba.png?v=3`;
 
 /* Kolory z app/globals.css - trzymamy je tu osobno, bo mail nie widzi arkusza strony. */
 export const CZERN = "#07070a";
@@ -66,82 +72,102 @@ export function nadtytul(tekst: string) {
 /**
  * Panel ze szkła - blok wyróżniony w treści listu.
  *
- * ------------------------------------------------------------------ czym jest „szkło" w mailu
+ * ------------------------------------------------------------------ rozmycie jest wypalone
  *
- * Na stronie szkło robi `backdrop-filter: blur()` - rozmywa to, co leży pod spodem.
- * W poczcie tego nie ma i nie będzie w żadnym kliencie, więc panel musi UDAWAĆ szybę
- * samym światłem. Trzy warstwy dają całe złudzenie:
+ * W poczcie NIE MA `backdrop-filter` i nie ma go w żadnym kliencie, więc rozmycia tego,
+ * co leży pod panelem, nie da się policzyć na miejscu. Trzeba je przynieść gotowe -
+ * `public/mail/szyba.png` to rozmyty kadr TEGO SAMEGO pliku, który jest tłem listu.
+ * Dzięki temu miękkie plamy w panelu mają tę samą barwę i ten sam charakter, co ostre
+ * linie konturu wokół niego.
+ *
+ * Szyba nie jest w pełni kryjąca (alpha 224 z 255): kilkanaście procent tego, co naprawdę
+ * jest pod panelem, przez nią przechodzi. To ta reszta daje wrażenie szkła - z samym
+ * kryjącym rozmyciem panel czytałby się jak wklejone zdjęcie.
+ *
+ * Czego to NIE robi: rozmycie nie jest zgrane w pikselach z tłem pod panelem. Tło ma
+ * początek układu w komórce listu, a panel we własnym narożniku, i nie znam jego
+ * przesunięcia - wysokość treści nad nim zależy od długości nicku, nazwy miasta i tego,
+ * który to list. Przy rozmyciu 19 px nie ma tam żadnego ostrego szczegółu, po którym dałoby
+ * się to poznać, więc panel czyta się jak szyba, a nie jak przesunięta kalka.
+ *
+ * ------------------------------------------------------------------ światła
+ *
+ * Na szybie leżą jeszcze trzy warstwy, wszystkie przezroczyste:
  *
  *   1. CIEPŁY BLASK od górnego lewego narożnika - jakby padało tam światło. Promienisty,
  *      więc gaśnie we wszystkich kierunkach i nigdzie nie tworzy krawędzi.
- *   2. SPADEK JASNOŚCI z góry na dół - szyba jest jaśniejsza tam, gdzie łapie światło,
- *      i ciemnieje ku dołowi. To ta warstwa sprawia, że panel czyta się jak płyta,
- *      a nie jak prostokąt wypełniony kolorem.
- *   3. ŚWIATŁO NA GÓRNEJ KRAWĘDZI - włos o wysokości jednego piksela, GASNĄCY NA OBU
- *      KOŃCACH. Prawdziwa szyba świeci na krawędzi tylko tam, gdzie jest zwrócona do
- *      światła; włos na całą szerokość byłby kreską, a nie odblaskiem. Jest ciepły,
- *      bo to on przejął rolę pomarańczowego paska (patrz niżej).
+ *   2. SPADEK JASNOŚCI z góry na dół - szyba jaśnieje tam, gdzie łapie światło.
+ *   3. ŚWIATŁO NA GÓRNEJ KRAWĘDZI - włos jednego piksela, GASNĄCY NA OBU KOŃCACH.
+ *      Prawdziwa szyba świeci na krawędzi tylko tam, gdzie jest zwrócona do światła;
+ *      włos na całą szerokość byłby kreską, a nie odblaskiem. Gaśnięcie do zera ma też
+ *      skutek praktyczny: na zaokrąglonych narożnikach włos nie wystaje poza obrys.
  *
- * Do tego zaokrąglone narożniki. One robią tu więcej niż wygląda: prostokąt o ostrych
- * kantach leżący na rysunku konturu boiska czyta się jak DZIURA w tle, a zaokrąglony -
- * jak przedmiot położony na wierzchu.
- *
- * ------------------------------------------------------------------ co zniknęło i dlaczego
- *
- * Był tu pomarańczowy pasek 3 px na całej wysokości i płaskie wypełnienie w ramce.
- * Pasek miał twarde końce u góry i u dołu, a ramka odcinała się od tła z każdej strony.
- * Gasnący pasek nie jest wyjściem: gradienty CSS wycina Outlook, więc pasek zniknąłby
- * tam w całości. Rolę akcentu wziął więc włos na górnej krawędzi, a barwę marki niesie
- * dalej nadtytuł w środku panelu - i tak jest pomarańczowy.
+ * Obrazek i gradienty siedzą w OSOBNYCH komórkach, choć CSS pozwala je złożyć w jedną
+ * deklarację. Powód jest praktyczny: klient poczty, który nie umie przeczytać listy kilku
+ * teł naraz, wyrzuca CAŁĄ deklarację - i wtedy panel traci i szybę, i światła. Rozbite na
+ * dwie komórki tracą się osobno.
  *
  * ------------------------------------------------------------------ co widzi Outlook
  *
- * Outlook renderuje maile silnikiem Worda: nie zna gradientów ani zaokrągleń. Zostaje mu
- * `bgcolor`, czyli prostokątny panel o ton jaśniejszy od tła listu - bez świateł, ale
- * nadal wyraźnie wyróżniony. To jest podłoga tego projektu, nie jego wygląd docelowy.
- * Dlatego kolor bazowy jest osobno w `bgcolor`, a nie tylko w gradiencie.
+ * Outlook renderuje maile silnikiem Worda: nie zna zaokrągleń, gradientów ani `cover`.
+ * Dostaje więc własną wersję w komentarzu warunkowym - prostokątny panel o ton jaśniejszy
+ * od tła, z włosową ramką. Bez szkła, ale nadal wyraźnie wyróżniony. Treść jest w kodzie
+ * dwa razy, ale każdy klient widzi dokładnie jedną: dla wszystkich poza Outlookiem blok
+ * `[if mso]` jest zwykłym komentarzem HTML, a dla Outlooka - odwrotnie.
  */
 export function kafelek(zawartosc: string) {
-  /* Blask z narożnika i spadek jasności szyby. Kolejność ma znaczenie: pierwsza warstwa
-     leży na wierzchu, więc ciepły blask jest NAD chłodnym rozjaśnieniem. */
-  const szklo =
+  /* Blask z narożnika i spadek jasności. Pierwsza warstwa leży na wierzchu, więc ciepły
+     blask jest NAD chłodnym rozjaśnieniem. */
+  const swiatla =
     "radial-gradient(115% 85% at 0% 0%," +
-    "rgba(255,138,42,0.20) 0%," +
-    "rgba(255,138,42,0.132) 18%," +
-    "rgba(255,138,42,0.075) 38%," +
-    "rgba(255,138,42,0.032) 58%," +
-    "rgba(255,138,42,0.008) 80%," +
+    "rgba(255,138,42,0.17) 0%," +
+    "rgba(255,138,42,0.112) 18%," +
+    "rgba(255,138,42,0.064) 38%," +
+    "rgba(255,138,42,0.027) 58%," +
+    "rgba(255,138,42,0.007) 80%," +
     "rgba(255,138,42,0) 100%)," +
     "linear-gradient(180deg," +
-    "rgba(255,255,255,0.085) 0%," +
-    "rgba(255,255,255,0.055) 22%," +
-    "rgba(255,255,255,0.03) 46%," +
-    "rgba(255,255,255,0.012) 72%," +
+    "rgba(255,255,255,0.07) 0%," +
+    "rgba(255,255,255,0.045) 24%," +
+    "rgba(255,255,255,0.024) 50%," +
+    "rgba(255,255,255,0.009) 76%," +
     "rgba(255,255,255,0) 100%)";
 
-  /* Odblask na krawędzi - gaśnie na obu końcach, więc nie jest kreską. */
   const krawedz =
     "linear-gradient(90deg," +
     "rgba(255,178,92,0) 0%," +
-    "rgba(255,178,92,0.28) 14%," +
-    "rgba(255,196,130,0.62) 50%," +
-    "rgba(255,178,92,0.28) 86%," +
+    "rgba(255,178,92,0.26) 14%," +
+    "rgba(255,196,130,0.58) 50%," +
+    "rgba(255,178,92,0.26) 86%," +
     "rgba(255,178,92,0) 100%)";
 
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
     style="margin:10px 0 26px;">
     <tr>
-      <td bgcolor="#100e14" style="background-color:#100e14;background-image:${szklo};
-        border-radius:18px;padding:0;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td height="1" style="height:1px;line-height:1px;font-size:0;
-            background-image:${krawedz};">&nbsp;</td>
-        </tr>
-        <tr>
-          <td style="padding:20px 24px 22px;">${zawartosc}</td>
-        </tr>
+      <td style="padding:0;">
+
+<!--[if mso]>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+          bgcolor="#13111a" style="background-color:#13111a;border:1px solid #2b2233;">
+          <tr><td style="padding:20px 24px 22px;">${zawartosc}</td></tr>
         </table>
+<![endif]-->
+
+<!--[if !mso]><!-->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+          style="border-radius:18px;background-image:url('${SZYBA}');background-size:cover;
+          background-position:center center;background-repeat:no-repeat;">
+          <tr>
+            <td height="1" style="height:1px;line-height:1px;font-size:0;
+              background-image:${krawedz};">&nbsp;</td>
+          </tr>
+          <tr>
+            <td style="padding:20px 24px 22px;border-radius:0 0 18px 18px;
+              background-image:${swiatla};">${zawartosc}</td>
+          </tr>
+        </table>
+<!--<![endif]-->
+
       </td>
     </tr>
   </table>`;
