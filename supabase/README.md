@@ -50,6 +50,7 @@ część nazwy pliku.
 | 31 | `migration-brama-i-polska.sql` | zgłoszenia boisk i poprawek wymagają konta (koniec z anonimowymi), a boiska wolno dodawać tylko w prostokącie Polski - z wyjątkiem administratora |
 | 32 | `migration-wydarzenia.sql` | wydarzenia na boiskach: tabela `wydarzenia`, odczyt dla wszystkich, zapis tylko dla administratora, plakaty w katalogu `wydarzenia/` bucketa zdjęć |
 | 33 | `migration-wydarzenia-powiadomienia.sql` | maile o wydarzeniu do osób, które podpaliły boisko albo okolicę: `wydarzenie_odbiorcy`, zaklepywanie wysyłki (`powiadomiono_at`) i wyłącznik `profiles.powiadomienia` |
+| 34 | `migration-wydarzenia-proporcje.sql` | proporcja plakatu wydarzenia (`zdjecie_proporcje`) - od niej zależy układ boxa na karcie boiska: pion daje wysoką kartę w prawej kolumnie, poziom szeroki pas nad kafelkami |
 
 ## Nieuruchomione (świadomie)
 

@@ -64,6 +64,7 @@ type Wiersz = {
   poczatek: string;
   koniec: string;
   zdjecie: string | null;
+  zdjecie_proporcje: number | null;
   powiadomiono_at: string | null;
   powiadomiono_ile: number | null;
   courts: { name: string; city: string; slug: string } | null;
@@ -83,7 +84,7 @@ async function pobierzListe(): Promise<{ items: WpisZBoiskiem[]; error: string |
   const { data, error } = await supabase
     .from("wydarzenia")
     .select(
-      "id, court_id, nazwa, opis, poczatek, koniec, zdjecie, powiadomiono_at, powiadomiono_ile, courts(name, city, slug)"
+      "id, court_id, nazwa, opis, poczatek, koniec, zdjecie, zdjecie_proporcje, powiadomiono_at, powiadomiono_ile, courts(name, city, slug)"
     )
     .order("poczatek", { ascending: true });
 
@@ -95,12 +96,32 @@ async function pobierzListe(): Promise<{ items: WpisZBoiskiem[]; error: string |
     poczatek: w.poczatek,
     koniec: w.koniec,
     zdjecie: w.zdjecie,
+    proporcje: w.zdjecie_proporcje,
     powiadomionoAt: w.powiadomiono_at,
     powiadomionoIle: w.powiadomiono_ile,
     boisko: w.courts ? { id: w.court_id, ...w.courts } : null,
   }));
 
   return { items, error: error ? error.message : null };
+}
+
+/**
+ * Szerokość podzielona przez wysokość wybranego pliku.
+ *
+ * `createImageBitmap` czyta nagłówek obrazu bez wstawiania go do drzewa dokumentu i bez
+ * czekania na cokolwiek poza samym plikiem, który już jest w pamięci. Gdy się nie uda
+ * (nietypowy format, uszkodzony plik), zwracamy `null` - box weźmie wtedy układ poziomy,
+ * czyli ten, który działa dla każdego zdjęcia.
+ */
+async function proporcjeObrazu(plik: File): Promise<number | null> {
+  try {
+    const obraz = await createImageBitmap(plik);
+    const wynik = obraz.width / obraz.height;
+    obraz.close();
+    return Number.isFinite(wynik) && wynik > 0 ? Number(wynik.toFixed(4)) : null;
+  } catch {
+    return null;
+  }
 }
 
 export function WydarzeniaAdmin({ slugBoiska }: { slugBoiska?: string | null }) {
@@ -243,7 +264,18 @@ export function WydarzeniaAdmin({ slugBoiska }: { slugBoiska?: string | null }) 
           /* wiersz zostaje - wydarzenie bez plakatu jest wydarzeniem, brak wiersza nie jest */
           setKomunikat(`Wydarzenie zapisane, ale plakat nie wszedł: ${up.error.message}`);
         } else {
-          await supabase.from("wydarzenia").update({ zdjecie: sciezka }).eq("id", id);
+          /*
+            Proporcję plakatu zapisujemy TERAZ, w przeglądarce, która ten plik właśnie
+            trzyma - bo to jedyne miejsce, gdzie wymiary są znane od razu. Od niej zależy
+            układ boxa na karcie boiska (pion - wysoka karta w prawej kolumnie, poziom -
+            szeroki pas), a karta powstaje na serwerze i nie może czekać na wczytanie
+            obrazka: przeskakiwałaby na inny układ po każdym wejściu.
+          */
+          const proporcje = await proporcjeObrazu(plik);
+          await supabase
+            .from("wydarzenia")
+            .update({ zdjecie: sciezka, zdjecie_proporcje: proporcje })
+            .eq("id", id);
         }
       }
 

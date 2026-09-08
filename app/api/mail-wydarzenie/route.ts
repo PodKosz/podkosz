@@ -121,6 +121,7 @@ export async function POST(request: Request) {
     poczatek: w.poczatek,
     koniec: w.koniec,
     zdjecie: null,
+    proporcje: null,
   };
 
   const wspolne = {

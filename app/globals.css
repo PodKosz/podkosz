@@ -1559,7 +1559,21 @@ body {
 */
 .court-marker[data-osoby] .pinezka-korpus {
   transform-origin: 50% 100%;
-  scale: calc(1 + var(--zar, 1) * 0.035);
+  /*
+    Dwa niezależne powody, żeby zmienić rozmiar pinezki, MNOŻĄ SIĘ przez siebie, a nie
+    walczą o tę samą właściwość:
+      --zar          - ile osób się dziś zapisało (rośnie),
+      --skala-pinezki - na jakim ekranie patrzymy (maleje na telefonie).
+    Wcześniej mobilna reguła nadpisywała `scale` w całości, więc na telefonie pinezka
+    przestawała reagować na tłum - a to jedyna informacja na mapie, która żyje w ciągu dnia.
+  */
+  scale: calc((1 + var(--zar, 1) * 0.035) * var(--skala-pinezki, 1));
+}
+
+/* pinezka bez zapisanych - sama skala ekranu */
+.court-marker .pinezka-korpus {
+  transform-origin: 50% 100%;
+  scale: var(--skala-pinezki, 1);
 }
 
 /* ramka odniesienia dla warstw ognia: dolna krawędź = spód kuli (nóżka ma 10 + 3 px) */
@@ -2125,11 +2139,37 @@ select option {
   }
 }
 
-/* na telefonie tak duża pinezka zjadałaby kadr - schodzimy do dwóch trzecich */
+/*
+  ROZMIARY NA TELEFONIE.
+
+  Pinezki są rysowane w pikselach dobranych do kursora i dużego kadru (38 px kula zwykła,
+  67 px wydarzenie). Na ekranie telefonu ten sam rozmiar zajmuje kilka razy większą część
+  widoku - trzy pinezki obok siebie zasłaniają całe miasto, a pinezka wydarzenia zjada
+  jedną trzecią kadru. Schodzimy więc o mniej więcej połowę, zachowując proporcje między
+  rodzajami: wydarzenie zostaje półtora raza większe od zwykłej pinezki, bo o to w niej
+  chodzi.
+
+  Skala idzie przez zmienną, więc powiększanie od liczby zapisanych działa dalej (patrz
+  reguła `[data-osoby]` wyżej). Punkt zaczepienia na dole - inaczej zmniejszona pinezka
+  odrywa się od miejsca, które wskazuje.
+*/
 @media (max-width: 640px) {
-  .court-marker[data-wydarzenie] .pinezka-korpus {
+  .court-marker {
+    --skala-pinezki: 0.55;
+  }
+
+  .court-marker[data-wydarzenie] {
+    --skala-pinezki: 0.46;
+  }
+
+  /*
+    Pinezki minigier mają inną budowę (bez `.pinezka-korpus`), więc dostają skalę na swoim
+    wewnętrznym opakowaniu. Na samym znaczniku nie, bo tym elementem MapLibre pozycjonuje
+    pinezkę na mapie.
+  */
+  .pinezka-gry > span {
     transform-origin: 50% 100%;
-    scale: 0.72;
+    scale: 0.6;
   }
 }
 

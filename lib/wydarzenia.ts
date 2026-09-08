@@ -16,7 +16,7 @@ import { supabasePublic } from "./supabase/publiczny";
 /** Na ile dni przed startem wydarzenie zapala pinezkę. */
 export const WIDOCZNE_OD_DNI = 30;
 
-const WYBOR = "id, court_id, nazwa, opis, poczatek, koniec, zdjecie";
+const WYBOR = "id, court_id, nazwa, opis, poczatek, koniec, zdjecie, zdjecie_proporcje";
 
 interface Wiersz {
   id: string;
@@ -26,6 +26,7 @@ interface Wiersz {
   poczatek: string;
   koniec: string;
   zdjecie: string | null;
+  zdjecie_proporcje: number | null;
 }
 
 function zWiersza(w: Wiersz): Wydarzenie {
@@ -37,6 +38,7 @@ function zWiersza(w: Wiersz): Wydarzenie {
     poczatek: w.poczatek,
     koniec: w.koniec,
     zdjecie: w.zdjecie,
+    proporcje: w.zdjecie_proporcje,
   };
 }
 

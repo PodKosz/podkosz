@@ -16,7 +16,7 @@ import { Pogoda } from "./Pogoda";
 import { Gallery } from "./Gallery";
 import { ShortsPlayer } from "./ShortsPlayer";
 import { ReportButton } from "./ReportButton";
-import type { Wydarzenie } from "@/lib/wydarzenia";
+import { wysokiPlakat, type Wydarzenie } from "@/lib/wydarzenia";
 import { BoxWydarzenia } from "./BoxWydarzenia";
 import {
   ArrowLeftIcon,
@@ -59,6 +59,14 @@ export function CourtDetail({
   /** aktualna godzina w Polsce, policzona na serwerze */
   nowHour?: number;
 }) {
+  /*
+    Układ karty zależy od PROPORCJI PLAKATU wydarzenia - patrz `BoxWydarzenia`.
+    Pion idzie w prawą kolumnę obok kafelków i opisu, poziom zostaje szerokim pasem nad
+    nimi. Rozstrzygamy to tutaj, bo od tej jednej wartości zależy cała siatka sekcji,
+    a nie tylko wnętrze samego boxa.
+  */
+  const wydarzenieObok = wydarzenie !== null && wysokiPlakat(wydarzenie);
+
   return (
     <main className="min-h-dvh pb-24">
       <section className="relative h-[62vh] max-h-[780px] min-h-[420px] w-full overflow-hidden">
@@ -170,8 +178,26 @@ export function CourtDetail({
           w jednym miejscu: jeśli na boisku coś się dzieje, to jest najważniejsza rzecz
           o tym boisku. Nawierzchnia i liczba koszy nie zmieniły się od miesięcy i nie
           zmienią przez najbliższą godzinę.
+
+          Szerokim pasem jest tylko wtedy, gdy plakat jest poziomy. Pionowy plakat wchodzi
+          niżej, w prawą kolumnę obok kafelków - w pasie zostawiałby ścianę pustki.
         */}
-        {wydarzenie && <BoxWydarzenia wydarzenie={wydarzenie} />}
+        {wydarzenie && !wydarzenieObok && <BoxWydarzenia wydarzenie={wydarzenie} />}
+
+        {/*
+          Dwie kolumny tylko przy pionowym plakacie: po lewej kafelki z parametrami i box
+          z opisem, po prawej wysoka karta wydarzenia na całą ich wysokość. Bez wydarzenia
+          (albo przy poziomym plakacie) ten sam kod daje zwykły, jednokolumnowy układ -
+          `grid` z jedną kolumną nie zmienia niczego w wyglądzie.
+        */}
+        <div
+          className={
+            wydarzenieObok
+              ? "relative z-10 -mt-6 grid items-stretch gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(300px,360px)]"
+              : ""
+          }
+        >
+          <div className={wydarzenieObok ? "min-w-0" : ""}>
 
         {/*
           z-10 jest konieczne: kafelki wchodzą 24 px na sekcję hero, a przyciemniające
@@ -190,9 +216,18 @@ export function CourtDetail({
           który stoi najwyżej, nie do konkretnej sekcji.
         */}
         <section
-          className={`relative z-10 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-[repeat(6,minmax(0,1fr))_minmax(300px,1.2fr)] ${
-            wydarzenie ? "mt-3" : "-mt-6"
-          }`}
+          /*
+            Siedem kolumn (sześć parametrów plus panel „kto dziś gra") wchodzi od 1024 px -
+            ale NIE wtedy, gdy obok stoi karta wydarzenia. Wtedy lewa kolumna jest o 360 px
+            węższa i te same siedem kolumn dawało kafelki po 95 px, w których „Całodobowo"
+            łamie się na trzy wiersze. Przy karcie obok próg idzie więc na 1280 px, a niżej
+            kafelki układają się po trzy w rzędzie - czytelnie, choć w dwóch rzędach.
+          */
+          className={`relative z-10 grid grid-cols-2 gap-3 sm:grid-cols-3 ${
+            wydarzenieObok
+              ? "xl:grid-cols-[repeat(6,minmax(0,1fr))_minmax(260px,1fr)]"
+              : "lg:grid-cols-[repeat(6,minmax(0,1fr))_minmax(300px,1.2fr)]"
+          } ${wydarzenieObok ? "" : wydarzenie ? "mt-3" : "-mt-6"}`}
         >
           <Spec icon={<HoopIcon className="h-7 w-7" />} label="Kosze" value={String(court.hoops)} />
           <Spec
@@ -217,7 +252,16 @@ export function CourtDetail({
             value={court.fenced ? "Tak" : "Brak"}
           />
 
-          <div className="col-span-2 sm:col-span-3 lg:col-span-1">
+          {/*
+            Panel „kto dziś gra" zajmuje cały rząd, dopóki kafelki nie ustawią się w siedem
+            kolumn - a ten próg zależy od tego, czy obok stoi karta wydarzenia (patrz wyżej).
+            Bez tego warunku panel dostawał jedną trzecią rzędu i przycisk się w nim nie mieścił.
+          */}
+          <div
+            className={`col-span-2 sm:col-span-3 ${
+              wydarzenieObok ? "xl:col-span-1" : "lg:col-span-1"
+            }`}
+          >
             <ZagramDzis courtId={court.id} />
           </div>
         </section>
@@ -260,6 +304,20 @@ export function CourtDetail({
             </div>
           </section>
         )}
+
+          </div>
+
+          {/*
+            Karta wydarzenia w prawej kolumnie. Na telefonie kolumny nie ma, więc idzie
+            NA GÓRĘ (`order-first`) - wydarzenie jest ważniejsze od nawierzchni, a przy
+            jednej kolumnie kolejność w drzewie to cała hierarchia.
+          */}
+          {wydarzenie && wydarzenieObok && (
+            <div className="order-first lg:order-none">
+              <BoxWydarzenia wydarzenie={wydarzenie} />
+            </div>
+          )}
+        </div>
 
         <section className="mt-14">
           <h2 className="mb-4 text-[13px] uppercase tracking-[0.18em] text-faint">

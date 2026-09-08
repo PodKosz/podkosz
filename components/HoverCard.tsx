@@ -1,10 +1,10 @@
 "use client";
 
-import { MapCourt, TYPE_LABEL, surfaceLabel } from "@/lib/types";
+import { MapCourt, TYPE_LABEL, surfaceLabel, type CourtPhotoRef } from "@/lib/types";
 import { thumbUrl, thumbWidth, useCourtPhotos } from "@/lib/galeria";
 import { PhotoPlaceholder } from "./CourtPhoto";
 import { photoUrl } from "@/lib/supabase/config";
-import { godziny, kiedy, plakietka, type Wydarzenie } from "@/lib/wydarzenia";
+import { godziny, kiedy, plakietka, wysokiPlakat, type Wydarzenie } from "@/lib/wydarzenia";
 import { ClockIcon, FireBallIcon, HoopIcon, BasketApprovedBadge, SurfaceIcon } from "./icons";
 
 /**
@@ -31,7 +31,13 @@ export function HoverCard({
   stan?: "wchodzi" | "znika";
 }) {
   // zdjęcia nie przychodzą razem z listą boisk - dociągamy je dla tej jednej pinezki
-  const thumbs = useCourtPhotos(court.id, 3);
+  /*
+    Cztery kadry, nie trzy: przy wydarzeniu z pionowym plakatem siatka ma inny kształt
+    (wąski plakat po lewej, cztery zdjęcia boiska po prawej) i potrzebuje o jedno więcej.
+    Zwykła wizytówka bierze z tego pierwsze trzy - nadmiarowy kadr nic nie kosztuje, bo
+    zapytanie i tak idzie po całą galerię tego boiska.
+  */
+  const thumbs = useCourtPhotos(court.id, 4);
   const kadry = thumbs.length ? thumbs : [null, null, null];
 
   /*
@@ -47,7 +53,7 @@ export function HoverCard({
         wydarzenie={wydarzenie}
         tapHint={tapHint}
         stan={stan}
-        zapasoweZdjecie={kadry[0]?.url ?? null}
+        kadry={thumbs}
       />
     );
   }
@@ -189,17 +195,32 @@ function WizytowkaWydarzenia({
   wydarzenie,
   tapHint,
   stan,
-  zapasoweZdjecie,
+  kadry,
 }: {
   court: MapCourt;
   wydarzenie: Wydarzenie;
   tapHint: boolean;
   stan: "wchodzi" | "znika";
-  /** gdy wydarzenie nie ma plakatu, bierzemy pierwsze zdjęcie boiska - pusta rama jest gorsza */
-  zapasoweZdjecie: string | null;
+  /** zdjęcia boiska - wypełniają siatkę obok plakatu wydarzenia */
+  kadry: CourtPhotoRef[];
 }) {
-  const zdjecie = wydarzenie.zdjecie ? photoUrl(wydarzenie.zdjecie) : zapasoweZdjecie;
+  const plakat = wydarzenie.zdjecie ? photoUrl(wydarzenie.zdjecie) : null;
   const trwa = plakietka(wydarzenie) === "trwa teraz";
+
+  /*
+    UKŁAD SIATKI IDZIE ZA PROPORCJĄ PLAKATU - dokładnie tak, jak box na karcie boiska.
+
+    Plakat pionowy dostaje wąski kafel na dwa rzędy (4:6, czyli 2:3 - kształt plakatu),
+    a resztę pola wypełniają CZTERY zdjęcia boiska. Plakat poziomy albo kwadratowy zajmuje
+    duży kafel dwa na dwa i zostawia po prawej dwa kadry - czyli dokładnie ten sam układ,
+    co zwykła wizytówka boiska, tylko z plakatem na pierwszym miejscu.
+
+    Bez plakatu siatka jest zwykłą siatką boiska: wydarzenie poznaje się wtedy po pasku
+    w barwach flagi i po plakietce, nie po zdjęciu.
+  */
+  const pion = wysokiPlakat(wydarzenie);
+  const ileWypelniaczy = plakat ? (pion ? 4 : 2) : 3;
+  const wypelniacze = Array.from({ length: ileWypelniaczy }, (_, i) => kadry[i] ?? null);
 
   return (
     <div
@@ -216,45 +237,54 @@ function WizytowkaWydarzenia({
         }}
       />
 
-      {/*
-        Kadr o stałych proporcjach, a w nim DWIE kopie plakatu: rozmyta z przycięciem
-        w tle i cała na wierzchu. Tak samo jak w boxie na karcie boiska (`BoxWydarzenia`)
-        i z tego samego powodu: plakaty są w pionie, a `object-cover` ucinał im tytuł
-        i godziny - czyli dokładnie to, po co ktoś na tę wizytówkę patrzy.
-      */}
-      <div className="relative aspect-[16/9] w-full overflow-hidden bg-white/5">
-        {zdjecie ? (
-          <>
+      <div className="relative grid grid-cols-3 grid-rows-2 gap-[2px] bg-white/5">
+        {plakat && (
+          <div
+            className={`relative overflow-hidden ${
+              pion ? "col-span-1 row-span-2" : "col-span-2 row-span-2"
+            }`}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={zdjecie}
-              alt=""
-              aria-hidden
-              className="absolute inset-0 h-full w-full scale-110 object-cover opacity-45 blur-lg"
+              src={plakat}
+              alt={`Plakat wydarzenia: ${wydarzenie.nazwa}`}
+              className="h-full w-full object-cover"
               decoding="async"
             />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={zdjecie}
-              alt=""
-              className="absolute inset-0 h-full w-full object-contain p-1.5"
-              decoding="async"
-            />
-          </>
-        ) : (
-          <PhotoPlaceholder kind="narożnik" seed={court.seed} />
+            <span
+              className="absolute left-2 top-2 rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-white"
+              style={{
+                background: BIALO_CZERWONA.czerwien,
+                boxShadow: trwa ? "0 0 0 3px rgb(232 17 45 / .35)" : undefined,
+                animation: trwa ? "kropka-puls 1.8s ease-in-out infinite" : undefined,
+              }}
+            >
+              {plakietka(wydarzenie)}
+            </span>
+          </div>
         )}
 
-        <span
-          className="absolute left-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white"
-          style={{
-            background: BIALO_CZERWONA.czerwien,
-            boxShadow: trwa ? `0 0 0 3px rgb(232 17 45 / .35)` : undefined,
-            animation: trwa ? "kropka-puls 1.8s ease-in-out infinite" : undefined,
-          }}
-        >
-          {plakietka(wydarzenie)}
-        </span>
+        {wypelniacze.map((p, i) => (
+          <div
+            key={i}
+            className={`relative overflow-hidden ${
+              /* bez plakatu pierwszy kadr boiska bierze duży kafel - jak w zwykłej wizytówce */
+              !plakat && i === 0 ? "col-span-2 row-span-2" : "aspect-[4/3]"
+            }`}
+          >
+            {p?.url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={thumbUrl(p.url, thumbWidth(plakat ? 1 : i))}
+                alt={p.caption}
+                className="h-full w-full object-cover"
+                decoding="async"
+              />
+            ) : (
+              <PhotoPlaceholder kind={i === 0 ? "narożnik" : "kosz-a"} seed={court.seed + i} />
+            )}
+          </div>
+        ))}
       </div>
 
       <div className={tapHint ? "p-2.5" : "p-3.5"}>

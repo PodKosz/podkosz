@@ -19,6 +19,20 @@ export interface Wydarzenie {
   koniec: string;
   /** ścieżka w buckecie zdjęć albo null */
   zdjecie: string | null;
+  /**
+   * Proporcja plakatu (szerokość / wysokość) albo `null`, gdy nieznana.
+   *
+   * Od niej zależy układ boxa na karcie boiska: pion dostaje wysoką kartę w prawej
+   * kolumnie, poziom - szeroki pas nad kafelkami. Liczba jest zapisywana przy wgrywaniu
+   * pliku, bo karta boiska powstaje na serwerze i nie może czekać z układem na to, aż
+   * przeglądarka wczyta obrazek.
+   */
+  proporcje: number | null;
+}
+
+/** Czy plakat jest „wysoki" - pion albo kwadrat. Próg 0,95, bo 1:1 czyta się jak poziom. */
+export function wysokiPlakat(w: Wydarzenie) {
+  return w.zdjecie !== null && w.proporcje !== null && w.proporcje < 0.95;
 }
 
 /* ---------------------------------------------------------------- czas */
