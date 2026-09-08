@@ -468,13 +468,32 @@ function Spec({
   value: string;
 }) {
   return (
-    <div className="glass kafel-zywy relative flex h-full min-h-[150px] flex-col items-center justify-center rounded-[20px] p-4 @min-[1580px]:p-5">
+    <div className="glass kafel-zywy relative flex h-full min-h-[150px] flex-col items-center justify-center overflow-hidden rounded-[20px] p-4 @min-[1580px]:p-5">
+      {/*
+        Rysunek wypełnia CAŁY kafelek, bez wcięcia. To zamierzone: ma być fragmentem
+        czegoś większego, wychodzącym za krawędzie, a nie ikonką położoną na środku
+        z marginesem wokół (patrz nota w `SzkicKafla`). Przycięcie robi `overflow-hidden`
+        na kafelku, a zaokrąglenie narożników bierze się z jego `rounded-[20px]`.
+      */}
+      <span aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.18]">
+        <SzkicKafla rodzaj={rodzaj} />
+      </span>
+
+      {/*
+        Osłona pod napisem. Rysunek jest teraz grubą kreską przechodzącą przez cały
+        kafelek, więc bez niej linie biegną dokładnie przez litery. Promienista i bardzo
+        miękka - ma odjąć kontrast pod tekstem, a nie położyć pod nim prostokąt.
+      */}
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-0 grid place-items-center opacity-[0.22]"
-      >
-        <SzkicKafla rodzaj={rodzaj} className="h-[86%] w-[86%]" />
-      </span>
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(62% 44% at 50% 58%, rgb(var(--rgb-plyta) / .72) 0%," +
+            "rgb(var(--rgb-plyta) / .5) 34%, rgb(var(--rgb-plyta) / .22) 62%," +
+            "rgb(var(--rgb-plyta) / 0) 100%)",
+        }}
+      />
 
       <span className="relative flex flex-col items-center text-center">
         {/* `break-words` to bezpiecznik: gdyby kiedyś trafiła tu wartość dłuższa niż
