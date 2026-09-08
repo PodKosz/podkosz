@@ -2,6 +2,7 @@ import { SzkicKafla, type RodzajSzkicu } from "./SzkicKafla";
 import Link from "next/link";
 import { ACCESS_LABEL, Court, TYPE_LABEL, surfaceLabel } from "@/lib/types";
 import { czyAutorAnonimowy, formatDistance, slugifyPlace } from "@/lib/site";
+import { adresMiniatury } from "@/lib/obrazy";
 import type { NearbyCourt } from "@/lib/repo";
 import type { WeatherHour } from "@/lib/pogoda";
 import { CourtPhoto } from "./CourtPhoto";
@@ -44,10 +45,13 @@ export function CourtDetail({
   weather = [],
   nowHour = 12,
   wydarzenie = null,
+  avatarAutora = null,
 }: {
   court: Court;
   /** wydarzenie na tym boisku - dostaje własny box nad wszystkim innym */
   wydarzenie?: Wydarzenie | null;
+  /** zdjęcie profilowe osoby, która zgłosiła boisko - do podpisu przy opisie */
+  avatarAutora?: string | null;
   nearby?: NearbyCourt[];
   /** prognoza godzinowa - pusta dla boisk krytych i gdy open-meteo nie odpowiada */
   weather?: WeatherHour[];
@@ -62,6 +66,9 @@ export function CourtDetail({
   */
   const wydarzenieObok = wydarzenie !== null && wysokiPlakat(wydarzenie);
 
+  /* ten sam punkt prowadzi przycisk w hero i współrzędne w opisie */
+  const nawigacja = `https://www.google.com/maps/dir/?api=1&destination=${court.lat},${court.lng}`;
+
   return (
     <main className="min-h-dvh pb-24">
       <section className="relative h-[62vh] max-h-[780px] min-h-[420px] w-full overflow-hidden">
@@ -71,8 +78,8 @@ export function CourtDetail({
         <div className="absolute inset-0 bg-gradient-to-t from-void via-void/45 to-void/70" />
         {/*
           Mocniejsze wygaszenie dołu: kafelki parametrów wchodzą na zdjęcie i muszą być czytelne.
-          Na telefonie pas jest wyższy, bo tytuł, plakietki, współrzędne i przyciski stoją niżej -
-          wszystkie muszą leżeć na przygaszonym tle, nie na samym kadrze.
+          Na telefonie pas jest wyższy, bo tytuł, plakietki i przyciski stoją niżej - wszystkie
+          muszą leżeć na przygaszonym tle, nie na samym kadrze.
         */}
         <div className="absolute inset-x-0 bottom-0 h-72 bg-gradient-to-t from-void via-void/85 to-transparent sm:h-56" />
 
@@ -90,9 +97,14 @@ export function CourtDetail({
           </div>
 
           {/*
-            Tytuł, a pod nim jedna linia: współrzędne i zaraz obok plakietki (typ boiska,
+            Tytuł, a pod nim jedna linia: miasto i zaraz obok plakietki (typ boiska,
             województwo, wyróżnienia). Wszystko trzyma się dołu zdjęcia, w obszarze
             gradientu, żeby nie zasłaniać kadru. Na telefonie linia zawija się sama.
+
+            WSPÓŁRZĘDNE ZESZŁY STĄD DO OPISU. Pod nazwą boiska stały obok miasta jako druga
+            liczba w tej samej linii i konkurowały o uwagę z tytułem - a są informacją
+            techniczną, potrzebną raz: przy przepisywaniu punktu do nawigacji. Miasto zostaje,
+            bo ono odpowiada na pytanie „gdzie to jest".
           */}
           <div className="flex flex-col">
             <h1 className="text-[22px] font-semibold leading-[1.1] tracking-[-0.02em] sm:mt-3 sm:text-[clamp(34px,6vw,64px)] sm:leading-[1.02]">
@@ -102,9 +114,7 @@ export function CourtDetail({
             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
               <p className="flex min-w-0 items-center gap-1.5 text-[13px] text-muted sm:gap-2 sm:text-[15px]">
                 <PinIcon className="h-4 w-4 shrink-0 text-flame" />
-                <span className="truncate">
-                  {court.city} · {court.lat.toFixed(4)}, {court.lng.toFixed(4)}
-                </span>
+                <span className="truncate">{court.city}</span>
               </p>
 
               <span className="flex flex-wrap items-center gap-1.5 sm:gap-2">
@@ -117,7 +127,7 @@ export function CourtDetail({
                 {court.basketApproved && <BasketApprovedBadge />}
                 {court.funny && <FunnyBadge />}
               </span>
-              {/* na telefonie ulubione siedzą przy współrzędnych, na dużym ekranie w rzędzie akcji */}
+              {/* na telefonie ulubione siedzą przy mieście, na dużym ekranie w rzędzie akcji */}
               <span className="ml-auto shrink-0 sm:hidden">
                 <Ulubione courtId={court.id} compact />
               </span>
@@ -130,39 +140,23 @@ export function CourtDetail({
               <Ulubione courtId={court.id} />
             </span>
             <a
-              href={`https://www.google.com/maps/dir/?api=1&destination=${court.lat},${court.lng}`}
+              href={nawigacja}
               target="_blank"
               rel="noreferrer"
               className="glass rounded-full px-4 py-2.5 text-[13px] font-medium text-ink transition hover:bg-white/10 sm:px-5 sm:py-3 sm:text-[14px]"
             >
               Prowadź do boiska
             </a>
-            <ReportButton courtId={court.id} />
 
-            {/* autor wpisu i data - przy akcjach, po prawej stronie rzędu */}
-            <p className="ml-auto hidden text-right text-[13px] leading-tight text-muted lg:block">
-              <span className="block text-[11px] uppercase tracking-[0.16em] text-faint">
-                Zgłoszone przez
-              </span>
-              {/*
-                Zgłoszenia bez konta nie mają profilu (i nie wchodzą do rankingu graczy),
-                więc podpis „gość" zostaje zwykłym tekstem - link prowadziłby na 404.
-              */}
-              {czyAutorAnonimowy(court.addedBy) ? (
-                <span className="font-semibold text-ink">@{court.addedBy}</span>
-              ) : (
-                <Link
-                  href={`/gracz/${slugifyPlace(court.addedBy)}`}
-                  className="font-semibold text-ink transition hover:text-flame"
-                >
-                  @{court.addedBy}
-                </Link>
-              )}
-              <span className="text-faint">
-                {" "}
-                · {new Date(court.addedAt).toLocaleDateString("pl-PL")}
-              </span>
-            </p>
+            {/*
+              „Zgłoś błąd" stało tu i drugi raz w stopce strony, pod zdjęciami. Ten sam
+              przycisk dwa razy na jednej stronie nie daje nic poza szumem w rzędzie akcji,
+              w którym każdy inny przycisk robi coś innego - a stopka jest lepszym miejscem:
+              o pomyłce we wpisie wie się PO przeczytaniu wpisu, nie przed.
+
+              Podpis autora zszedł stąd na dół, do opisu - ma tam avatar i czytelny nick,
+              zamiast najdrobniejszego tekstu na stronie przy prawej krawędzi rzędu.
+            */}
           </div>
         </div>
       </section>
@@ -361,29 +355,60 @@ export function CourtDetail({
           Opis boiska idzie po galerii i jest największym tekstem na stronie - to jedyne
           zdanie napisane ręką człowieka, więc ma prawo krzyczeć. Gradient marki zamiast
           zwykłej bieli.
-        */}
-        <section className="mt-16">
-          <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">O boisku</h2>
-          <p className="mt-4 max-w-4xl flame-text text-[clamp(24px,3.4vw,40px)] font-semibold leading-[1.25] tracking-[-0.01em]">
-            {court.description}
-          </p>
 
-          {/* odnośniki do podstron miejsca: nawigacja dla ludzi i ścieżka dla wyszukiwarek */}
-          <p className="mt-6 flex flex-wrap items-center gap-2 text-[13px] text-muted">
-            Więcej boisk:
-            <Link
-              href={`/miasto/${slugifyPlace(court.city)}`}
-              className="rounded-full border border-hairline bg-white/6 px-3 py-1 transition hover:text-ink"
-            >
-              {court.city}
-            </Link>
-            <Link
-              href={`/wojewodztwo/${slugifyPlace(court.voivodeship)}`}
-              className="rounded-full border border-hairline bg-white/6 px-3 py-1 transition hover:text-ink"
-            >
-              {court.voivodeship}
-            </Link>
-          </p>
+          Obok opisu stoi PODPIS AUTORA: kto to boisko zgłosił. To jedyne miejsce na stronie,
+          w którym ktoś dostaje coś w zamian za dopisanie boiska do mapy, a wcześniej było
+          najdrobniejszym tekstem w karcie - przy prawej krawędzi rzędu akcji, bez twarzy
+          i schowane poniżej `lg`. Tu ma swoją kolumnę, avatar i nick w rozmiarze, który
+          widać. Przy opisie, bo obie rzeczy mówią o człowieku, nie o nawierzchni.
+
+          Dwie kolumny dopiero od `lg`: niżej podpis wchodzi pod opis i zajmuje całą
+          szerokość - na telefonie kolumna 300 px obok opisu zostawiłaby opisowi 60 px.
+        */}
+        <section className="mt-16 grid items-stretch gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(260px,320px)]">
+          <div className="glass relative overflow-hidden rounded-[28px] px-6 py-8 sm:px-10 sm:py-10">
+            <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">O boisku</h2>
+            <p className="mt-4 flame-text text-[clamp(24px,3.4vw,40px)] font-semibold leading-[1.25] tracking-[-0.01em]">
+              {court.description}
+            </p>
+
+            {/*
+              Jeden rząd drobnych plakietek pod opisem: współrzędne (zeszły tu z nagłówka
+              - kliknięcie prowadzi w nawigację, więc liczby nie trzeba przepisywać ręcznie)
+              i odnośniki do podstron miejsca, czyli nawigacja dla ludzi i ścieżka dla
+              wyszukiwarek.
+            */}
+            <div className="mt-7 flex flex-wrap items-center gap-2 text-[13px] text-muted">
+              <a
+                href={nawigacja}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-white/6 px-3 py-1 tabular-nums transition hover:text-ink"
+              >
+                <PinIcon className="h-3.5 w-3.5 text-flame" />
+                {court.lat.toFixed(4)}, {court.lng.toFixed(4)}
+              </a>
+              <span className="ml-1 text-faint">Więcej boisk:</span>
+              <Link
+                href={`/miasto/${slugifyPlace(court.city)}`}
+                className="rounded-full border border-hairline bg-white/6 px-3 py-1 transition hover:text-ink"
+              >
+                {court.city}
+              </Link>
+              <Link
+                href={`/wojewodztwo/${slugifyPlace(court.voivodeship)}`}
+                className="rounded-full border border-hairline bg-white/6 px-3 py-1 transition hover:text-ink"
+              >
+                {court.voivodeship}
+              </Link>
+            </div>
+          </div>
+
+          <AutorWpisu
+            nick={court.addedBy}
+            avatar={avatarAutora}
+            dodane={court.addedAt}
+          />
         </section>
 
         {/* pod opisem pogoda, a pod nią najbliższe boiska */}
@@ -506,6 +531,84 @@ function Spec({
           {label}
         </p>
       </span>
+    </div>
+  );
+}
+
+/**
+ * Podpis autora wpisu - kolumna obok opisu boiska.
+ *
+ * Cały box jest jedną rzeczą: „to boisko dopisał tu ten człowiek". Dlatego avatar,
+ * nick i data stoją na środku, jeden pod drugim, a nie w wierszu z etykietami -
+ * to podpis pod obrazem, nie pole formularza.
+ *
+ * Avatar bierze `avatar-rankingu`, ten sam pierścień i to samo światło, co twarze
+ * w rankingu graczy: ta sama osoba wygląda tu tak samo jak tam, a jeden styl mniej
+ * do utrzymania.
+ */
+function AutorWpisu({
+  nick,
+  avatar,
+  dodane,
+}: {
+  nick: string;
+  avatar: string | null;
+  dodane: string;
+}) {
+  /*
+    Zgłoszenia bez konta nie mają profilu (i nie wchodzą do rankingu graczy), więc podpis
+    „gość" zostaje zwykłym tekstem - link prowadziłby na 404.
+  */
+  const anonim = czyAutorAnonimowy(nick);
+  const podpis = <span className="text-[clamp(19px,2vw,24px)] font-semibold tracking-[-0.02em]">@{nick}</span>;
+
+  return (
+    <div className="glass relative flex flex-col items-center justify-center gap-4 overflow-hidden rounded-[28px] px-6 py-9 text-center">
+      {/* poświata za avatarem - żeby kolumna świeciła jak karty rankingu, a nie stała pusta */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full"
+        style={{
+          background:
+            "radial-gradient(circle, rgb(var(--rgb-flame) / .2) 0%, rgb(var(--rgb-ember) / .07) 52%, transparent 74%)",
+        }}
+      />
+
+      <p className="relative text-[11px] uppercase tracking-[0.18em] text-faint">Zgłoszone przez</p>
+
+      <span className="avatar-rankingu relative grid h-[92px] w-[92px] place-items-center overflow-hidden rounded-full">
+        {avatar ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={adresMiniatury(avatar, 184, 70)}
+            alt=""
+            width={92}
+            height={92}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          /* bez zdjęcia zostaje pierwsza litera nicku na gradiencie marki - jak w rankingu */
+          <span className="flame-gradient grid h-full w-full place-items-center text-[30px] font-bold text-black">
+            {nick.slice(0, 1).toUpperCase()}
+          </span>
+        )}
+      </span>
+
+      <p className="relative flex flex-col items-center gap-1">
+        {anonim ? (
+          podpis
+        ) : (
+          <Link
+            href={`/gracz/${slugifyPlace(nick)}`}
+            className="transition-colors hover:text-flame"
+          >
+            {podpis}
+          </Link>
+        )}
+        <span className="text-[12px] text-faint">
+          dodane {new Date(dodane).toLocaleDateString("pl-PL")}
+        </span>
+      </p>
     </div>
   );
 }

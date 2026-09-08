@@ -357,6 +357,20 @@ const fetchAvatary = unstable_cache(
 );
 
 /**
+ * Avatar jednej osoby, po nicku - pod podpis autora na karcie boiska.
+ *
+ * Idzie tą samą, jedną zapytaną i zapamiętaną mapą co ranking, zamiast osobnym zapytaniem
+ * o jeden wiersz: kart boisk jest tyle, ile boisk, a profili kilkadziesiąt. Jedno zapytanie
+ * trzymane w pamięci podręcznej jest tu tańsze niż setka zapytań punktowych - i przy okazji
+ * nie dodaje żadnego nowego miejsca, które trzeba unieważniać.
+ */
+export async function avatarAutora(nick: string): Promise<string | null> {
+  if (czyAutorAnonimowy(nick)) return null;
+  const avatary = await fetchAvatary();
+  return avatary[nick] ?? null;
+}
+
+/**
  * Ranking odkrywców: kolejność wyznacza liczba opublikowanych boisk (zgłoszenia czekające
  * w kolejce się nie liczą - w tabeli `courts` są tylko te zatwierdzone), a przy równej
  * liczbie decydują zebrane podpalenia.
