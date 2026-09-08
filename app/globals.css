@@ -391,6 +391,74 @@ body {
   }
 }
 
+/* ---------- podpowiedź po najechaniu ---------- */
+/*
+  Zamiennik systemowej chmurki z atrybutu `title` - tamtej nie da się ostylować, a wyglądała
+  jak wyrwana z innej strony: czcionka systemu, kanciasty narożnik, sekunda opóźnienia.
+  Ta jest z tego samego szkła co karty i pojawia się od razu.
+
+  Leży w `document.body` (portal, patrz `components/Podpowiedz.tsx`), więc pozycję dostaje
+  w pikselach ekranu przez `left`/`top`, a nad kotwicę wynosi ją `translate`. `--przesuniecie`
+  dokłada korektę przy krawędzi okna - liczy ją komponent po zmierzeniu szerokości napisu.
+*/
+.podpowiedz {
+  position: fixed;
+  z-index: 90;
+  translate: calc(-50% + var(--przesuniecie, 0px)) calc(-100% - 11px);
+  max-width: min(280px, calc(100vw - 24px));
+  padding: 7px 11px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 12px;
+  background: rgb(var(--rgb-plyta) / 0.9);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  box-shadow:
+    inset 0 1px 0 rgb(var(--rgb-szyba) / 0.1),
+    0 18px 40px -20px rgb(0 0 0 / calc(0.95 * var(--moc-cienia)));
+  color: rgb(var(--rgb-szyba) / 0.88);
+  font-size: 11.5px;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  text-align: center;
+  text-wrap: balance;
+  /* nie łapie kursora: chmurka wisi nad kotwicą i bez tego odbierałaby jej najechanie,
+     a wtedy sama by się gasiła i zapalała w pętli */
+  pointer-events: none;
+  animation: podpowiedz-wejscie 160ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* dzióbek - obrócony kwadracik z dwiema krawędziami, żeby siedział w obrysie chmurki */
+.podpowiedz::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: calc(50% - var(--przesuniecie, 0px));
+  width: 7px;
+  height: 7px;
+  translate: -50% 0;
+  rotate: 45deg;
+  border-right: 1px solid var(--color-hairline);
+  border-bottom: 1px solid var(--color-hairline);
+  background: rgb(var(--rgb-plyta) / 0.9);
+}
+
+@keyframes podpowiedz-wejscie {
+  from {
+    opacity: 0;
+    translate: calc(-50% + var(--przesuniecie, 0px)) calc(-100% - 5px);
+  }
+  to {
+    opacity: 1;
+    translate: calc(-50% + var(--przesuniecie, 0px)) calc(-100% - 11px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .podpowiedz {
+    animation: none;
+  }
+}
+
 /* ---------- Liquid warm gradient accents ---------- */
 
 .flame-gradient {
@@ -2622,6 +2690,23 @@ select option {
     padding-left 420ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/*
+  Poświata pod kursorem, gasnąca w prawo.
+  
+  Wcześniej stały tu trzy przystanki: 0.16 na starcie, 0.04 na 38% i zero na 70%. Widać
+  było KRAWĘDŹ - i nie tam, gdzie gradient się kończył, ale na 38%. W tym miejscu spadek
+  przezroczystości zmieniał tempo z gwałtownego na ledwie zauważalne, a taki załamek na
+  prostych odcinkach oko czyta jako ostrą granicę. Do tego całość gasła już na 70%,
+  więc ostatnia trzecia część wiersza była płaska.
+
+  Teraz przystanków jest siedem i leżą na krzywej (1 - x)² - odcinki między nimi są tak
+  krótkie, że nie widać, gdzie jeden przechodzi w drugi, a tempo gaśnięcia zmienia się
+  łagodnie na całej długości. Zero wypada dokładnie na prawej krawędzi, więc nigdzie
+  w wierszu nie ma miejsca, w którym poświata „się kończy".
+
+  Na końcu jest `rgb(... / 0)`, a nie `transparent`: to ta sama barwa z zerową
+  przezroczystością, więc przeglądarka nie ma czego domyślać się po drodze.
+*/
 .wiersz-rankingu::before {
   content: "";
   position: absolute;
@@ -2630,9 +2715,13 @@ select option {
   opacity: 0;
   background: linear-gradient(
     100deg,
-    rgb(var(--rgb-flame) / 0.16) 0%,
-    rgb(var(--rgb-flame) / 0.04) 38%,
-    transparent 70%
+    rgb(var(--rgb-flame) / 0.15) 0%,
+    rgb(var(--rgb-flame) / 0.111) 14%,
+    rgb(var(--rgb-flame) / 0.076) 29%,
+    rgb(var(--rgb-flame) / 0.045) 45%,
+    rgb(var(--rgb-flame) / 0.023) 61%,
+    rgb(var(--rgb-flame) / 0.007) 78%,
+    rgb(var(--rgb-flame) / 0) 100%
   );
   transition: opacity 320ms ease;
 }

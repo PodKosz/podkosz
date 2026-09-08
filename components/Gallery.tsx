@@ -37,10 +37,28 @@ export function Gallery({ court, video }: { court: Court; video?: React.ReactNod
    */
   const tile = (index: number, ratio: string, extraClass = "") =>
     index < 0 || !photos[index] ? null : (
+      /*
+        Reakcja na kursor jest ta sama, co na kartach boisk w „Najbliższych boiskach"
+        (`.karta-rankingu`): miękka poświata w barwie marki, kadr podchodzący o 4,5%
+        i smuga światła przejeżdżająca po szkle.
+
+        Wcześniej kafelek zapalał tu pomarańczowy WŁOS na obrysie (`hover:border-flame/50`).
+        Cienka, twarda linia wokół zdjęcia czyta się jak zaznaczenie pola w formularzu,
+        a nie jak dotknięcie kadru - i była jedyną taką odpowiedzią na najechanie
+        w całym serwisie.
+
+        Podpis dostaje `z-[2]`, bo smuga jest elementem pozycjonowanym z `z-index: 1`
+        i bez tego przejeżdżałaby po napisie. Sama smuga stoi w drzewie na końcu - musi
+        leżeć nad zdjęciem.
+
+        `transition` z Tailwinda schodzi: `.karta-rankingu` ma własne czasy przejść
+        (520 ms na poświatę, 900 ms na kadr), a klasa narzędziowa nakładała na wszystko
+        swoje 150 ms.
+      */
       <button
         key={index}
         onClick={() => setOpen(index)}
-        className={`group relative overflow-hidden rounded-[20px] border border-hairline transition hover:border-flame/50 ${ratio} ${extraClass}`}
+        className={`karta-rankingu group relative overflow-hidden rounded-[20px] border border-hairline ${ratio} ${extraClass}`}
       >
         <span className="absolute inset-0">
           <CourtPhoto
@@ -49,9 +67,10 @@ export function Gallery({ court, video }: { court: Court; video?: React.ReactNod
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           />
         </span>
-        <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent p-2.5 text-left text-[10px] uppercase tracking-[0.1em] text-ink/85 sm:text-[11px]">
+        <span className="absolute inset-x-0 bottom-0 z-[2] bg-gradient-to-t from-black/85 to-transparent p-2.5 text-left text-[10px] uppercase tracking-[0.1em] text-ink/85 sm:text-[11px]">
           {photos[index].caption}
         </span>
+        <span aria-hidden className="karta-rankingu-blysk" />
       </button>
     );
 

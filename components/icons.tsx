@@ -1,5 +1,7 @@
 import { SVGProps } from "react";
 
+import { Podpowiedz } from "./Podpowiedz";
+
 type P = SVGProps<SVGSVGElement>;
 
 export function BallIcon(props: P) {
@@ -156,17 +158,24 @@ export function FireBallIcon({
   );
 }
 
-/** Odznaka "Basket Approved" - rekomendacja przyznawana osobiście przez twórcę. */
+/**
+ * Odznaka "Basket Approved" - rekomendacja przyznawana osobiście przez twórcę.
+ *
+ * Wyjaśnienie pod kursorem daje `Podpowiedz`, a nie atrybut `title`: systemowa chmurka
+ * przeglądarki wyglądała jak wyrwana z innej strony i nie da się jej ostylować.
+ * Pełny tekst zostaje w `aria-label`, żeby czytnik ekranu dostał to samo, co kursor.
+ */
 export function BasketApprovedBadge({ className = "" }: { className?: string }) {
   return (
-    <span
-      title="Basket Approved - rekomendacja twórcy serwisu"
-      aria-label="Basket Approved"
-      className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-1.5 py-[3px] text-[10px] font-bold uppercase tracking-[0.16em] text-kadr basket-gradient basket-ring sm:px-2.5 sm:py-[4px] ${className}`}
-    >
-      <FireBallIcon variant="basket" className="h-3.5 w-3.5" />
-      <span className="hidden sm:inline">Basket Approved</span>
-    </span>
+    <Podpowiedz tekst="Basket Approved - rekomendacja twórcy serwisu" className={className}>
+      <span
+        aria-label="Basket Approved - rekomendacja twórcy serwisu"
+        className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-1.5 py-[3px] text-[10px] font-bold uppercase tracking-[0.16em] text-kadr basket-gradient basket-ring sm:px-2.5 sm:py-[4px]"
+      >
+        <FireBallIcon variant="basket" className="h-3.5 w-3.5" />
+        <span className="hidden sm:inline">Basket Approved</span>
+      </span>
+    </Podpowiedz>
   );
 }
 
@@ -186,18 +195,26 @@ export function FunnyBadge({
   label?: string;
 }) {
   return (
-    <span
-      title={label}
-      aria-label={label}
-      className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-1.5 py-[3px] text-[10px] font-bold uppercase tracking-[0.16em] text-black lime-gradient lime-ring sm:px-2.5 sm:py-[4px] ${className}`}
-    >
-      <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round">
-        <circle cx="12" cy="12" r="9" />
-        <path d="M8.5 9.5h.01M15.5 9.5h.01" />
-        <path d="M8 15c1.4 1.4 6.2 1.4 8-1" />
-      </svg>
-      <span className="hidden sm:inline">{label}</span>
-    </span>
+    <Podpowiedz tekst={label} className={className}>
+      <span
+        aria-label={label}
+        className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-1.5 py-[3px] text-[10px] font-bold uppercase tracking-[0.16em] text-black lime-gradient lime-ring sm:px-2.5 sm:py-[4px]"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          className="h-3.5 w-3.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.9"
+          strokeLinecap="round"
+        >
+          <circle cx="12" cy="12" r="9" />
+          <path d="M8.5 9.5h.01M15.5 9.5h.01" />
+          <path d="M8 15c1.4 1.4 6.2 1.4 8-1" />
+        </svg>
+        <span className="hidden sm:inline">{label}</span>
+      </span>
+    </Podpowiedz>
   );
 }
 
