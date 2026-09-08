@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ACCESS_LABEL, Court, TYPE_LABEL, surfaceLabel } from "@/lib/types";
 import { czyAutorAnonimowy, formatDistance, slugifyPlace } from "@/lib/site";
 import { adresMiniatury } from "@/lib/obrazy";
+import { zdaniaOBoisku } from "@/lib/opis-boiska";
 import type { NearbyCourt } from "@/lib/repo";
 import type { WeatherHour } from "@/lib/pogoda";
 import { CourtPhoto } from "./CourtPhoto";
@@ -379,6 +380,17 @@ export function CourtDetail({
             <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">O boisku</h2>
             <p className="mt-4 flame-text text-[clamp(24px,3.4vw,40px)] font-semibold leading-[1.25] tracking-[-0.01em]">
               {court.description}
+            </p>
+
+            {/*
+              Pod zdaniem od człowieka - zdania złożone z danych boiska (`zdaniaOBoisku`).
+              Spokojnym tekstem i wyraźnie mniejszym: opis od autora zgłoszenia zostaje
+              najgłośniejszą rzeczą w tym boxie, bo to jedyne zdanie, którego nikt nie
+              policzył z pól w bazie. Dopisek ma być tym, co się doczytuje, a nie tym,
+              co krzyczy.
+            */}
+            <p className="mt-5 text-[14.5px] leading-[1.65] text-muted sm:text-[15.5px]">
+              {zdaniaOBoisku(court).join(" ")}
             </p>
           </div>
 
