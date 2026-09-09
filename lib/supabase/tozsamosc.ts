@@ -138,24 +138,46 @@ export interface Tozsamosc {
 export async function tozsamosc(supabase: SupabaseClient): Promise<Tozsamosc | null> {
   const zestaw = await kluczePodpisu();
 
-  const { data } = await supabase.auth.getClaims(
+  const { data, error } = await supabase.auth.getClaims(
     undefined,
     zestaw ? { jwks: zestaw } : undefined
   );
 
-  const claims = data?.claims;
-  if (!claims?.sub) return null;
-
-  /* `user_metadata` przychodzi z tokenu luźno typowane - domykamy je tu, nie dalej */
-  const meta = (claims.user_metadata ?? {}) as {
-    full_name?: unknown;
-    avatar_url?: unknown;
-  };
   const tekst = (v: unknown) => (typeof v === "string" && v.trim() ? v : null);
 
+  let id = tekst(data?.claims?.sub);
+  let email = tekst(data?.claims?.email);
+  /* `user_metadata` przychodzi z tokenu luźno typowane - domykamy je tu, nie dalej */
+  let meta = (data?.claims?.user_metadata ?? {}) as Record<string, unknown>;
+
+  /*
+    SIATKA BEZPIECZEŃSTWA.
+
+    Brak sesji i nieudana weryfikacja wyglądają w wyniku tak samo (`data: null`), ale różni
+    je `error`: przy zwykłym braku ciasteczka jest null. Jeśli błąd JEST, to znaczy, że coś
+    poszło nie tak w samej weryfikacji - zestaw kluczy bez pasującego `kid`, brak WebCrypto
+    w środowisku, token, którego nie dało się odświeżyć.
+
+    Wtedy pytamy serwer Auth, czyli płacimy dokładnie tę podróż, którą cały ten moduł miał
+    oszczędzić. I bardzo dobrze: pomyłka w weryfikacji bez tego zapasu pokazuje KAŻDEMU
+    zalogowanemu, że jest wylogowany - pasek bez konta, puste ulubione, zniknięte
+    podpalenia. Jedno żądanie więcej jest tanie, cicha utrata sesji nie jest.
+  */
+  if (!id && error) {
+    const { data: awaryjne } = await supabase.auth.getUser();
+    const user = awaryjne?.user;
+    if (!user) return null;
+
+    id = user.id;
+    email = tekst(user.email);
+    meta = (user.user_metadata ?? {}) as Record<string, unknown>;
+  }
+
+  if (!id) return null;
+
   return {
-    id: claims.sub,
-    email: typeof claims.email === "string" ? claims.email : null,
+    id,
+    email,
     nazwaZTokenu: tekst(meta.full_name),
     avatarZTokenu: tekst(meta.avatar_url),
   };
