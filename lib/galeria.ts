@@ -68,7 +68,38 @@ function rozgrzej(url: string) {
 }
 
 /**
- * Pobiera miniatury dla wielu boisk jednym zapytaniem i rozgrzewa obrazki.
+ * Ile boisk pytamy jednym zapytaniem.
+ *
+ * `.in("court_id", [...])` trafia do adresu URL, a identyfikator to 36 znaków. Przy
+ * trzystu boiskach adres ma jedenaście kilobajtów - a Kong przed Supabase ma bufor
+ * ośmiu, więc od pewnej liczby wpisów zapytanie wracało jako 414 i `catch` zamiatał to
+ * pod dywan: rozgrzewanie po prostu przestawało działać i nikt się nie dowiadywał.
+ * Pięćdziesiąt identyfikatorów to około dwóch kilobajtów, z zapasem na wszystko.
+ */
+const PACZKA = 50;
+
+/**
+ * Ilu boiskom rozgrzewamy SAME PLIKI zdjęć.
+ *
+ * To jest zupełnie inna liczba niż `PACZKA` i inaczej się o niej myśli. Pobranie adresów
+ * jest tanie (kilka bajtów na boisko), ale rozgrzanie obrazka to prawdziwe pobranie
+ * pliku. Zmierzone na zdjęciu z tego serwisu: duży kadr 480 px waży 48 kB, dwa małe po
+ * 9 kB - czyli 66 kB na boisko.
+ *
+ * Do tej pory rozgrzewaliśmy trzy kadry KAŻDEGO boiska do trzystu wpisów. To 20 MB
+ * pobrane przez każdego odwiedzającego z komputera, ZANIM najedzie na cokolwiek - a przy
+ * trzystu odwiedzających 6 GB transferu ze Storage. Darmowy plan Supabase daje 5 GB na
+ * miesiąc, Pro 250 GB; jedno udane wejście z mediów zjadałoby miesiąc w jeden dzień.
+ *
+ * Dwadzieścia cztery boiska (te najczęściej podpalane stoją na liście pierwsze) to
+ * 1,2 MB - tyle, co jedno zdjęcie w tle. Pozostałe wizytówki mają już ADRESY, więc
+ * przeglądarka zaczyna pobierać plik w chwili najechania: kadr pojawia się o ułamek
+ * sekundy później, zamiast czekać wcześniej na wszystkie trzysta.
+ */
+const ROZGRZEWANYCH = 24;
+
+/**
+ * Pobiera miniatury dla wielu boisk i rozgrzewa obrazki tych pierwszych na liście.
  * Wołane po wczytaniu mapy, w bezczynnym momencie.
  */
 export async function prefetchCourtPhotos(courtIds: string[], howMany = 3) {
@@ -83,13 +114,26 @@ export async function prefetchCourtPhotos(courtIds: string[], howMany = 3) {
     return;
   }
 
-  const { data } = await supabase
-    .from("court_photos")
-    .select("court_id, kind, storage_path, sort")
-    .in("court_id", brakujace)
-    .order("sort");
+  /*
+    Paczkami, nie wszystko naraz - patrz `PACZKA`. Paczki lecą równolegle: to nadal
+    kilka żądań zamiast jednego, ale krótkich i naraz, a nie jedno, które nie przechodzi.
+  */
+  const paczki: string[][] = [];
+  for (let i = 0; i < brakujace.length; i += PACZKA) {
+    paczki.push(brakujace.slice(i, i + PACZKA));
+  }
 
-  const wiersze = (data ?? []) as {
+  const odpowiedzi = await Promise.all(
+    paczki.map((paczka) =>
+      supabase
+        .from("court_photos")
+        .select("court_id, kind, storage_path, sort")
+        .in("court_id", paczka)
+        .order("sort")
+    )
+  );
+
+  const wiersze = odpowiedzi.flatMap((r) => (r.data ?? [])) as {
     court_id: string;
     kind: PhotoKind;
     storage_path: string;
@@ -107,13 +151,16 @@ export async function prefetchCourtPhotos(courtIds: string[], howMany = 3) {
     poBoisku.set(r.court_id, lista);
   }
 
-  for (const id of brakujace) {
+  brakujace.forEach((id, miejsce) => {
     const photos = orderPhotos(poBoisku.get(id) ?? []);
     cache.set(id, photos);
+
+    /* pliki rozgrzewamy tylko czołówce listy - patrz `ROZGRZEWANYCH` */
+    if (miejsce >= ROZGRZEWANYCH) return;
     photos.slice(0, howMany).forEach((p, i) => {
       if (p.url) rozgrzej(thumbUrl(p.url, thumbWidth(i)));
     });
-  }
+  });
 }
 
 export async function fetchCourtPhotos(courtId: string): Promise<CourtPhotoRef[]> {
