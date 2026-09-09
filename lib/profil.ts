@@ -106,20 +106,51 @@ export async function statystykiGracza(nick: string): Promise<ProfilGracza> {
  * Nick pasujący do adresu profilu.
  *
  * Adresy budujemy ze zeslugowanego nicku (`/gracz/basket`), a polskich znaków nie da się
- * odwrócić w SQL-u. Dlatego dopasowujemy po stronie serwera: kont jest na tyle mało, że
- * jedno zapytanie o nicki jest tańsze niż trzymanie osobnej kolumny ze slugiem.
+ * odwrócić: z „basket" nie wynika, czy w bazie stoi „Basket" czy „Bąsket". Slug jest więc
+ * kolumną liczoną przez bazę tą samą regułą co `slugifyPlace` i ma indeks
+ * (`migration-slug-profilu.sql`) - wejście na profil to jedno trafienie w indeks.
  *
- * Dzięki temu profil ma też ktoś, kto nie dodał jeszcze żadnego boiska - jego strona
- * istnieje od chwili założenia konta.
+ * Wcześniej ta funkcja ŚCIĄGAŁA WSZYSTKIE NICKI i szukała pasującego w JavaScripcie,
+ * z komentarzem „kont jest na tyle mało". To prawda dokładnie do chwili, w której
+ * przestaje nią być - a wołane jest to dwa razy na wejście: raz dla metadanych strony,
+ * raz dla samej strony.
+ *
+ * Profil ma też ktoś, kto nie dodał jeszcze żadnego boiska - jego strona istnieje od
+ * chwili założenia konta.
  */
 export async function nickZeSlugu(slug: string): Promise<string | null> {
   const supabase = supabasePublic();
   if (!supabase) return null;
 
-  const { data } = await supabase.from("profiles").select("display_name");
-  const nicki = (data ?? []) as { display_name: string | null }[];
+  /*
+    `limit(1)`, nie `maybeSingle()`: dwa różne nicki mogą zeslugować się do tego samego
+    adresu („Basket" i „Bąsket"), a wtedy `maybeSingle` zwróciłoby BŁĄD zamiast wiersza
+    i profil odpowiedziałby 404. Pierwszy z brzegu to to samo, co robił stary przegląd
+    listy - migracja ma zapytanie kontrolne, które takie zbiegi wypisuje.
+  */
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("slug", slug)
+    .limit(1);
 
-  return nicki.find((p) => p.display_name && slugifyPlace(p.display_name) === slug)?.display_name ?? null;
+  if (!error) {
+    return ((data ?? []) as { display_name: string | null }[])[0]?.display_name ?? null;
+  }
+
+  /*
+    ZAPAS NA CZAS PRZED MIGRACJĄ. Zapytanie o nieistniejącą kolumnę wraca błędem, a nie
+    pustką - i to jest ta różnica, po której poznajemy „nie ma kolumny" (wtedy stary
+    przegląd listy) od „nie ma takiego profilu" (wtedy null wyżej). Do usunięcia, gdy
+    kolumna stoi na produkcji.
+  */
+  const { data: wszystkie } = await supabase.from("profiles").select("display_name");
+  const nicki = (wszystkie ?? []) as { display_name: string | null }[];
+
+  return (
+    nicki.find((p) => p.display_name && slugifyPlace(p.display_name) === slug)?.display_name ??
+    null
+  );
 }
 
 /**

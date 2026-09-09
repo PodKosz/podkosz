@@ -339,13 +339,29 @@ export interface Plakietka {
   stopien: number;
 }
 
-/** Avatary z profili, żeby ranking pokazywał twarze, a nie same nicki. */
+/**
+ * Avatary WYMIENIONYCH osób - żeby ranking pokazywał twarze, a nie same nicki.
+ *
+ * Nicki wchodzą listą, a nie „daj wszystkie": wcześniej ta funkcja czytała CAŁĄ tabelę
+ * profili i trzymała ją w pamięci podręcznej. Przy kilkudziesięciu kontach to nic, przy
+ * tysiącach - kilka megabajtów przepisywane co pięć minut po to, żeby wyjąć z nich
+ * dwadzieścia pięć twarzy do rankingu i jedną do podpisu pod opisem boiska.
+ *
+ * Argumenty wchodzą do klucza pamięci podręcznej, więc każdy zestaw nicków ma własny wpis.
+ * Dla karty boiska to jeden nick i jeden wiersz; dla rankingu - dwadzieścia pięć.
+ */
 const fetchAvatary = unstable_cache(
-  async (): Promise<Record<string, string>> => {
+  async (nicki: string[]): Promise<Record<string, string>> => {
+    if (!nicki.length) return {};
+
     const supabase = supabasePublic();
     if (!supabase) return {};
 
-    const { data } = await supabase.from("profiles").select("display_name, avatar_url");
+    const { data } = await supabase
+      .from("profiles")
+      .select("display_name, avatar_url")
+      .in("display_name", nicki);
+
     const out: Record<string, string> = {};
     for (const r of (data ?? []) as { display_name: string | null; avatar_url: string | null }[]) {
       if (r.display_name && r.avatar_url) out[r.display_name] = r.avatar_url;
@@ -353,20 +369,13 @@ const fetchAvatary = unstable_cache(
     return out;
   },
   ["avatary-odkrywcow"],
-  { revalidate: COURTS_TTL }
+  { revalidate: COURTS_TTL, tags: [COURTS_TAG] }
 );
 
-/**
- * Avatar jednej osoby, po nicku - pod podpis autora na karcie boiska.
- *
- * Idzie tą samą, jedną zapytaną i zapamiętaną mapą co ranking, zamiast osobnym zapytaniem
- * o jeden wiersz: kart boisk jest tyle, ile boisk, a profili kilkadziesiąt. Jedno zapytanie
- * trzymane w pamięci podręcznej jest tu tańsze niż setka zapytań punktowych - i przy okazji
- * nie dodaje żadnego nowego miejsca, które trzeba unieważniać.
- */
+/** Avatar jednej osoby, po nicku - pod podpis autora na karcie boiska. */
 export async function avatarAutora(nick: string): Promise<string | null> {
   if (czyAutorAnonimowy(nick)) return null;
-  const avatary = await fetchAvatary();
+  const avatary = await fetchAvatary([nick]);
   return avatary[nick] ?? null;
 }
 
@@ -381,15 +390,18 @@ export async function avatarAutora(nick: string): Promise<string | null> {
 const ZE_PLAKIETKAMI = 5;
 
 export async function listRankingOdkrywcow(ile = 25): Promise<OdkrywcaRanking[]> {
-  const [odkrywcy, courts, avatary] = await Promise.all([
-    listContributors(),
-    listCourts(),
-    fetchAvatary(),
-  ]);
+  const [odkrywcy, courts] = await Promise.all([listContributors(), listCourts()]);
 
-  const lista = odkrywcy
-    .filter((o) => !czyAutorAnonimowy(o.name))
-    .slice(0, ile)
+  /*
+    Najpierw kto jest na liście, dopiero potem ich twarze. Kolejność, nie równoległość:
+    zapytanie o avatary musi wiedzieć, o kogo pytać - inaczej wracamy do czytania całej
+    tabeli profili. Jedna podróż więcej w ścieżce, która i tak leci z pamięci podręcznej
+    przez pięć minut.
+  */
+  const wybrani = odkrywcy.filter((o) => !czyAutorAnonimowy(o.name)).slice(0, ile);
+  const avatary = await fetchAvatary(wybrani.map((o) => o.name));
+
+  const lista = wybrani
     .map((o) => {
       /*
         Kadry w konstelacji: bierzemy do czternastu najczęściej podpalanych boisk. Więcej
