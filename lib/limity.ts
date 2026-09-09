@@ -119,7 +119,7 @@ export async function przepustkaWspolna(
   try {
     const { data, error } = await supabase.rpc("przepustka_wspolna", {
       p_kubelek: kubelek,
-      p_ip: klucz,
+      p_klucz: klucz,
       p_ile: ile,
       p_okno_s: oknoS,
     });

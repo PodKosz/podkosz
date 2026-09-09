@@ -20,12 +20,17 @@
 --  dodatkowe zapytanie do bazy na wyszukanie adresu jest tanie; utrata dostępu do
 --  Nominatim nie jest, bo nie da się jej odkupić.
 --
---  DLACZEGO ADRES IP WCHODZI SUROWY
+--  CZYM JEST KLUCZ
 --
---  Tak samo jak w `log_visit_ip` i `puls_obecnosci`: funkcję woła NASZ serwer, więc baza
---  widziałaby adres funkcji, nie odwiedzającego. Skrót liczy się tutaj, z solą, więc
---  w tabeli nie ma ani jednego czytelnego adresu - a wołający nie może celować w kubełek
---  kogoś innego, bo nie zna soli.
+--  Czymkolwiek, co identyfikuje rozliczanego: adresem IP z trasy API albo identyfikatorem
+--  konta z funkcji w bazie. Funkcja nie musi wiedzieć, co dostała - liczy z tego skrót
+--  z solą i tyle. Dzięki temu ten sam licznik obsługuje `/api/geo` (po adresie) i minigrę
+--  (po koncie), zamiast dwóch prawie takich samych mechanizmów.
+--
+--  Adres IP wchodzi surowy, tak samo jak w `log_visit_ip` i `puls_obecnosci`: funkcję woła
+--  NASZ serwer, więc baza widziałaby adres funkcji, nie odwiedzającego. Skrót liczy się
+--  tutaj, więc w tabeli nie ma ani jednego czytelnego adresu - a wołający nie może celować
+--  w kubełek kogoś innego, bo nie zna soli.
 --
 --  OKNO STAŁE, NIE PRZESUWNE
 --
@@ -56,7 +61,7 @@ alter table public.limit_zapytan enable row level security;
  */
 create or replace function public.przepustka_wspolna(
   p_kubelek text,
-  p_ip      text,
+  p_klucz   text,
   p_ile     integer,
   p_okno_s  integer
 )
@@ -66,7 +71,7 @@ security definer
 set search_path = public
 as $$
 declare
-  ip     text := nullif(btrim(coalesce(p_ip, '')), '');
+  kto    text := nullif(btrim(coalesce(p_klucz, '')), '');
   okno_s integer := greatest(1, least(coalesce(p_okno_s, 60), 86400));
   limit_ integer := greatest(1, coalesce(p_ile, 1));
   teraz  bigint := floor(extract(epoch from now()))::bigint;
@@ -75,13 +80,13 @@ declare
   ile_   integer;
 begin
   /* nie da się przypisać żądania do nikogo - lepiej przepuścić niż rozliczać wszystkich razem */
-  if ip is null then
+  if kto is null then
     return 0;
   end if;
 
   nr := teraz / okno_s;
   klucz_ := left(coalesce(p_kubelek, 'x'), 32) || '|' ||
-            md5(ip || '|podkosz-limit-v1') || '|' || nr::text;
+            md5(kto || '|podkosz-limit-v1') || '|' || nr::text;
 
   /*
     Sprzątanie przy okazji, nie osobnym zadaniem: tabela rośnie tylko o wiersze z okien,

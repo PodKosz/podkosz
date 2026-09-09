@@ -29,6 +29,15 @@ import { TloBoiska } from "./TlaBoisk";
  * kolumna. Ranking jest tu rzeczą, po którą się sięga między seriami - nie tłem do gry.
  */
 
+/**
+ * Jak rzadko wolno pobrać tabelę wyników „na wszelki wypadek".
+ *
+ * Piętnaście sekund to kompromis między „tabela żyje" a „tabela nie jest pobierana po
+ * każdym pudle". Wynik, który do niej wchodzi, i tak pobiera ją natychmiast - ten odstęp
+ * dotyczy wyłącznie przypadku, w którym pobieramy ją dlatego, że KTOŚ INNY mógł coś zdobyć.
+ */
+const ODSTEP_RANKINGU_MS = 15_000;
+
 export interface WpisRankingu {
   nick: string;
   avatar: string | null;
@@ -113,6 +122,17 @@ export function EkranGry({
     je raz i trzymałaby w domknięciu liczbę z pierwszego rysowania.
   */
   const progRef = useRef(0);
+
+  /*
+    Najsłabszy wynik widoczny w tabeli - próg, poniżej którego nowy wynik na pewno niczego
+    w niej nie zmienia. Zero, dopóki tabela nie jest pełna: wtedy wchodzi do niej każdy
+    wynik i pobranie ma sens za każdym razem.
+  */
+  const progRankinguRef = useRef(0);
+  const ostatnieOdswiezenieRef = useRef(0);
+  useEffect(() => {
+    progRankinguRef.current = lista.length >= 20 ? (lista[lista.length - 1]?.seria ?? 0) : 0;
+  }, [lista]);
   useEffect(() => {
     if (seria === 0) progRef.current = Math.max(rekord, liderSeria);
   }, [seria, rekord, liderSeria]);
@@ -141,9 +161,33 @@ export function EkranGry({
     };
   }, [miejsce.id, sesja?.user]);
 
+  /*
+    ODŚWIEŻANIE TABELI WYNIKÓW MA HAMULEC.
+
+    Runda w rzutach kończy się przy KAŻDYM pudle, a pudło zdarza się co kilka sekund.
+    Bez hamulca każde z nich pobierało dwadzieścia wierszy tabeli - przy stu grających
+    to kilkadziesiąt zapytań na sekundę o listę, która w większości przypadków nie mogła
+    się zmienić.
+
+    Dwa warunki, wystarczy jeden:
+
+      - wynik WCHODZI DO TABELI, czyli bije najsłabszy widoczny wpis (albo tabela nie jest
+        jeszcze pełna). Wtedy lista na pewno wygląda inaczej i trzeba ją pobrać;
+      - minęło `ODSTEP_RANKINGU_MS` od ostatniego pobrania. To jest ten drugi powód, dla
+        którego lista się zmienia: ktoś inny właśnie coś zdobył. Nie wiadomo o tym z
+        niczego, co mamy pod ręką, więc po prostu co jakiś czas patrzymy.
+
+    Rekord własny rośnie NIEZALEŻNIE od tego - to jedna liczba w pamięci przeglądarki,
+    nie ma powodu, żeby czekała na sieć.
+  */
   const odswiez = useCallback(
     async (wynik: number) => {
       setRekord((r) => Math.max(r, wynik));
+
+      const teraz = Date.now();
+      const wchodzi = wynik > progRankinguRef.current;
+      if (!wchodzi && teraz - ostatnieOdswiezenieRef.current < ODSTEP_RANKINGU_MS) return;
+      ostatnieOdswiezenieRef.current = teraz;
 
       const supabase = await supabaseBrowser();
       if (!supabase) return;
