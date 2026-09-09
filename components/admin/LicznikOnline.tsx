@@ -7,12 +7,15 @@ import { plural } from "@/lib/site";
 /**
  * Ilu ludzi jest na stronie w tej chwili - tylko dla administratora.
  *
- * Liczba bierze się z pulsu: każda otwarta i widoczna karta odzywa się co czterdzieści
- * pięć sekund, a baza liczy tych, którzy odezwali się w ostatnich dwóch minutach. To nie
+ * Liczba bierze się z pulsu: każda otwarta i widoczna karta odzywa się co dwie i pół
+ * minuty, a baza liczy tych, którzy odezwali się w ostatnich pięciu minutach. To nie
  * to samo, co licznik wizyt - ten mówi „ilu było dziś", a ten „ilu patrzy teraz".
  *
- * Odpytujemy co piętnaście sekund. Częściej nie ma sensu, bo sam puls idzie rzadziej,
- * a rzadziej - licznik przestaje być „live".
+ * Odpytujemy co minutę. Wcześniej co piętnaście sekund, kiedy i puls był czterokrotnie
+ * częstszy; przy pulsie raz na 150 s cztery zapytania na minutę oddawały cztery razy tę
+ * samą liczbę. To jedyne miejsce, gdzie ta funkcja jest wołana, i chodzi tylko wtedy, gdy
+ * administrator ma otwarty panel - ale sprzątanie starych wierszy siedzi w tej samej
+ * funkcji, więc niech nie chodzi bez potrzeby.
  */
 async function pobierz(): Promise<number | null> {
   const supabase = await supabaseBrowser();
@@ -34,7 +37,7 @@ export function LicznikOnline() {
     };
 
     void odswiez();
-    const zegar = window.setInterval(() => void odswiez(), 15_000);
+    const zegar = window.setInterval(() => void odswiez(), 60_000);
 
     return () => {
       aktualne = false;

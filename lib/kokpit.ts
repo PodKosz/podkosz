@@ -114,7 +114,7 @@ export function usePanelGlowny() {
     /*
       Odświeżamy co pół minuty. Kokpit zostaje otwarty na drugim monitorze i ma pokazywać
       stan „teraz", a nie sprzed godziny - ale częściej nie ma sensu, bo licznik obecnych
-      i tak zmienia się co dwie minuty.
+      i tak zmienia się co pięć minut.
     */
     const zegar = window.setInterval(() => void cykl(), 30_000);
     return () => {
