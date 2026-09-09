@@ -3,6 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import { adresKlienta } from "@/lib/adres-ip";
 import { przepustka } from "@/lib/limity";
 import { SUPABASE_ANON_KEY, SUPABASE_URL, supabaseEnabled } from "@/lib/supabase/config";
+import { maCiasteczkoSesji, tozsamosc } from "@/lib/supabase/tozsamosc";
 import {
   PAMIEC_IP_WOLNY,
   PAMIEC_IP_ZBANOWANY,
@@ -153,10 +154,19 @@ export async function proxy(request: NextRequest) {
       },
     });
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    idUzytkownika = user?.id ?? null;
+    /*
+      Tożsamość z podpisu tokenu, nie z pytania serwera Auth - opis w `lib/supabase/tozsamosc.ts`.
+      Wcześniej stało tu `auth.getUser()`, czyli podróż po sieci na KAŻDYM żądaniu, które
+      nie jest plikiem statycznym; przy pobieraniach z wyprzedzeniem to kilkanaście podróży
+      na minutę od jednej osoby klikającej po mapie.
+
+      Bez ciasteczka sesji nie pytamy nawet o to: nie ma czego weryfikować, a anonimowy
+      ruch to większość ruchu.
+    */
+    if (maCiasteczkoSesji(request.cookies.getAll())) {
+      const kto = await tozsamosc(supabase);
+      idUzytkownika = kto?.id ?? null;
+    }
     klient = supabase;
   }
 
