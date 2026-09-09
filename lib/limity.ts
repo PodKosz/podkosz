@@ -24,6 +24,8 @@
  * jest N razy luźniejszy, więc ustawiam go tak, żeby N-krotność wciąż była nieszkodliwa.
  */
 
+import { supabasePublic } from "./supabase/publiczny";
+
 interface Kubelek {
   /** numer okna czasowego */
   okno: number;
@@ -81,6 +83,54 @@ export function przepustka(
   }
 
   return { ok: true, poczekaj: 0 };
+}
+
+/**
+ * Limit WSPÓLNY dla wszystkich instancji - licznik stoi w bazie.
+ *
+ * Limit z pamięci wyżej ma wadę, której nie da się z niego usunąć: im większy ruch, tym
+ * więcej instancji trzyma Vercel, tym luźniejszy limit. Przy jednej instancji trzydzieści
+ * zapytań na minutę, przy dziesięciu - trzysta.
+ *
+ * Dla większości tras to akceptowalne, bo koszt przekroczenia ponosimy my i jest
+ * policzalny. Jest jedna trasa, gdzie koszt ponosi ktoś inny: `/api/geo` pośredniczy do
+ * Nominatim, a regulamin OSM liczy zapytania NA ŹRÓDŁO - źródłem jesteśmy my, jednym
+ * adresem IP. Za przekroczenie Nominatim blokuje po adresie, bez ostrzeżenia i bez
+ * terminu. Tego nie da się odkupić, więc tam limit musi znać wszystkie instancje naraz.
+ *
+ * ------------------------------------------------------------------ przepuszcza po awarii
+ *
+ * Gdy baza nie odpowie, funkcja mówi „wolno". Odwrotna decyzja zamieniłaby chwilową
+ * niedostępność bazy w niedostępność wyszukiwarki adresów - a limit z pamięci i tak
+ * stoi obok i łapie najgorszy przypadek. Zapora, która przy własnej awarii zamyka drzwi
+ * na klucz, jest gorsza od tej, która ich wtedy nie pilnuje.
+ */
+export async function przepustkaWspolna(
+  kubelek: string,
+  klucz: string | null,
+  ile: number,
+  oknoS: number
+): Promise<Przepustka> {
+  if (!klucz) return { ok: true, poczekaj: 0 };
+
+  const supabase = supabasePublic();
+  if (!supabase) return { ok: true, poczekaj: 0 };
+
+  try {
+    const { data, error } = await supabase.rpc("przepustka_wspolna", {
+      p_kubelek: kubelek,
+      p_ip: klucz,
+      p_ile: ile,
+      p_okno_s: oknoS,
+    });
+
+    /* brak funkcji (migracja nie puszczona) wygląda jak każdy inny błąd - przepuszczamy */
+    if (error || typeof data !== "number") return { ok: true, poczekaj: 0 };
+
+    return data > 0 ? { ok: false, poczekaj: data } : { ok: true, poczekaj: 0 };
+  } catch {
+    return { ok: true, poczekaj: 0 };
+  }
 }
 
 /** Odpowiedź na przekroczony limit - z nagłówkiem, po którym klient wie, kiedy wrócić. */

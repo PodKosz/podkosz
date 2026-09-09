@@ -1,5 +1,5 @@
 import { adresKlienta } from "@/lib/adres-ip";
-import { przepustka, zaDuzo } from "@/lib/limity";
+import { przepustka, przepustkaWspolna, zaDuzo } from "@/lib/limity";
 import { SITE_URL } from "@/lib/site";
 
 /**
@@ -93,6 +93,21 @@ export async function GET(request: Request) {
   const ip = adresKlienta(request.headers);
   const przepust = przepustka("geo", ip, 30, 60);
   if (!przepust.ok) return zaDuzo(przepust.poczekaj, "Za dużo zapytań o adresy.");
+
+  /*
+    DRUGI LIMIT, TEN SAM PRÓG, ALE WSPÓLNY DLA WSZYSTKICH INSTANCJI.
+
+    Limit wyżej żyje w pamięci jednej instancji, a Vercel trzyma ich kilka - więc realnie
+    przepuszczał trzydzieści zapytań na minutę RAZY liczba instancji. Dla nas to byłby
+    tylko rachunek, ale zapytania idą dalej do Nominatim, a ten liczy je na źródło i za
+    przekroczenie blokuje nasz adres IP bez ostrzeżenia i bez terminu.
+
+    Kolejność jest celowa: najpierw pamięć (darmowa, odsiewa pętlę), potem baza (jedno
+    zapytanie, ale wiążące). Odwrotnie każde odrzucone żądanie kosztowałoby podróż
+    do bazy. Gdy baza nie odpowie, przepuszczamy - patrz nota przy `przepustkaWspolna`.
+  */
+  const wspolny = await przepustkaWspolna("geo", ip, 30, 60);
+  if (!wspolny.ok) return zaDuzo(wspolny.poczekaj, "Za dużo zapytań o adresy.");
 
   const cel = new URL(`https://nominatim.openstreetmap.org/${tryb}`);
   cel.searchParams.set("format", "jsonv2");

@@ -56,9 +56,20 @@ z 429; przy 300 czterysta żądań w 63 sekundy przechodzi - i tak ma być, to z
 człowieka.
 
 **Co zostaje otwarte:** licznik żyje w pamięci **jednej** instancji funkcji, a Vercel trzyma
-ich kilka naraz, więc realny limit jest kilka razy luźniejszy. To warstwa przeciw jednemu
-źródłu w pętli, nie zapora. Prawdziwy limit ruchu włącza się w panelu Vercela
-(Firewall → Rate Limiting) i tam warto go dołożyć na `/api/*`.
+ich kilka naraz, więc realny limit jest kilka razy luźniejszy - i to w przewrotny sposób:
+**im większy ruch, tym więcej instancji, tym słabsza zapora**. Rozpuszcza się dokładnie
+wtedy, gdy zaczyna być potrzebna. To warstwa przeciw jednemu źródłu w pętli, nie zapora.
+
+Od tego jest wyjątek: `/api/geo` ma **drugi limit, wspólny dla wszystkich instancji**
+(`przepustka_wspolna` w bazie, `migration-limit-wspolny.sql`) - bo tam koszt przekroczenia
+ponosi nie nasz rachunek, tylko nasza reputacja w OSM (punkt 4). Kolejność jest celowa:
+najpierw pamięć, bo darmowa, potem baza, bo wiążąca. Gdy baza nie odpowie, przepuszczamy -
+zapora, która przy własnej awarii zamyka drzwi na klucz, jest gorsza od tej, która ich
+wtedy nie pilnuje.
+
+Prawdziwy limit ruchu włącza się w panelu Vercela (Firewall → Rate Limiting) i tam wciąż
+warto go dołożyć na `/api/*` - to jedyna warstwa, która odsiewa żądanie, **zanim** uruchomi
+naszą funkcję.
 
 ---
 
@@ -86,6 +97,12 @@ dziura w całym serwisie: jedna linijka w bashu.
 
 **Co stoi:** kolejka ma sufit 2,5 s. Kto trafi na zatłoczoną, dostaje 429 z nagłówkiem
 `Retry-After` - odmowa w ćwierć sekundy jest zawsze lepsza niż odpowiedź po dwóch minutach.
+Do tego **limit wspólny dla wszystkich instancji**: trzydzieści zapytań na minutę z adresu,
+liczone w bazie, nie w pamięci procesu. Ten jeden raz to konieczne, bo limit z pamięci
+mnoży się przez liczbę instancji, a Nominatim liczy zapytania **na źródło** - źródłem jest
+jeden adres IP naszych funkcji. Za przekroczenie blokuje ten adres bez ostrzeżenia i bez
+terminu: pewnego dnia wyszukiwarka adresów w kreatorze przestaje zwracać cokolwiek, i nie
+ma tego jak odkupić.
 
 **Sprawdzone:** osiem równoległych żądań z jednego adresu - cztery odrzucone natychmiast,
 cztery obsłużone. Bez sufitu ostatnie czekałoby osiem sekund.
