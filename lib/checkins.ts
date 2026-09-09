@@ -47,6 +47,48 @@ export async function fetchOsoby(courtId: string): Promise<number> {
   return typeof data === "number" ? data : 0;
 }
 
+/**
+ * Cały panel deklaracji jednym zapytaniem.
+ *
+ * Wcześniej karta boiska dociągała to czterema osobnymi wywołaniami - godziny, liczba
+ * osób, moje godziny i powód blokady. Cztery pełne żądania przez PostgREST na jedno
+ * wejście na stronę, przy stronie, która sama leci z pamięci podręcznej. Przy kilkuset
+ * osobach czytających karty boisk to kilkaset zapytań na sekundę o coś, co mieści się
+ * w jednym (`checkin_panel`, migracja `migration-checkin-panel.sql`).
+ *
+ * `null` znaczy „nie udało się" - wtedy komponent spada na cztery stare wywołania. Ta
+ * ścieżka istnieje na czas między wydaniem kodu i uruchomieniem migracji; bez niej panel
+ * byłby w tym okienku pusty na wszystkich boiskach.
+ */
+export interface PanelDeklaracji {
+  slots: CheckinSlot[];
+  osoby: number;
+  moje: number[];
+  blokada: string | null;
+}
+
+export async function fetchPanel(courtId: string): Promise<PanelDeklaracji | null> {
+  const supabase = await supabaseBrowser();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase.rpc("checkin_panel", { in_court: courtId });
+  if (error || !data || typeof data !== "object") return null;
+
+  const w = data as {
+    godziny?: { hour: number; people: number }[];
+    osoby?: number;
+    moje?: number[];
+    blokada?: string | null;
+  };
+
+  return {
+    slots: (w.godziny ?? []).map((r) => ({ hour: r.hour, people: r.people })),
+    osoby: typeof w.osoby === "number" ? w.osoby : 0,
+    moje: w.moje ?? [],
+    blokada: typeof w.blokada === "string" && w.blokada ? w.blokada : null,
+  };
+}
+
 /** Godziny, na które zalogowany użytkownik zapisał się dziś na to boisko. */
 export async function fetchMyHours(courtId: string): Promise<number[]> {
   const supabase = await supabaseBrowser();

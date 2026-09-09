@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   CheckinSlot,
+  PanelDeklaracji,
   cancelToday,
   declareToday,
   fetchBlokada,
   fetchCheckins,
   fetchMyHours,
   fetchOsoby,
+  fetchPanel,
   opisGodzin,
 } from "@/lib/checkins";
 import { supabaseEnabled } from "@/lib/supabase/config";
@@ -45,45 +47,62 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
   /** dlaczego dziś nie da się tu zapisać (dwa boiska dziennie, jedno województwo) */
   const [blokada, setBlokada] = useState<string | null>(null);
 
+  /*
+    JEDNO ZAPYTANIE NA CAŁY PANEL.
+
+    Wcześniej były cztery - godziny, liczba osób, moje godziny, powód blokady - i to na
+    stronie, która sama leci z pamięci podręcznej. Cztery pełne żądania przez PostgREST
+    na każde wejście na kartę boiska; przy kilkuset osobach czytających karty to kilkaset
+    zapytań na sekundę o coś, co mieści się w jednym (`fetchPanel`).
+
+    Cztery stare wywołania zostają jako ścieżka zapasowa na czas między wydaniem kodu
+    i uruchomieniem migracji - bez niej panel byłby w tym okienku pusty na wszystkich
+    boiskach.
+
+    `pobierz` NICZEGO nie ustawia w stanie - oddaje dane, a przypisanie robi wołający.
+    To nie jest upodobanie do czystych funkcji: setState wywołany (choćby pośrednio)
+    w ciele efektu wywołuje kaskadę renderów i linter tego pilnuje. Tak setState siedzi
+    w `.then`, gdzie jego miejsce.
+  */
+  const pobierz = useCallback(async (): Promise<PanelDeklaracji> => {
+    const panel = await fetchPanel(courtId).catch(() => null);
+    if (panel) return panel;
+
+    const [slots, ilu] = await Promise.all([
+      fetchCheckins(courtId).catch(() => [] as CheckinSlot[]),
+      fetchOsoby(courtId).catch(() => 0),
+    ]);
+    if (!signedIn) return { slots, osoby: ilu, moje: [], blokada: null };
+
+    const [moje, powod] = await Promise.all([
+      fetchMyHours(courtId).catch(() => [] as number[]),
+      fetchBlokada(courtId).catch(() => null),
+    ]);
+    return { slots, osoby: ilu, moje, blokada: powod };
+  }, [courtId, signedIn]);
+
+  const przypisz = useCallback((p: PanelDeklaracji) => {
+    setSlots(p.slots);
+    setOsoby(p.osoby);
+    setMine(p.moje);
+    setBlokada(p.blokada);
+  }, []);
+
   const reload = () => {
-    void fetchCheckins(courtId).then(setSlots);
-    void fetchOsoby(courtId).then(setOsoby);
-    if (signedIn) {
-      void fetchMyHours(courtId).then(setMine);
-      void fetchBlokada(courtId).then(setBlokada);
-    }
+    void pobierz().then(przypisz).catch(() => undefined);
   };
 
   useEffect(() => {
     let alive = true;
-    // setState tylko w callbackach obietnic - synchroniczny setState w efekcie
-    // wywołuje kaskadę renderów
-    fetchCheckins(courtId)
-      .then((list) => {
-        if (alive) setSlots(list);
+    pobierz()
+      .then((p) => {
+        if (alive) przypisz(p);
       })
       .catch(() => undefined);
-    fetchOsoby(courtId)
-      .then((n) => {
-        if (alive) setOsoby(n);
-      })
-      .catch(() => undefined);
-    if (signedIn) {
-      fetchMyHours(courtId)
-        .then((hours) => {
-          if (alive) setMine(hours);
-        })
-        .catch(() => undefined);
-      fetchBlokada(courtId)
-        .then((powod) => {
-          if (alive) setBlokada(powod);
-        })
-        .catch(() => undefined);
-    }
     return () => {
       alive = false;
     };
-  }, [courtId, signedIn]);
+  }, [pobierz, przypisz]);
 
   const zapisz = async (start: number, koniec = start) => {
     if (!(await wymagaj("zadeklarować, że dziś tu zagrasz"))) return;
