@@ -56,14 +56,39 @@ export const SCENE_LABEL: Record<WeatherScene, string> = {
 
 const API = "https://api.open-meteo.com/v1/forecast";
 
+/**
+ * Do ilu miejsc po przecinku zaokrąglamy punkt, o który pytamy.
+ *
+ * ------------------------------------------------------------------ dlaczego to ważne
+ *
+ * Adres zapytania jest kluczem pamięci podręcznej. Przy trzech miejscach po przecinku
+ * (110 m) KAŻDE boisko ma własny wpis, czyli własne 48 zapytań na dobę. Darmowy limit
+ * open-meteo to 10 tysięcy zapytań dziennie: przy 28 boiskach jest 1,3 tysiąca, przy 300
+ * już 14 tysięcy - czyli za limitem. A awaria byłaby cicha, bo `if (!res.ok) return []`
+ * sprawia, że sekcja pogody po prostu znika i nikt nie wie dlaczego.
+ *
+ * Jedno miejsce po przecinku to około 11 km. Wszystkie boiska w mieście dzielą wtedy
+ * jedno zapytanie i z czternastu tysięcy robi się kilkaset - a różnica w prognozie
+ * między dwoma boiskami w tym samym mieście nie istnieje: temperatura i opady liczą się
+ * z siatki modelu o oczku kilku kilometrów, więc dla obu punktów wychodzą z tej samej
+ * komórki niezależnie od tego, o co spytamy.
+ */
+const MIEJSC_PO_PRZECINKU = 1;
+
 export async function fetchWeather(lat: number, lng: number): Promise<WeatherHour[]> {
   const url =
-    `${API}?latitude=${lat.toFixed(3)}&longitude=${lng.toFixed(3)}` +
+    `${API}?latitude=${lat.toFixed(MIEJSC_PO_PRZECINKU)}` +
+    `&longitude=${lng.toFixed(MIEJSC_PO_PRZECINKU)}` +
     "&hourly=temperature_2m,precipitation,wind_speed_10m,weather_code,is_day" +
     "&timezone=Europe%2FWarsaw&forecast_days=1";
 
   try {
-    const res = await fetch(url, { next: { revalidate: 1800 } });
+    /*
+      Godzina, nie pół. Prognoza jest godzinowa, więc częstsze pytanie nie przynosi nowej
+      informacji - a strona boiska i tak przebudowuje się co pół godziny, czyli co drugie
+      przebudowanie bierze prognozę z pamięci.
+    */
+    const res = await fetch(url, { next: { revalidate: 3600 } });
     if (!res.ok) return [];
 
     const data = (await res.json()) as {
