@@ -48,7 +48,23 @@ async function dataUrlToBlob(dataUrl: string) {
   return (await fetch(dataUrl)).blob();
 }
 
-export async function submitCourt(input: NewSubmission): Promise<void> {
+/**
+ * Ile zdjęć wysyłamy naraz.
+ *
+ * Wcześniej szły jedno po drugim. Dziewięć plików po jakieś 400 kB przez LTE na boisku to
+ * kilkadziesiąt sekund, przez które wystarczy wejść pod wiadukt. Trzy naraz skracają to
+ * około trzykrotnie; więcej nie ma sensu, bo łącze w telefonie i tak jest wąskim gardłem,
+ * a każdy równoległy plik zabiera pamięć na własny bufor.
+ */
+const ROWNOLEGLE = 3;
+
+export interface WynikZgloszenia {
+  /** ile zdjęć naprawdę doszło i zostało podpiętych */
+  wyslane: number;
+  wszystkich: number;
+}
+
+export async function submitCourt(input: NewSubmission): Promise<WynikZgloszenia> {
   const supabase = await supabaseBrowser();
 
   if (!supabase) {
@@ -74,7 +90,7 @@ export async function submitCourt(input: NewSubmission): Promise<void> {
       hours: input.hours,
       notes: input.notes,
     });
-    return;
+    return { wyslane: input.photos.length, wszystkich: input.photos.length };
   }
 
   const {
@@ -135,21 +151,62 @@ export async function submitCourt(input: NewSubmission): Promise<void> {
     throw new Error(`Nie udało się zapisać zgłoszenia: ${error.message}`);
   }
 
-  const rows: { submission_id: string; kind: PhotoKind; storage_path: string; sort: number }[] = [];
-  for (const [i, photo] of input.photos.entries()) {
+  /*
+    ZDJĘCIA WYSYŁAMY RÓWNOLEGLE I PODPINAMY POJEDYNCZO.
+
+    Wcześniej szły jedno po drugim, a wiersze `submission_photos` dopisywały się DOPIERO
+    NA KOŃCU, wszystkie naraz. Zerwane połączenie przy siódmym z dziewięciu zdjęć zostawiało
+    więc: zgłoszenie w bazie BEZ ANI JEDNEGO ZDJĘCIA, sześć plików-sierot w Storage
+    i człowieka z komunikatem błędu, który klika „wyślij" jeszcze raz - czyli drugie
+    zgłoszenie i kolejne sześć plików. Przy dodawaniu boisk z telefonu, na boisku, to nie
+    jest brzeg możliwości, tylko codzienność.
+
+    Teraz każde zdjęcie podpina się zaraz po wgraniu, więc to, co doszło, jest już częścią
+    zgłoszenia. Reszta idzie dalej niezależnie: awaria jednego pliku nie przerywa pozostałych.
+
+    NIE RZUCAMY BŁĘDU, gdy część zdjęć nie doszła - i to jest tu najważniejsza decyzja.
+    Zgłoszenie JEST zapisane, a błąd na ekranie znaczy dla człowieka „nie wyszło, wyślij
+    jeszcze raz", czyli prowadzi wprost do duplikatu. Zamiast tego oddajemy liczby, a
+    kreator mówi na ekranie końcowym, ile zdjęć doszło.
+  */
+  const kolejka = input.photos.map((photo, i) => ({ photo, i }));
+  let wyslane = 0;
+
+  const wyslijJedno = async ({ photo, i }: { photo: NewSubmission["photos"][number]; i: number }) => {
     const path = `zgloszenia/${id}/${i + 1}-${slugify(photo.kind)}.jpg`;
     const blob = await dataUrlToBlob(photo.dataUrl);
+
+    /* `upsert` już tu było i teraz zarabia na siebie: ponowna próba nadpisuje ten sam plik */
     const up = await supabase.storage
       .from("court-photos")
       .upload(path, blob, { contentType: "image/jpeg", upsert: true });
-    if (up.error) throw new Error(`Nie udało się wgrać zdjęcia: ${up.error.message}`);
-    rows.push({ submission_id: id, kind: photo.kind, storage_path: path, sort: i });
-  }
+    if (up.error) throw new Error(up.error.message);
 
-  if (rows.length) {
-    const { error: photoError } = await supabase.from("submission_photos").insert(rows);
-    if (photoError) throw new Error(`Zdjęcia nie zostały podpięte: ${photoError.message}`);
-  }
+    const { error: photoError } = await supabase
+      .from("submission_photos")
+      .insert({ submission_id: id, kind: photo.kind, storage_path: path, sort: i });
+    if (photoError) throw new Error(photoError.message);
+
+    wyslane += 1;
+  };
+
+  const robotnik = async () => {
+    for (;;) {
+      const zadanie = kolejka.shift();
+      if (!zadanie) return;
+      try {
+        await wyslijJedno(zadanie);
+      } catch {
+        /* jedno zdjęcie mniej nie unieważnia zgłoszenia - liczby oddajemy niżej */
+      }
+    }
+  };
+
+  await Promise.all(
+    Array.from({ length: Math.min(ROWNOLEGLE, input.photos.length) }, () => robotnik())
+  );
+
+  return { wyslane, wszystkich: input.photos.length };
 }
 
 /* ------------------------------------------------------------------ */

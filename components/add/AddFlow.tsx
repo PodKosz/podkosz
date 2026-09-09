@@ -42,6 +42,10 @@ export function AddFlow({ user, admin = false }: { user: AddFlowUser; admin?: bo
   const [stage, setStage] = useState<Stage>("intro");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  /** ile zdjęć naprawdę doszło - ekran końcowy mówi o tym, gdy któregoś zabrakło */
+  const [wyslaneZdjecia, setWyslaneZdjecia] = useState<{ wyslane: number; wszystkich: number } | null>(
+    null
+  );
   /** kadr, który użytkownik właśnie robi; null = ekran przeglądu zdjęć */
   const [shotKind, setShotKind] = useState<PhotoKind | null>(REQUIRED_PHOTO_STEPS[0].kind);
   const [photos, setPhotos] = useState<Partial<Record<PhotoKind, string>>>({});
@@ -240,7 +244,7 @@ export function AddFlow({ user, admin = false }: { user: AddFlowUser; admin?: bo
     setSending(true);
     setSendError(null);
     try {
-      await submitCourt({
+      const wynik = await submitCourt({
         photos: PHOTO_STEPS.filter((s) => photos[s.kind]).map((s) => ({
           kind: s.kind,
           dataUrl: photos[s.kind]!,
@@ -272,6 +276,7 @@ export function AddFlow({ user, admin = false }: { user: AddFlowUser; admin?: bo
           email: user?.email ?? author.email ?? undefined,
         },
       });
+      setWyslaneZdjecia(wynik);
       setStage("done");
     } catch (e) {
       setSendError((e as Error).message);
@@ -939,6 +944,33 @@ export function AddFlow({ user, admin = false }: { user: AddFlowUser; admin?: bo
             Trafiło do kolejki weryfikacji. Sprawdzamy zdjęcia i dane, a po akceptacji pinezka
             pojawia się na mapie - zwykle w ciągu doby.
           </p>
+
+          {/*
+            Gdy część zdjęć nie doszła, mówimy to wprost i od razu prosimy, żeby NIE wysyłać
+            zgłoszenia drugi raz. Bez tego zdania człowiek widzący „wysłane" przy sześciu
+            z dziewięciu kadrów zrobi dokładnie to, co zrobiłby każdy: kliknie jeszcze raz.
+          */}
+          {wyslaneZdjecia && wyslaneZdjecia.wyslane < wyslaneZdjecia.wszystkich && (
+            <p className="mx-auto mt-4 max-w-md rounded-2xl border border-hairline bg-white/6 px-5 py-4 text-[14px] leading-relaxed text-muted">
+              {wyslaneZdjecia.wyslane === 0 ? (
+                <>
+                  Zdjęcia nie doszły - najpewniej zerwało połączenie. Samo zgłoszenie jest
+                  zapisane, więc <b className="text-ink">nie wysyłaj go drugi raz</b>: napisz
+                  do nas przez „O nas”, a dopniemy kadry do tego wpisu.
+                </>
+              ) : (
+                <>
+                  Doszło{" "}
+                  <b className="text-ink">
+                    {wyslaneZdjecia.wyslane} z {wyslaneZdjecia.wszystkich}
+                  </b>{" "}
+                  zdjęć - reszcie przerwało połączenie. Zgłoszenie jest zapisane z tymi, które
+                  weszły, więc <b className="text-ink">nie wysyłaj go drugi raz</b>. Jeśli
+                  brakujące kadry są ważne, napisz do nas przez „O nas”.
+                </>
+              )}
+            </p>
+          )}
           <div className="mt-8 flex justify-center gap-3">
             <Link
               href="/"
