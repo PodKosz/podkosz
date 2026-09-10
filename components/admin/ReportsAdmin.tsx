@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { REASON_LABEL, useReports } from "@/lib/reports";
 import { PinIcon } from "../icons";
+import { PunktyOsmAdmin } from "./PunktyOsmAdmin";
 
 type Sort = "count" | "newest";
 
@@ -156,6 +157,13 @@ export function ReportsAdmin() {
           </article>
         ))}
       </div>
+
+      {/*
+        Ta sama praca, inny rodzaj miejsca: przy boisku ktoś mówi „dane się nie zgadzają",
+        przy szarej pinezce - „tego boiska tu nie ma". Sekcja milczy, dopóki nie ma żadnego
+        zgłoszenia, więc na co dzień nie zajmuje miejsca.
+      */}
+      <PunktyOsmAdmin />
     </div>
   );
 }
