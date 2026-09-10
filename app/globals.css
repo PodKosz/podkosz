@@ -2245,6 +2245,54 @@ select option {
   will-change: transform;
 }
 
+/* ------------------------------------------------------------------ nieodkryte boiska
+
+  Szara pinezka to miejsce, w którym według OpenStreetMap stoi boisko, a u nas jeszcze go
+  nie ma. Cały jej wygląd mówi jedno zdanie: „to jeszcze nie istnieje".
+
+  Barwy z motywu (`--rgb-szyba`, `--rgb-plyta`), nie stały grafit: serwis ma motywy jasne
+  i ciemne, a stały szary byłby raz niewidoczny, raz krzyczący. Tak w każdym motywie
+  pinezka jest przygaszoną wersją tego, co pod spodem.
+
+  Kreska PRZERYWANA jest tu głównym nośnikiem znaczenia - kształt jest zarysowany, a nie
+  wypełniony. Do tego zero poświaty i zero płomienia: te należą się boiskom, na których
+  ktoś już był.
+*/
+.punkt-osm {
+  cursor: pointer;
+  will-change: transform;
+}
+
+.punkt-osm-korpus {
+  transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.punkt-osm:hover .punkt-osm-korpus {
+  transform: translateY(-2px) scale(1.08);
+}
+
+.punkt-osm-kula {
+  /* `currentColor` maluje kreskę piłki w środku - stąd kolor, a nie samo tło */
+  color: rgb(var(--rgb-szyba) / 0.5);
+  background: rgb(var(--rgb-plyta) / 0.72);
+  border: 1.5px dashed rgb(var(--rgb-szyba) / 0.34);
+}
+
+/* pod kursorem punkt się rozgrzewa - zapowiedź tego, czym się stanie po odkryciu */
+.punkt-osm:hover .punkt-osm-kula {
+  color: rgb(var(--rgb-glow) / 0.85);
+  border-color: rgb(var(--rgb-glow) / 0.55);
+  border-style: solid;
+}
+
+.punkt-osm-nozka {
+  background: linear-gradient(180deg, rgb(var(--rgb-szyba) / 0.36), transparent);
+}
+
+.punkt-osm-kropka {
+  background: rgb(var(--rgb-szyba) / 0.3);
+}
+
 /*
   Poświata pod kulą przy najechaniu i na pinezce aktywnej idzie w kolorze samej pinezki -
   trójkę RGB podaje marker w zmiennej `--cien`. Wcześniej stał tu wpisany na sztywno

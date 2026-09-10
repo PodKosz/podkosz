@@ -203,6 +203,12 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
     [router]
   );
 
+  /* szara pinezka: miejsce, w którym boiska jeszcze nie ma - prowadzi na jego małą stronę */
+  const onSelectPunkt = useCallback(
+    (osmId: string) => router.push(`/nieodkryte/${osmId}`),
+    [router]
+  );
+
   const toggleLeads = useCallback(async () => {
     if (showLeads) {
       setShowLeads(false);
@@ -242,6 +248,7 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
         highlightVoivodeship={filters.voivodeship}
         onHoverCourt={setActiveId}
         onSelectCourt={onSelect}
+        onSelectPunkt={onSelectPunkt}
         leads={showLeads ? leads ?? [] : []}
         onSelectLead={setActiveLead}
         registerClearCard={registerClearCard}

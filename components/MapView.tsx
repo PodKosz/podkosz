@@ -15,6 +15,7 @@ import { FiltrSzkla } from "./FiltrSzkla";
 import { czytajWidok, zapiszWidok } from "@/lib/adres";
 import { fetchCheckinyDzisiaj } from "@/lib/checkins";
 import { pobierzWydarzenia, type Wydarzenie } from "@/lib/wydarzenia";
+import { punktyWKadrze, type PunktOsm } from "@/lib/punkty-osm";
 import { MIEJSCA_GRY } from "@/lib/minigra";
 
 /**
@@ -77,6 +78,28 @@ const fitPadding = (width: number) =>
 const CLUSTER_FROM = 300;
 /** Od tego przybliżenia zamiast kropek rysujemy pełne pinezki. */
 const PIN_ZOOM = 11;
+
+/**
+ * Od jakiego przybliżenia widać szare pinezki nieodkrytych boisk.
+ *
+ * Piętnaście to poziom, na którym widać pojedyncze budynki i podwórka - czyli moment,
+ * w którym pytanie „co jest w tej okolicy" zaczyna mieć sens. Na mapie Polski, a nawet
+ * na mapie miasta, tych punktów nie ma i to jest zamierzone: siedem tysięcy szarych
+ * kropek nad krajem zasłoniłoby prawdziwe boiska i zamieniło mapę w szum.
+ *
+ * Pinezki wydarzeń mają wyjątek od progów (patrz `syncPins`), te nie mają żadnego -
+ * nieodkryte boisko to zaproszenie dla kogoś, kto już jest w okolicy.
+ */
+const PRZYBLIZENIE_PUNKTOW = 15;
+
+/**
+ * Ile czekamy po zatrzymaniu mapy, zanim spytamy o punkty.
+ *
+ * Przeciągnięcie mapy palcem to kilkanaście zdarzeń `moveend` pod rząd. Bez tego opóźnienia
+ * każde z nich byłoby osobnym zapytaniem do bazy - a interesuje nas wyłącznie to, gdzie
+ * mapa się w końcu zatrzymała.
+ */
+const ZWLOKA_PUNKTOW_MS = 250;
 /** Górny limit pinezek HTML naraz - powyżej i tak zlewałyby się w plamę. */
 const PIN_LIMIT = 160;
 /** Ile trwa gaśnięcie wizytówki - musi być zgodne z `.karta-mapy-znika` w globals.css. */
@@ -232,6 +255,7 @@ export function MapView({
   highlightVoivodeship,
   onHoverCourt,
   onSelectCourt,
+  onSelectPunkt,
   leads,
   onSelectLead,
   registerClearCard,
@@ -242,6 +266,8 @@ export function MapView({
   highlightVoivodeship: string;
   onHoverCourt: (id: string | null) => void;
   onSelectCourt: (court: MapCourt) => void;
+  /** klik w szarą pinezkę nieodkrytego boiska - prowadzi na jego małą stronę */
+  onSelectPunkt: (osmId: string) => void;
   /** szare punkty z OSM - tylko dla administratora, po włączeniu przycisku */
   leads?: LeadPoint[];
   onSelectLead?: (lead: LeadPoint) => void;
@@ -717,6 +743,94 @@ export function MapView({
       window.clearInterval(zegar);
     };
   }, [oznaczPinezke, courts]);
+
+  /* ---- szare pinezki nieodkrytych boisk ----
+
+     Osobny efekt, osobne pinezki, osobna pamięć. Nie wchodzi w warstwę boisk i nie zna jej
+     stanu: nieodkryty punkt nie ma wizytówki, nie ma zapisów, nie klastruje się i nie ma
+     nic wspólnego z podpaleniami. Wplecenie go w tamten efekt oznaczałoby gałąź „a jeśli to
+     nie jest boisko" w każdym z jego kroków.
+
+     Punkty pobieramy PO KADRZE i dopiero od `PRZYBLIZENIE_PUNKTOW`. Nie ma tu żadnej listy
+     w pamięci przeglądarki - siedem tysięcy punktów nigdy nie jedzie na klienta, jedzie
+     kilkanaście widocznych. */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+
+    let zywy = true;
+    let zwloka: number | undefined;
+    const pinezki = new Map<string, Marker>();
+
+    const wyczysc = () => {
+      for (const m of pinezki.values()) m.remove();
+      pinezki.clear();
+    };
+
+    const narysuj = (punkty: PunktOsm[]) => {
+      const zostaja = new Set(punkty.map((p) => p.id));
+      for (const [id, m] of pinezki) {
+        if (!zostaja.has(id)) {
+          m.remove();
+          pinezki.delete(id);
+        }
+      }
+
+      for (const punkt of punkty) {
+        if (pinezki.has(punkt.id)) continue;
+
+        const el = document.createElement("div");
+        el.className = "punkt-osm";
+        el.innerHTML = markerHtmlNieodkryte();
+        el.title = "Boisko nieodkryte - przyjdź tu i dodaj je do mapy";
+        el.addEventListener("click", (e) => {
+          e.stopPropagation();
+          onSelectPunkt(punkt.id);
+        });
+
+        pinezki.set(
+          punkt.id,
+          new Marker({ element: el, anchor: "bottom" })
+            .setLngLat([punkt.lng, punkt.lat])
+            .addTo(map)
+        );
+      }
+    };
+
+    const odswiez = () => {
+      if (map.getZoom() < PRZYBLIZENIE_PUNKTOW) {
+        wyczysc();
+        return;
+      }
+
+      const b = map.getBounds();
+      void punktyWKadrze({
+        minLat: b.getSouth(),
+        minLng: b.getWest(),
+        maxLat: b.getNorth(),
+        maxLng: b.getEast(),
+      })
+        .then((punkty) => {
+          if (zywy) narysuj(punkty);
+        })
+        .catch(() => undefined);
+    };
+
+    const zaplanuj = () => {
+      window.clearTimeout(zwloka);
+      zwloka = window.setTimeout(odswiez, ZWLOKA_PUNKTOW_MS);
+    };
+
+    zaplanuj();
+    map.on("moveend", zaplanuj);
+
+    return () => {
+      zywy = false;
+      window.clearTimeout(zwloka);
+      map.off("moveend", zaplanuj);
+      wyczysc();
+    };
+  }, [ready, onSelectPunkt]);
 
   /* ---- pinezki i klastry ----
      Przy kilkunastu boiskach każde dostaje własną pinezkę HTML - tak jak dotąd.
@@ -1428,6 +1542,39 @@ let licznikZaru = 0;
 function przyrostekZaru() {
   licznikZaru += 1;
   return String(licznikZaru);
+}
+
+/**
+ * Szara pinezka nieodkrytego boiska.
+ *
+ * Ta sama rodzina kształtów co pinezka boiska - kula, nóżka, kropka - i to jest cały zamysł:
+ * ma być czytelne, że to jest boisko, tylko jeszcze nie nasze. Różnice są celowe i wszystkie
+ * mówią „to jeszcze nie istnieje":
+ *
+ *   - barwa: grafit zamiast ognia, bez ani jednego akcentu koloru,
+ *   - brak poświaty i brak płomienia - one należą się boiskom, na których ktoś już był,
+ *   - kreska przerywana zamiast pełnej kuli: kształt jest zarysowany, nie wypełniony,
+ *   - mniejsza (30 px wobec 38 px), więc obok prawdziwej pinezki nigdy nie wygra spojrzenia.
+ *
+ * Bez `pinezka-korpus`: tamta klasa jest podpięta pod skalowanie od zapisów i od wydarzeń
+ * w arkuszu, a tu nie ma czego skalować.
+ */
+function markerHtmlNieodkryte() {
+  const size = 30;
+  return `
+  <div class="punkt-osm-korpus relative flex flex-col items-center"
+       style="filter: drop-shadow(0 4px 10px rgb(0 0 0 / calc(.5 * var(--moc-cienia, 1))))">
+    <span class="punkt-osm-kula grid place-items-center rounded-full"
+          style="width:${size}px;height:${size}px">
+      <svg viewBox="0 0 24 24" style="width:${size * 0.58}px;height:${size * 0.58}px" fill="none"
+           stroke="currentColor" stroke-width="1.1" stroke-linecap="round">
+        <circle cx="12" cy="12" r="9.2"/><path d="M12 2.8v18.4M2.8 12h18.4"/>
+        <path d="M5.4 5.4c3.9 3.9 3.9 9.3 0 13.2M18.6 5.4c-3.9 3.9-3.9 9.3 0 13.2"/>
+      </svg>
+    </span>
+    <span class="punkt-osm-nozka" style="width:2px;height:8px"></span>
+    <span class="punkt-osm-kropka" style="width:6px;height:3px;border-radius:99px"></span>
+  </div>`;
 }
 
 function markerHtml(court: MapCourt, wydarzenie = false) {

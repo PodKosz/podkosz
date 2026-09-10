@@ -47,3 +47,10 @@ next-env.d.ts
 
 # lokalna konfiguracja narzedzi
 /.claude/
+
+# dane z OpenStreetMap - generowane przez scripts/punkty-osm.mjs
+#
+# Celowo POZA repozytorium. Plik ma 310 kB i jest w całości wyciągiem z bazy OSM na
+# licencji ODbL; trzymanie go w naszym kodzie mieszałoby dwie rzeczy, które mają zostać
+# osobno. Odtwarza się jedną komendą, a jego stan i tak starzeje się z każdym dniem.
+supabase/dane-punkty-osm.sql
