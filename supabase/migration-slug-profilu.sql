@@ -28,9 +28,14 @@
 --
 --  Inaczej adres wygenerowany przez stronę nie znajdzie wiersza w bazie i profil odpowie
 --  404 - czyli awaria widoczna tylko dla kont z polskimi znakami w nicku. Stąd ostatni
---  krok wygląda dziwnie: `^-` i `-$` zdejmują po JEDNYM myślniku z każdej strony, a nie
---  wszystkie, bo dokładnie tyle zdejmuje `.replace(/^-|-$/g, "")` w JavaScripcie.
---  „--Basket--" daje więc „-basket-" po obu stronach - brzydko, ale identycznie.
+--  krok wygląda dziwnie: dwa osobne `regexp_replace` na `^-` i `-$`, zamiast jednego
+--  `trim`. Wynik jest ten sam co w JavaScripcie, bo `.replace(/^-|-$/g, "")` z flagą `g`
+--  zdejmuje oba końce w jednym przejściu, ale nie wchodzi głębiej: przy wielu myślnikach
+--  z rzędu i tak nie ma czego zdejmować, bo poprzedni krok („[^a-z0-9]+") ścisnął je już
+--  do jednego.
+--
+--  Sprawdzone po uruchomieniu na wszystkich kontach w bazie: slug policzony przez SQL jest
+--  co do znaku taki sam jak ten z `slugifyPlace` dla każdego z nich.
 -- =====================================================================
 
 create or replace function public.slug_nicku(nazwa text)
