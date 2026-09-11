@@ -444,6 +444,24 @@ export function MapView({
     pokazKarte({ court: c, x: p.x, y: p.y });
   }, [pokazKarte]);
 
+  /*
+    OSTRZEŻENIE DLA MIERZĄCEGO: w niewidocznej karcie mapa nie pobiera ANI JEDNEGO kafelka.
+
+    MapLibre rysuje na `requestAnimationFrame`, a przeglądarka wstrzymuje rAF w karcie,
+    która jest w tle albo schowana. Mapa powstaje, płótno ma poprawny rozmiar, `styledata`
+    przychodzi - i na tym koniec: skoro nie ma klatki do narysowania, nie ma też pytania,
+    których kafelków do niej potrzeba. Ruch rusza dopiero, gdy karta staje się widoczna.
+
+    To nie jest usterka, tylko poprawne zachowanie przeglądarki - karta w tle nie ma prawa
+    palić cudzego transferu. Zostawiam tę notę, bo kosztowała już dwa fałszywe alarmy:
+    „mapa wstaje 30 sekund" i „szare pinezki nie pojawiają się same". Oba razy stoper
+    mierzył moment, w którym narzędzie zrobiło zrzut ekranu i obudziło kartę, a nie żadną
+    powolność kodu.
+
+    Zmierzone 11 września 2026 na produkcji, przy widocznej karcie: pierwszy kafelek pół
+    sekundy po wejściu, wszystkie sto pięćdziesiąt gotowe pół sekundy później. Kto chce to
+    powtórzyć, musi najpierw sprawdzić `document.visibilityState` - inaczej zmierzy siebie.
+  */
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
