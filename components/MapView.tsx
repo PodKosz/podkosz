@@ -822,21 +822,24 @@ export function MapView({
     };
 
     /*
-      DWA WYZWALACZE, NIE JEDEN - i ten drugi jest tu po znalezionym błędzie.
+      Trzy wyzwalacze: teraz, przy pierwszym spoczynku mapy i przy każdym późniejszym ruchu.
 
-      Samo `moveend` nie wystarcza: kto wchodzi z linku prosto na przybliżony kadr
-      (`/?m=52.2771,21.0533,15.5`), tego mapa nigdzie nie przesuwa, więc `moveend` nie pada
-      ani razu i szare pinezki nie pojawiają się, dopóki człowiek sam nie ruszy mapą.
-      Sprawdzone na produkcji: po wejściu zero pinezek, po jednym przeciągnięciu - dziewięć.
+      `once("idle")` to siatka bezpieczeństwa na wyścig, którego NIE UDAŁO MI SIĘ POTWIERDZIĆ,
+      więc zapisuję uczciwie, czym jest. Efekt startuje, gdy mapa zgłosi gotowość, a odpytanie
+      idzie ćwierć sekundy później. Gdyby w tej ćwierci mapa nie miała jeszcze docelowego
+      przybliżenia, warunek progu odrzuciłby zapytanie i - przy wejściu z gotowym kadrem, gdzie
+      `moveend` nie pada ani razu - nic by go nie ponowiło. `idle` pada, gdy mapa skończy
+      rysować, czyli gdy kadr jest już na pewno ustalony, i zamyka tę dziurę.
 
-      Samo wywołanie przy montowaniu też nie wystarcza, i to jest właśnie ta pułapka, w którą
-      wpadłem: efekt startuje, gdy mapa zgłosi gotowość, ale w tej chwili może jeszcze nie
-      mieć docelowego przybliżenia - a wtedy warunek progu odrzuca zapytanie i nic go już
-      nie ponawia.
+      Skąd podejrzenie: na produkcji zobaczyłem zero pinezek po wejściu i dziewięć po jednym
+      przeciągnięciu. Wyglądało to na brakujący wyzwalacz, ale przyczyna była inna - w tamtym
+      oknie (kanwa 3747 x 1979) pierwsze kafelki mapy poszły dwadzieścia dziewięć sekund po
+      wczytaniu strony, a ja mierzyłem po kilkunastu. Przy dłuższym czekaniu pinezki pojawiają
+      się same, bez dotykania mapy. Wyzwalacz zostaje mimo to: kosztuje jedną linijkę i jedno
+      wywołanie, a broni przed wyścigiem, który jest możliwy nawet jeśli tamtego dnia go nie było.
 
-      `idle` pada, gdy mapa skończy rysować wszystko, co miała - czyli dokładnie wtedy, gdy
-      kadr jest już ustalony. `once`, bo to zdarzenie powtarza się po każdej zmianie i jako
-      stały nasłuch byłoby drugim `moveend`, tylko częstszym.
+      `once`, bo `idle` powtarza się po każdej zmianie i jako stały nasłuch byłby drugim
+      `moveend`, tylko częstszym.
     */
     zaplanuj();
     map.once("idle", zaplanuj);
