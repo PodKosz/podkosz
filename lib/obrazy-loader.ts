@@ -1,4 +1,4 @@
-import { adresMiniatury } from "./obrazy";
+import { JAKOSC_ZDJECIA, adresMiniatury } from "./obrazy";
 
 /**
  * Własny „loader" dla `next/image` - kieruje wszystkie zdjęcia boisk do skalowania
@@ -22,5 +22,5 @@ export default function loaderObrazow({
   width: number;
   quality?: number;
 }) {
-  return adresMiniatury(src, width, quality ?? 60);
+  return adresMiniatury(src, width, quality ?? JAKOSC_ZDJECIA);
 }

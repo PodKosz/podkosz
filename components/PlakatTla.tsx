@@ -1,6 +1,6 @@
 "use client";
 
-import { adresMiniatury, zapasowyAdres, zestawMiniatur } from "@/lib/obrazy";
+import { JAKOSC_PLAKATU, adresMiniatury, zapasowyAdres, zestawMiniatur } from "@/lib/obrazy";
 
 /**
  * Plakat wydarzenia jako tło boxu.
@@ -31,8 +31,8 @@ export function PlakatTla({
   return (
     /* eslint-disable-next-line @next/next/no-img-element */
     <img
-      src={adresMiniatury(plakat, bazowa, 62)}
-      srcSet={zestawMiniatur(plakat, szerokosci, 62)}
+      src={adresMiniatury(plakat, bazowa, JAKOSC_PLAKATU)}
+      srcSet={zestawMiniatur(plakat, szerokosci, JAKOSC_PLAKATU)}
       sizes={sizes}
       onError={(e) => {
         const img = e.currentTarget;

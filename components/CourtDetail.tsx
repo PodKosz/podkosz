@@ -2,7 +2,7 @@ import { SzkicKafla, type RodzajSzkicu } from "./SzkicKafla";
 import Link from "next/link";
 import { ACCESS_LABEL, Court, TYPE_LABEL, surfaceLabel } from "@/lib/types";
 import { czyAutorAnonimowy, formatDistance, slugifyPlace } from "@/lib/site";
-import { adresMiniatury } from "@/lib/obrazy";
+import { JAKOSC_ZDJECIA, adresMiniatury } from "@/lib/obrazy";
 import { opisBoiska } from "@/lib/opis-boiska";
 import type { NearbyCourt } from "@/lib/repo";
 import type { WeatherHour } from "@/lib/pogoda";
@@ -565,7 +565,7 @@ function AutorWpisu({
         {avatar ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={adresMiniatury(avatar, 184, 70)}
+            src={adresMiniatury(avatar, 184, JAKOSC_ZDJECIA)}
             alt=""
             width={92}
             height={92}

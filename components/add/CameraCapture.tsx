@@ -23,6 +23,27 @@ interface Obiektyw {
 const TYLNE = /back|rear|tyl|tył|environment/i;
 const ULTRA = /ultra.?wide|ultra.?szerok|ultraszerok/i;
 
+/*
+  ROZMIAR I JAKOŚĆ ZAPISYWANEGO KADRU.
+
+  Było 2048 px przy jakości 0,75 - ustawienie „żeby weszło", nie „żeby było ładne".
+  Zdjęcie boiska jest tu główną treścią, a na dzisiejszym telefonie i na ekranie 4K
+  między 2048 a 3072 px widać różnicę: na tablicy kosza czytać można numer, nie tylko
+  zgadywać, że coś tam jest.
+
+  Cena jest w wysyłce: plik rośnie z jakichś 450 kB do 1,2 MB, czyli dziewięć kadrów
+  z ~4 MB do ~11 MB na zgłoszenie. Na LTE przy boisku to zauważalnie dłużej - i dlatego
+  ta zmiana przychodzi PO tym, jak wysyłka przestała być „wszystko albo nic": zdjęcia
+  lecą po trzy naraz i podpinają się pojedynczo, więc zerwane połączenie zabiera
+  najwyżej ostatni kadr, a nie całe zgłoszenie.
+
+  Powyżej 3072 px nie ma po co iść: aparaty w telefonach dają wprawdzie więcej, ale
+  serwis i tak nigdy nie pokazuje kadru szerszego niż 2560 px, a każdy dodatkowy piksel
+  to czysty koszt wysyłki i miejsca.
+*/
+const MAKS_PIKSELI = 3072;
+const JAKOSC = 0.82;
+
 /** Podgląd z aparatu, schemat kadru na obrazie i podpowiedź pod nim. */
 export function CameraCapture({
   kind,
@@ -148,18 +169,18 @@ export function CameraCapture({
     [aktywny, obiektywy, otworz, przelacza]
   );
 
+
   const shoot = useCallback(() => {
     const video = videoRef.current;
     if (!video || !video.videoWidth) return;
-    const max = 2048;
-    const scale = Math.min(1, max / Math.max(video.videoWidth, video.videoHeight));
+    const scale = Math.min(1, MAKS_PIKSELI / Math.max(video.videoWidth, video.videoHeight));
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(video.videoWidth * scale);
     canvas.height = Math.round(video.videoHeight * scale);
     canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
     setFlash(true);
     setTimeout(() => setFlash(false), 180);
-    onCapture(canvas.toDataURL("image/jpeg", 0.75));
+    onCapture(canvas.toDataURL("image/jpeg", JAKOSC));
   }, [onCapture]);
 
   const fromFile = (file?: File) => {
@@ -168,13 +189,12 @@ export function CameraCapture({
     reader.onload = () => {
       const img = new Image();
       img.onload = () => {
-        const max = 2048;
-        const scale = Math.min(1, max / Math.max(img.width, img.height));
+        const scale = Math.min(1, MAKS_PIKSELI / Math.max(img.width, img.height));
         const canvas = document.createElement("canvas");
         canvas.width = Math.round(img.width * scale);
         canvas.height = Math.round(img.height * scale);
         canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height);
-        onCapture(canvas.toDataURL("image/jpeg", 0.75));
+        onCapture(canvas.toDataURL("image/jpeg", JAKOSC));
       };
       img.src = reader.result as string;
     };

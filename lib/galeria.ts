@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { CourtPhotoRef, PHOTO_KIND_LABEL, PhotoKind } from "./types";
 import { orderPhotos } from "./photos";
 import { photoUrl } from "./supabase/config";
-import { adresMiniatury } from "./obrazy";
+import { JAKOSC_MINIATURY, adresMiniatury } from "./obrazy";
 import { supabaseBrowser } from "./supabase/client";
 import { COURTS } from "./data";
 
@@ -53,7 +53,7 @@ export const thumbWidth = (index: number) => {
  * po to, żeby wizytówka nad pinezką pojawiała się bez ani jednej klatki czekania.
  */
 export function thumbUrl(url: string, w: number = 320) {
-  return adresMiniatury(url, w, 55);
+  return adresMiniatury(url, w, JAKOSC_MINIATURY);
 }
 
 /** Adresy już rozgrzane - żeby nie tworzyć drugi raz tego samego obrazka. */

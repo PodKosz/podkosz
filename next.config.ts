@@ -62,11 +62,12 @@ const nextConfig: NextConfig = {
     ],
     formats: ["image/avif", "image/webp"],
     /*
-      Domyślnie Next dopuszcza tylko jakość 75 i każdą inną odrzuca błędem 400.
-      55 jest dla miniatur w wizytówce nad pinezką - przy 200-320 px różnicy nie widać,
-      a plik jest wyraźnie mniejszy (rozgrzewamy ich kilkadziesiąt z góry).
+      Domyślnie Next dopuszcza tylko jakość 75 i każdą inną odrzuca błędem 400. Lista musi
+      zawierać wszystkie poziomy z `lib/obrazy.ts` (68 miniatury, 72 zdjęcia, 76 plakaty) -
+      dziś nikt nie podaje `quality` wprost do `next/image`, ale gdy kiedyś poda, brak
+      wartości na liście objawi się błędem 400 na jednym zdjęciu i niczym więcej.
     */
-    qualities: [55, 75],
+    qualities: [68, 72, 75, 76],
     // szerokości dobrane pod nasze kadry: miniatury w liście, kafelki galerii, zdjęcie tytułowe
     imageSizes: [96, 200, 320, 480],
     deviceSizes: [640, 828, 1080, 1440, 1920, 2560],
