@@ -65,6 +65,25 @@ export async function GET() {
       skutek: "Bez tego opinie zostają w panelu, ale nie przychodzą mailem.",
     },
     {
+      klucz: "NEXT_PUBLIC_CDN_OBRAZKI",
+      ustawione: jest(process.env.NEXT_PUBLIC_CDN_OBRAZKI),
+      waga: "opcjonalne",
+      skutek:
+        "Bez tego skalowanie zdjęć idzie przez Supabase: płatne od tysiąca obrazów " +
+        "źródłowych miesięcznie i liczone do puli transferu. Z tym - przez Cloudflare, " +
+        "gdzie transfer z brzegu jest darmowy.",
+    },
+    {
+      klucz: "PODKOSZ_ZA_CLOUDFLARE",
+      ustawione: jest(process.env.PODKOSZ_ZA_CLOUDFLARE),
+      waga: "wazne",
+      skutek:
+        "Ustawiać WYŁĄCZNIE gdy domena idzie przez Cloudflare. Wtedy prawdziwy adres " +
+        "odwiedzającego jest w nagłówku cf-connecting-ip; bez tego wszystkie limity " +
+        "i blokady IP liczyłyby jeden adres Cloudflare dla wszystkich naraz. " +
+        "Ustawione bez Cloudflare jest gorsze niż nieustawione - adres da się podrobić.",
+    },
+    {
       klucz: "NEXT_PUBLIC_CARTO_KEY",
       ustawione: jest(process.env.NEXT_PUBLIC_CARTO_KEY),
       waga: "opcjonalne",
