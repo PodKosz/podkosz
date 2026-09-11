@@ -28,6 +28,7 @@ import { ShotDiagram } from "../ShotDiagram";
 import { CameraCapture } from "./CameraCapture";
 import { ArrowLeftIcon, PinIcon } from "../icons";
 import { GoogleMark } from "../GoogleMark";
+import { PodpowiedzAdresu } from "../PodpowiedzAdresu";
 
 export interface AddFlowUser {
   name: string;
@@ -893,15 +894,21 @@ export function AddFlow({ user, admin = false }: { user: AddFlowUser; admin?: bo
             </button>
 
             {author.mode === "guest" && !user && (
-              <Field label="E-mail (opcjonalnie)">
-                <input
-                  type="email"
-                  value={author.email}
-                  onChange={(e) => setAuthor({ ...author, email: e.target.value })}
-                  placeholder="ty@example.com"
-                  className="w-full bg-transparent text-[14px] outline-none placeholder:text-faint"
+              <div>
+                <Field label="E-mail (opcjonalnie)">
+                  <input
+                    type="email"
+                    value={author.email}
+                    onChange={(e) => setAuthor({ ...author, email: e.target.value })}
+                    placeholder="ty@example.com"
+                    className="w-full bg-transparent text-[14px] outline-none placeholder:text-faint"
+                  />
+                </Field>
+                <PodpowiedzAdresu
+                  adres={author.email ?? ""}
+                  onPopraw={(poprawiony) => setAuthor({ ...author, email: poprawiony })}
                 />
-              </Field>
+              </div>
             )}
             {author.mode === "account" && !user && !supabaseEnabled && (
               <p className="rounded-2xl border border-hairline bg-white/4 px-4 py-3 text-[13px] text-muted">
