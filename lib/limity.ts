@@ -22,6 +22,28 @@
  * (`limit_zapytan`) i tam idą rzeczy rzadkie i drogie - poczta. Tutaj zostaje to, co
  * musi być darmowe: odsianie jednego źródła walącego w pętli. Przy N instancjach limit
  * jest N razy luźniejszy, więc ustawiam go tak, żeby N-krotność wciąż była nieszkodliwa.
+ *
+ * ------------------------------------------------------------------ pierwsza zapora stoi wyżej
+ *
+ * Od 11 września 2026 przed tym wszystkim stoi reguła w Cloudflare: więcej niż 50 żądań
+ * na `/api/` w 10 sekund z jednego adresu IP = blokada tego adresu na 10 sekund.
+ *
+ * To jest ważniejsze, niż wygląda, bo limity w tym pliku i te w bazie już kosztują.
+ * Zanim któryś z nich powie „za dużo", żądanie przeszło przez funkcję na Vercelu i zwykle
+ * też przez zapytanie do Supabase - czyli policzyło się na obu rachunkach. Reguła
+ * w Cloudflare odbija ruch na brzegu, zanim dotknie czegokolwiek naszego.
+ *
+ * Darmowy plan Cloudflare daje DOKŁADNIE JEDNĄ taką regułę i zawęża ją do jednego
+ * kształtu: charakterystyka tylko po IP, okno tylko 10 sekund, blokada tylko 10 sekund,
+ * akcja tylko „zablokuj" (żadnego łagodnego wyzwania). Stąd próg z zapasem: twarda
+ * blokada, która trafi nie tego, kogo trzeba, jest gorsza niż przepuszczenie paru żądań,
+ * a pod jednym adresem IP potrafi siedzieć całe osiedle albo pół sieci komórkowej.
+ *
+ * Sprawdzone po wdrożeniu na produkcji:
+ *   - 200 żądań w 2,6 s → 71 przeszło, 129 odbitych (429),
+ *   - w trakcie blokady `/api/` oddaje 429, ale strony (`/`, `/wkrotce`) dalej 200,
+ *   - po 15 sekundach wszystko wraca samo,
+ *   - tempo 13 żądań na 10 s (grubo powyżej tego, co robi człowiek) → 40 na 40 przeszło.
  */
 
 import { supabasePublic } from "./supabase/publiczny";
