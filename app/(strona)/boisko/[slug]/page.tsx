@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { avatarAutora, getCourtBySlug, listCourts, listNearby } from "@/lib/repo";
+import { avatarAutora, getCourtBySlug, listNearby, slugiBoisk } from "@/lib/repo";
 import { SITE_NAME } from "@/lib/site";
 import { fetchWeather } from "@/lib/pogoda";
 import { CourtDetail } from "@/components/CourtDetail";
@@ -16,8 +16,8 @@ import { LocalCourtDetail } from "@/components/LocalCourtDetail";
 export const revalidate = 1800;
 
 export async function generateStaticParams() {
-  const courts = await listCourts();
-  return courts.map((c) => ({ slug: c.slug }));
+  const slugi = await slugiBoisk();
+  return slugi.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({

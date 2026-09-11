@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getAuthor, listContributors, listCourts } from "@/lib/repo";
+import { boiskaPoId, getAuthor, listContributors } from "@/lib/repo";
 import { historiaGracza, nickZeSlugu, statystykiGracza, ulubioneGracza } from "@/lib/profil";
 import { CourtCard } from "@/components/CourtCard";
 import { PlakietkiZaslug } from "@/components/PlakietkiZaslug";
@@ -76,18 +76,21 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
   const nick = await nickProfilu(slug);
   if (!nick) notFound();
 
-  const [autor, statystyki, ulubioneId, historia, wszystkie] = await Promise.all([
+  const [autor, statystyki, ulubioneId, historia] = await Promise.all([
     getAuthor(slug),
     statystykiGracza(nick),
     ulubioneGracza(nick),
     historiaGracza(nick),
-    listCourts(),
   ]);
 
   const boiska = autor?.courts ?? [];
 
-  /* nazwy i zdjęcia dokładamy z listy boisk, którą i tak mamy w pamięci podręcznej */
-  const poId = new Map(wszystkie.map((c) => [c.id, c]));
+  /*
+    Nazwy i zdjęcia dobieramy DOKŁADNIE dla tych boisk, które profil pokaże - a jest ich
+    najwyżej dwanaście ulubionych i dwanaście odwiedzin (limity w `migration-profil-publiczny.sql`).
+    Wcześniej po to samo pobierana była cała lista boisk w Polsce razem ze zdjęciami.
+  */
+  const poId = await boiskaPoId([...ulubioneId, ...historia.map((w) => w.courtId)]);
   const ulubione = ulubioneId.map((id) => poId.get(id)).filter((c) => c !== undefined);
   const wizyty = historia
     .map((w) => ({ day: w.day, court: poId.get(w.courtId) }))

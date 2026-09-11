@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { listCourts } from "@/lib/repo";
+import { boiskaDoSitemapy } from "@/lib/repo";
 import { SITE_URL, slugifyPlace } from "@/lib/site";
 
 /**
@@ -12,7 +12,7 @@ import { SITE_URL, slugifyPlace } from "@/lib/site";
 export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const courts = await listCourts();
+  const courts = await boiskaDoSitemapy();
 
   const statyczne: MetadataRoute.Sitemap = [
     { url: `${SITE_URL}/`, changeFrequency: "daily", priority: 1 },

@@ -65,29 +65,151 @@ export const COURTS_TAG = "courts";
 const COURTS_TTL = 300;
 
 /**
- * Odczyty publiczne idą przez klient bez ciasteczek, bo tylko takie wyniki wolno trzymać
- * w pamięci podręcznej. Wcześniej każde wejście na stronę - także od robotów - oznaczało
- * zapytanie do Supabase o całą tabelę boisk.
+ * ------------------------------------------------------------------ dlaczego nie ma tu
+ * ------------------------------------------------------------------ funkcji „daj wszystkie boiska"
+ *
+ * Była. Nazywała się `listCourts()`, ciągnęła całą tabelę razem ze wszystkimi zdjęciami
+ * i obsługiwała ośmiu odbiorców, z których każdy brał z tego ułamek: ranking rysował
+ * dwadzieścia pięć pierwszych, sitemapa potrzebowała pięciu kolumn i zera zdjęć, strona
+ * miasta brała boiska z jednego miasta, a dostawała wszystkie z Polski.
+ *
+ * Zmierzone na produkcji: pełny wiersz ze zdjęciami waży 1554 bajty, a pamięć podręczna
+ * Vercela odmawia zapisania wpisu większego niż 2 MB - i nie zgłasza tego, po prostu nie
+ * zapisuje. Ściana wypadała przy 1349 boiskach i była niewidoczna: strona działała dalej,
+ * tyle że każde wejście na każdą z tych stron odpytywało bazę od zera.
+ *
+ * Dlatego funkcji „daj wszystkie" tu nie ma i celowo nie wraca. Każdy odbiorca ma niżej
+ * własne zapytanie, pobierające wyłącznie to, czego naprawdę używa. Ile to daje:
+ *
+ *     kształt                     bajtów na boisko      próg 2 MB
+ *     pełny, ze zdjęciami                    1554           1 349   ← było, dla wszystkich
+ *     sitemapa (pięć kolumn)                  171          12 264
+ *     same slugi                               52          40 329
+ *     czołówka rankingu / po id            stały koszt      bez progu
+ *
+ * Gdyby kiedyś znów kusiło pobranie wszystkiego i odfiltrowanie w JavaScripcie: to jest
+ * dokładnie ten ruch, który tworzy takie ściany. Filtr po mieście, województwie i autorze
+ * ma w bazie swoją kolumnę ze slugiem i indeks - patrz `migration-boiska-bez-pelnej-listy.sql`.
  */
-const fetchCourts = unstable_cache(
-  async (): Promise<Court[]> => {
+
+/** Same slugi - do listy adresów przy przebudowie stron. Pięćdziesiąt dwa bajty na boisko. */
+export const slugiBoisk = unstable_cache(
+  async (): Promise<string[]> => {
     const supabase = supabasePublic();
-    if (!supabase) return COURTS;
+    if (!supabase) return COURTS.map((c) => c.slug);
 
-    const { data, error } = await supabase
-      .from("courts")
-      .select(COURT_SELECT)
-      .order("likes_count", { ascending: false });
-
+    const { data, error } = await supabase.from("courts").select("slug");
     if (error || !data) return [];
-    return (data as unknown as CourtRow[]).map(rowToCourt);
+    return (data as { slug: string }[]).map((r) => r.slug);
   },
-  ["courts-lista"],
+  ["boiska-slugi"],
   { tags: [COURTS_TAG], revalidate: COURTS_TTL }
 );
 
-export async function listCourts(): Promise<Court[]> {
-  return fetchCourts();
+export interface BoiskoWSitemapie {
+  slug: string;
+  addedAt: string;
+  city: string;
+  voivodeship: string;
+  addedBy: string;
+}
+
+/** Pięć kolumn, których używa spis adresów dla wyszukiwarek. Żadnych zdjęć ani opisów. */
+export const boiskaDoSitemapy = unstable_cache(
+  async (): Promise<BoiskoWSitemapie[]> => {
+    const supabase = supabasePublic();
+    if (!supabase)
+      return COURTS.map((c) => ({
+        slug: c.slug,
+        addedAt: c.addedAt,
+        city: c.city,
+        voivodeship: c.voivodeship,
+        addedBy: c.addedBy,
+      }));
+
+    const { data, error } = await supabase
+      .from("courts")
+      .select("slug, city, voivodeship, added_by_name, created_at");
+
+    if (error || !data) return [];
+    return (
+      data as {
+        slug: string;
+        city: string;
+        voivodeship: string;
+        added_by_name: string;
+        created_at: string;
+      }[]
+    ).map((r) => ({
+      slug: r.slug,
+      addedAt: r.created_at.slice(0, 10),
+      city: r.city,
+      voivodeship: r.voivodeship,
+      addedBy: r.added_by_name,
+    }));
+  },
+  ["boiska-sitemapa"],
+  { tags: [COURTS_TAG], revalidate: COURTS_TTL }
+);
+
+/**
+ * Czołówka rankingu - dokładnie tyle boisk, ile strona rysuje.
+ *
+ * Wcześniej ranking pobierał wszystkie boiska ze zdjęciami, sortował i wyrzucał wszystko
+ * poza pierwszą dwudziestką piątką. Liczbę podaje wołający, a źródłem prawdy jest stała
+ * z komponentu - żeby zapytanie i widok nie mogły się rozjechać.
+ */
+export async function topBoiska(ile: number): Promise<Court[]> {
+  const cached = unstable_cache(
+    async (): Promise<Court[]> => {
+      const supabase = supabasePublic();
+      if (!supabase) return [...COURTS].sort((a, b) => b.likes - a.likes).slice(0, ile);
+
+      const { data, error } = await supabase
+        .from("courts")
+        .select(COURT_SELECT)
+        .order("likes_count", { ascending: false })
+        .limit(ile);
+
+      if (error || !data) return [];
+      return (data as unknown as CourtRow[]).map(rowToCourt);
+    },
+    ["boiska-top", String(ile)],
+    { tags: [COURTS_TAG], revalidate: COURTS_TTL }
+  );
+  return cached();
+}
+
+/** Ile identyfikatorów mieści się w jednym zapytaniu - dalej adres robi się za długi. */
+const PACZKA_ID = 100;
+
+/**
+ * Boiska po identyfikatorach, zwrócone mapą - dla ulubionych, historii gry i kadrów
+ * w konstelacji odkrywców. Wszystkie te miejsca znają identyfikatory i potrzebują nazw
+ * oraz zdjęć; wcześniej dobierały je z pełnej listy wszystkich boisk w Polsce.
+ */
+export async function boiskaPoId(ids: string[]): Promise<Map<string, Court>> {
+  const unikalne = [...new Set(ids)];
+  if (!unikalne.length) return new Map();
+
+  const supabase = supabasePublic();
+  if (!supabase)
+    return new Map(COURTS.filter((c) => unikalne.includes(c.id)).map((c) => [c.id, c]));
+
+  const paczki: string[][] = [];
+  for (let i = 0; i < unikalne.length; i += PACZKA_ID)
+    paczki.push(unikalne.slice(i, i + PACZKA_ID));
+
+  const wyniki = await Promise.all(
+    paczki.map((paczka) => supabase.from("courts").select(COURT_SELECT).in("id", paczka))
+  );
+
+  const mapa = new Map<string, Court>();
+  for (const { data, error } of wyniki) {
+    if (error || !data) continue;
+    for (const row of data as unknown as CourtRow[]) mapa.set(row.id, rowToCourt(row));
+  }
+  return mapa;
 }
 
 /** Kolumny potrzebne mapie i liście - bez złączenia ze zdjęciami. */
@@ -222,11 +344,21 @@ async function fetchNearby(court: Court, limit: number): Promise<NearbyCourt[]> 
     if (error) {
       console.warn("courts_nearby niedostępne, wracam do filtra po województwie", error.message);
     }
-    const all = await listCourts();
-    return all
-      .filter((c) => c.id !== court.id && c.voivodeship === court.voivodeship)
-      .slice(0, limit)
-      .map((c) => ({ court: c, distanceM: null }));
+    /*
+      Zapas po województwie, nie po całej Polsce. Ta ścieżka włącza się tylko wtedy, gdy
+      zawiedzie liczenie odległości w bazie - ale i wtedy nie ma powodu pobierać wszystkiego:
+      wystarczy tyle wierszy, ile karta pokaże, plus jeden na odsianie samego siebie.
+    */
+    const { data: zapas } = await supabase
+      .from("courts")
+      .select(COURT_SELECT)
+      .eq("voivodeship_slug", slugifyPlace(court.voivodeship))
+      .neq("id", court.id)
+      .order("likes_count", { ascending: false })
+      .limit(limit);
+
+    return ((zapas ?? []) as unknown as CourtRow[])
+      .map((row) => ({ court: rowToCourt(row), distanceM: null }));
   }
 
   const odleglosci = near as { id: string; distance_m: number }[];
@@ -389,8 +521,11 @@ export async function avatarAutora(nick: string): Promise<string | null> {
 /** Ile pierwszych miejsc dostaje plakietki odznaczeń - tyle, ile rysuje konstelacja. */
 const ZE_PLAKIETKAMI = 5;
 
+/** Ile kadrów mieści pierścień konstelacji przy jednym odkrywcy. */
+const KADROW_NA_ODKRYWCE = 14;
+
 export async function listRankingOdkrywcow(ile = 25): Promise<OdkrywcaRanking[]> {
-  const [odkrywcy, courts] = await Promise.all([listContributors(), listCourts()]);
+  const odkrywcy = await listContributors();
 
   /*
     Najpierw kto jest na liście, dopiero potem ich twarze. Kolejność, nie równoległość:
@@ -399,20 +534,46 @@ export async function listRankingOdkrywcow(ile = 25): Promise<OdkrywcaRanking[]>
     przez pięć minut.
   */
   const wybrani = odkrywcy.filter((o) => !czyAutorAnonimowy(o.name)).slice(0, ile);
-  const avatary = await fetchAvatary(wybrani.map((o) => o.name));
+  const nazwiska = wybrani.map((o) => o.name);
+
+  /*
+    Kadry w konstelacji: do czternastu najczęściej podpalanych boisk na osobę. Więcej
+    pierścień nie zniesie - przy każdym kolejnym zdjęciu muszą się zmniejszać, żeby zmieścić
+    się na obwodzie, a poniżej pewnego rozmiaru nie widać już, co jest na zdjęciu.
+
+    Wybór robi baza (`kadry_odkrywcow`) i oddaje SAME IDENTYFIKATORY, po których dobieramy
+    boiska jednym zapytaniem. Wcześniej brało się to z pełnej listy boisk w Polsce: przy
+    dwudziestu pięciu osobach po kilkaset boisk każda oznaczało to pobranie kilku tysięcy
+    wierszy ze zdjęciami po to, żeby zostawić po czternaście.
+  */
+  const supabase = supabasePublic();
+  const { data: kadry } = supabase
+    ? await supabase.rpc("kadry_odkrywcow", {
+        in_nazwiska: nazwiska,
+        in_ile: KADROW_NA_ODKRYWCE,
+      })
+    : { data: null };
+
+  const pary = (Array.isArray(kadry) ? kadry : []) as { autor: string; court_id: string }[];
+  const boiska = await boiskaPoId(pary.map((p) => p.court_id));
+
+  const poAutorze = new Map<string, Court[]>();
+  for (const para of pary) {
+    const boisko = boiska.get(para.court_id);
+    if (!boisko) continue;
+    const lista = poAutorze.get(para.autor) ?? [];
+    lista.push(boisko);
+    poAutorze.set(para.autor, lista);
+  }
+
+  const avatary = await fetchAvatary(nazwiska);
 
   const lista = wybrani
     .map((o) => {
-      /*
-        Kadry w konstelacji: bierzemy do czternastu najczęściej podpalanych boisk. Więcej
-        pierścień nie zniesie - przy każdym kolejnym zdjęciu muszą się zmniejszać, żeby
-        zmieściły się na obwodzie, a poniżej pewnego rozmiaru nie widać już, co jest na
-        zdjęciu.
-      */
-      const moje = courts
-        .filter((c) => c.addedBy === o.name)
+      /* kolejność wierszy z bazy nie jest obiecana - porządek nadajemy tutaj */
+      const moje = (poAutorze.get(o.name) ?? [])
         .sort((a, b) => b.likes - a.likes)
-        .slice(0, 14);
+        .slice(0, KADROW_NA_ODKRYWCE);
 
       return {
         name: o.name,
@@ -532,13 +693,15 @@ export interface Place {
  * stronę (nazwa → adres), więc dopasowanie w drugą stronę robimy przez tę listę,
  * a nie przez odgadywanie polskich znaków z adresu.
  */
-export async function listPlaces(): Promise<{ cities: Place[]; voivodeships: Place[] }> {
-  const courts = await listCourts();
+const wgWielkosci = (a: Place, b: Place) =>
+  b.courts - a.courts || a.name.localeCompare(b.name, "pl");
 
+/** Ta sama lista policzona z danych wbudowanych - gdy baza nie jest podpięta. */
+function miejscaZDanychLokalnych(): { cities: Place[]; voivodeships: Place[] } {
   const cities = new Map<string, Place>();
   const voivodeships = new Map<string, Place>();
 
-  for (const court of courts) {
+  for (const court of COURTS) {
     const citySlug = slugifyPlace(court.city);
     const city = cities.get(citySlug) ?? {
       name: court.city,
@@ -560,26 +723,90 @@ export async function listPlaces(): Promise<{ cities: Place[]; voivodeships: Pla
     voivodeships.set(vSlug, voivodeship);
   }
 
-  const bySize = (a: Place, b: Place) => b.courts - a.courts || a.name.localeCompare(b.name, "pl");
   return {
-    cities: [...cities.values()].sort(bySize),
-    voivodeships: [...voivodeships.values()].sort(bySize),
+    cities: [...cities.values()].sort(wgWielkosci),
+    voivodeships: [...voivodeships.values()].sort(wgWielkosci),
   };
 }
+
+/**
+ * Liczenie robi baza jednym `group by`, a nie my z pełnej listy boisk.
+ *
+ * Wcześniej, żeby pokazać „Bydgoszcz: 12 boisk", trzeba było pobrać te dwanaście boisk
+ * razem ze zdjęciami - i tak samo wszystkie pozostałe w Polsce. Teraz wraca jeden wiersz
+ * na miejscowość: nazwa, slug i licznik.
+ */
+export const listPlaces = unstable_cache(
+  async (): Promise<{ cities: Place[]; voivodeships: Place[] }> => {
+    const supabase = supabasePublic();
+    if (!supabase) return miejscaZDanychLokalnych();
+
+    const { data, error } = await supabase.rpc("miejsca_boisk");
+    if (error || !Array.isArray(data)) return { cities: [], voivodeships: [] };
+
+    const wiersze = data as {
+      rodzaj: "miasto" | "wojewodztwo";
+      nazwa: string;
+      slug: string;
+      wojewodztwo: string;
+      ile: number;
+    }[];
+
+    const zRodzaju = (rodzaj: "miasto" | "wojewodztwo") =>
+      wiersze
+        .filter((w) => w.rodzaj === rodzaj)
+        .map((w) => ({
+          name: w.nazwa,
+          slug: w.slug,
+          courts: Number(w.ile),
+          voivodeship: w.wojewodztwo,
+        }))
+        .sort(wgWielkosci);
+
+    return { cities: zRodzaju("miasto"), voivodeships: zRodzaju("wojewodztwo") };
+  },
+  ["boiska-miejsca"],
+  { tags: [COURTS_TAG], revalidate: COURTS_TTL }
+);
 
 /** Boiska w miejscowości albo w województwie, po slugu z adresu. Null = nie ma takiego miejsca. */
 export async function listCourtsForPlace(
   kind: "city" | "voivodeship",
   slug: string
 ): Promise<{ place: Place; courts: Court[] } | null> {
-  const courts = await listCourts();
-  const field = kind === "city" ? "city" : "voivodeship";
-  const matched = courts.filter((c) => slugifyPlace(c[field]) === slug);
+  const pole = kind === "city" ? "city" : "voivodeship";
+
+  const cached = unstable_cache(
+    async (): Promise<Court[]> => {
+      const supabase = supabasePublic();
+      /* bez bazy zostaje filtr po danych wbudowanych - tych jest garść */
+      if (!supabase) return COURTS.filter((c) => slugifyPlace(c[pole]) === slug);
+
+      /*
+        Filtr idzie po kolumnie ze slugiem, którą liczy baza (patrz
+        `migration-boiska-bez-pelnej-listy.sql`). Wcześniej to samo robił JavaScript -
+        ale żeby odfiltrować dwanaście boisk z Bydgoszczy, musiał najpierw pobrać
+        wszystkie boiska w Polsce razem ze zdjęciami.
+      */
+      const { data, error } = await supabase
+        .from("courts")
+        .select(COURT_SELECT)
+        .eq(kind === "city" ? "city_slug" : "voivodeship_slug", slug)
+        .order("likes_count", { ascending: false });
+
+      if (error || !data) return [];
+      return (data as unknown as CourtRow[]).map(rowToCourt);
+    },
+    ["boiska-miejsce", kind, slug],
+    { tags: [COURTS_TAG], revalidate: COURTS_TTL }
+  );
+
+  const matched = await cached();
   if (!matched.length) return null;
 
   return {
     place: {
-      name: matched[0][field],
+      name: matched[0][pole],
       slug,
       courts: matched.length,
       voivodeship: matched[0].voivodeship,
@@ -603,8 +830,26 @@ export interface Author {
  * którym budujemy adresy podstron miejsc.
  */
 export async function getAuthor(slug: string): Promise<Author | null> {
-  const courts = await listCourts();
-  const matched = courts.filter((c) => slugifyPlace(c.addedBy) === slug);
+  const cached = unstable_cache(
+    async (): Promise<Court[]> => {
+      const supabase = supabasePublic();
+      if (!supabase) return COURTS.filter((c) => slugifyPlace(c.addedBy) === slug);
+
+      /* kolumna ze slugiem autora liczona przez bazę - ta sama reguła, co `slugifyPlace` */
+      const { data, error } = await supabase
+        .from("courts")
+        .select(COURT_SELECT)
+        .eq("added_by_slug", slug)
+        .order("likes_count", { ascending: false });
+
+      if (error || !data) return [];
+      return (data as unknown as CourtRow[]).map(rowToCourt);
+    },
+    ["boiska-autora", slug],
+    { tags: [COURTS_TAG], revalidate: COURTS_TTL }
+  );
+
+  const matched = await cached();
   if (!matched.length) return null;
 
   return {

@@ -39,6 +39,15 @@ import {
 const SIATKA_DO = 10;
 const LISTA_DO = 25;
 
+/**
+ * Ile boisk ta strona w ogóle pokazuje - i tyle strona pobiera z bazy.
+ *
+ * Wcześniej ranking dostawał wszystkie boiska w Polsce razem ze zdjęciami, sortował je
+ * i wyrzucał wszystko poza tą dwudziestką piątką. Stała jest tu, a nie w zapytaniu, żeby
+ * zmiana układu nie mogła rozjechać się z tym, co przyjeżdża z bazy.
+ */
+export const RANKING_DO = LISTA_DO;
+
 export function RankingBoisk({ courts }: { courts: Court[] }) {
   const [pierwszy, ...reszta] = courts;
   const trojka = reszta.slice(0, 3);

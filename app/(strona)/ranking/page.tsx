@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { listCourts } from "@/lib/repo";
-import { RankingBoisk } from "@/components/ranking/RankingBoisk";
+import { topBoiska } from "@/lib/repo";
+import { RankingBoisk, RANKING_DO } from "@/components/ranking/RankingBoisk";
 import { HoopOutline } from "@/components/HoopOutline";
 
 export const metadata: Metadata = {
@@ -14,8 +14,8 @@ export const metadata: Metadata = {
 export const revalidate = 300;
 
 export default async function RankingPage() {
-  const courts = await listCourts();
-  const sorted = [...courts].sort((a, b) => b.likes - a.likes);
+  /* tyle, ile strona rysuje - patrz RANKING_DO w komponencie */
+  const sorted = await topBoiska(RANKING_DO);
 
   return (
     /*
