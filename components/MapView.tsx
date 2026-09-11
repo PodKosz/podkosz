@@ -821,12 +821,31 @@ export function MapView({
       zwloka = window.setTimeout(odswiez, ZWLOKA_PUNKTOW_MS);
     };
 
+    /*
+      DWA WYZWALACZE, NIE JEDEN - i ten drugi jest tu po znalezionym błędzie.
+
+      Samo `moveend` nie wystarcza: kto wchodzi z linku prosto na przybliżony kadr
+      (`/?m=52.2771,21.0533,15.5`), tego mapa nigdzie nie przesuwa, więc `moveend` nie pada
+      ani razu i szare pinezki nie pojawiają się, dopóki człowiek sam nie ruszy mapą.
+      Sprawdzone na produkcji: po wejściu zero pinezek, po jednym przeciągnięciu - dziewięć.
+
+      Samo wywołanie przy montowaniu też nie wystarcza, i to jest właśnie ta pułapka, w którą
+      wpadłem: efekt startuje, gdy mapa zgłosi gotowość, ale w tej chwili może jeszcze nie
+      mieć docelowego przybliżenia - a wtedy warunek progu odrzuca zapytanie i nic go już
+      nie ponawia.
+
+      `idle` pada, gdy mapa skończy rysować wszystko, co miała - czyli dokładnie wtedy, gdy
+      kadr jest już ustalony. `once`, bo to zdarzenie powtarza się po każdej zmianie i jako
+      stały nasłuch byłoby drugim `moveend`, tylko częstszym.
+    */
     zaplanuj();
+    map.once("idle", zaplanuj);
     map.on("moveend", zaplanuj);
 
     return () => {
       zywy = false;
       window.clearTimeout(zwloka);
+      map.off("idle", zaplanuj);
       map.off("moveend", zaplanuj);
       wyczysc();
     };
