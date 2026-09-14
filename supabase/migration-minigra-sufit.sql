@@ -99,7 +99,17 @@ begin
   values (p_miejsce, uid, greatest(0, least(coalesce(p_seria, 0), 5000)))
   on conflict (miejsce, user_id) do update
     set seria = greatest(minigra_wyniki.seria, excluded.seria),
-        zapisany_at = now()
+        /*
+          POPRAWIONE (patrz `migration-minigra-zapis-kolumna.sql`). Stało tu
+          `zapisany_at = now()` - kolumny o tej nazwie nigdy nie było, więc każdy zapis
+          trafiający w już istniejący wiersz wywracał się w locie. Warunek jest z oryginału:
+          czas rusza tylko przy poprawie wyniku, bo ranking sortuje po `seria desc, updated_at`
+          i przy remisie wyżej ma stać ten, kto był pierwszy.
+        */
+        updated_at = case
+          when excluded.seria > minigra_wyniki.seria then now()
+          else minigra_wyniki.updated_at
+        end
   returning seria into wynik;
 
   return wynik;
