@@ -178,7 +178,7 @@ export function Sidebar({
   return (
     <>
       {/* ---------- komputer: osobne pudełka jedno pod drugim ---------- */}
-      <div className="pointer-events-none absolute left-5 top-5 bottom-5 z-30 hidden w-[386px] flex-col gap-3 md:flex">
+      <div className="pointer-events-none absolute left-5 top-5 bottom-5 z-30 hidden w-[386px] flex-col gap-3 lg:flex">
         {/* logo bez kafelka - leży wprost na mapie, cień trzyma czytelność */}
         <div
           className="pointer-events-auto shrink-0 pl-1"
@@ -249,7 +249,7 @@ export function Sidebar({
       {/* przygaszenie mapy pod arkuszem - dotknięcie zamyka panel */}
       <div
         onClick={() => setSheetOpen(false)}
-        className={`fixed inset-0 z-[25] bg-void/55 backdrop-blur-[2px] transition-opacity duration-300 md:hidden ${
+        className={`fixed inset-0 z-[25] bg-void/55 backdrop-blur-[2px] transition-opacity duration-300 lg:hidden ${
           sheetOpen ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
       />
@@ -262,7 +262,7 @@ export function Sidebar({
           transition: "transform 460ms cubic-bezier(.32,.72,0,1)",
           willChange: "transform",
         }}
-        className="panel-filtrow pointer-events-auto fixed inset-x-0 bottom-0 top-[68px] z-30 flex flex-col rounded-t-[26px] md:hidden"
+        className="panel-filtrow pointer-events-auto fixed inset-x-0 bottom-0 top-[68px] z-30 flex flex-col rounded-t-[26px] lg:hidden"
       >
         <div ref={stripRef}>
         <button

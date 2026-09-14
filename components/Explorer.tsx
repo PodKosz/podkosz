@@ -265,7 +265,7 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
       />
 
       {isAdmin && (
-        <div className="absolute right-4 top-20 z-20 flex flex-col items-end gap-2 md:right-6 md:top-24">
+        <div className="absolute right-4 top-20 z-20 flex flex-col items-end gap-2 lg:right-6 lg:top-24">
           <button
             onClick={toggleLeads}
             className={`rounded-2xl px-4 py-2.5 text-[12px] font-semibold uppercase tracking-[0.12em] transition ${
@@ -289,7 +289,7 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
       )}
 
       {activeLead && (
-        <div className="glass absolute bottom-[184px] left-1/2 z-30 w-[300px] -translate-x-1/2 rounded-[22px] p-4 rise md:bottom-8 md:left-auto md:right-6 md:translate-x-0">
+        <div className="glass absolute bottom-[184px] left-1/2 z-30 w-[300px] -translate-x-1/2 rounded-[22px] p-4 rise lg:bottom-8 lg:left-auto lg:right-6 lg:translate-x-0">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[10px] uppercase tracking-[0.16em] text-faint">
@@ -336,7 +336,7 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
         </div>
       )}
 
-      <p className="pointer-events-none absolute inset-x-0 bottom-2 z-10 hidden text-center text-[11px] tracking-wide text-faint md:block">
+      <p className="pointer-events-none absolute inset-x-0 bottom-2 z-10 hidden text-center text-[11px] tracking-wide text-faint lg:block">
         © 2026 PODKOSZ.PL
       </p>
     </main>

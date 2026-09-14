@@ -51,10 +51,10 @@ export function TopNav() {
     <div className="pointer-events-none fixed inset-x-0 top-0 z-40 flex items-center justify-between gap-2 p-3 sm:p-5">
       {/* na telefonie logo jest zawsze, także na mapie - inaczej nie ma jak wrócić */}
       <div className="pointer-events-auto shrink-0">
-        <span className="md:hidden">
+        <span className="lg:hidden">
           <Brand compact />
         </span>
-        <span className="hidden md:block">{path !== "/" && <Brand compact />}</span>
+        <span className="hidden lg:block">{path !== "/" && <Brand compact />}</span>
       </div>
 
       {/*
@@ -63,12 +63,12 @@ export function TopNav() {
         wracają do normy. To była realna kolizja, nie ostrożność: przy poprzednich wartościach
         pasek wychodził poza prawą krawędź ekranu przy 375 pikselach.
       */}
-      <nav className="glass pointer-events-auto flex shrink-0 items-center gap-0.5 rounded-full p-1 pl-1.5 sm:gap-1 sm:p-1.5 sm:pl-3">
+      <nav className="glass pointer-events-auto flex shrink-0 items-center gap-0.5 rounded-full p-1 pl-1.5 lg:gap-1 lg:p-1.5 lg:pl-3">
         {LINKS.map((l) => (
           <Link
             key={l.href}
             href={l.href}
-            className={`whitespace-nowrap rounded-full px-1 py-1.5 text-[10px] font-medium uppercase tracking-[0.01em] transition sm:px-3.5 sm:py-2 sm:text-[12px] sm:tracking-[0.11em] ${
+            className={`whitespace-nowrap rounded-full px-1 py-1.5 text-[10px] font-medium uppercase tracking-[0.01em] transition lg:px-3.5 lg:py-2 lg:text-[12px] lg:tracking-[0.11em] ${
               isActive(path, l.href) ? "text-ink" : "text-muted hover:text-ink"
             }`}
           >
@@ -78,15 +78,15 @@ export function TopNav() {
 
         <Link
           href="/dodaj"
-          className="whitespace-nowrap rounded-full flame-gradient px-2.5 py-2 text-[10px] font-bold uppercase tracking-[0.02em] text-black transition hover:brightness-110 active:scale-[0.98] sm:px-5 sm:py-2.5 sm:text-[12px] sm:tracking-[0.12em]"
+          className="whitespace-nowrap rounded-full flame-gradient px-2.5 py-2 text-[10px] font-bold uppercase tracking-[0.02em] text-black transition hover:brightness-110 active:scale-[0.98] lg:px-5 lg:py-2.5 lg:text-[12px] lg:tracking-[0.12em]"
         >
-          <span className="sm:hidden">Dodaj</span>
-          <span className="hidden sm:inline">Dodaj boisko</span>
+          <span className="lg:hidden">Dodaj</span>
+          <span className="hidden lg:inline">Dodaj boisko</span>
         </Link>
 
-        <span className="h-5 w-px bg-white/12 sm:mx-1 sm:h-6" />
+        <span className="h-5 w-px bg-white/12 lg:mx-1 lg:h-6" />
         {sesja === undefined ? (
-          <span className="h-9 w-9 rounded-full bg-white/6 sm:w-[104px]" aria-hidden />
+          <span className="h-9 w-9 rounded-full bg-white/6 lg:w-[104px]" aria-hidden />
         ) : (
           <AuthMenu user={sesja.user} />
         )}

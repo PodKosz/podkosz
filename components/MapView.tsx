@@ -66,11 +66,18 @@ function zeStylu(nazwa: string, awaryjna: string) {
 const POLAND_BOUNDS: [number, number, number, number] = [13.9, 48.9, 24.3, 55.0];
 
 /**
- * Zapas na panel: na komputerze stoi po lewej, na telefonie wysuwa się od dołu,
- * więc kadr Polski musi omijać raz bok, a raz dolną krawędź.
+ * Zapas na panel: po lewej, gdy panel stoi z boku; od dołu, gdy wysuwa się jako arkusz.
+ *
+ * PRÓG MUSI BYĆ TEN SAM, CO W `Sidebar` (`lg:`, czyli 1024) - inaczej mapa omija panel,
+ * którego nie ma, albo wchodzi pod ten, który jest.
+ *
+ * Stało tu 768. Na tablecie trzymanym pionowo dawało to kadr Polski wciśnięty w
+ * 768 - 430 - 70 = 268 pikseli szerokości, więc mapa musiała oddalić się tak, żeby zmieścić
+ * w tym cały kraj: na ekranie widać było pół Europy, a Polska była małym kształtem z boku.
+ * Panel o stałej szerokości 386 pikseli zajmował tam ponad połowę ekranu.
  */
 const fitPadding = (width: number) =>
-  width < 768
+  width < 1024
     ? { top: 90, bottom: 200, left: 24, right: 24 }
     : { top: 70, bottom: 70, left: 430, right: 70 };
 
@@ -1494,7 +1501,7 @@ export function MapView({
         </div>
       )}
 
-      <div className="absolute bottom-[168px] right-4 z-20 flex flex-col gap-2 md:bottom-8 md:right-6">
+      <div className="absolute bottom-[168px] right-4 z-20 flex flex-col gap-2 lg:bottom-8 lg:right-6">
         <button
           onClick={() => zoomBy(1)}
           className="glass grid h-11 w-11 place-items-center rounded-2xl text-xl text-ink/80 transition hover:text-ink active:scale-95"

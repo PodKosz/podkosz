@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signInWithGoogle, signOut } from "@/lib/auth";
@@ -17,8 +17,58 @@ export interface AuthUser {
 
 export function AuthMenu({ user }: { user: AuthUser | null }) {
   const path = usePathname();
-  const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const kotwica = useRef<HTMLDivElement>(null);
+
+  /*
+    Menu pamięta, NA KTÓRYM ADRESIE zostało otwarte - nie zwykłe „otwarte/zamknięte".
+
+    Dzięki temu zamknięcie przy przejściu na inną stronę nie wymaga żadnego efektu:
+    po zmianie adresu zapamiętana wartość przestaje pasować i menu jest zamknięte samo
+    z siebie. Pierwsza wersja robiła to `useEffect`-em z `setOpen(false)` i słusznie
+    poległa na regule `react-hooks/set-state-in-effect` - stan, który da się wyliczyć
+    z tego, co już mamy, nie ma po co być osobnym stanem.
+  */
+  const [otwarteNa, setOtwarteNa] = useState<string | null>(null);
+  const open = otwarteNa === path;
+  const zamknij = () => setOtwarteNa(null);
+
+  /*
+    ZAMYKANIE MENU.
+
+    Do tej pory menu zamykało się WYŁĄCZNIE po kliknięciu w jego własny link albo
+    w awatar po raz drugi. Wszystko inne zostawiało je otwarte: dotknięcie mapy obok,
+    cofnięcie się w przeglądarce, wylogowanie. Na telefonie to nie drobiazg - menu
+    zasłania tam pół ekranu i wygląda, jakby strona się zawiesiła.
+
+    Trzy wyjścia, bo każde zamyka co innego:
+      - zmiana adresu: łapie nawigację, która nie poszła z tego menu (wstecz, wylogowanie,
+        odnośnik spod spodu),
+      - dotknięcie poza menu: najczęstszy odruch i jedyny, który działa bez celowania,
+      - Escape: klawiatura ma prawo zamknąć to, co otworzyła.
+  */
+  useEffect(() => {
+    if (!open) return;
+
+    /*
+      `pointerdown`, nie `click`: na telefonie palec schodzi z ekranu dopiero po chwili,
+      a menu ma zniknąć od razu. Warunek `contains` jest tu konieczny - bez niego dotknięcie
+      własnego linku zamykałoby menu, zanim odnośnik zdążyłby się uruchomić.
+    */
+    const pozaMenu = (e: PointerEvent) => {
+      if (!kotwica.current?.contains(e.target as Node)) zamknij();
+    };
+    const naKlawisz = (e: KeyboardEvent) => {
+      if (e.key === "Escape") zamknij();
+    };
+
+    document.addEventListener("pointerdown", pozaMenu);
+    document.addEventListener("keydown", naKlawisz);
+    return () => {
+      document.removeEventListener("pointerdown", pozaMenu);
+      document.removeEventListener("keydown", naKlawisz);
+    };
+  }, [open]);
 
   if (!user) {
     return (
@@ -28,10 +78,10 @@ export function AuthMenu({ user }: { user: AuthUser | null }) {
             signInWithGoogle(path).catch((e: Error) => setError(e.message))
           }
           title={supabaseEnabled ? "Zaloguj się przez Google" : "Wymaga podpięcia bazy"}
-          className="flex items-center gap-2 rounded-full border border-hairline bg-white/6 px-2 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em] text-muted transition hover:text-ink sm:px-3 sm:py-2 sm:text-[12px] sm:tracking-[0.1em]"
+          className="flex items-center gap-2 rounded-full border border-hairline bg-white/6 px-2 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em] text-muted transition hover:text-ink lg:px-3 lg:py-2 lg:text-[12px] lg:tracking-[0.1em]"
         >
           <GoogleMark className="h-5 w-5" />
-          <span className="hidden sm:inline">Zaloguj</span>
+          <span className="hidden lg:inline">Zaloguj</span>
         </button>
         {error && (
           <p className="menu-konta absolute right-0 top-12 z-50 w-64 rounded-2xl p-3 text-[12px] leading-snug text-muted">
@@ -43,10 +93,12 @@ export function AuthMenu({ user }: { user: AuthUser | null }) {
   }
 
   return (
-    <div className="relative">
+    <div className="relative" ref={kotwica}>
       <button
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 rounded-full border border-hairline bg-white/6 p-1 transition hover:bg-white/10 sm:py-1 sm:pl-1 sm:pr-3"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOtwarteNa((o) => (o === path ? null : path))}
+        className="flex items-center gap-2 rounded-full border border-hairline bg-white/6 p-1 transition hover:bg-white/10 lg:py-1 lg:pl-1 lg:pr-3"
       >
         <span className="grid h-8 w-8 place-items-center overflow-hidden rounded-full flame-gradient text-[13px] font-bold text-black">
           {user.avatar ? (
@@ -56,7 +108,7 @@ export function AuthMenu({ user }: { user: AuthUser | null }) {
             user.name.slice(0, 1).toUpperCase()
           )}
         </span>
-        <span className="hidden max-w-[120px] truncate text-[12px] font-medium sm:block">
+        <span className="hidden max-w-[120px] truncate text-[12px] font-medium lg:block">
           {user.name}
         </span>
       </button>
@@ -71,14 +123,14 @@ export function AuthMenu({ user }: { user: AuthUser | null }) {
         <div className="menu-konta absolute right-0 top-12 z-50 w-56 overflow-hidden rounded-2xl p-1.5">
           <Link
             href="/konto"
-            onClick={() => setOpen(false)}
+            onClick={zamknij}
             className="block rounded-xl px-3 py-2.5 text-[13px] text-muted hover:text-ink"
           >
             Moje konto
           </Link>
           <Link
             href="/ulubione"
-            onClick={() => setOpen(false)}
+            onClick={zamknij}
             className="block rounded-xl px-3 py-2.5 text-[13px] text-muted hover:text-ink"
           >
             Ulubione boiska
@@ -93,7 +145,7 @@ export function AuthMenu({ user }: { user: AuthUser | null }) {
           {user.isAdmin && (
             <Link
               href="/admin"
-              onClick={() => setOpen(false)}
+              onClick={zamknij}
               className="block rounded-xl px-3 py-2.5 text-[13px] text-muted hover:text-ink"
             >
               Panel administratora
