@@ -15,7 +15,11 @@ import { supabasePublic } from "@/lib/supabase/publiczny";
  *
  * Odpalanie: `vercel.json`, sekcja `crons`. Vercel woła to raz dziennie i sam dokłada
  * nagłówek `Authorization: Bearer <CRON_SECRET>`, jeśli taka zmienna jest ustawiona.
- * Sprawdzamy go tylko wtedy, gdy istnieje - bez niej trasa i tak niczego nie ujawnia.
+ *
+ * BEZ `CRON_SECRET` TRASA JEST WYŁĄCZONA, nie otwarta - patrz warunek niżej. Stało tu
+ * wcześniej „sprawdzamy go tylko wtedy, gdy istnieje", co opisywało poprzednią, luźniejszą
+ * wersję; sam warunek został zaostrzony, a ten opis został po staremu i mówił coś innego
+ * niż kod tuż pod nim.
  */
 export const dynamic = "force-dynamic";
 
