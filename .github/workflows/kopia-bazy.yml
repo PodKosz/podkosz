@@ -1,0 +1,123 @@
+# =====================================================================
+#  Codzienna kopia zapasowa bazy
+#
+#  DLACZEGO TO W OGÓLE ISTNIEJE
+#
+#  Darmowy plan Supabase nie robi ŻADNYCH kopii zapasowych. Nie „rzadkich" ani
+#  „tygodniowych" - żadnych. Jedno nieopatrzne `delete` albo `drop` i nie ma z czego wrócić,
+#  a razem z bazą znikają konta ludzi, ich ulubione boiska i historia gry.
+#
+#  Codzienne kopie z siedmiu dni wstecz są dopiero w planie Pro ($25). To jest tańszy
+#  zamiennik na czas, gdy siedzimy na darmowym: ten sam efekt, zero złotówek.
+#
+#  GDZIE LĄDUJE KOPIA
+#
+#  Na razie jako artefakt przebiegu GitHub Actions. To nie jest docelowe miejsce i nie
+#  udaje, że jest: artefakty wygasają, a przy większej bazie zjadłyby limit repozytorium.
+#  Docelowo ma to iść do Cloudflare R2 - patrz krok „Wyślij do R2" na końcu, wystarczy
+#  wtedy dopisać trzy sekrety i zdjąć `if: false`.
+#
+#  CZEGO TA KOPIA NIE ZAŁATWIA
+#
+#  Zdjęć. Te leżą w magazynie plików, nie w bazie, i `pg_dump` ich nie widzi - w kopii
+#  są wyłącznie ścieżki do nich. Zdjęcia zabezpiecza osobno przeniesienie na R2.
+# =====================================================================
+
+name: Kopia zapasowa bazy
+
+on:
+  schedule:
+    # 03:30 UTC, czyli w nocy naszego czasu i z dala od budzika bazy o 06:00.
+    # GitHub potrafi odpalić zadanie z opóźnieniem przy dużym obciążeniu - tu to nie szkodzi.
+    - cron: "30 3 * * *"
+  # Ręczne uruchomienie: zakładka Actions → ten workflow → „Run workflow".
+  # Konieczne, żeby dało się sprawdzić kopię od razu, a nie czekać do nocy.
+  workflow_dispatch:
+
+jobs:
+  kopia:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Sprawdź, czy sekret jest ustawiony
+        env:
+          ADRES_BAZY: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$ADRES_BAZY" ]; then
+            echo "::error::Brak sekretu SUPABASE_DB_URL. Ustaw go w Settings → Secrets and variables → Actions."
+            echo "Weź go z Supabase: Project Settings → Database → Connection string → Session pooler."
+            exit 1
+          fi
+          echo "Sekret jest. Nie wypisuję go - adres zawiera hasło."
+
+      # pg_dump MUSI być w wersji nie starszej niż serwer, inaczej odmawia zrzutu
+      # („server version mismatch"). Domyślny klient na runnerze bywa starszy od bazy
+      # Supabase, więc bierzemy najnowszy z oficjalnego repozytorium PostgreSQL -
+      # nowszy klient poradzi sobie ze starszym serwerem, odwrotnie nie.
+      - name: Zainstaluj klienta PostgreSQL 17
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] \
+            https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17
+          pg_dump --version
+
+      - name: Zrzuć bazę
+        env:
+          ADRES_BAZY: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          NAZWA="podkosz-$(date -u +%Y-%m-%d).dump"
+          echo "NAZWA=$NAZWA" >> "$GITHUB_ENV"
+
+          # -Fc  format własny Postgresa: skompresowany i czytelny dla `pg_restore`,
+          #      w dodatku pozwala odtworzyć pojedynczą tabelę zamiast całości.
+          # --no-owner  właściciele obiektów różnią się między projektami Supabase
+          #      i przy odtwarzaniu tylko przeszkadzają. Uprawnień (`grant execute ...
+          #      to anon`) NIE zdejmujemy - role `anon` i `authenticated` istnieją
+          #      w każdym projekcie, a bez tych nadań połowa strony przestałaby działać.
+          pg_dump -Fc --no-owner --file "$NAZWA" "$ADRES_BAZY"
+
+          echo "Gotowe: $NAZWA ($(du -h "$NAZWA" | cut -f1))"
+
+      # Zrzut, którego nie da się odtworzyć, jest gorszy niż brak zrzutu - bo usypia
+      # czujność. `pg_restore --list` czyta spis treści pliku: jeśli jest uszkodzony
+      # albo pusty, poznamy to tutaj, a nie w dniu awarii.
+      - name: Sprawdź, czy kopia da się odczytać
+        run: |
+          set -euo pipefail
+          POZYCJI=$(pg_restore --list "$NAZWA" | grep -c "^[0-9]" || true)
+          echo "Obiektów w kopii: $POZYCJI"
+          if [ "$POZYCJI" -lt 50 ]; then
+            echo "::error::Kopia ma tylko $POZYCJI obiektów - to za mało jak na tę bazę. Coś poszło nie tak."
+            exit 1
+          fi
+          echo "Kopia wygląda kompletnie."
+
+      - name: Zachowaj kopię
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.NAZWA }}
+          path: ${{ env.NAZWA }}
+          retention-days: 30
+          if-no-files-found: error
+
+      # ------------------------------------------------------------------ docelowe miejsce
+      # Włączyć, gdy R2 będzie gotowe: zdjąć `if: false` i dodać trzy sekrety
+      # (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY) oraz kubełek `kopie`.
+      # Wtedy kopie przestają wygasać razem z artefaktami i leżą poza GitHubem.
+      - name: Wyślij do R2
+        if: false
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          KONTO: ${{ secrets.R2_ACCOUNT_ID }}
+        run: |
+          aws s3 cp "$NAZWA" "s3://kopie/$NAZWA" \
+            --endpoint-url "https://${KONTO}.r2.cloudflarestorage.com"
