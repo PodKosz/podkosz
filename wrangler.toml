@@ -1,0 +1,44 @@
+# =====================================================================
+#  Worker zdjęć - cała konfiguracja w repozytorium, nie w panelu
+#
+#  Powiązanie z kubełkiem, zmienne i trasa klikało się w panelu Cloudflare i to nie jest
+#  dobre miejsce na taką wiedzę: nie widać jej w przeglądzie zmian, nie da się jej odtworzyć
+#  po pomyłce i nikt poza klikającym nie wie, co tam stoi. Tutaj widać wszystko naraz,
+#  a wdrożenie to `npx wrangler deploy`.
+#
+#  Kubełek dostajemy przez POWIĄZANIE, nie przez klucze S3 - nie ma sekretu do wykradzenia,
+#  bo nie ma sekretu w ogóle. Szczegóły w nagłówku `worker/zdjecia.js`.
+# =====================================================================
+
+name = "podkosz-zdjecia"
+main = "worker/zdjecia.js"
+compatibility_date = "2026-09-14"
+
+# Trasa TYLKO na wgrywanie. Odczyt zdjęć idzie wprost z `zdjecia.podkosz.pl`, czyli
+# z własnej domeny kubełka - i ma tak zostać. Darmowe Workers mają sufit 100 tys. wywołań
+# na dobę, a odczytów zdjęć są setki tysięcy; przepuszczenie ich tędy zamieniłoby darmowy
+# odczyt w policzalny. Reszta ruchu na podkosz.pl leci do Vercela, nietknięta.
+#
+# GWIAZDKA NA KOŃCU JEST KONIECZNA, nie ozdobna. Wzorzec bez niej dopasowuje się do
+# DOKŁADNEGO adresu razem z zapytaniem, więc `/zdjecia/wgraj` trafiało do Workera,
+# a `/zdjecia/wgraj?sciezka=...` - czyli każde prawdziwe wywołanie - leciało do Vercela
+# i wracało z 405. Objaw był mylący: trasa wyglądała na działającą.
+routes = [
+  { pattern = "podkosz.pl/zdjecia/wgraj*", zone_name = "podkosz.pl" }
+]
+
+# Kubełek pod nazwą `ZDJECIA` - tak widzi go kod Workera (`env.ZDJECIA`).
+[[r2_buckets]]
+binding = "ZDJECIA"
+bucket_name = "podkosz-zdjecia"
+
+# Oba są publiczne z natury: adres projektu i klucz anonimowy jadą w paczce JS każdej
+# strony. Trzymanie ich jako zwykłych zmiennych, a nie sekretów, jest tu poprawne -
+# udawanie, że to tajemnica, tylko zaciemniałoby, co naprawdę jest wrażliwe.
+[vars]
+SUPABASE_URL = "https://muyhxifftgjnygyrbjqn.supabase.co"
+SUPABASE_ANON_KEY = "sb_publishable_Qjne1iMqEqCyiyE_VPYzCg_hzUBoMFZ"
+
+# Dziennik wywołań - bez tego nie widać, czemu wgrywanie odmówiło.
+[observability]
+enabled = true
