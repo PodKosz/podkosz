@@ -7,6 +7,7 @@ import { photoUrl, supabaseEnabled } from "./supabase/config";
 import { supabaseBrowser } from "./supabase/client";
 import { refreshCourtsCache } from "./admin";
 import type { SubmissionRow } from "./supabase/types";
+import { usunZdjecia, wgrajZdjecie } from "./zdjecia";
 import {
   Submission,
   SubmissionStatus,
@@ -176,11 +177,8 @@ export async function submitCourt(input: NewSubmission): Promise<WynikZgloszenia
     const path = `zgloszenia/${id}/${i + 1}-${slugify(photo.kind)}.jpg`;
     const blob = await dataUrlToBlob(photo.dataUrl);
 
-    /* `upsert` już tu było i teraz zarabia na siebie: ponowna próba nadpisuje ten sam plik */
-    const up = await supabase.storage
-      .from("court-photos")
-      .upload(path, blob, { contentType: "image/jpeg", upsert: true });
-    if (up.error) throw new Error(up.error.message);
+    /* nadpisanie tej samej ścieżki jest bezpieczne: ponowna próba podmienia plik, nie dubluje */
+    await wgrajZdjecie(path, blob);
 
     const { error: photoError } = await supabase
       .from("submission_photos")
@@ -230,7 +228,7 @@ async function removeUnusedFiles(
 
   const inUse = new Set(((used ?? []) as { storage_path: string }[]).map((r) => r.storage_path));
   const orphans = paths.filter((p) => !inUse.has(p));
-  if (orphans.length) await supabase.storage.from("court-photos").remove(orphans);
+  if (orphans.length) await usunZdjecia(orphans);
 }
 
 function rowToSubmission(row: SubmissionRow): Submission {

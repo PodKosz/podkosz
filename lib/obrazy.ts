@@ -1,4 +1,4 @@
-import { SUPABASE_URL } from "./supabase/config";
+import { SUPABASE_URL, ZDJECIA_BAZA } from "./supabase/config";
 
 /**
  * Skalowanie zdjęć - przez Supabase, nie przez optymalizator Vercela.
@@ -85,8 +85,16 @@ export const JAKOSC_MINIATURY = 68;
 export const JAKOSC_ZDJECIA = 72;
 export const JAKOSC_PLAKATU = 76;
 
-/** Czy to publiczny adres pliku w naszym Supabase - tylko takie umiemy przeskalować. */
-function naszePlikiSupabase(adres: string) {
+/**
+ * Czy to NASZ plik - tylko takie wolno przepuścić przez skalowanie.
+ *
+ * Dwa adresy, bo zdjęcia przeniosły się z magazynu Supabase na R2 (16 września 2026),
+ * a stary adres wciąż potrafi trafić się w starszej pamięci podręcznej albo w odpowiedzi
+ * sprzed przeniesienia. Kosztuje to jedno porównanie, a chroni przed sytuacją, w której
+ * skalowanie po cichu przestaje działać i wszyscy dostają pełnowymiarowe pliki.
+ */
+function naszeZdjecie(adres: string) {
+  if (ZDJECIA_BAZA && adres.startsWith(`${ZDJECIA_BAZA}/`)) return true;
   return Boolean(SUPABASE_URL) && adres.startsWith(`${SUPABASE_URL}${PREFIKS_OBIEKTU}`);
 }
 
@@ -112,7 +120,7 @@ function naszePlikiSupabase(adres: string) {
  */
 export function adresMiniatury(adres: string, szerokosc: number, jakosc = JAKOSC_ZDJECIA) {
   if (!adres) return "";
-  if (adres.startsWith("data:") || !naszePlikiSupabase(adres)) return adres;
+  if (adres.startsWith("data:") || !naszeZdjecie(adres)) return adres;
 
   const w = Math.round(szerokosc);
 
@@ -132,8 +140,18 @@ export function adresMiniatury(adres: string, szerokosc: number, jakosc = JAKOSC
     return `${CDN}/cdn-cgi/image/width=${w},quality=${jakosc},format=auto,fit=scale-down/${adres}`;
   }
 
-  const sciezka = adres.slice(`${SUPABASE_URL}${PREFIKS_OBIEKTU}`.length);
-  return `${SUPABASE_URL}${PREFIKS_RENDERA}${sciezka}?width=${w}&quality=${jakosc}&resize=contain`;
+  /*
+    Bez Cloudflare zostaje surowy plik - i to jest uczciwa odpowiedź, nie zaniechanie.
+    Skalowanie po stronie Supabase działało tylko dla plików LEŻĄCYCH w Supabase, a te
+    są teraz w R2, które własnego przeskalowywania nie ma. Jedyne skalowanie, jakie mamy,
+    idzie przez Cloudflare; gdy nie jest skonfigurowane, lepiej oddać pełny plik niż
+    zbudować adres, który zwróci błąd.
+  */
+  if (adres.startsWith(`${SUPABASE_URL}${PREFIKS_OBIEKTU}`)) {
+    const sciezka = adres.slice(`${SUPABASE_URL}${PREFIKS_OBIEKTU}`.length);
+    return `${SUPABASE_URL}${PREFIKS_RENDERA}${sciezka}?width=${w}&quality=${jakosc}&resize=contain`;
+  }
+  return adres;
 }
 
 /**
@@ -153,12 +171,18 @@ export function zapasowyAdres(adres: string) {
   if (!adres || adres.startsWith("data:")) return adres;
 
   /*
-    Adres przez Cloudflare ma oryginał doklejony na końcu, więc zapas to po prostu wszystko
-    od miejsca, w którym zaczyna się nasz Supabase. Warunek `> 0`, a nie `>= 0`: pod zerem
-    stoi adres, który JUŻ jest surowym plikiem, i nie ma z czego go obcinać.
+    Adres przez Cloudflare wygląda tak: <cdn>/cdn-cgi/image/<opcje>/<oryginalny adres>.
+    Zapas to wszystko za ukośnikiem kończącym opcje - bez wiedzy o tym, gdzie stoi
+    oryginał. Wcześniej szukaliśmy tu wprost adresu Supabase i po przeniesieniu zdjęć
+    na R2 ten zapas przestałby działać w ciszy: przy błędzie skalowania nie byłoby
+    już do czego wrócić.
   */
-  const odCdn = adres.indexOf(`${SUPABASE_URL}${PREFIKS_OBIEKTU}`);
-  if (odCdn > 0) return adres.slice(odCdn);
+  const ZNACZNIK = "/cdn-cgi/image/";
+  const odCdn = adres.indexOf(ZNACZNIK);
+  if (odCdn > 0) {
+    const zaOpcjami = adres.indexOf("/", odCdn + ZNACZNIK.length);
+    if (zaOpcjami > 0) return adres.slice(zaOpcjami + 1);
+  }
 
   if (adres.includes(PREFIKS_RENDERA)) {
     return adres.replace(PREFIKS_RENDERA, PREFIKS_OBIEKTU).split("?")[0];

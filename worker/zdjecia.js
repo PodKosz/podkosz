@@ -129,21 +129,56 @@ export default {
     }
 
     /* ---------------------------------------------------------------- kto może wgrywać */
+    /*
+      Kolejność sprawdzeń ma znaczenie dla kosztu: najpierw tania ścieżka gościa (jedno
+      pytanie do bazy), a dopiero gdy ta odmówi - droższe sprawdzenie administratora
+      (dwa pytania: token na konto, konto na uprawnienie).
+    */
+    let wolno = false;
+    let jakoAdmin = false;
+
     if (wZgloszeniach) {
       /*
         Gość też może - i to nie jest luka, tylko świadoma decyzja produktowa: boisko
         wolno dodać bez zakładania konta. Bramą jest otwarte zgłoszenie, nie zalogowanie.
       */
-      const otwarte = await pytajBaze(env, "submission_open", { sub: idZgloszenia }, token);
-      if (otwarte !== true) {
-        return odpowiedz({ ok: false, powod: "zgłoszenie zamknięte albo nie istnieje" }, 403);
-      }
+      wolno = (await pytajBaze(env, "submission_open", { sub: idZgloszenia }, token)) === true;
+    }
 
-      /*
-        Limit plików liczony na R2, bo w bazie nie ma już czego liczyć. `list` z prefiksem
-        jest operacją klasy A - przy dwunastu plikach na zgłoszenie to nic, a bez tego
-        limit zniknąłby po cichu razem z przeprowadzką.
-      */
+    /*
+      Administrator wchodzi wszędzie, także do katalogu ZAMKNIĘTEGO zgłoszenia. To nie jest
+      wygoda, tylko konieczność: część zdjęć zatwierdzonych boisk została pod ścieżkami
+      `zgloszenia/...`, bo panel przy zatwierdzaniu ponownie używa ścieżki ze zgłoszenia
+      zamiast wgrywać plik drugi raz. Bez tego wyjątku nie dałoby się ich ani przenieść,
+      ani nigdy więcej podmienić.
+    */
+    if (!wolno) {
+      jakoAdmin = await czyAdmin(env, token);
+      wolno = jakoAdmin;
+    }
+
+    if (!wolno) {
+      return odpowiedz(
+        {
+          ok: false,
+          powod: wZgloszeniach
+            ? "zgłoszenie zamknięte albo nie istnieje"
+            : "ten katalog wymaga administratora",
+        },
+        403
+      );
+    }
+
+    /*
+      Limit plików liczony na R2, bo w bazie nie ma już czego liczyć. `list` z prefiksem
+      jest operacją klasy A - przy dwunastu plikach na zgłoszenie to nic, a bez tego
+      limit zniknąłby po cichu razem z przeprowadzką.
+
+      Administratora nie dotyczy: on podmienia i przenosi istniejące pliki, a nie zapycha
+      dysk nowym zgłoszeniem. Limit jest po to, żeby obcy nie wrzucił tysiąca zdjęć pod
+      jedno zgłoszenie - nie po to, żeby blokować własne porządki.
+    */
+    if (wZgloszeniach && !jakoAdmin) {
       const juzSa = await env.ZDJECIA.list({
         prefix: `zgloszenia/${idZgloszenia}/`,
         limit: MAKS_PLIKOW + 1,
@@ -151,8 +186,6 @@ export default {
       if (juzSa.objects.length >= MAKS_PLIKOW) {
         return odpowiedz({ ok: false, powod: `najwyżej ${MAKS_PLIKOW} zdjęć na zgłoszenie` }, 429);
       }
-    } else if (!(await czyAdmin(env, token))) {
-      return odpowiedz({ ok: false, powod: "ten katalog wymaga administratora" }, 403);
     }
 
     /* ---------------------------------------------------------------- sam plik */

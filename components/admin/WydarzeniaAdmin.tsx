@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { photoUrl } from "@/lib/supabase/config";
 import { godziny, kiedy, plakietka, stanWydarzenia, type Wydarzenie } from "@/lib/wydarzenia";
+import { usunZdjecia, wgrajZdjecie } from "@/lib/zdjecia";
 
 /**
  * Kreator wydarzeń - jedyne miejsce, z którego wydarzenie powstaje.
@@ -256,13 +257,16 @@ export function WydarzeniaAdmin({ slugBoiska }: { slugBoiska?: string | null }) 
       if (plik) {
         const rozszerzenie = plik.name.split(".").pop()?.toLowerCase() === "png" ? "png" : "jpg";
         const sciezka = `wydarzenia/${id}/plakat.${rozszerzenie}`;
-        const up = await supabase.storage
-          .from("court-photos")
-          .upload(sciezka, plik, { contentType: plik.type || "image/jpeg", upsert: true });
+        let bladPlakatu: string | null = null;
+        try {
+          await wgrajZdjecie(sciezka, plik);
+        } catch (e) {
+          bladPlakatu = (e as Error).message;
+        }
 
-        if (up.error) {
+        if (bladPlakatu) {
           /* wiersz zostaje - wydarzenie bez plakatu jest wydarzeniem, brak wiersza nie jest */
-          setKomunikat(`Wydarzenie zapisane, ale plakat nie wszedł: ${up.error.message}`);
+          setKomunikat(`Wydarzenie zapisane, ale plakat nie wszedł: ${bladPlakatu}`);
         } else {
           /*
             Proporcję plakatu zapisujemy TERAZ, w przeglądarce, która ten plik właśnie
@@ -332,7 +336,7 @@ export function WydarzeniaAdmin({ slugBoiska }: { slugBoiska?: string | null }) 
     const supabase = await supabaseBrowser();
     if (!supabase) return;
 
-    if (w.zdjecie) await supabase.storage.from("court-photos").remove([w.zdjecie]);
+    if (w.zdjecie) await usunZdjecia([w.zdjecie]);
     const { error } = await supabase.from("wydarzenia").delete().eq("id", w.id);
     if (error) {
       setBlad(error.message);

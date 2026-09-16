@@ -7,6 +7,7 @@ import { orderPhotos } from "./photos";
 import { photoUrl } from "./supabase/config";
 import { supabaseBrowser } from "./supabase/client";
 import type { CourtRow } from "./supabase/types";
+import { usunZdjecia, wgrajZdjecie } from "./zdjecia";
 
 export interface CourtValues {
   name: string;
@@ -163,10 +164,11 @@ export async function saveCourt(
     if (isNewPhoto(photo)) {
       const blob = await fileToJpeg(photo.file);
       const path = `boiska/${id}/${Date.now()}-${i + 1}-${slugify(photo.kind)}.jpg`;
-      const up = await supabase.storage
-        .from("court-photos")
-        .upload(path, blob, { contentType: "image/jpeg", upsert: true });
-      if (up.error) throw new Error(`Zdjęcie ${i + 1}: ${up.error.message}`);
+      try {
+        await wgrajZdjecie(path, blob);
+      } catch (e) {
+        throw new Error(`Zdjęcie ${i + 1}: ${(e as Error).message}`);
+      }
       paths.push({ kind: photo.kind, storage_path: path });
     } else {
       paths.push({ kind: photo.kind, storage_path: photo.storagePath });
@@ -198,8 +200,13 @@ export async function deleteCourt(courtId: string) {
   // Pliki kasujemy przed wierszem boiska - inaczej stracilibyśmy ścieżki i zostałyby sieroty.
   // Brakujący plik nie blokuje usunięcia wpisu; blokuje wyłącznie realny błąd Storage.
   if (files.length) {
-    const { error: storageError } = await supabase.storage.from("court-photos").remove(files);
-    if (storageError) throw new Error(`Zdjęcia zostały w Storage: ${storageError.message}`);
+    const zniknelo = await usunZdjecia(files);
+    if (zniknelo < files.length) {
+      throw new Error(
+        `Nie skasowano wszystkich zdjęć (${zniknelo} z ${files.length}). Boisko zostaje - ` +
+          `inaczej stracilibyśmy ścieżki i pliki zostałyby na zawsze.`
+      );
+    }
   }
 
   const { error } = await supabase.from("courts").delete().eq("id", courtId);
