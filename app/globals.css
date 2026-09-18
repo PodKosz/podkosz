@@ -2361,14 +2361,31 @@ select option {
     opacity: 0;
     scale: 0.96;
     transform-origin: 50% 100%;
+    /*
+      `visibility`, nie samo `opacity`. Karta wisi w drzewie przez cały czas życia mapy,
+      a ma na sobie `backdrop-filter: blur(46px)` (z klasy `szklo-plynne`). Przezroczysty
+      element z filtrem tła nadal bywa składany przez przeglądarkę - a to trzy takie
+      elementy nad mapą, która i tak przerysowuje się przy każdym ruchu. `visibility`
+      zdejmuje je z rysowania zupełnie.
+
+      Skok wartości opóźniony o czas gaśnięcia, żeby karta zdążyła zniknąć płynnie,
+      zamiast urwać się w połowie.
+    */
+    visibility: hidden;
     transition:
       opacity 0.16s ease-out,
-      scale 0.16s ease-out;
+      scale 0.16s ease-out,
+      visibility 0s linear 0.16s;
   }
 
   .pinezka-gry:hover .wizytowka-gry {
     opacity: 1;
     scale: 1;
+    visibility: visible;
+    transition:
+      opacity 0.16s ease-out,
+      scale 0.16s ease-out,
+      visibility 0s;
   }
 
   /* najechana pinezka gry wychodzi nad pozostałe - inaczej karta wchodzi pod sąsiednie */
