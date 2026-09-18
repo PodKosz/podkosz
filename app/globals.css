@@ -2313,6 +2313,90 @@ select option {
 }
 
 /*
+  ---------- wizytówka minigry ----------
+
+  Karta siedzi WEWNĄTRZ niebieskiej pinezki (patrz `wizytowkaGryHtml` w MapView), więc
+  jeździ razem z nią i nie wymaga ani stanu, ani przeliczania położenia przy ruchu mapy.
+
+  Tylko przy prawdziwym kursorze. Na dotyku `:hover` zapala się po stuknięciu i zostaje,
+  a stuknięcie w tę pinezkę ma otworzyć grę, nie zostawić wiszącą chmurkę.
+*/
+@media (hover: hover) {
+  .wizytowka-gry {
+    position: absolute;
+    left: 50%;
+    /* nad CAŁĄ pinezką, nie nad jej środkiem - inaczej stopka karty wchodzi pod kulę */
+    bottom: calc(100% + 14px);
+    width: 250px;
+    translate: -50% 0;
+    pointer-events: none;
+    opacity: 0;
+    scale: 0.96;
+    transform-origin: 50% 100%;
+    transition:
+      opacity 0.16s ease-out,
+      scale 0.16s ease-out;
+  }
+
+  .pinezka-gry:hover .wizytowka-gry {
+    opacity: 1;
+    scale: 1;
+  }
+
+  /* najechana pinezka gry wychodzi nad pozostałe - inaczej karta wchodzi pod sąsiednie */
+  .pinezka-gry:hover {
+    z-index: 6;
+  }
+
+  .wizytowka-gry-karta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 13px 15px 12px;
+    border-radius: 20px;
+    text-align: left;
+    /* barwa poświaty bierze się z pinezki, nie z domyślnego pomarańczu */
+    box-shadow: 0 18px 50px -18px rgb(29 95 208 / 0.85);
+  }
+
+  .wgk-nadtytul {
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #7cc0ff;
+  }
+
+  .wgk-tytul {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--color-ink);
+  }
+
+  .wgk-miejsce {
+    font-size: 12px;
+    color: var(--color-muted);
+  }
+
+  .wgk-jak {
+    margin-top: 7px;
+    font-size: 11.5px;
+    line-height: 1.4;
+    color: var(--color-muted);
+  }
+
+  .wgk-stopka {
+    margin-top: 9px;
+    padding-top: 8px;
+    border-top: 1px solid rgb(var(--rgb-szyba) / 0.12);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #7cc0ff;
+  }
+}
+
+/*
   Pinezka wydarzenia.
 
   Rozmiar i barwy przychodzą z treści pinezki (patrz `markerHtml`), tutaj zostają trzy

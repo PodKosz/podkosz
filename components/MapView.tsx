@@ -16,7 +16,7 @@ import { czytajWidok, zapiszWidok } from "@/lib/adres";
 import { fetchCheckinyDzisiaj } from "@/lib/checkins";
 import { pobierzWydarzenia, type Wydarzenie } from "@/lib/wydarzenia";
 import { punktyWKadrze, type PunktOsm } from "@/lib/punkty-osm";
-import { MIEJSCA_GRY } from "@/lib/minigra";
+import { MIEJSCA_GRY, NAZWY_GIER, type MiejsceGry, type RodzajGry } from "@/lib/minigra";
 import { szwyPilki } from "@/lib/pilka";
 /* podgląd propozycji pinezek - rusztowanie do wyrzucenia, patrz `lib/pinezka-podglad.ts` */
 import { pinezkaPodgladHtml, wariantZAdresu } from "@/lib/pinezka-podglad";
@@ -612,7 +612,7 @@ export function MapView({
       el.href = `/gra/${g.slug}`;
       el.title = `${g.nazwa}, ${g.miasto}`;
       el.setAttribute("aria-label", `Minigra: ${g.nazwa}`);
-      el.innerHTML = markerGryHtml();
+      el.innerHTML = markerGryHtml(g);
       el.addEventListener("click", (e) => e.stopPropagation());
 
       new Marker({ element: el, anchor: "bottom" }).setLngLat([g.lng, g.lat]).addTo(map);
@@ -1548,27 +1548,73 @@ export function MapView({
  * a błękit nie znaczy na tej mapie nic innego - więc od razu widać, że to coś osobnego,
  * i nikt nie pomyśli, że w Kalifornii dodano boisko do polskiej bazy.
  */
-function markerGryHtml() {
+function markerGryHtml(g: MiejsceGry) {
   const size = 38;
+  const gra = NAZWY_GIER[g.rodzaj];
 
-  return `<span style="position:relative;display:block;width:${size}px;height:${size + 10}px">
-    <span style="position:absolute;left:50%;top:50%;width:${size * 2.1}px;height:${size * 2.1}px;
-      translate:-50% -52%;border-radius:999px;pointer-events:none;
+  /*
+    Budowa jeden do jednego z `markerHtml`: kolumna, w której kula stoi na nóżce zakończonej
+    kropką. Wcześniej ta pinezka miała własną konstrukcję na pozycjonowaniu bezwzględnym i
+    dwie rzeczy z tego wynikały, obie źle:
+
+      - kula miała `inset: 0` w pudełku o wysokości `size + 10`, więc rozciągała się na
+        38 x 48 px i z koła robiło się jajko;
+      - nóżka i kropka leżały POD kulą w tym samym pudełku, czyli były nią zasłonięte -
+        pinezka gry nie miała widocznego oparcia, choć w kodzie je miała.
+
+    Teraz obie pinezki są tym samym kształtem w dwóch barwach i nie ma jak ich rozjechać.
+  */
+  return `<span class="relative flex flex-col items-center"
+      style="--cien:29 95 208;filter:drop-shadow(0 6px 14px rgb(0 0 0 / calc(.6 * var(--moc-cienia, 1))))">
+
+    ${wizytowkaGryHtml(g, gra)}
+
+    <span class="pulse-glow absolute -top-2 left-1/2 -translate-x-1/2 rounded-full"
+      style="width:${size * 1.8}px;height:${size * 1.8}px;pointer-events:none;
       background:radial-gradient(circle,rgba(86,172,255,.55) 0%,rgba(24,92,190,.18) 45%,transparent 70%)"></span>
 
-    <span style="position:absolute;inset:0;border-radius:999px;
+    <span class="marker-core relative grid place-items-center rounded-full transition-all duration-200"
+      style="width:${size}px;height:${size}px;
       background:linear-gradient(135deg,#d7ecff,#56acff 55%,#1d5fd0);
-      box-shadow:0 6px 14px -6px rgba(20,80,180,.9), inset 0 1px 0 rgba(255,255,255,.55)">
-      <svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none"
+      box-shadow:0 0 0 1.5px rgba(255,255,255,.28) inset, 0 6px 18px -4px rgba(20,80,180,.9)">
+      <svg viewBox="0 0 24 24" style="width:${size}px;height:${size}px" fill="none"
         stroke="rgba(10,30,70,.72)" stroke-width=".97" stroke-linecap="round">
         <path d="${szwyPilki(12, 12, 12)}"/>
       </svg>
     </span>
 
-    <span style="position:absolute;left:50%;bottom:0;width:3px;height:11px;translate:-50% 0;
-      border-radius:2px;background:#56acff"></span>
-    <span style="position:absolute;left:50%;bottom:-3px;width:7px;height:4px;translate:-50% 0;
-      border-radius:999px;background:rgba(0,0,0,.45);filter:blur(1px)"></span>
+    <span style="width:2px;height:10px;background:linear-gradient(180deg,#56acff,transparent)"></span>
+    <span style="width:7px;height:3px;border-radius:99px;background:rgba(86,172,255,.85)"></span>
+  </span>`;
+}
+
+/**
+ * Wizytówka minigry - to, co pokazuje się po najechaniu na niebieską pinezkę.
+ *
+ * ------------------------------------------------------------------ czemu bez Reacta
+ *
+ * Wizytówka boiska jest komponentem, bo musi dociągnąć zdjęcia, zna wydarzenia i zmienia
+ * treść w trakcie życia strony. Tutaj nie ma czego dociągać: nazwa gry, miasto i jedno
+ * zdanie instrukcji są znane w chwili wieszania pinezki i nigdy się nie zmieniają.
+ *
+ * Skoro treść jest stała, karta może siedzieć WEWNĄTRZ znacznika i pokazywać się samym
+ * arkuszem. Dzięki temu nie ma stanu, nie ma nasłuchiwania myszy i - co najważniejsze -
+ * nie ma przeliczania położenia przy każdym ruchu mapy: karta jest dzieckiem pinezki,
+ * więc jeździ razem z nią za darmo.
+ *
+ * Widoczna tylko tam, gdzie jest prawdziwe najeżdżanie (`@media (hover: hover)`), bo na
+ * dotyku „hover" zapala się po stuknięciu i zostaje - a stuknięcie w tę pinezkę ma
+ * otwierać grę, nie zostawiać wiszącą chmurkę.
+ */
+function wizytowkaGryHtml(g: MiejsceGry, gra: (typeof NAZWY_GIER)[RodzajGry]) {
+  return `<span class="wizytowka-gry" aria-hidden="true">
+    <span class="wizytowka-gry-karta szklo-plynne">
+      <span class="wgk-nadtytul">Minigra</span>
+      <span class="wgk-tytul">${gra.nazwa}</span>
+      <span class="wgk-miejsce">${g.nazwa} · ${g.miasto}</span>
+      <span class="wgk-jak">${gra.jak}</span>
+      <span class="wgk-stopka">Kliknij, żeby zagrać</span>
+    </span>
   </span>`;
 }
 
