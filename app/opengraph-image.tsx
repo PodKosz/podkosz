@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { SITE_URL } from "@/lib/site";
+import { szwyPilki } from "@/lib/pilka";
 
 /**
  * Obrazek podglądu linków (Facebook, Messenger, WhatsApp, X, Discord).
@@ -33,8 +34,7 @@ const LOGO = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width=
     <path d="M14.5 27a7 7 0 0 1 0 10" stroke-width="1.6" opacity=".85"/>
     <path d="M49.5 27a7 7 0 0 0 0 10" stroke-width="1.6" opacity=".85"/>
     <circle cx="32" cy="32" r="7.5" stroke-width="2.2"/>
-    <path d="M32 24.5v15M24.5 32h15" stroke-width="1.3" opacity=".95"/>
-    <path d="M27.2 26c2.7 3.3 2.7 8.7 0 12M36.8 26c-2.7 3.3-2.7 8.7 0 12" stroke-width="1.3" opacity=".95"/>
+    <path d="${szwyPilki(32, 32, 7.5)}" stroke-width="1.3" opacity=".95"/>
   </g>
 </svg>`;
 

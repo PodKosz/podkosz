@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { WejscieBeta } from "@/components/WejscieBeta";
 import { ZapisNaOtwarcie } from "@/components/ZapisNaOtwarcie";
 import { CourtOutline } from "@/components/CourtOutline";
+import { szwyPilki } from "@/lib/pilka";
 
 export const metadata: Metadata = {
   title: "PodKosz - już niedługo",
@@ -96,12 +97,7 @@ export default function Wkrotce() {
             <path d="M14.5 27a7 7 0 0 1 0 10" strokeWidth="1.6" opacity=".85" />
             <path d="M49.5 27a7 7 0 0 0 0 10" strokeWidth="1.6" opacity=".85" />
             <circle cx="32" cy="32" r="7.5" strokeWidth="2.2" />
-            <path d="M32 24.5v15M24.5 32h15" strokeWidth="1.3" opacity=".95" />
-            <path
-              d="M27.2 26c2.7 3.3 2.7 8.7 0 12M36.8 26c-2.7 3.3-2.7 8.7 0 12"
-              strokeWidth="1.3"
-              opacity=".95"
-            />
+            <path d={szwyPilki(32, 32, 7.5)} strokeWidth="1.3" opacity=".95" />
           </g>
         </svg>
 

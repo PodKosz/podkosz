@@ -1560,9 +1560,8 @@ function markerGryHtml() {
       background:linear-gradient(135deg,#d7ecff,#56acff 55%,#1d5fd0);
       box-shadow:0 6px 14px -6px rgba(20,80,180,.9), inset 0 1px 0 rgba(255,255,255,.55)">
       <svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none"
-        stroke="rgba(10,30,70,.72)" stroke-width=".95" stroke-linecap="round">
-        <circle cx="12" cy="12" r="7.2"/>
-        <path d="${szwyPilki(12, 12, 7.2)}"/>
+        stroke="rgba(10,30,70,.72)" stroke-width=".97" stroke-linecap="round">
+        <path d="${szwyPilki(12, 12, 12)}"/>
       </svg>
     </span>
 
@@ -1615,9 +1614,10 @@ function markerHtmlNieodkryte() {
        style="filter: drop-shadow(0 4px 10px rgb(0 0 0 / calc(.5 * var(--moc-cienia, 1))))">
     <span class="punkt-osm-kula grid place-items-center rounded-full"
           style="width:${size}px;height:${size}px">
-      <svg viewBox="0 0 24 24" style="width:${size * 0.58}px;height:${size * 0.58}px" fill="none"
-           stroke="currentColor" stroke-width="1.1" stroke-linecap="round">
-        <circle cx="12" cy="12" r="9.2"/><path d="${szwyPilki(12, 12, 9.2)}"/>
+      <!-- kulka JEST piłką, tak samo jak w pinezce boiska; obrysem jest jej kreskowana krawędź -->
+      <svg viewBox="0 0 24 24" style="width:${size}px;height:${size}px" fill="none"
+           stroke="currentColor" stroke-width="1.12" stroke-linecap="round">
+        <path d="${szwyPilki(12, 12, 12)}"/>
       </svg>
     </span>
     <span class="punkt-osm-nozka" style="width:2px;height:8px"></span>
@@ -1744,8 +1744,20 @@ function markerHtml(court: MapCourt, wydarzenie = false) {
     </span>
     <span class="marker-core relative grid place-items-center rounded-full transition-all duration-200"
           style="width:${size}px;height:${size}px;background:${core};box-shadow:0 0 0 1.5px rgba(255,255,255,.28) inset, 0 6px 18px -4px ${shadow}">
-      <svg viewBox="0 0 24 24" style="width:${size * 0.62}px;height:${size * 0.62}px" fill="none" stroke="${seam}" stroke-width=".95" stroke-linecap="round">
-        <circle cx="12" cy="12" r="9.2"/><path d="${szwyPilki(12, 12, 9.2)}"/>
+      <!--
+        Szwy idą przez CAŁĄ kulę, nie przez jej środek.
+
+        Wcześniej rysunek piłki miał 62% średnicy pinezki i własny, ciemny obrys - więc
+        w kulce siedziała druga, mniejsza piłka, a dookoła niej zostawał pusty pomarańczowy
+        pierścień. Teraz kulka JEST piłką: obrysem jest jej własna krawędź, a szwy sięgają
+        od brzegu do brzegu.
+
+        Grubość 0.97 przy promieniu 12 to dokładnie ta sama proporcja kreski do średnicy,
+        co w galerii propozycji (1.05 przy 13) - inaczej pinezka wyglądałaby na mapie
+        inaczej niż wariant, który został wybrany.
+      -->
+      <svg viewBox="0 0 24 24" style="width:${size}px;height:${size}px" fill="none" stroke="${seam}" stroke-width=".97" stroke-linecap="round">
+        <path d="${szwyPilki(12, 12, 12)}"/>
       </svg>
     </span>
     <span style="width:2px;height:10px;background:linear-gradient(180deg,${stem},transparent)"></span>
