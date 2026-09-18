@@ -139,6 +139,45 @@ function skalaPinezkiWydarzenia(zoom: number) {
   const t = (zoom - WYD_ZOOM_MALY) / (WYD_ZOOM_PELNY - WYD_ZOOM_MALY);
   return WYD_SKALA_MIN + (1 - WYD_SKALA_MIN) * t;
 }
+
+/*
+  ZWYKŁA pinezka też maleje przy oddalaniu - ten sam powód, mniejsza skala.
+
+  Stały rozmiar w pikselach znaczy, że im dalej odjedziemy, tym większa jest pinezka
+  względem kraju. Przy widoku Polski w oknie kule zaczynają się zlewać, a przy widoku
+  pół Europy dziesięć boisk zasłania środek mapy.
+
+  Progi wzięte z konkretnych widoków, nie z wzoru:
+
+    7    - miasto i bliżej. Tu nikt się nie skarżył i tu nic się nie zmienia.
+    6,4  - Polska wypełnia okno. Zejście o 10%: kule przestają się stykać, ale
+           wciąż czytać je jako piłki.
+    5,7  - widać pół Europy. Zejście o 30%.
+
+  Poniżej 5,7 skala się zatrzymuje. Można by ciągnąć ją dalej w dół, ale to już
+  zgadywanie - a przy takim oddaleniu i tak wchodzi warstwa klastrów.
+
+  Pinezki WYDARZENIA to nie dotyczy: mają własne malenie (`--skala-zoom-wyd`, aż do
+  jednej trzeciej) i pomnożenie jednego przez drugie zrobiłoby z nich pyłek.
+*/
+const PIN_ZOOM_PELNY = 7;
+const PIN_ZOOM_KRAJ = 6.4;
+const PIN_ZOOM_DALEKI = 5.7;
+const PIN_SKALA_KRAJ = 0.9;
+const PIN_SKALA_DALEKA = 0.7;
+
+function skalaPinezkiOdZoomu(zoom: number) {
+  if (zoom >= PIN_ZOOM_PELNY) return 1;
+  if (zoom <= PIN_ZOOM_DALEKI) return PIN_SKALA_DALEKA;
+
+  if (zoom >= PIN_ZOOM_KRAJ) {
+    const t = (zoom - PIN_ZOOM_KRAJ) / (PIN_ZOOM_PELNY - PIN_ZOOM_KRAJ);
+    return PIN_SKALA_KRAJ + (1 - PIN_SKALA_KRAJ) * t;
+  }
+
+  const t = (zoom - PIN_ZOOM_DALEKI) / (PIN_ZOOM_KRAJ - PIN_ZOOM_DALEKI);
+  return PIN_SKALA_DALEKA + (PIN_SKALA_KRAJ - PIN_SKALA_DALEKA) * t;
+}
 /**
  * Gaśnięcie żaru przy oddalaniu kamery, w stopniach przybliżenia.
  *
@@ -578,13 +617,14 @@ export function MapView({
       pinezki są przebudowywane przy każdej zmianie danych - styl wpisany na element
       zniknąłby razem z nimi, a zmienna na kontenerze zostaje.
     */
-    const odswiezSkaleWydarzen = () => {
-      map
-        .getContainer()
-        .style.setProperty("--skala-zoom-wyd", String(skalaPinezkiWydarzenia(map.getZoom())));
+    const odswiezSkaleOdZoomu = () => {
+      const zoom = map.getZoom();
+      const styl = map.getContainer().style;
+      styl.setProperty("--skala-zoom-wyd", String(skalaPinezkiWydarzenia(zoom)));
+      styl.setProperty("--skala-zoom", String(skalaPinezkiOdZoomu(zoom)));
     };
-    odswiezSkaleWydarzen();
-    map.on("zoom", odswiezSkaleWydarzen);
+    odswiezSkaleOdZoomu();
+    map.on("zoom", odswiezSkaleOdZoomu);
 
     map.on("zoom", () => {
       const wejscie = zoomWejsciaRef.current;
@@ -610,8 +650,12 @@ export function MapView({
       const el = document.createElement("a");
       el.className = "court-marker pinezka-gry";
       el.href = `/gra/${g.slug}`;
-      el.title = `${g.nazwa}, ${g.miasto}`;
-      el.setAttribute("aria-label", `Minigra: ${g.nazwa}`);
+      /*
+        Bez `title`. Systemowa chmurka przeglądarki wyskakiwała obok naszej wizytówki -
+        dwie dymki naraz, jedna w stylu serwisu, druga w stylu systemu. Treść i tak jest
+        teraz w karcie, a dla czytnika ekranu zostaje `aria-label`.
+      */
+      el.setAttribute("aria-label", `Minigra: ${g.nazwa}, ${g.miasto}`);
       el.innerHTML = markerGryHtml(g);
       el.addEventListener("click", (e) => e.stopPropagation());
 
@@ -1607,11 +1651,22 @@ function markerGryHtml(g: MiejsceGry) {
  * otwierać grę, nie zostawiać wiszącą chmurkę.
  */
 function wizytowkaGryHtml(g: MiejsceGry, gra: (typeof NAZWY_GIER)[RodzajGry]) {
+  /*
+    Nazwa gry zaczyna się od słowa „Minigra" (patrz `NAZWY_GIER`), więc nadtytuł
+    powtarzałby je dwa razy pod rząd. Zostaje samo rozróżnienie - „Rzuty", „Kozły" -
+    a wspólny przedrostek idzie nad nim, mniejszą kreską.
+  */
+  const [przedrostek, ...reszta] = gra.nazwa.split(" ");
+  const nazwaGry = reszta.join(" ") || gra.nazwa;
+
+  /* Chicago stoi w Chicago - „Chicago · Chicago" wygląda jak usterka, więc łączymy w jedno. */
+  const gdzie = g.nazwa === g.miasto ? g.nazwa : `${g.nazwa} · ${g.miasto}`;
+
   return `<span class="wizytowka-gry" aria-hidden="true">
     <span class="wizytowka-gry-karta szklo-plynne">
-      <span class="wgk-nadtytul">Minigra</span>
-      <span class="wgk-tytul">${gra.nazwa}</span>
-      <span class="wgk-miejsce">${g.nazwa} · ${g.miasto}</span>
+      <span class="wgk-nadtytul">${przedrostek}</span>
+      <span class="wgk-tytul">${nazwaGry}</span>
+      <span class="wgk-miejsce">${gdzie}</span>
       <span class="wgk-jak">${gra.jak}</span>
       <span class="wgk-stopka">Kliknij, żeby zagrać</span>
     </span>

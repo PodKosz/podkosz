@@ -1748,13 +1748,13 @@ body {
     Wcześniej mobilna reguła nadpisywała `scale` w całości, więc na telefonie pinezka
     przestawała reagować na tłum - a to jedyna informacja na mapie, która żyje w ciągu dnia.
   */
-  scale: calc((1 + var(--zar, 1) * 0.035) * var(--skala-pinezki, 1));
+  scale: calc((1 + var(--zar, 1) * 0.035) * var(--skala-pinezki, 1) * var(--skala-zoom, 1));
 }
 
-/* pinezka bez zapisanych - sama skala ekranu */
+/* pinezka bez zapisanych - skala ekranu razy skala oddalenia */
 .court-marker .pinezka-korpus {
   transform-origin: 50% 100%;
-  scale: var(--skala-pinezki, 1);
+  scale: calc(var(--skala-pinezki, 1) * var(--skala-zoom, 1));
 }
 
 /*
@@ -1777,6 +1777,19 @@ body {
   scale: calc(
     (1 + var(--zar, 1) * 0.035) * var(--skala-pinezki, 1) * var(--skala-zoom-wyd, 1)
   );
+}
+
+/*
+  Pinezka minigry maleje przy oddalaniu tak samo jak pinezka boiska. Ma inną budowę
+  (bez `.pinezka-korpus`), więc skalę dostaje na swoim wewnętrznym opakowaniu - na samym
+  znaczniku nie, bo tym elementem MapLibre pozycjonuje pinezkę na mapie.
+
+  Reguła stoi PRZED blokiem dla telefonu, żeby tamten mógł ją nadpisać. Odwrotna
+  kolejność kasowałaby mobilne zejście o 40%, bo obie mają tę samą wagę.
+*/
+.pinezka-gry > span {
+  transform-origin: 50% 100%;
+  scale: var(--skala-zoom, 1);
 }
 
 /* ramka odniesienia dla warstw ognia: dolna krawędź = spód kuli (nóżka ma 10 + 3 px) */
@@ -2355,7 +2368,7 @@ select option {
     left: 50%;
     /* nad CAŁĄ pinezką, nie nad jej środkiem - inaczej stopka karty wchodzi pod kulę */
     bottom: calc(100% + 14px);
-    width: 250px;
+    width: 268px;
     translate: -50% 0;
     pointer-events: none;
     opacity: 0;
@@ -2393,51 +2406,81 @@ select option {
     z-index: 6;
   }
 
+  /*
+    Wszystko w osi, bo karta nie ma się na czym oprzeć: nie ma w niej zdjęcia ani
+    ikony, które wyznaczałyby lewą krawędź, więc tekst dosunięty do lewej wyglądał
+    jak niedokończony. Wyśrodkowanie daje jej własny środek ciężkości.
+  */
   .wizytowka-gry-karta {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    padding: 13px 15px 12px;
+    align-items: center;
+    gap: 3px;
+    padding: 15px 16px 14px;
     border-radius: 20px;
-    text-align: left;
+    text-align: center;
     /* barwa poświaty bierze się z pinezki, nie z domyślnego pomarańczu */
     box-shadow: 0 18px 50px -18px rgb(29 95 208 / 0.85);
   }
 
   .wgk-nadtytul {
-    font-size: 10px;
-    letter-spacing: 0.16em;
+    font-size: 9.5px;
+    letter-spacing: 0.22em;
     text-transform: uppercase;
     color: #7cc0ff;
   }
 
   .wgk-tytul {
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
+    font-size: 21px;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
     color: var(--color-ink);
   }
 
   .wgk-miejsce {
-    font-size: 12px;
-    color: var(--color-muted);
-  }
-
-  .wgk-jak {
-    margin-top: 7px;
+    margin-top: 1px;
     font-size: 11.5px;
-    line-height: 1.4;
     color: var(--color-muted);
   }
 
-  .wgk-stopka {
+  /*
+    Szerokość ograniczona, żeby wiersze łamały się mniej więcej po równo. Sam
+    `text-align: center` przy pełnej szerokości karty zostawiał ostatni wiersz
+    o jedno słowo - wyglądało to jak przypadek, a nie jak układ.
+  */
+  .wgk-jak {
+    max-width: 24ch;
     margin-top: 9px;
-    padding-top: 8px;
-    border-top: 1px solid rgb(var(--rgb-szyba) / 0.12);
-    font-size: 10px;
-    letter-spacing: 0.14em;
+    font-size: 12px;
+    line-height: 1.45;
+    text-wrap: balance;
+    color: var(--color-muted);
+  }
+
+  /*
+    Zaproszenie do kliknięcia jako osobny niebieski kafelek, a nie dopisek pod kreską.
+    To jedyne miejsce w karcie, które mówi „tu się coś stanie" - ma wyglądać jak
+    przycisk, nawet jeśli klikalna jest cała pinezka.
+  */
+  .wgk-stopka {
+    margin-top: 12px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid rgb(124 192 255 / 0.32);
+    background: linear-gradient(
+      140deg,
+      rgb(124 192 255 / 0.26),
+      rgb(29 95 208 / 0.28) 70%
+    );
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.16),
+      0 6px 16px -8px rgb(29 95 208 / 0.9);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: #7cc0ff;
+    color: #dceeff;
   }
 }
 
@@ -2523,7 +2566,18 @@ select option {
     transform-origin: 50% 100%;
     scale: 0.6;
   }
+
+  /*
+    Na telefonie pinezki NIE maleją dodatkowo od oddalenia. Mają już własne zejście o
+    połowę (`--skala-pinezki`), a pomnożenie jednego przez drugie dałoby przy widoku
+    kraju kropki nie do trafienia palcem. Zmienna ustawiona tutaj, na samym znaczniku,
+    wygrywa z tą, którą mapa wpisuje na swoim kontenerze - bo jest bliżej.
+  */
+  .court-marker {
+    --skala-zoom: 1;
+  }
 }
+
 
 /* ---------- Motion ---------- */
 
