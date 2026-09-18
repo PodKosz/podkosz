@@ -588,9 +588,37 @@ body {
       rgb(var(--rgb-szyba) / 0.04) 24%,
       rgb(var(--rgb-szyba) / 0) 50%
     ),
-    /* ciepły refleks z góry i chłodny od dołu - szkło nigdy nie jest jednobarwne */
+    /*
+      Ciepły refleks z góry i barwny od dołu - szkło nigdy nie jest jednobarwne.
+
+      Dolny refleks miał wpisany na sztywno błękit. Przy boisku o szarej płycie wyglądał
+      świetnie, bo zgadzał się ze zdjęciem, ale przy czerwonym tartanie był cudzą naklejką.
+      Teraz wizytówka boiska podaje w `--szklo-akcent` najczęstszą barwę swojego zdjęcia
+      (patrz `lib/barwa-zdjecia.ts`). Wartość zapasowa to ten sam błękit co dotąd - dostaje
+      ją każde szkło poza wizytówką i każde zdjęcie bez dominującej barwy.
+    */
     radial-gradient(125% 120% at 14% -12%, rgb(var(--rgb-glow) / 0.15), transparent 58%),
-    radial-gradient(115% 130% at 88% 112%, rgba(120, 170, 255, 0.1), transparent 62%),
+    radial-gradient(
+      115% 130% at 88% 112%,
+      rgb(var(--szklo-akcent, 120 170 255) / 0.1),
+      transparent 62%
+    ),
+    /*
+      Szeroka poświata barwy zdjęcia, wchodząca od dołu w cały dolny pas karty.
+
+      Refleks wyżej jest za słaby, żeby unieść zmianę barwy: leży w 88% szerokości i 112%
+      wysokości, czyli PRAWIE CAŁY poza kadrem karty, a przy 10% krycia jego wpływ na to,
+      co widać, jest w granicach błędu. Sprawdzone: podmiana samej tej warstwy z błękitu
+      na ceglasty nie dawała różnicy widocznej gołym okiem.
+
+      Siła jest zmienną domyślnie ZEROWĄ, więc dla wszystkich pozostałych szklanych
+      powierzchni w serwisie nic się nie zmienia. Włącza ją tylko wizytówka mapy, niżej.
+    */
+      radial-gradient(
+      150% 115% at 50% 116%,
+      rgb(var(--szklo-akcent, 120 170 255) / var(--szklo-akcent-moc, 0)),
+      transparent 68%
+    ),
     linear-gradient(180deg, rgb(var(--rgb-szyba) / 0.06) 0%, rgb(var(--rgb-szyba) / 0.02) 100%),
     /*
       Ciemna podkładka na samym spodzie stosu. Same rozmycie nie wystarcza: mapa pod
@@ -3272,6 +3300,21 @@ select option {
   zamiast pojawiać się obok. Czas wyjścia musi zgadzać się z `CZAS_ZNIKANIA` w MapView:
   to on decyduje, kiedy węzeł zejdzie z drzewa.
 */
+/*
+  Tylko wizytówka mapy zapala szeroką poświatę barwy zdjęcia (patrz `.szklo-plynne`).
+  Barwę podaje sam komponent w `--szklo-akcent`; tutaj włączamy jej siłę, żeby pozostałe
+  szklane powierzchnie w serwisie zostały dokładnie takie, jakie były.
+
+  Bez przejścia, i to świadomie: zmiennej własnej użytej w gradiencie przeglądarka nie
+  animuje, więc `transition` byłby tu ozdobnikiem bez działania. W praktyce nie ma czego
+  wygładzać - miniatury są rozgrzewane z góry (`prefetchCourtPhotos`), więc barwa jest
+  znana w tej samej klatce, w której karta zaczyna swoje wejście.
+*/
+.karta-mapy,
+.karta-mapy-znika {
+  --szklo-akcent-moc: 0.26;
+}
+
 .karta-mapy {
   animation: karta-wejscie 260ms cubic-bezier(0.22, 1.18, 0.36, 1) both;
 }

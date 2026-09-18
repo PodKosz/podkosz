@@ -7,6 +7,8 @@ import { PhotoPlaceholder } from "./CourtPhoto";
 import { photoUrl } from "@/lib/supabase/config";
 import { godziny, kiedy, plakietka, wysokiPlakat, type Wydarzenie } from "@/lib/wydarzenia";
 import { ClockIcon, FireBallIcon, HoopIcon, BasketApprovedBadge, SurfaceIcon } from "./icons";
+import { barwaZObrazka, zapamietanaBarwa } from "@/lib/barwa-zdjecia";
+import { useState } from "react";
 
 /**
  * Miniatura kadru z zapasem.
@@ -16,7 +18,18 @@ import { ClockIcon, FireBallIcon, HoopIcon, BasketApprovedBadge, SurfaceIcon } f
  * cięższy, ale WIDOCZNY, a puste kadry w wizytówce wyglądają jak zepsuta strona. Dokładnie
  * to zdarzyło się na produkcji, gdy limit przekształceń wyczerpał się po stronie Vercela.
  */
-function Miniatura({ url, opis, szerokosc }: { url: string; opis: string; szerokosc: number }) {
+function Miniatura({
+  url,
+  opis,
+  szerokosc,
+  poWczytaniu,
+}: {
+  url: string;
+  opis: string;
+  szerokosc: number;
+  /** wywoływane, gdy piksele są już w przeglądarce - stąd bierzemy barwę wizytówki */
+  poWczytaniu?: (img: HTMLImageElement) => void;
+}) {
   return (
     /* eslint-disable-next-line @next/next/no-img-element */
     <img
@@ -24,6 +37,7 @@ function Miniatura({ url, opis, szerokosc }: { url: string; opis: string; szerok
       alt={opis}
       className="h-full w-full object-cover"
       decoding="async"
+      onLoad={(e) => poWczytaniu?.(e.currentTarget)}
       onError={(e) => {
         const img = e.currentTarget;
         const zapas = zapasowyAdres(img.src);
@@ -66,6 +80,23 @@ export function HoverCard({
   const thumbs = useCourtPhotos(court.id, 4);
 
   /*
+    Barwa refleksu na szkle, zdjęta z największego kadru (patrz `lib/barwa-zdjecia.ts`).
+
+    Stoi TUTAJ, przy pozostałych zaczepach, a nie niżej przy samej karcie: wizytówka
+    wydarzenia wychodzi wcześniejszym `return`, więc zaczep postawiony po nim wywoływałby
+    się warunkowo - a to już nie jest zaczep, tylko błąd.
+
+    Stan zaczyna od tego, co już policzyliśmy dla tego boiska w tej sesji - dzięki temu
+    przy powrocie na tę samą pinezkę karta ma właściwą barwę od pierwszej klatki, zamiast
+    mrugnąć błękitem i dopiero się przebarwić.
+
+    `null` znaczy „zostań przy domyślnym błękicie" i jest zwyczajną odpowiedzią: tak
+    kończy zdjęcie bez dominującej barwy (szary beton, pochmurne niebo) i tak kończy
+    obrazek, którego nie da się odczytać z płótna.
+  */
+  const [akcent, setAkcent] = useState<string | null>(() => zapamietanaBarwa(court.id));
+
+  /*
     Wydarzenie ma własną wizytówkę, a nie plakietkę doklejoną do zwykłej.
     Kto najeżdża na płonącą, biało-czerwoną pinezkę, pyta o jedno: co i kiedy. Nawierzchnia,
     liczba koszy i godziny otwarcia boiska są w tym momencie szumem - zostają na karcie
@@ -103,6 +134,7 @@ export function HoverCard({
       className={`szklo-plynne overflow-hidden rounded-[22px] ${
         stan === "znika" ? "karta-mapy-znika" : "karta-mapy"
       } ${tapHint ? "w-full" : "w-[320px]"}`}
+      style={akcent ? ({ "--szklo-akcent": akcent } as React.CSSProperties) : undefined}
     >
       <div className="grid grid-cols-3 gap-[2px] bg-white/5">
         {kadry.map((p, i) => (
@@ -118,7 +150,20 @@ export function HoverCard({
                 rozgrzewamy z góry (patrz prefetchCourtPhotos), więc obrazek jest już
                 w pamięci przeglądarki i wizytówka pojawia się bez migania.
               */
-              <Miniatura url={p.url} opis={p.caption} szerokosc={thumbWidth(i)} />
+              <Miniatura
+                url={p.url}
+                opis={p.caption}
+                szerokosc={thumbWidth(i)}
+                /* barwę liczymy tylko z pierwszego, największego kadru - on niesie kolor boiska */
+                poWczytaniu={
+                  i === 0
+                    ? (img) => {
+                        const b = barwaZObrazka(img, court.id);
+                        if (b) setAkcent(b);
+                      }
+                    : undefined
+                }
+              />
             ) : (
               // póki zdjęcia lecą z serwera, stoi grafika zastępcza - nic nie przeskakuje
               <PhotoPlaceholder kind={i === 0 ? "narożnik" : "kosz-a"} seed={court.seed + i} />
