@@ -17,6 +17,9 @@ import { fetchCheckinyDzisiaj } from "@/lib/checkins";
 import { pobierzWydarzenia, type Wydarzenie } from "@/lib/wydarzenia";
 import { punktyWKadrze, type PunktOsm } from "@/lib/punkty-osm";
 import { MIEJSCA_GRY } from "@/lib/minigra";
+import { szwyPilki } from "@/lib/pilka";
+/* podgląd propozycji pinezek - rusztowanie do wyrzucenia, patrz `lib/pinezka-podglad.ts` */
+import { pinezkaPodgladHtml, wariantZAdresu } from "@/lib/pinezka-podglad";
 
 /**
  * Barwy dla warstw MapLibre - jedyne miejsce w serwisie, gdzie motyw NIE może iść przez
@@ -1559,8 +1562,7 @@ function markerGryHtml() {
       <svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none"
         stroke="rgba(10,30,70,.72)" stroke-width=".95" stroke-linecap="round">
         <circle cx="12" cy="12" r="7.2"/>
-        <path d="M4.8 12h14.4M12 4.8v14.4"/>
-        <path d="M7 6.4c2.6 3.2 2.6 8 0 11.2M17 6.4c-2.6 3.2-2.6 8 0 11.2"/>
+        <path d="${szwyPilki(12, 12, 7.2)}"/>
       </svg>
     </span>
 
@@ -1615,8 +1617,7 @@ function markerHtmlNieodkryte() {
           style="width:${size}px;height:${size}px">
       <svg viewBox="0 0 24 24" style="width:${size * 0.58}px;height:${size * 0.58}px" fill="none"
            stroke="currentColor" stroke-width="1.1" stroke-linecap="round">
-        <circle cx="12" cy="12" r="9.2"/><path d="M12 2.8v18.4M2.8 12h18.4"/>
-        <path d="M5.4 5.4c3.9 3.9 3.9 9.3 0 13.2M18.6 5.4c-3.9 3.9-3.9 9.3 0 13.2"/>
+        <circle cx="12" cy="12" r="9.2"/><path d="${szwyPilki(12, 12, 9.2)}"/>
       </svg>
     </span>
     <span class="punkt-osm-nozka" style="width:2px;height:8px"></span>
@@ -1698,6 +1699,25 @@ function markerHtml(court: MapCourt, wydarzenie = false) {
   */
   const cien = wydarzenie ? "232 17 45" : court.basketApproved ? "139 92 246" : "var(--rgb-ember)";
 
+  /*
+    PODGLĄD PROPOZYCJI PINEZEK - rusztowanie do wyrzucenia po wybraniu kształtu.
+
+    Bez `?pinezka=<nr>` w adresie ta gałąź nie istnieje: `wariantZAdresu` zwraca wtedy
+    `null` i pinezka rysuje się dokładnie tak, jak rysowała się dotąd. Podgląd dostaje
+    wszystkie barwy wyliczone wyżej, więc podmienia WYŁĄCZNIE kształt - poświata, ogień
+    zapisów, powiększenie przy najechaniu i skalowanie zostają mapy.
+  */
+  const wariant = wariantZAdresu();
+  if (wariant !== null) {
+    const podglad = pinezkaPodgladHtml(
+      wariant,
+      wydarzenie ? "wydarzenie" : court.basketApproved ? "approved" : "zwykla",
+      size,
+      { glow, cien, ogien }
+    );
+    if (podglad) return podglad;
+  }
+
   return `
   <div class="pinezka-korpus relative flex flex-col items-center transition-transform duration-200 ease-out"
        style="filter: drop-shadow(0 6px 14px rgb(0 0 0 / calc(.6 * var(--moc-cienia, 1))));--kula:${size}px;--cien:${cien};--o1:${ogien.o1};--o2:${ogien.o2};--o3:${ogien.o3};--o4:${ogien.o4}">
@@ -1725,8 +1745,7 @@ function markerHtml(court: MapCourt, wydarzenie = false) {
     <span class="marker-core relative grid place-items-center rounded-full transition-all duration-200"
           style="width:${size}px;height:${size}px;background:${core};box-shadow:0 0 0 1.5px rgba(255,255,255,.28) inset, 0 6px 18px -4px ${shadow}">
       <svg viewBox="0 0 24 24" style="width:${size * 0.62}px;height:${size * 0.62}px" fill="none" stroke="${seam}" stroke-width=".95" stroke-linecap="round">
-        <circle cx="12" cy="12" r="9.2"/><path d="M12 2.8v18.4M2.8 12h18.4"/>
-        <path d="M5.4 5.4c3.9 3.9 3.9 9.3 0 13.2M18.6 5.4c-3.9 3.9-3.9 9.3 0 13.2"/>
+        <circle cx="12" cy="12" r="9.2"/><path d="${szwyPilki(12, 12, 9.2)}"/>
       </svg>
     </span>
     <span style="width:2px;height:10px;background:linear-gradient(180deg,${stem},transparent)"></span>

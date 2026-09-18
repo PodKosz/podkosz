@@ -1,6 +1,7 @@
 import { SVGProps } from "react";
 
 import { Podpowiedz } from "./Podpowiedz";
+import { szwyPilki } from "@/lib/pilka";
 
 type P = SVGProps<SVGSVGElement>;
 
@@ -8,8 +9,7 @@ export function BallIcon(props: P) {
   return (
     <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.4" stroke="currentColor" {...props}>
       <circle cx="12" cy="12" r="9.2" />
-      <path d="M12 2.8v18.4M2.8 12h18.4" />
-      <path d="M5.4 5.4c3.9 3.9 3.9 9.3 0 13.2M18.6 5.4c-3.9 3.9-3.9 9.3 0 13.2" />
+      <path d={szwyPilki(12, 12, 9.2)} />
     </svg>
   );
 }

@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { punktOsm } from "@/lib/punkty-osm";
 import { ZglosBrakBoiska } from "@/components/ZglosBrakBoiska";
 import { ArrowLeftIcon, PinIcon } from "@/components/icons";
+import { szwyPilki } from "@/lib/pilka";
 
 /**
  * Boisko nieodkryte - miejsce, w którym według OpenStreetMap stoi kosz, a u nas go nie ma.
@@ -73,8 +74,7 @@ export default async function NieodkrytePage({
             strokeLinecap="round"
           >
             <circle cx="12" cy="12" r="9.2" />
-            <path d="M12 2.8v18.4M2.8 12h18.4" />
-            <path d="M5.4 5.4c3.9 3.9 3.9 9.3 0 13.2M18.6 5.4c-3.9 3.9-3.9 9.3 0 13.2" />
+            <path d={szwyPilki(12, 12, 9.2)} />
           </svg>
         </span>
 
