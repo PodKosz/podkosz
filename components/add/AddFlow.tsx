@@ -28,7 +28,6 @@ import { ShotDiagram } from "../ShotDiagram";
 import { CameraCapture } from "./CameraCapture";
 import { ArrowLeftIcon, PinIcon } from "../icons";
 import { GoogleMark } from "../GoogleMark";
-import { PodpowiedzAdresu } from "../PodpowiedzAdresu";
 
 export interface AddFlowUser {
   name: string;
@@ -88,11 +87,6 @@ export function AddFlow({ user, admin = false }: { user: AddFlowUser; admin?: bo
     from: "06:00",
     to: "22:00",
     notes: "",
-  });
-  const [author, setAuthor] = useState<{ mode: "guest" | "account"; email: string; name: string }>({
-    mode: user ? "account" : "guest",
-    email: "",
-    name: "",
   });
 
   const step = shotKind ? PHOTO_STEPS.find((s) => s.kind === shotKind) ?? null : null;
@@ -272,9 +266,13 @@ export function AddFlow({ user, admin = false }: { user: AddFlowUser; admin?: bo
         hours: form.access === "24h" ? "całą dobę" : `${form.from} - ${form.to}`,
         notes: form.notes,
         author: {
-          mode: user ? "account" : author.mode,
-          name: user?.name ?? author.name ?? undefined,
-          email: user?.email ?? author.email ?? undefined,
+          /*
+            Zawsze z konta. Pole `mode` zostaje w typie, bo stare zgłoszenia w bazie mają
+            „gość" i panel dalej to pokazuje - ale nowe nie mają już jak takie powstać.
+          */
+          mode: "account",
+          name: user?.name ?? undefined,
+          email: user?.email ?? undefined,
         },
       });
       setWyslaneZdjecia(wynik);
@@ -847,74 +845,63 @@ export function AddFlow({ user, admin = false }: { user: AddFlowUser; admin?: bo
         <section className="rise">
           <h2 className="text-[24px] font-semibold tracking-tight">Ostatni krok</h2>
           <p className="mt-2 text-[14px] text-muted">
-            Podpisać zgłoszenie kontem czy wysłać jako gość?
+            {user ? "Zgłoszenie pójdzie z twojego konta." : "Boisko dodaje się z konta."}
           </p>
 
+          {/*
+            WYBORU JUŻ NIE MA - boisko dodaje się z konta.
+
+            Wcześniej stały tu dwa przyciski: „Konto Google" i „Jako gość". Zerowy próg
+            wejścia miał swoją cenę, której nie dało się odrobić później:
+
+              - ze zgłoszeniem bez konta nie ma z kim rozmawiać. Gdy coś jest nie tak ze
+                zdjęciem albo z pinezką, nie ma komu zadać pytania i wpis leci w ciemno;
+              - nie ma czego zablokować - konto da się zbanować, przeglądarki nie;
+              - autor nie dostawał nic w zamian: ani miejsca w rankingu odkrywców, ani
+                odznaczeń, ani wiadomości o publikacji. Trzy minuty pracy na boisku
+                znikały z jego perspektywy bez śladu.
+
+            Zdjęcia i dane z kreatora NIE przepadają przy logowaniu - wracamy dokładnie
+            na ten krok (`/dodaj`), bo tak działa przekierowanie z Google.
+          */}
           <div className="mt-6 space-y-3">
-            <button
-              onClick={() => {
-                setAuthor({ ...author, mode: "account" });
-                if (!user && supabaseEnabled)
-                  signInWithGoogle("/dodaj").catch((e: Error) => setSendError(e.message));
-              }}
-              className={`flex w-full items-center gap-4 rounded-2xl border p-4 text-left transition ${
-                author.mode === "account"
-                  ? "border-flame/60 bg-flame/10"
-                  : "border-hairline bg-white/4 hover:bg-white/7"
-              }`}
-            >
-              <GoogleMark />
-              <span className="flex-1">
-                <span className="block text-[15px] font-semibold">
-                  {user ? `Zalogowany jako ${user.name}` : "Konto Google"}
+            {user ? (
+              <div className="flex w-full items-center gap-4 rounded-2xl border border-flame/60 bg-flame/10 p-4 text-left">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full flame-gradient text-[15px] font-bold text-black">
+                  {user.name.slice(0, 1).toUpperCase()}
                 </span>
-                <span className="block text-[13px] text-muted">
-                  Powiadomienie o publikacji, ulubione i miejsce w rankingu odkrywców
+                <span className="flex-1">
+                  <span className="block text-[15px] font-semibold">{user.name}</span>
+                  <span className="block text-[13px] text-muted">
+                    Boisko podpiszemy tym kontem. Trafi do twojego dorobku w rankingu odkrywców.
+                  </span>
                 </span>
-              </span>
-            </button>
-
-            <button
-              onClick={() => setAuthor({ ...author, mode: "guest" })}
-              className={`flex w-full items-center gap-4 rounded-2xl border p-4 text-left transition ${
-                author.mode === "guest"
-                  ? "border-flame/60 bg-flame/10"
-                  : "border-hairline bg-white/4 hover:bg-white/7"
-              }`}
-            >
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-hairline bg-white/6 text-[18px]">
-                👤
-              </span>
-              <span className="flex-1">
-                <span className="block text-[15px] font-semibold">Jako gość</span>
-                <span className="block text-[13px] text-muted">
-                  Bez zakładania konta. Możesz zostawić e-mail, żeby dostać info o publikacji.
-                </span>
-              </span>
-            </button>
-
-            {author.mode === "guest" && !user && (
-              <div>
-                <Field label="E-mail (opcjonalnie)">
-                  <input
-                    type="email"
-                    value={author.email}
-                    onChange={(e) => setAuthor({ ...author, email: e.target.value })}
-                    placeholder="ty@example.com"
-                    className="w-full bg-transparent text-[14px] outline-none placeholder:text-faint"
-                  />
-                </Field>
-                <PodpowiedzAdresu
-                  adres={author.email ?? ""}
-                  onPopraw={(poprawiony) => setAuthor({ ...author, email: poprawiony })}
-                />
               </div>
-            )}
-            {author.mode === "account" && !user && !supabaseEnabled && (
-              <p className="rounded-2xl border border-hairline bg-white/4 px-4 py-3 text-[13px] text-muted">
-                Logowanie Google ruszy po podpięciu bazy - na razie zgłoszenie poleci jako
-                anonimowe.
-              </p>
+            ) : (
+              <div className="rounded-2xl border border-hairline bg-white/4 p-5">
+                <p className="text-[15px] font-semibold">Zaloguj się, żeby wysłać</p>
+                <p className="mt-2 text-[13px] leading-relaxed text-muted">
+                  Dzięki temu boisko ma autora: trafia do twojego dorobku, dostajesz wiadomość
+                  o publikacji, a gdybyśmy mieli pytanie o zdjęcie albo pinezkę - jest do kogo
+                  je zadać. Zdjęcia i dane z kreatora zostają, wrócisz tu po zalogowaniu.
+                </p>
+
+                {supabaseEnabled ? (
+                  <button
+                    onClick={() =>
+                      signInWithGoogle("/dodaj").catch((e: Error) => setSendError(e.message))
+                    }
+                    className="mt-4 flex w-full items-center justify-center gap-3 rounded-2xl bg-white px-4 py-3 text-[14px] font-semibold text-black transition hover:brightness-95"
+                  >
+                    <GoogleMark />
+                    Zaloguj przez Google
+                  </button>
+                ) : (
+                  <p className="mt-4 rounded-2xl border border-ember/40 bg-ember/10 px-4 py-3 text-[13px] text-ember">
+                    Logowanie ruszy po podpięciu bazy.
+                  </p>
+                )}
+              </div>
             )}
           </div>
 
@@ -935,8 +922,11 @@ export function AddFlow({ user, admin = false }: { user: AddFlowUser; admin?: bo
           <Nav
             onBack={() => setStage("details")}
             onNext={submit}
-            nextDisabled={sending}
-            nextLabel={sending ? "Wysyłam zdjęcia…" : "Wyślij zgłoszenie"}
+            /* bez konta nie ma czego wysyłać - baza i tak odmówi, lepiej powiedzieć to tutaj */
+            nextDisabled={sending || !user}
+            nextLabel={
+              sending ? "Wysyłam zdjęcia…" : user ? "Wyślij zgłoszenie" : "Najpierw zaloguj się"
+            }
           />
         </section>
       )}

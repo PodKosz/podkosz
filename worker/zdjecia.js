@@ -27,9 +27,9 @@
  * Reguły są DOKŁADNIE te, co w bazie - i nie są tu przepisane z pamięci, tylko dalej
  * pyta się o nie bazy:
  *
- *   - wgrywanie do `zgloszenia/<id>/<plik>` wolno KAŻDEMU, także niezalogowanemu gościowi
- *     (tak jest dziś: polityka `court_photos_upload` jest nadana roli `anon`), ale tylko
- *     gdy zgłoszenie jest otwarte - o to pyta funkcja `submission_open` w bazie;
+ *   - wgrywanie do `zgloszenia/<id>/<plik>` wymaga ZALOGOWANIA i otwartego zgłoszenia;
+ *     do 18 września 2026 wolno było też gościowi - zmienione świadomie, patrz
+ *     `supabase/migration-zgloszenia-tylko-zalogowani.sql`;
  *   - wszystko poza `zgloszenia/` - czyli katalog `boiska/` i `wydarzenia/` - wymaga
  *     administratora; o to pyta funkcja `is_admin`;
  *   - kasowanie wymaga administratora.
@@ -130,19 +130,28 @@ export default {
 
     /* ---------------------------------------------------------------- kto może wgrywać */
     /*
-      Kolejność sprawdzeń ma znaczenie dla kosztu: najpierw tania ścieżka gościa (jedno
-      pytanie do bazy), a dopiero gdy ta odmówi - droższe sprawdzenie administratora
-      (dwa pytania: token na konto, konto na uprawnienie).
+      Kolejność sprawdzeń ma znaczenie dla kosztu: najpierw tańsza ścieżka zwykłego
+      zgłoszenia (jedno pytanie do bazy), a dopiero gdy ta odmówi - droższe sprawdzenie
+      administratora (dwa pytania: token na konto, konto na uprawnienie).
     */
     let wolno = false;
     let jakoAdmin = false;
 
     if (wZgloszeniach) {
       /*
-        Gość też może - i to nie jest luka, tylko świadoma decyzja produktowa: boisko
-        wolno dodać bez zakładania konta. Bramą jest otwarte zgłoszenie, nie zalogowanie.
+        Dwie bramy naraz, i obie są konieczne.
+
+        TOKEN: bez niego `pytajBaze` poleciałoby kluczem anonimowym, a `submission_open`
+        jest nadane roli `anon` - czyli gość przechodziłby, mimo że baza już go nie
+        wpuszcza do samego zgłoszenia. Sprawdzenie tokenu tutaj domyka tę szparę.
+
+        ZGŁOSZENIE OTWARTE: token nie wystarcza, bo zalogowany też nie ma prawa dosypywać
+        zdjęć do zgłoszenia sprzed miesiąca. Podrobiony token nie przejdzie - Supabase
+        odpowie na niego 401, a `pytajBaze` odda wtedy `null`.
       */
-      wolno = (await pytajBaze(env, "submission_open", { sub: idZgloszenia }, token)) === true;
+      wolno =
+        Boolean(token) &&
+        (await pytajBaze(env, "submission_open", { sub: idZgloszenia }, token)) === true;
     }
 
     /*
@@ -162,7 +171,9 @@ export default {
         {
           ok: false,
           powod: wZgloszeniach
-            ? "zgłoszenie zamknięte albo nie istnieje"
+            ? token
+              ? "zgłoszenie zamknięte albo nie istnieje"
+              : "dodawanie boisk wymaga zalogowania"
             : "ten katalog wymaga administratora",
         },
         403
