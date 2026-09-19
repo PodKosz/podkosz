@@ -19,6 +19,7 @@ import { Pogoda } from "./Pogoda";
 import { Gallery } from "./Gallery";
 import { ShortsPlayer } from "./ShortsPlayer";
 import { ReportButton } from "./ReportButton";
+import { PoprawZdjecia } from "./PoprawZdjecia";
 import { wysokiPlakat, type Wydarzenie } from "@/lib/wydarzenia";
 import { BoxWydarzenia } from "./BoxWydarzenia";
 import {
@@ -438,11 +439,24 @@ export function CourtDetail({
         <div className="mx-auto max-w-xl text-center">
           <p className="text-[18px] font-semibold">Coś się nie zgadza?</p>
           <p className="mx-auto mt-2 max-w-md text-[14px] leading-relaxed text-muted">
-            Zmieniły się godziny, zniknęła siatka, zdjęcia są nieaktualne? Napisz - zaktualizujemy
-            wpis.
+            Zmieniły się godziny, zniknęła siatka? Napisz - zaktualizujemy wpis. A jeśli boisko
+            wygląda dziś ładniej niż na zdjęciach, przynieś lepszy kadr: jesteś na miejscu,
+            więc możesz to zrobić od ręki.
           </p>
-          <div className="mt-6">
+          {/*
+            Dwa różne zaproszenia, nie jedno z dwiema nazwami. „Zgłoś zmianę" prosi MNIE
+            o poprawkę i działa z domu; „Popraw zdjęcia" robi ją samodzielnie i wymaga
+            stania na boisku. Pomarańczowy zostaje przy tym pierwszym, bo dotyczy każdego -
+            drugi przycisk ma sens tylko dla osoby, która właśnie tam stoi.
+          */}
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
             <ReportButton courtId={court.id} label="Zgłoś zmianę" prominent />
+            <PoprawZdjecia
+              courtId={court.id}
+              lat={court.lat}
+              lng={court.lng}
+              photos={court.photos}
+            />
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { REASON_LABEL, useReports } from "@/lib/reports";
 import { PinIcon } from "../icons";
+import { PoprawkiAdmin } from "./PoprawkiAdmin";
 import { PunktyOsmAdmin } from "./PunktyOsmAdmin";
 
 type Sort = "count" | "newest";
@@ -157,6 +158,13 @@ export function ReportsAdmin() {
           </article>
         ))}
       </div>
+
+      {/*
+        Trzeci rodzaj tego samego zgłoszenia: nie „dane się nie zgadzają", tylko „mam
+        lepsze zdjęcie". Idzie tuż pod błędami, bo decyzja jest najszybsza ze wszystkich -
+        widać oba kadry obok siebie i albo jeden jest lepszy, albo nie.
+      */}
+      <PoprawkiAdmin />
 
       {/*
         Ta sama praca, inny rodzaj miejsca: przy boisku ktoś mówi „dane się nie zgadzają",

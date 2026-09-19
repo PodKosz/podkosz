@@ -264,3 +264,24 @@ select privilege_type
 -- 3. Obie funkcje istnieją.
 select proname from pg_proc
  where proname in ('poprawka_otwarta', 'przyjmij_poprawke');
+
+/*
+  ---------- 7. wycofanie własnej poprawki ----------
+
+  Dopisane po uruchomieniu części pierwszej - plik jest idempotentny, więc całość
+  puszcza się ponownie.
+
+  Powód jest w kolejności zapisu. Wiersz musi powstać PRZED wgraniem pliku, bo Worker
+  pyta o niego `poprawka_otwarta` - inaczej nie wiedziałby, komu ten katalog wolno
+  otworzyć. Gdy więc wgrywanie padnie (zerwane LTE przy boisku to nie brzeg możliwości,
+  tylko codzienność), zostaje wiersz wskazujący na plik, którego nie ma, a autor nie ma
+  jak po sobie posprzątać: `photo_swaps_admin_write` przepuszcza kasowanie wyłącznie
+  administratorowi. Efekt byłby taki, że w panelu stoi zgłoszenie z rozbitym kadrem,
+  a jedyną osobą, która może je zdjąć, jestem ja.
+
+  Tylko WŁASNE i tylko OTWARTE. Po przyjęciu status to `accepted`, więc ta polityka
+  już nie sięga - historia przyjętej poprawki zostaje i nie da się jej wymazać.
+*/
+drop policy if exists photo_swaps_delete_wlasne on photo_swaps;
+create policy photo_swaps_delete_wlasne on photo_swaps for delete
+  using (author_id = auth.uid() and status = 'open');
