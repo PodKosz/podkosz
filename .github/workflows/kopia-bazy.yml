@@ -87,6 +87,33 @@ jobs:
               ;;
           esac
 
+          # Znaki specjalne w haśle to najcichsza z tutejszych pułapek, bo adres wygląda
+          # wtedy POPRAWNIE, a mimo to nie działa - i dostajemy „password authentication
+          # failed", czyli komunikat sugerujący złe hasło, a nie zły zapis adresu:
+          #
+          #   „#" i wszystko po nim libpq ucina jako fragment   -> hasło obcięte w połowie
+          #   „?" zaczyna parametry zapytania                   -> jak wyżej
+          #   „/" kończy część z hasłem                         -> jak wyżej
+          #   „@" rozcina adres w złym miejscu                  -> zły host albo złe hasło
+          #
+          # Supabase ostrzega o tym pod polem („percent-encode them in the connection
+          # string"), ale ostrzeżenie łatwo przeoczyć. Liczba „@" jest tu najpewniejszym
+          # sygnałem: w poprawnym adresie jest DOKŁADNIE jedna, ta przed hostem.
+          MALPY=$(printf '%s' "$ADRES_BAZY" | tr -cd '@' | wc -c)
+          if [ "$MALPY" -ne 1 ]; then
+            echo "::error::Adres zawiera $MALPY znaków „@”, a powinien dokładnie jeden (ten przed hostem)."
+            echo "Jeśli hasło zawiera „@”, trzeba je zapisać jako %40 - albo prościej: zresetować hasło na takie z samych liter i cyfr."
+            exit 1
+          fi
+
+          case "${ADRES_BAZY%@*}" in
+            *'#'*|*'?'*)
+              echo "::error::Hasło w adresie zawiera „#” albo „?”. Te znaki ucinają adres w połowie, więc do serwera trafia niepełne hasło."
+              echo "Zakoduj je procentowo (%23 i %3F) albo zresetuj hasło na takie z samych liter i cyfr."
+              exit 1
+              ;;
+          esac
+
           echo "Sekret jest i wygląda na adres URI. Cel: ${ADRES_BAZY##*@}"
 
       # pg_dump MUSI być w wersji nie starszej niż serwer, inaczej odmawia zrzutu
