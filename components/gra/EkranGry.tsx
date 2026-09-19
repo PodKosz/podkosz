@@ -361,13 +361,18 @@ export function EkranGry({
           zaczeta ? "opacity-100" : "opacity-0"
         }`}
       >
+        {/*
+          Zegar jest liczbą, nie plakietką. Szkło zostaje jako podkładka, ale gradient
+          musi siedzieć na OSOBNYM elemencie w środku: `szklo-pro` ustawia własne tło,
+          a `background-clip: text` też potrzebuje tła - na jednym elemencie jedno
+          zjadłoby drugie i zegar zniknąłby zupełnie.
+        */}
         {zegar !== null && (
-          <span
-            className={`szklo-pro rounded-full px-4 py-2.5 text-[15px] font-semibold tabular-nums ${
-              zegar <= 10 ? "text-ember" : "text-ink"
-            }`}
-          >
-            {Math.ceil(zegar)}s
+          <span className="szklo-pro grid place-items-center rounded-[22px] px-5 py-2">
+            <span className={`zegar-gry ${zegar <= 10 ? "zegar-gry-alarm" : ""}`}>
+              {Math.ceil(zegar)}
+              <span className="zegar-gry-jednostka">s</span>
+            </span>
           </span>
         )}
 

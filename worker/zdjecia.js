@@ -30,7 +30,10 @@
  *   - wgrywanie do `zgloszenia/<id>/<plik>` wymaga ZALOGOWANIA i otwartego zgłoszenia;
  *     do 18 września 2026 wolno było też gościowi - zmienione świadomie, patrz
  *     `supabase/migration-zgloszenia-tylko-zalogowani.sql`;
- *   - wszystko poza `zgloszenia/` - czyli katalog `boiska/` i `wydarzenia/` - wymaga
+ *   - wgrywanie do `poprawki/<id>/<plik>` wymaga ZALOGOWANIA i otwartej poprawki
+ *     NALEŻĄCEJ DO TEJ OSOBY; o to pyta funkcja `poprawka_otwarta`, patrz
+ *     `supabase/migration-poprawki-zdjec.sql`;
+ *   - wszystko poza nimi - czyli katalog `boiska/` i `wydarzenia/` - wymaga
  *     administratora; o to pyta funkcja `is_admin`;
  *   - kasowanie wymaga administratora.
  *
@@ -45,11 +48,14 @@ const MAKS_BAJTOW = 4 * 1024 * 1024;
 /** Dozwolone rodzaje plików - te same, co miał kubełek w Supabase. */
 const RODZAJE = new Set(["image/jpeg", "image/png", "image/webp"]);
 
-/** Ile plików wolno pod jednym zgłoszeniem. */
+/** Ile plików wolno pod jednym zgłoszeniem boiska. */
 const MAKS_PLIKOW = 12;
 
+/** Poprawka zdjęcia to jeden kadr, więc jeden plik. Dwa znaczą, że ktoś próbuje dosypać. */
+const MAKS_PLIKOW_POPRAWKI = 1;
+
 /** Ścieżka: `zgloszenia/<uuid>/<nazwa>` albo `boiska/<uuid>/<nazwa>`, bez wyjścia w górę. */
-const KSZTALT = /^(zgloszenia|boiska|wydarzenia)\/[0-9a-f-]{36}\/[A-Za-z0-9._-]{1,120}$/i;
+const KSZTALT = /^(zgloszenia|poprawki|boiska|wydarzenia)\/[0-9a-f-]{36}\/[A-Za-z0-9._-]{1,120}$/i;
 
 const odpowiedz = (dane, status = 200) =>
   new Response(JSON.stringify(dane), {
@@ -113,6 +119,7 @@ export default {
 
     const token = request.headers.get("authorization");
     const wZgloszeniach = sciezka.startsWith("zgloszenia/");
+    const wPoprawkach = sciezka.startsWith("poprawki/");
     const idZgloszenia = sciezka.split("/")[1];
 
     /* ---------------------------------------------------------------- kasowanie */
@@ -137,7 +144,24 @@ export default {
     let wolno = false;
     let jakoAdmin = false;
 
-    if (wZgloszeniach) {
+    if (wPoprawkach) {
+      /*
+        Poprawka zdjęcia do CUDZEGO boiska - patrz `supabase/migration-poprawki-zdjec.sql`.
+
+        Reguła jest węższa niż przy zgłoszeniu boiska i to jest celowe: tam wiersz
+        w bazie powstaje NA KOŃCU, więc katalog musi być otwarty wcześniej; tutaj
+        zgłoszenie zakłada się NAJPIERW i dopiero pod jego identyfikator wgrywa się
+        plik. Dzięki temu baza zna już autora i może odpowiedzieć na pytanie „czy to
+        jego zgłoszenie i czy jeszcze czeka".
+
+        Bez tokenu nie ma o czym mówić: `poprawka_otwarta` pyta o `auth.uid()`, a przy
+        kluczu anonimowym to NULL - odpowiedź byłaby zawsze przecząca, tylko po jednym
+        zapytaniu więcej.
+      */
+      wolno =
+        Boolean(token) &&
+        (await pytajBaze(env, "poprawka_otwarta", { sub: idZgloszenia }, token)) === true;
+    } else if (wZgloszeniach) {
       /*
         Dwie bramy naraz, i obie są konieczne.
 
@@ -170,11 +194,15 @@ export default {
       return odpowiedz(
         {
           ok: false,
-          powod: wZgloszeniach
+          powod: wPoprawkach
             ? token
-              ? "zgłoszenie zamknięte albo nie istnieje"
-              : "dodawanie boisk wymaga zalogowania"
-            : "ten katalog wymaga administratora",
+              ? "poprawka zamknięta, nie istnieje albo należy do kogoś innego"
+              : "poprawka zdjęcia wymaga zalogowania"
+            : wZgloszeniach
+              ? token
+                ? "zgłoszenie zamknięte albo nie istnieje"
+                : "dodawanie boisk wymaga zalogowania"
+              : "ten katalog wymaga administratora",
         },
         403
       );
@@ -189,13 +217,24 @@ export default {
       dysk nowym zgłoszeniem. Limit jest po to, żeby obcy nie wrzucił tysiąca zdjęć pod
       jedno zgłoszenie - nie po to, żeby blokować własne porządki.
     */
-    if (wZgloszeniach && !jakoAdmin) {
+    if ((wZgloszeniach || wPoprawkach) && !jakoAdmin) {
+      /*
+        Poprawka niesie JEDEN kadr, więc liczy się ją inaczej niż zgłoszenie boiska:
+        tam dwanaście plików to komplet zdjęć, tutaj drugi plik pod tym samym
+        identyfikatorem znaczy, że ktoś próbuje dosypać do zatwierdzonego już
+        katalogu albo strzela do endpointu w pętli.
+      */
+      const katalog = wPoprawkach ? "poprawki" : "zgloszenia";
+      const sufit = wPoprawkach ? MAKS_PLIKOW_POPRAWKI : MAKS_PLIKOW;
       const juzSa = await env.ZDJECIA.list({
-        prefix: `zgloszenia/${idZgloszenia}/`,
-        limit: MAKS_PLIKOW + 1,
+        prefix: `${katalog}/${idZgloszenia}/`,
+        limit: sufit + 1,
       });
-      if (juzSa.objects.length >= MAKS_PLIKOW) {
-        return odpowiedz({ ok: false, powod: `najwyżej ${MAKS_PLIKOW} zdjęć na zgłoszenie` }, 429);
+      if (juzSa.objects.length >= sufit) {
+        return odpowiedz(
+          { ok: false, powod: `najwyżej ${sufit} zdjęć na to zgłoszenie` },
+          429
+        );
       }
     }
 

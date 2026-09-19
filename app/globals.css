@@ -479,6 +479,73 @@ body {
   color: transparent;
 }
 
+/*
+  ---------- zegar minigry ----------
+
+  Licznik sekund stał w narożniku jako piętnastopikselowy napis i po prostu ginął:
+  w kozłowaniu patrzy się na piłkę pośrodku ekranu, a nie w róg, więc informacja
+  „została minuta” nie docierała wcale. Teraz jest liczbą, nie plakietką.
+
+  Poświata idzie FILTREM, nie `text-shadow`. Przy tekście z `background-clip: text`
+  litera jest przezroczysta, a cień rysuje się po jej kształcie NAD gradientem -
+  zamiast blasku wychodzi szary obrys. `drop-shadow` działa na gotowy rysunek,
+  więc rozświetla to, co widać.
+*/
+.zegar-gry {
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(
+    135deg,
+    var(--color-glow-soft) 0%,
+    var(--color-flame) 52%,
+    var(--color-ember) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 16px rgb(var(--rgb-flame) / calc(0.5 * var(--moc-poswiaty, 1))));
+}
+
+/** Sekundy mniejsze od liczby - jednostka ma nie konkurować z wartością. */
+.zegar-gry-jednostka {
+  font-size: 0.46em;
+  font-weight: 700;
+  margin-left: 0.08em;
+  letter-spacing: 0.04em;
+}
+
+/*
+  Ostatnie dziesięć sekund. Barwa idzie w głąb żaru, a liczba zaczyna pulsować -
+  sam kolor przy tej wielkości zmienia się zbyt dyskretnie, żeby to zauważyć
+  kątem oka, a właśnie kątem oka się na ten zegar patrzy.
+*/
+.zegar-gry-alarm {
+  background: linear-gradient(
+    135deg,
+    var(--color-flame) 0%,
+    var(--color-ember) 55%,
+    var(--color-ember-deep) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: zegar-puls 1s ease-in-out infinite;
+}
+
+@keyframes zegar-puls {
+  0%,
+  100% {
+    opacity: 1;
+    scale: 1;
+  }
+  50% {
+    opacity: 0.72;
+    scale: 1.07;
+  }
+}
+
 .flame-ring {
   box-shadow:
     0 0 0 1px rgb(var(--rgb-flame) / 0.35),
