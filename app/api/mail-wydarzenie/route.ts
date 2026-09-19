@@ -1,5 +1,6 @@
 import { getSessionUser, supabaseServer } from "@/lib/supabase/server";
 import { POWOD_BRAK_NADAWCY, nadawca } from "@/lib/mail/nadawca";
+import { wyslijPrzezResend } from "@/lib/mail/sufit";
 import { htmlWydarzenia, tekstWydarzenia, tematWydarzenia } from "@/lib/mail/wydarzenie";
 import { kiedy, type Wydarzenie } from "@/lib/wydarzenia";
 
@@ -141,25 +142,35 @@ export async function POST(request: Request) {
   for (let i = 0; i < odbiorcy.length; i += PORCJA) {
     const paczka = odbiorcy.slice(i, i + PORCJA);
 
-    const res = await fetch("https://api.resend.com/emails/batch", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify(
-        paczka.map((o) => {
-          const dane = { ...wspolne, powod: o.powod, nick: o.nick };
-          return {
-            from,
-            to: [o.email],
-            subject,
-            html: htmlWydarzenia(dane),
-            text: tekstWydarzenia(dane),
-          };
-        })
-      ),
-    });
+    const wynik = await wyslijPrzezResend(
+      supabase,
+      key,
+      paczka.map((o) => {
+        const dane = { ...wspolne, powod: o.powod, nick: o.nick };
+        return {
+          from,
+          to: [o.email],
+          subject,
+          html: htmlWydarzenia(dane),
+          text: tekstWydarzenia(dane),
+        };
+      })
+    );
 
-    if (res.ok) wyslane += paczka.length;
-    else bledy.push(`porcja ${i / PORCJA + 1}: poczta odmówiła (${res.status})`);
+    if (wynik.ok) {
+      wyslane += paczka.length;
+      continue;
+    }
+
+    bledy.push(`porcja ${i / PORCJA + 1}: ${wynik.powod}`);
+
+    /*
+      Po trafieniu w dzienny sufit nie ma po co mielić kolejnych porcji: każda dostanie
+      tę samą odpowiedź, a każda to jedno zapytanie do bazy i jedno do dostawcy. Sufit
+      poznajemy po tym, że w ogóle nie było odpowiedzi od Resend (`status` zero) - odmowa
+      dostawcy ma zawsze jakiś kod i może dotyczyć jednej porcji.
+    */
+    if (wynik.status === 0) break;
   }
 
   return Response.json({

@@ -1,6 +1,7 @@
 import { getSessionUser, supabaseServer } from "@/lib/supabase/server";
 import { htmlOtwarcia, tekstOtwarcia, tematOtwarcia } from "@/lib/mail/otwarcie";
 import { POWOD_BRAK_NADAWCY, nadawca } from "@/lib/mail/nadawca";
+import { wyslijPrzezResend } from "@/lib/mail/sufit";
 
 /**
  * Rozesłanie wiadomości o otwarciu serwisu do osób zapisanych na stronie „Już niedługo".
@@ -54,27 +55,27 @@ export async function POST() {
   const text = tekstOtwarcia();
   const subject = tematOtwarcia();
 
-  const res = await fetch("https://api.resend.com/emails/batch", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify(
-      adresy.map((adres) => ({
-        from,
-        to: [adres],
-        ...(odpowiedzi ? { reply_to: odpowiedzi } : {}),
-        subject,
-        html,
-        text,
-      }))
-    ),
-  });
+  const wynik = await wyslijPrzezResend(
+    supabase,
+    key,
+    adresy.map((adres) => ({
+      from,
+      to: [adres],
+      ...(odpowiedzi ? { reply_to: odpowiedzi } : {}),
+      subject,
+      html,
+      text,
+    }))
+  );
 
-  if (!res.ok) {
+  if (!wynik.ok) {
+    /*
+      Porcja wraca do kolejki niezależnie od tego, czy odmówił dostawca, czy nasz dzienny
+      sufit - w obu przypadkach te adresy nadal czekają na list i mają go dostać przy
+      następnym wywołaniu. Sufit zeruje się o północy UTC, więc „jutro" jest tu dosłowne.
+    */
     await supabase.rpc("zapisy_zwolnij", { p_adresy: adresy });
-    return Response.json(
-      { wyslane: 0, powod: `poczta odmówiła (${res.status})` },
-      { status: 502 }
-    );
+    return Response.json({ wyslane: 0, powod: wynik.powod }, { status: 502 });
   }
 
   /* ile jeszcze czeka - żeby panel wiedział, czy wołać dalej */

@@ -1,4 +1,5 @@
 import { nadawca } from "@/lib/mail/nadawca";
+import { wyslijPrzezResend } from "@/lib/mail/sufit";
 import { supabaseServer } from "@/lib/supabase/server";
 
 /**
@@ -52,16 +53,15 @@ export async function POST(request: Request) {
     );
   }
 
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from,
-      to: [to],
-      subject: "PodKosz - nowa opinia",
-      text: `${message}\n\n---\nKontakt: ${contact || "nie podano"}`,
-    }),
+  const wynik = await wyslijPrzezResend(supabase, key, {
+    from,
+    to: [to],
+    subject: "PodKosz - nowa opinia",
+    text: `${message}\n\n---\nKontakt: ${contact || "nie podano"}`,
   });
 
-  return Response.json({ sent: res.ok }, { status: res.ok ? 200 : 502 });
+  return Response.json(
+    { sent: wynik.ok, ...(wynik.powod ? { powod: wynik.powod } : {}) },
+    { status: wynik.ok ? 200 : 502 }
+  );
 }

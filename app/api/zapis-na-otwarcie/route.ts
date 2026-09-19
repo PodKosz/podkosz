@@ -1,6 +1,7 @@
 import { adresKlienta } from "@/lib/adres-ip";
 import { przepustka, zaDuzo } from "@/lib/limity";
 import { nadawca } from "@/lib/mail/nadawca";
+import { wyslijPrzezResend } from "@/lib/mail/sufit";
 import { supabaseServer } from "@/lib/supabase/server";
 import {
   htmlPotwierdzenia,
@@ -114,18 +115,18 @@ export async function POST(request: Request) {
   */
   if (!key || awaryjny) return Response.json({ zapisany: true, nowy: true, mail: false });
 
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from,
-      to: [email],
-      ...(odpowiedzi ? { reply_to: odpowiedzi } : {}),
-      subject: tematPotwierdzenia(),
-      html: htmlPotwierdzenia(),
-      text: tekstPotwierdzenia(),
-    }),
+  const wynik = await wyslijPrzezResend(supabase, key, {
+    from,
+    to: [email],
+    ...(odpowiedzi ? { reply_to: odpowiedzi } : {}),
+    subject: tematPotwierdzenia(),
+    html: htmlPotwierdzenia(),
+    text: tekstPotwierdzenia(),
   });
 
-  return Response.json({ zapisany: true, nowy: true, mail: res.ok });
+  /*
+    Zapis zostaje nawet wtedy, gdy potwierdzenie nie poszło - i to jest ważniejsze niż
+    sam list. Adres jest w bazie, więc wiadomość o otwarciu i tak do tej osoby trafi.
+  */
+  return Response.json({ zapisany: true, nowy: true, mail: wynik.ok });
 }

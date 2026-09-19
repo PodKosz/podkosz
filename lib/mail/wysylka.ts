@@ -1,4 +1,5 @@
 import { POWOD_BRAK_NADAWCY, nadawca } from "./nadawca";
+import { wyslijPrzezResend } from "./sufit";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ZASLONA } from "@/lib/zaslona";
 import {
@@ -84,26 +85,23 @@ export async function wyslijPowitanie(
     pionier: Boolean(wiersz.pionier),
   };
 
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from,
-      to: [wiersz.adres],
-      ...(odpowiedzi ? { reply_to: odpowiedzi } : {}),
-      subject: tematPowitania(dane),
-      html: htmlPowitania(dane),
-      text: tekstPowitania(dane),
-    }),
+  const wynik = await wyslijPrzezResend(supabase, key, {
+    from,
+    to: [wiersz.adres],
+    ...(odpowiedzi ? { reply_to: odpowiedzi } : {}),
+    subject: tematPowitania(dane),
+    html: htmlPowitania(dane),
+    text: tekstPowitania(dane),
   });
 
-  if (!res.ok) {
+  if (!wynik.ok) {
     /*
       Zaklepanie zdejmujemy, żeby jedna awaria dostawcy nie skasowała powitania na zawsze -
-      przy następnym wejściu próba pójdzie jeszcze raz.
+      przy następnym wejściu próba pójdzie jeszcze raz. Tak samo traktujemy trafienie
+      w dzienny sufit: powitanie nie przepada, tylko poczeka do jutra.
     */
     await supabase.rpc("powitanie_zwolnij");
-    return { wyslano: false, powod: `poczta odmówiła (${res.status})` };
+    return { wyslano: false, powod: wynik.powod };
   }
 
   return { wyslano: true, powod: dane.rodzaj };

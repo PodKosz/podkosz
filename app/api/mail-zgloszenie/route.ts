@@ -7,6 +7,7 @@ import {
   tematOdmowy,
   tematPublikacji,
 } from "@/lib/mail/zgloszenie";
+import { wyslijPrzezResend } from "@/lib/mail/sufit";
 import { supabaseServer } from "@/lib/supabase/server";
 
 /**
@@ -108,11 +109,10 @@ export async function POST(request: Request) {
           tekstOdmowy({ nazwa, miasto, powod: body.reason }),
         ];
 
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from, to: [adres], subject, html, text }),
-  });
+  const wynik = await wyslijPrzezResend(supabase, key, { from, to: [adres], subject, html, text });
 
-  return Response.json({ sent: res.ok }, { status: res.ok ? 200 : 502 });
+  return Response.json(
+    { sent: wynik.ok, ...(wynik.powod ? { powod: wynik.powod } : {}) },
+    { status: wynik.ok ? 200 : 502 }
+  );
 }
