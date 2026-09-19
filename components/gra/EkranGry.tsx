@@ -357,22 +357,26 @@ export function EkranGry({
         wydrążoną liczbą w tle planszy. Zostaje zegar (tylko w grach na czas) i rekord.
       */}
       <div
-        className={`absolute right-5 top-5 z-20 flex items-center gap-2.5 transition-opacity duration-500 ${
+        /*
+          `items-start`, nie `items-center`: zegar jest teraz wyraźnie wyższy od plakietki
+          rekordu, a wyśrodkowanie zepchnęłoby ją w dół, poza linię przycisku powrotu
+          po drugiej stronie ekranu. Obie rzeczy mają wisieć od tej samej górnej krawędzi,
+          a liczba ma rosnąć w dół - w pustkę, która i tak tam jest.
+        */
+        className={`absolute right-5 top-5 z-20 flex items-start gap-4 transition-opacity duration-500 ${
           zaczeta ? "opacity-100" : "opacity-0"
         }`}
       >
         {/*
-          Zegar jest liczbą, nie plakietką. Szkło zostaje jako podkładka, ale gradient
-          musi siedzieć na OSOBNYM elemencie w środku: `szklo-pro` ustawia własne tło,
-          a `background-clip: text` też potrzebuje tła - na jednym elemencie jedno
-          zjadłoby drugie i zegar zniknąłby zupełnie.
+          Zegar bez szkła pod spodem. Przy trzydziestu kilku pikselach plakietka pomagała
+          odkleić liczbę od tła, ale przy dziewięćdziesięciu robi się z niej blok zajmujący
+          ćwierć narożnika. Czytelność bierze teraz na siebie sama liczba: gradient marki
+          i dwuwarstwowa poświata (patrz `.zegar-gry`).
         */}
         {zegar !== null && (
-          <span className="szklo-pro grid place-items-center rounded-[22px] px-5 py-2">
-            <span className={`zegar-gry ${zegar <= 10 ? "zegar-gry-alarm" : ""}`}>
-              {Math.ceil(zegar)}
-              <span className="zegar-gry-jednostka">s</span>
-            </span>
+          <span className={`zegar-gry ${zegar <= 10 ? "zegar-gry-alarm" : ""}`}>
+            {Math.ceil(zegar)}
+            <span className="zegar-gry-jednostka">s</span>
           </span>
         )}
 

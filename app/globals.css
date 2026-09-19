@@ -492,10 +492,24 @@ body {
   więc rozświetla to, co widać.
 */
 .zegar-gry {
-  font-size: 34px;
+  /*
+    Rozmiar idzie z szerokości okna, a nie z progów.
+
+    Na komputerze plansza ma kilkaset pikseli pustego nieba w prawym górnym rogu i to
+    tam zegar ma być duży - trzydzieści kilka pikseli ginęło tam tak samo jak piętnaście.
+    Na telefonie ten sam rozmiar zasłoniłby ćwierć ekranu, a gra toczy się pośrodku.
+
+    `clamp` załatwia oba końce jedną deklaracją: 36 px to dolna granica czytelności,
+    6.2vw prowadzi wartość przez tablet, a 120 px zatrzymuje ją, zanim liczba zacznie
+    konkurować z piłką. Progów `@media` nie ma z rozmysłem - zegar zmienia się płynnie,
+    także przy obróceniu telefonu czy zmianie okna, zamiast przeskakiwać.
+
+    Zmierzone: 375 px -> 36, 768 px -> 48, 1280 px -> 79, 1920 px -> 119.
+  */
+  font-size: clamp(36px, 6.2vw, 120px);
   font-weight: 800;
   line-height: 1;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.035em;
   font-variant-numeric: tabular-nums;
   background: linear-gradient(
     135deg,
@@ -506,7 +520,13 @@ body {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 0 16px rgb(var(--rgb-flame) / calc(0.5 * var(--moc-poswiaty, 1))));
+  /*
+    Poświata rośnie razem z liczbą - stała szesnastka przy dziewięćdziesięciu pikselach
+    byłaby obwódką, a nie blaskiem. Druga, ciemna warstwa odkleja cyfry od jasnych miejsc
+    planszy; bez niej zegar gubił się nad rozświetlonym parkietem.
+  */
+  filter: drop-shadow(0 0 0.22em rgb(var(--rgb-flame) / calc(0.55 * var(--moc-poswiaty, 1))))
+    drop-shadow(0 0.04em 0.06em rgb(0 0 0 / 0.55));
 }
 
 /** Sekundy mniejsze od liczby - jednostka ma nie konkurować z wartością. */
