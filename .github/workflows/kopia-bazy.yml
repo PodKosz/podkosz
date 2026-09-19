@@ -40,16 +40,54 @@ jobs:
     timeout-minutes: 15
 
     steps:
+      # Sprawdzamy KSZTAŁT sekretu, nie tylko jego obecność - i to nie jest nadgorliwość.
+      #
+      # `pg_dump`, dostawszy coś, co nie wygląda na adres URI, traktuje to jako NAZWĘ BAZY
+      # i puka do lokalnego gniazda uniksowego. Wtedy w dzienniku ląduje:
+      #
+      #   connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed:
+      #   No such file or directory
+      #
+      # czyli komunikat, który wygląda na awarię serwera Postgresa, a nie na źle wklejony
+      # sekret - i wysyła szukającego w zupełnie złą stronę. Zdarzyło się dokładnie to przy
+      # pierwszym uruchomieniu. Taniej jest powiedzieć prawdę tutaj.
+      #
+      # Niczego tu nie wypisujemy poza ogonem adresu (host, port, baza). Hasło stoi PRZED
+      # ostatnim „@", więc obcięcie do `##*@` zostawia wyłącznie rzeczy jawne.
       - name: Sprawdź, czy sekret jest ustawiony
         env:
           ADRES_BAZY: ${{ secrets.SUPABASE_DB_URL }}
         run: |
           if [ -z "$ADRES_BAZY" ]; then
             echo "::error::Brak sekretu SUPABASE_DB_URL. Ustaw go w Settings → Secrets and variables → Actions."
-            echo "Weź go z Supabase: Project Settings → Database → Connection string → Session pooler."
+            echo "Weź go z Supabase: Connect → Direct → Session pooler."
             exit 1
           fi
-          echo "Sekret jest. Nie wypisuję go - adres zawiera hasło."
+
+          if [ "$ADRES_BAZY" != "$(printf '%s' "$ADRES_BAZY" | tr -d '\r\n')" ]; then
+            echo "::error::SUPABASE_DB_URL zawiera znak nowej linii. Wklej adres jako JEDNĄ linię, bez entera na końcu."
+            exit 1
+          fi
+
+          case "$ADRES_BAZY" in
+            postgresql://*|postgres://*) ;;
+            *)
+              echo "::error::SUPABASE_DB_URL nie zaczyna się od postgresql:// ani postgres://."
+              echo "pg_dump uzna taki tekst za nazwę bazy i spróbuje połączyć się lokalnie - stąd mylące „No such file or directory”."
+              echo "Najczęstsze przyczyny: skopiowany sam host zamiast całego adresu, cudzysłowy dokoła wartości, albo spacja na początku."
+              exit 1
+              ;;
+          esac
+
+          case "$ADRES_BAZY" in
+            *'[YOUR-PASSWORD]'*|*'[TWOJE-HASŁO]'*)
+              echo "::error::W adresie został znacznik [YOUR-PASSWORD] - trzeba go zastąpić prawdziwym hasłem do bazy."
+              echo "Hasła nie da się podejrzeć po utworzeniu; można je zresetować w Supabase (Database → Reset database password)."
+              exit 1
+              ;;
+          esac
+
+          echo "Sekret jest i wygląda na adres URI. Cel: ${ADRES_BAZY##*@}"
 
       # pg_dump MUSI być w wersji nie starszej niż serwer, inaczej odmawia zrzutu
       # („server version mismatch"). Domyślny klient na runnerze bywa starszy od bazy
