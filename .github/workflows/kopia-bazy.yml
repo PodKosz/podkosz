@@ -12,10 +12,15 @@
 #
 #  GDZIE LĄDUJE KOPIA
 #
-#  Na razie jako artefakt przebiegu GitHub Actions. To nie jest docelowe miejsce i nie
-#  udaje, że jest: artefakty wygasają, a przy większej bazie zjadłyby limit repozytorium.
-#  Docelowo ma to iść do Cloudflare R2 - patrz krok „Wyślij do R2" na końcu, wystarczy
-#  wtedy dopisać trzy sekrety i zdjąć `if: false`.
+#  W DWÓCH miejscach naraz i to jest zamierzone.
+#
+#  Jako artefakt przebiegu - pod ręką, widoczna przy samym dzienniku, do pobrania jednym
+#  kliknięciem. Wygasa po trzydziestu dniach i leży w tym samym serwisie co kod, więc sama
+#  w sobie kopią zapasową nie jest.
+#
+#  I w Cloudflare R2 - poza GitHubem, bez terminu ważności. To jest kopia właściwa.
+#  Gdyby R2 kiedyś odmówiło, przebieg padnie na ostatnim kroku, ale artefakt będzie już
+#  odłożony; kolejność kroków jest taka celowo.
 #
 #  CZEGO TA KOPIA NIE ZAŁATWIA
 #
@@ -194,16 +199,57 @@ jobs:
           if-no-files-found: error
 
       # ------------------------------------------------------------------ docelowe miejsce
-      # Włączyć, gdy R2 będzie gotowe: zdjąć `if: false` i dodać trzy sekrety
-      # (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY) oraz kubełek `kopie`.
-      # Wtedy kopie przestają wygasać razem z artefaktami i leżą poza GitHubem.
+      #
+      # Artefakt przebiegu wygasa po trzydziestu dniach i leży w tym samym miejscu, co kod.
+      # R2 zdejmuje oba te ograniczenia. Włączone 19 września.
+      #
+      # ŚWIADOME ODSTĘPSTWO OD ZASADY TEGO PROJEKTU, więc mówimy o nim wprost. Worker zdjęć
+      # dostaje kubełek przez POWIĄZANIE i chwali się w swoim nagłówku, że „nie ma żadnego
+      # klucza do wykradzenia, bo nie ma klucza w ogóle" (`worker/zdjecia.js`). Tutaj klucz
+      # JEST, bo GitHub Actions nie jest Workerem i powiązania mieć nie może.
+      #
+      # Stąd warunek, który nie jest formalnością: token MUSI być zawężony do kubełka
+      # `kopie` i tylko do niego. Ta kopia to komplet danych ludzi - adresy e-mail, konta,
+      # historia gry - więc token o szerszym zasięgu zamieniłby jeden wyciek sekretu
+      # z GitHuba w wyciek wszystkiego, co mamy.
+      #
+      # Wersja bez klucza jest możliwa: dołożyć Workerowi trasę na kopie i wpuszczać go
+      # sekretem. GitHub trzymałby wtedy prawo WGRANIA kopii, a nie odczytania wszystkich.
+      # Nie robimy tego dziś; zapisane tutaj, żeby nie wyglądało na przeoczenie.
       - name: Wyślij do R2
-        if: false
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: auto
           KONTO: ${{ secrets.R2_ACCOUNT_ID }}
+          # AWS CLI v2 dokłada od pewnej wersji własne sumy kontrolne do każdego żądania,
+          # a R2 odbija je błędem, który o sumach nie wspomina ani słowem. Te dwie zmienne
+          # każą wysyłać je tylko tam, gdzie wymaga tego protokół - inaczej mielibyśmy
+          # kolejny objaw bez związku z przyczyną, jak przy „No such file or directory".
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
         run: |
-          aws s3 cp "$NAZWA" "s3://kopie/$NAZWA" \
-            --endpoint-url "https://${KONTO}.r2.cloudflarestorage.com"
+          set -euo pipefail
+
+          if [ -z "${KONTO:-}" ] || [ -z "${AWS_ACCESS_KEY_ID:-}" ] || [ -z "${AWS_SECRET_ACCESS_KEY:-}" ]; then
+            echo "::error::Brakuje sekretów R2 (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY)."
+            echo "Kopia leży w artefakcie tego przebiegu, więc nie przepadła - ale poza GitHuba nie wyszła."
+            exit 1
+          fi
+
+          KOSZ="https://${KONTO}.r2.cloudflarestorage.com"
+          aws s3 cp "$NAZWA" "s3://kopie/$NAZWA" --endpoint-url "$KOSZ"
+
+          # „cp bez błędu" to nie to samo co „plik jest w kubełku". Pytamy więc kubełek
+          # o rozmiar i porównujemy z tym, co wysyłaliśmy - dokładnie w tym duchu, co krok
+          # sprawdzający czytelność zrzutu wyżej. Kopia, której nie ma, jest gorsza niż
+          # brak kopii, bo usypia czujność.
+          LOKALNIE=$(stat -c%s "$NAZWA")
+          ZDALNIE=$(aws s3api head-object --bucket kopie --key "$NAZWA" \
+            --endpoint-url "$KOSZ" --query ContentLength --output text)
+          echo "Wysłane: $LOKALNIE B, w kubełku: $ZDALNIE B"
+          if [ "$LOKALNIE" != "$ZDALNIE" ]; then
+            echo "::error::Rozmiar w kubełku nie zgadza się z lokalnym - kopia w R2 jest niepełna."
+            exit 1
+          fi
+          echo "Kopia leży w R2: s3://kopie/$NAZWA"
