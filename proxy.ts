@@ -44,6 +44,25 @@ const ZAWSZE_DOSTEPNE = [
     Trasa oddaje wyłącznie dane właściciela ciasteczka, więc nic tu nie wycieka.
   */
   "/api/sesja",
+  /*
+    Polityka prywatności i regulamin - z tego samego powodu, co endpoint zapisu: ktoś
+    z zewnątrz MUSI móc je otworzyć, zanim wejdzie za zasłonę.
+
+    Takim miejscem jest ekran zgody Google przy logowaniu: stoją na nim odnośniki do obu
+    tych stron, a człowiek klika je ZANIM założy konto - czyli zanim ma jakąkolwiek szansę
+    przejść za zasłonę. Przepisanie na „Już niedługo" znaczyło, że ktoś pytający o to, co
+    robimy z jego danymi, dostaje w odpowiedzi plakat.
+
+    Sama strona zasłony nie linkuje dziś do żadnej z nich - nie ma na niej ani jednego
+    odnośnika. Gdyby kiedyś miała, ten wpis jest już na swoim miejscu.
+
+    NIE otwiera to serwisu. Te dwie strony nie pokazują ani jednego boiska, ani jednego
+    konta i nie prowadzą nigdzie dalej - a `noindex` zostaje na nich tak czy owak, bo
+    nakłada go układ całej grupy `(strona)` na czas zasłony (patrz `app/(strona)/layout.tsx`).
+    Wyszukiwarka ich więc nie zaindeksuje, mimo że robot je pobierze.
+  */
+  "/prywatnosc",
+  "/regulamin",
 ];
 
 /** Wynik sprawdzenia adresu IP - żeby nie pytać bazy przy każdym żądaniu. */
