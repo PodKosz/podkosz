@@ -336,18 +336,57 @@ export function PilkaOdznaczen({
             ))}
           </radialGradient>
 
+          {/* ————— szkło —————
+              Trzy warstwy kładzione NA wypełnieniu, wszystkie w jednostkach rysunku, nie
+              pola. To jest sedno: refleks ma jedno źródło światła dla całej kuli, więc
+              osiem pól nalanych do różnej wysokości dalej wygląda jak jedno ciało, a nie
+              jak osiem osobnych tarcz z własnym połyskiem. */}
+          <radialGradient
+            id="kula-rdzen"
+            gradientUnits="userSpaceOnUse"
+            cx={CX}
+            cy={CY}
+            r={+(R * 0.52).toFixed(1)}
+          >
+            <stop offset="0" stopColor="#FFF6E8" stopOpacity=".62" />
+            <stop offset=".46" stopColor="#FFD8A4" stopOpacity=".2" />
+            <stop offset="1" stopColor="#FFD8A4" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient
+            id="kula-polysk"
+            gradientUnits="userSpaceOnUse"
+            cx={+(CX - R * 0.34).toFixed(1)}
+            cy={+(CY - R * 0.42).toFixed(1)}
+            r={+(R * 0.88).toFixed(1)}
+          >
+            <stop offset="0" stopColor="#ffffff" stopOpacity=".38" />
+            <stop offset=".42" stopColor="#ffffff" stopOpacity=".1" />
+            <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient
+            id="kula-spod"
+            gradientUnits="userSpaceOnUse"
+            cx={+(CX + R * 0.3).toFixed(1)}
+            cy={+(CY + R * 0.46).toFixed(1)}
+            r={+(R * 0.8).toFixed(1)}
+          >
+            <stop offset="0" stopColor="#ffffff" stopOpacity=".16" />
+            <stop offset=".6" stopColor="#ffffff" stopOpacity=".03" />
+            <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
+          </radialGradient>
+
           {/* Żar pod kursorem bierze barwę ZE STOPNIA pola. Jedna wspólna pomarańcz
               przeczyłaby jedynej rzeczy, którą ten rysunek mówi: że barwa jest stopniem. */}
           {STOPNIE.map((p, k) => (
             <radialGradient key={`a${k}`} id={`kula-zarA-${k}`}>
-              <stop offset="0" stopColor={`rgb(${zarBarwa(k)} / .60)`} />
-              <stop offset=".62" stopColor={`rgb(${zarBarwa(k)} / .21)`} />
+              <stop offset="0" stopColor={`rgb(${zarBarwa(k)} / .34)`} />
+              <stop offset=".62" stopColor={`rgb(${zarBarwa(k)} / .12)`} />
               <stop offset="1" stopColor={`rgb(${zarBarwa(k)} / 0)`} />
             </radialGradient>
           ))}
           <radialGradient id="kula-zarC">
-            <stop offset="0" stopColor="rgb(var(--rgb-glow-soft) / .46)" />
-            <stop offset=".62" stopColor="rgb(var(--rgb-glow-soft) / .15)" />
+            <stop offset="0" stopColor="rgb(var(--rgb-glow-soft) / .26)" />
+            <stop offset=".62" stopColor="rgb(var(--rgb-glow-soft) / .08)" />
             <stop offset="1" stopColor="rgb(var(--rgb-glow-soft) / 0)" />
           </radialGradient>
 
@@ -356,16 +395,16 @@ export function PilkaOdznaczen({
               dokładnie jak podświetlenie województwa na mapie (`lib/zarWojewodztwa.ts`). */}
           <radialGradient id="kula-czolo">
             <stop offset="0" stopColor="rgb(var(--rgb-glow-soft) / 0)" />
-            <stop offset=".46" stopColor="rgb(var(--rgb-glow-soft) / .08)" />
-            <stop offset=".74" stopColor="rgb(var(--rgb-glow-soft) / .26)" />
-            <stop offset=".90" stopColor="rgb(var(--rgb-glow-soft) / .54)" />
-            <stop offset=".98" stopColor="rgb(255 255 255 / .30)" />
+            <stop offset=".5" stopColor="rgb(var(--rgb-glow-soft) / .05)" />
+            <stop offset=".78" stopColor="rgb(var(--rgb-glow-soft) / .16)" />
+            <stop offset=".92" stopColor="rgb(var(--rgb-glow-soft) / .30)" />
+            <stop offset=".99" stopColor="rgb(255 255 255 / .12)" />
             <stop offset="1" stopColor="rgb(255 255 255 / 0)" />
           </radialGradient>
 
           <radialGradient id="kula-szklo" cx="34%" cy="26%" r="72%">
-            <stop offset="0" stopColor="#ffffff" stopOpacity=".50" />
-            <stop offset=".45" stopColor="#ffffff" stopOpacity=".10" />
+            <stop offset="0" stopColor="#ffffff" stopOpacity=".38" />
+            <stop offset=".45" stopColor="#ffffff" stopOpacity=".07" />
             <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
           </radialGradient>
           <linearGradient id="kula-krawedz" x1="0" y1="0" x2=".85" y2="1">
@@ -373,8 +412,11 @@ export function PilkaOdznaczen({
             <stop offset=".42" stopColor="#ffffff" stopOpacity=".06" />
             <stop offset="1" stopColor="#ffffff" stopOpacity=".16" />
           </linearGradient>
-          <radialGradient id="kula-cien" cx="68%" cy="78%" r="62%">
-            <stop offset="0" stopColor="#000000" stopOpacity=".46" />
+          {/* Cień leży NA wypełnieniu, więc każdy jego punkt krycia zabiera barwie
+              tyle samo jasności. Przy .46 dolna ćwiartka kuli gasła do brązu niezależnie
+              od tego, jaki stopień tam stał - a to właśnie stopień ma tam być widoczny. */}
+          <radialGradient id="kula-cien" cx="70%" cy="80%" r="58%">
+            <stop offset="0" stopColor="#000000" stopOpacity=".24" />
             <stop offset="1" stopColor="#000000" stopOpacity="0" />
           </radialGradient>
           <radialGradient id="kula-skora" cx="36%" cy="28%">
@@ -467,6 +509,12 @@ export function PilkaOdznaczen({
                     fill="url(#kula-widmo)"
                     filter="url(#kula-miekko)"
                   />
+                  {/* Rdzeń: gorące światło tuż za awatarem. Bez niego środek kuli był
+                      najciemniejszym jej miejscem, mimo że to od niego wszystko się nalewa. */}
+                  <circle cx={CX} cy={CY} r={+r.toFixed(1)} fill="url(#kula-rdzen)" />
+                  {/* Refleks i odbicie od spodu - to one robią z barwy ciecz pod szkłem. */}
+                  <circle cx={CX} cy={CY} r={+r.toFixed(1)} fill="url(#kula-polysk)" />
+                  <circle cx={CX} cy={CY} r={+r.toFixed(1)} fill="url(#kula-spod)" />
                   {/* menisk: jasne czoło cieczy - to ono robi wrażenie nalania,
                       a nie pomalowania */}
                   <circle
@@ -475,7 +523,7 @@ export function PilkaOdznaczen({
                     r={+r.toFixed(1)}
                     fill="none"
                     stroke="#ffffff"
-                    strokeOpacity=".46"
+                    strokeOpacity=".62"
                     strokeWidth={+(BOK * 0.0034).toFixed(2)}
                   />
                 </g>

@@ -37,10 +37,10 @@ export const POPIOL: Poziom = { id: "popiol", nazwa: "Popiół", barwa: "176 180
 
 /** Kolejność ma znaczenie: indeks + 1 to numer stopnia. */
 export const POZIOMY: Poziom[] = [
-  { id: "iskra", nazwa: "Iskra", barwa: "247 191 76" },
-  { id: "zar", nazwa: "Żar", barwa: "214 62 48" },
-  { id: "plomien", nazwa: "Płomień", barwa: "255 118 40" },
-  { id: "niebieski", nazwa: "Ogień", barwa: "132 196 255" },
+  { id: "iskra", nazwa: "Iskra", barwa: "255 206 72" },
+  { id: "zar", nazwa: "Żar", barwa: "255 84 52" },
+  { id: "plomien", nazwa: "Płomień", barwa: "255 138 36" },
+  { id: "niebieski", nazwa: "Ogień", barwa: "92 182 255" },
 ];
 
 /** Stopnie od zerowego w górę - indeks tablicy to numer stopnia. */

@@ -124,9 +124,7 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
         <PilkaOdznaczen statystyki={statystyki} nick={nick} avatar={statystyki.avatar} />
 
         {/* Nazwa siedzi TUŻ POD PIŁKĄ - to jedna para, nie dwie osobne linijki. */}
-        <h1 className="mt-4 flame-text pb-1 text-[clamp(32px,6vw,58px)] font-semibold tracking-[-0.03em]">
-          @{nick}
-        </h1>
+        <h1 className="nick-gracza mt-4 pb-1 text-[clamp(44px,9.5vw,94px)]">@{nick}</h1>
 
         <p className="text-[13px] text-muted">
           {statystyki.dolaczyl

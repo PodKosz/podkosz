@@ -1207,22 +1207,22 @@ body {
 */
 .stopien-iskra,
 .medal-iskra {
-  --b: 247 191 76;
+  --b: 255 206 72;
   --pilka: url("/odznaczenia/iskra.webp");
 }
 .stopien-zar,
 .medal-zar {
-  --b: 214 62 48;
+  --b: 255 84 52;
   --pilka: url("/odznaczenia/zar.webp");
 }
 .stopien-plomien,
 .medal-plomien {
-  --b: 255 118 40;
+  --b: 255 138 36;
   --pilka: url("/odznaczenia/plomien.webp");
 }
 .stopien-niebieski,
 .medal-niebieski {
-  --b: 132 196 255;
+  --b: 92 182 255;
   --pilka: url("/odznaczenia/niebieski.webp");
 }
 /*
@@ -3478,26 +3478,19 @@ select option {
 }
 
 /*
-  Skala siedzi na NAJSTARSZEJ grupie pola, tej z przycięciem do koła. W SVG transform
-  działa razem z `clip-path` elementu, więc przycięcie jedzie ze skalą i klin naprawdę
-  wychodzi poza obrys piłki, zamiast rosnąć pod maską.
+  Pole pod kursorem NIE ZMIENIA ROZMIARU. Wcześniej rosło o 4,5%, a że w SVG transform
+  działa razem z `clip-path` elementu, razem ze skalą jechało też przycięcie - więc
+  podświetlony klin wychodził poza obrys piłki i poza własne szwy. Zostaje samo
+  rozjaśnienie, czyli zmiana, która z definicji nie rusza ani jednego piksela na zewnątrz.
 */
 .kula-pole {
-  transform-box: view-box;
-  transform-origin: 50% 50%;
-  transition:
-    transform 0.34s cubic-bezier(0.22, 0.9, 0.24, 1),
-    filter 0.28s ease;
+  transition: filter 0.3s ease;
 }
 .kula-traf {
   cursor: pointer;
 }
 .kula-pole.gorace {
-  transform: scale(1.045);
-  filter: brightness(1.14) saturate(1.04);
-}
-.kula-pole.kula-obrecz.gorace {
-  transform: scale(1.022);
+  filter: brightness(1.09) saturate(1.05);
 }
 
 .kula-kropa {
@@ -3536,11 +3529,11 @@ select option {
     transform: scale(0.04);
     opacity: 0;
   }
-  12% {
-    opacity: 1;
+  14% {
+    opacity: 0.62;
   }
   70% {
-    opacity: 0.8;
+    opacity: 0.44;
   }
   100% {
     transform: scale(1);
@@ -3622,10 +3615,15 @@ select option {
 /*
   Nalewanie przy wejściu na stronę: czoło cieczy wyrasta z rdzenia do swojego stopnia.
   Skala, nie promień, bo promień w SVG nie jest własnością animowaną na karcie graficznej.
+
+  Nasycenie podbijamy TYLKO tutaj, na samej cieczy. Gdyby siedziało na całym rysunku,
+  razem z barwą podniosłoby też szwy, obręcz i kropki wyróżnień - a te mają zostać
+  spokojne, żeby kolor niósł informację tylko tam, gdzie coś znaczy.
 */
 .kula-nalew {
   transform-box: fill-box;
   transform-origin: center;
+  filter: saturate(1.22);
   animation: kula-rozlew 1100ms cubic-bezier(0.2, 0.8, 0.24, 1) both;
 }
 @keyframes kula-rozlew {
@@ -3644,9 +3642,6 @@ select option {
   .kula-kropa {
     transition: none;
   }
-  .kula-pole.gorace {
-    transform: none;
-  }
   .kula-fala {
     animation: none;
   }
@@ -3663,7 +3658,55 @@ select option {
   }
 }
 
-/* ---------- karta odznaczenia ---------- */
+/* ---------- nazwa gracza ---------- */
+/*
+  Gradient ma pięć przystanków, nie dwa jak `.flame-text`, i jasne pasmo w środku. W spoczynku
+  pasmo stoi poza literami (`background-position` przy prawej krawędzi), a najechanie
+  przeciąga je przez cały napis - stąd wrażenie światła biegnącego po rozgrzanym metalu,
+  bez ani jednej dodatkowej warstwy w drzewie.
+
+  `inline-block` pilnuje, żeby pole najechania kończyło się na ostatniej literze. Na profilu
+  robi to już kolumna (`items-center` zwęża element do treści), ale reguła ma działać także
+  poza nią - rozciągnięty `h1` zapalałby napis przy kursorze pół ekranu dalej.
+*/
+.nick-gracza {
+  display: inline-block;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  background: linear-gradient(
+    100deg,
+    var(--color-glow-soft) 0%,
+    var(--color-flame) 26%,
+    #fff6e8 44%,
+    var(--color-flame) 60%,
+    var(--color-glow-soft) 100%
+  );
+  background-size: 260% 100%;
+  background-position: 92% 50%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  transition:
+    background-position 1s cubic-bezier(0.22, 0.8, 0.26, 1),
+    filter 0.45s ease;
+}
+.nick-gracza:hover {
+  background-position: 8% 50%;
+  filter: drop-shadow(0 0 34px rgb(var(--rgb-flame) / 0.42));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nick-gracza {
+    transition: none;
+  }
+  .nick-gracza:hover {
+    background-position: 92% 50%;
+    filter: none;
+  }
+}
+
+/* ---------- karta pod piłką ---------- */
 .kula-karta {
   position: absolute;
   z-index: 30;
