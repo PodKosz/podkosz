@@ -1200,6 +1200,10 @@ body {
 /*
   Barwy stopni. Kolor kreski i poświaty nadal bierze się stąd - piłka wnosi obrazek,
   ale obwódki, dymki i kropki muszą znać jedną barwę wiodącą.
+
+  Te same cztery trójki siedzą w `POZIOMY` w `lib/odznaczenia.ts`: piłka odznaczeń na
+  profilu składa z nich jeden gradient i nie ma jak sięgnąć po zmienną CSS dla czterech
+  stopni naraz. Zmiana barwy musi iść w obu miejscach.
 */
 .stopien-iskra,
 .medal-iskra {
@@ -3444,6 +3448,348 @@ select option {
 @media (prefers-reduced-motion: reduce) {
   .zar-woj-plama {
     animation: none;
+  }
+}
+
+/* ---------- piłka odznaczeń na profilu ---------- */
+/*
+  Rysunek składa `components/PilkaOdznaczen.tsx`; tutaj zostaje tylko to, czego nie da się
+  policzyć w locie - ruch i szkło karty.
+*/
+/*
+  Scena jest szeroka na całą kolumnę, choć piłka zajmuje jej środek. To układ odniesienia
+  dla karty odznaczenia: gdyby sięgała tylko po obrys kuli, karta przycinana do jej
+  szerokości lądowałaby przy każdym kliknięciu w tym samym rogu.
+*/
+.kula-scena {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+}
+
+.kula {
+  position: relative;
+  display: block;
+  width: min(86vw, 460px);
+  height: auto;
+  /* pola wypiętrzają się pod kursorem ponad obrys kuli, więc nie wolno ich obciąć */
+  overflow: visible;
+}
+
+/*
+  Skala siedzi na NAJSTARSZEJ grupie pola, tej z przycięciem do koła. W SVG transform
+  działa razem z `clip-path` elementu, więc przycięcie jedzie ze skalą i klin naprawdę
+  wychodzi poza obrys piłki, zamiast rosnąć pod maską.
+*/
+.kula-pole {
+  transform-box: view-box;
+  transform-origin: 50% 50%;
+  transition:
+    transform 0.34s cubic-bezier(0.22, 0.9, 0.24, 1),
+    filter 0.28s ease;
+}
+.kula-traf {
+  cursor: pointer;
+}
+.kula-pole.gorace {
+  transform: scale(1.045);
+  filter: brightness(1.14) saturate(1.04);
+}
+.kula-pole.kula-obrecz.gorace {
+  transform: scale(1.022);
+}
+
+.kula-kropa {
+  cursor: pointer;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.22s cubic-bezier(0.22, 0.9, 0.24, 1);
+}
+.kula-kropa:hover {
+  transform: scale(1.55);
+}
+
+/*
+  Żar pola - ten sam pomysł, co podświetlenie województwa wyżej. Najpierw przez pole
+  przechodzi fala, której najjaśniejszy jest BRZEG, a nie środek; za nią, z ćwierćsekundową
+  zwłoką, wstają trzy miękkie plamy i wolno wędrują, każda w swoim tempie i fazie. Jedna
+  plama w jednym kolorze czyta się jak reflektor, a nie jak rozgrzana blacha.
+*/
+.kula-zar {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.kula-pole.gorace .kula-zar {
+  opacity: 1;
+}
+
+.kula-fala {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: kula-fala 1400ms cubic-bezier(0.2, 0.6, 0.35, 1);
+}
+
+@keyframes kula-fala {
+  0% {
+    transform: scale(0.04);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+.kula-plamy {
+  opacity: 0;
+}
+.kula-pole.gorace .kula-plamy {
+  animation: kula-wstanie 900ms ease 240ms both;
+}
+@keyframes kula-wstanie {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.kula-plama {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.kula-pole.gorace .kula-p1 {
+  animation: kula-a 7s ease-in-out infinite;
+}
+.kula-pole.gorace .kula-p2 {
+  animation: kula-b 9.5s ease-in-out infinite;
+}
+.kula-pole.gorace .kula-p3 {
+  animation: kula-c 5.5s ease-in-out infinite;
+}
+
+@keyframes kula-a {
+  0%,
+  100% {
+    transform: translate(calc(var(--dx) * -0.5), calc(var(--dy) * -0.35)) scale(0.94);
+    opacity: 0.72;
+  }
+  45% {
+    transform: translate(calc(var(--dx) * 0.55), calc(var(--dy) * 0.3)) scale(1.14);
+    opacity: 1;
+  }
+  72% {
+    transform: translate(calc(var(--dx) * 0.1), calc(var(--dy) * -0.5)) scale(1.02);
+    opacity: 0.82;
+  }
+}
+@keyframes kula-b {
+  0%,
+  100% {
+    transform: translate(calc(var(--dx) * 0.6), calc(var(--dy) * 0.45)) scale(1.08);
+    opacity: 0.6;
+  }
+  40% {
+    transform: translate(calc(var(--dx) * -0.45), calc(var(--dy) * 0.15)) scale(0.9);
+    opacity: 0.95;
+  }
+  70% {
+    transform: translate(calc(var(--dx) * -0.15), calc(var(--dy) * -0.55)) scale(1.16);
+    opacity: 0.68;
+  }
+}
+@keyframes kula-c {
+  0%,
+  100% {
+    transform: translate(calc(var(--dx) * 0.25), calc(var(--dy) * -0.6)) scale(0.86);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translate(calc(var(--dx) * -0.55), calc(var(--dy) * 0.5)) scale(1.2);
+    opacity: 0.9;
+  }
+}
+
+/*
+  Nalewanie przy wejściu na stronę: czoło cieczy wyrasta z rdzenia do swojego stopnia.
+  Skala, nie promień, bo promień w SVG nie jest własnością animowaną na karcie graficznej.
+*/
+.kula-nalew {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: kula-rozlew 1100ms cubic-bezier(0.2, 0.8, 0.24, 1) both;
+}
+@keyframes kula-rozlew {
+  from {
+    transform: scale(0.14);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kula-pole,
+  .kula-kropa {
+    transition: none;
+  }
+  .kula-pole.gorace {
+    transform: none;
+  }
+  .kula-fala {
+    animation: none;
+  }
+  .kula-nalew {
+    animation: none;
+  }
+  .kula-pole.gorace .kula-plamy {
+    animation: kula-wstanie 300ms ease both;
+  }
+  .kula-pole.gorace .kula-p1,
+  .kula-pole.gorace .kula-p2,
+  .kula-pole.gorace .kula-p3 {
+    animation: none;
+  }
+}
+
+/* ---------- karta odznaczenia ---------- */
+.kula-karta {
+  position: absolute;
+  z-index: 30;
+  width: 296px;
+  max-width: calc(100vw - 32px);
+  padding: 16px 17px 17px;
+  border-radius: 20px;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  background: rgb(16 18 23 / 0.76);
+  backdrop-filter: blur(22px) saturate(1.5);
+  box-shadow:
+    0 26px 60px -18px rgb(0 0 0 / 0.9),
+    inset 0 1px 0 rgb(255 255 255 / 0.1);
+  opacity: 0;
+  transform: translateY(8px) scale(0.97);
+  pointer-events: none;
+  transition:
+    opacity 0.2s ease,
+    transform 0.24s cubic-bezier(0.22, 0.9, 0.24, 1);
+}
+.kula-karta.widac {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+.kula-karta-gora {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+}
+.kula-karta-gora h3 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+.kula-karta-pkt {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  flex: none;
+  margin-top: 6px;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.45);
+}
+.kula-karta-stopien {
+  margin: 3px 0 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgb(var(--rgb-tekst-slaby, 97 105 116));
+}
+.kula-karta-zamknij {
+  margin-left: auto;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  background: transparent;
+  color: inherit;
+  opacity: 0.7;
+  font-size: 16px;
+  line-height: 1;
+  transition: 0.16s;
+}
+.kula-karta-zamknij:hover {
+  opacity: 1;
+  border-color: rgb(255 255 255 / 0.22);
+  background: rgb(255 255 255 / 0.06);
+}
+.kula-segmenty {
+  display: flex;
+  gap: 4px;
+  margin-top: 14px;
+}
+.kula-segmenty i {
+  flex: 1;
+  height: 4px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.08);
+}
+.kula-karta-licz {
+  margin: 12px 0 0;
+  font-size: 13px;
+  opacity: 0.75;
+}
+.kula-karta-licz b {
+  font-size: 19px;
+  opacity: 1;
+  margin-right: 5px;
+}
+.kula-karta-cel {
+  margin: 7px 0 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  opacity: 0.75;
+}
+.kula-karta-opis {
+  margin: 11px 0 0;
+  padding-top: 11px;
+  border-top: 1px solid rgb(255 255 255 / 0.07);
+  font-size: 11.5px;
+  line-height: 1.5;
+  opacity: 0.5;
+}
+
+/*
+  Poniżej 560 px karta przestaje być dymkiem przy kursorze i siada jako szuflada na dole
+  ekranu: palec i tak zasłania to, w co właśnie nacisnął.
+*/
+@media (max-width: 560px) {
+  .kula-karta {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    top: auto;
+    width: auto;
+    transform: translateY(16px);
+  }
+  .kula-karta.widac {
+    transform: none;
   }
 }
 

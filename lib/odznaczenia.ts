@@ -15,6 +15,15 @@ export type IdPoziomu = "popiol" | "iskra" | "zar" | "plomien" | "niebieski";
 export interface Poziom {
   id: IdPoziomu;
   nazwa: string;
+  /**
+   * Barwa wiodąca stopnia, jako trójka RGB do wstawienia w `rgb(...)`.
+   *
+   * To samo, co `--b` w regułach `.stopien-*` w `app/globals.css` - tam jest potrzebne
+   * arkuszowi, tu rysunkowi piłki na profilu, który buduje z tego gradient w locie i nie
+   * ma jak sięgnąć po zmienną CSS dla czterech stopni naraz. Zmiana barwy musi iść w obu
+   * miejscach, inaczej ten sam stopień powie na profilu co innego niż na koncie.
+   */
+  barwa: string;
 }
 
 /**
@@ -24,15 +33,18 @@ export interface Poziom {
  * każdego konta. Trzymanie go poza tablicą pilnuje też, żeby nie namieszał w arytmetyce:
  * `postepPelny` dzieli przez liczbę stopni DO ZDOBYCIA, a tych jest cztery.
  */
-export const POPIOL: Poziom = { id: "popiol", nazwa: "Popiół" };
+export const POPIOL: Poziom = { id: "popiol", nazwa: "Popiół", barwa: "176 180 190" };
 
 /** Kolejność ma znaczenie: indeks + 1 to numer stopnia. */
 export const POZIOMY: Poziom[] = [
-  { id: "iskra", nazwa: "Iskra" },
-  { id: "zar", nazwa: "Żar" },
-  { id: "plomien", nazwa: "Płomień" },
-  { id: "niebieski", nazwa: "Ogień" },
+  { id: "iskra", nazwa: "Iskra", barwa: "247 191 76" },
+  { id: "zar", nazwa: "Żar", barwa: "214 62 48" },
+  { id: "plomien", nazwa: "Płomień", barwa: "255 118 40" },
+  { id: "niebieski", nazwa: "Ogień", barwa: "132 196 255" },
 ];
+
+/** Stopnie od zerowego w górę - indeks tablicy to numer stopnia. */
+export const STOPNIE: Poziom[] = [POPIOL, ...POZIOMY];
 
 /** Liczby z profilu, na których stoją wszystkie odznaczenia. */
 export interface StatystykiGracza {

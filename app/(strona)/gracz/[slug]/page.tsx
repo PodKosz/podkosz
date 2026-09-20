@@ -4,8 +4,8 @@ import { notFound } from "next/navigation";
 import { boiskaPoId, getAuthor, listContributors } from "@/lib/repo";
 import { historiaGracza, nickZeSlugu, statystykiGracza, ulubioneGracza } from "@/lib/profil";
 import { CourtCard } from "@/components/CourtCard";
-import { PlakietkiZaslug } from "@/components/PlakietkiZaslug";
-import { WyroznieniaLatajace } from "@/components/WyroznieniaLatajace";
+import { Odznaczenia } from "@/components/Odznaczenia";
+import { PilkaOdznaczen } from "@/components/PilkaOdznaczen";
 import { TloPilki } from "@/components/TloPilki";
 import { NaglowekSekcji } from "@/components/NaglowekSekcji";
 import { czyAutorAnonimowy, dataOpisowa, SITE_NAME, plural, slugifyPlace } from "@/lib/site";
@@ -66,10 +66,15 @@ export async function generateMetadata({
 /**
  * Publiczny profil gracza - wizytówka, nie pulpit.
  *
- * Układ jest wyśrodkowany i czytany z góry na dół: twarz, nick, plakietki za zasługi,
- * liczby, dodane boiska, ulubione i miejsca ostatnich gier. Pełną siatkę odznaczeń z
- * paskami postępu widzi tylko właściciel na swojej stronie „Moje konto" - tam jest to lista
- * celów, tu byłaby listą cudzych zadań.
+ * Układ jest wyśrodkowany i czytany z góry na dół: piłka odznaczeń, nick, liczby, dodane
+ * boiska, ulubione i miejsca ostatnich gier.
+ *
+ * Pierwsze, co widać, to piłka: dwadzieścia sześć odznaczeń jednym obrazkiem, bez czytania
+ * choćby jednej liczby. Dopiero pod nią stoi ta sama treść słowami. Wcześniej pełna siatka
+ * była wyłącznie na własnym koncie, bo lista „czego jeszcze nie mam" jest zadaniem do
+ * odhaczenia, a nie wizytówką - ale skoro piłka i tak pokazuje wszystkie, także te
+ * nierozpalone, to jej brak nic już nie chronił, a odbierał dostęp do szczegółu każdemu,
+ * kto nie ma kursora.
  */
 export default async function GraczPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -116,31 +121,10 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
 
       {/* ---------- wizytówka ---------- */}
       <header className="mt-10 flex flex-col items-center text-center">
-        {/*
-          Orbita wyróżnień musi być wycentrowana na awatarze, więc opakowujemy go w blok
-          z `position: relative`. Sama orbita jest warstwą absolutną, więc nie zajmuje
-          miejsca - nick i liczby stoją tam, gdzie stały.
-        */}
-        <span className="relative inline-grid">
-        <span className="awatar-ramka">
-          <span className="grid h-[132px] w-[132px] place-items-center overflow-hidden text-[40px] font-bold">
-            {statystyki.avatar ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={statystyki.avatar}
-                alt=""
-                className="h-full w-full rounded-full object-cover"
-              />
-            ) : (
-              <span className="flame-text">{nick.slice(0, 1).toUpperCase()}</span>
-            )}
-          </span>
-        </span>
+        <PilkaOdznaczen statystyki={statystyki} nick={nick} avatar={statystyki.avatar} />
 
-          <WyroznieniaLatajace statystyki={statystyki} />
-        </span>
-
-        <h1 className="mt-6 flame-text pb-1 text-[clamp(32px,6vw,58px)] font-semibold tracking-[-0.03em]">
+        {/* Nazwa siedzi TUŻ POD PIŁKĄ - to jedna para, nie dwie osobne linijki. */}
+        <h1 className="mt-4 flame-text pb-1 text-[clamp(32px,6vw,58px)] font-semibold tracking-[-0.03em]">
           @{nick}
         </h1>
 
@@ -149,8 +133,6 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
             ? `w PodKoszu od ${dataOpisowa(statystyki.dolaczyl)}`
             : "autor boisk w bazie"}
         </p>
-
-        <PlakietkiZaslug statystyki={statystyki} />
       </header>
 
       {/* ---------- liczby ---------- */}
@@ -166,10 +148,12 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
       </section>
 
       {/*
-        Nie ma tu sekcji wyróżnień. Zdobyte krążą wokół zdjęcia profilowego, a lista „czego
-        jeszcze nie mam" jest zadaniem do odhaczenia - to sprawa właściciela konta i widzi
-        ją na /konto. Odwiedzającemu do niczego nie jest potrzebna.
+        Ta sama treść, którą niesie piłka, tylko słowami: stopnie, liczniki, ile brakuje do
+        następnego progu i wyróżnienia. Piłka mówi „jak wysoko", lista mówi „ile dokładnie" -
+        i jako jedyna działa bez kursora oraz w czytniku ekranu.
       */}
+      <Odznaczenia statystyki={statystyki} />
+
       {/* ---------- dodane boiska ---------- */}
       <section className="mt-14">
         <NaglowekSekcji tytul={`Dodane boiska (${boiska.length})`} />
