@@ -123,8 +123,19 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
       <header className="mt-10 flex flex-col items-center text-center">
         <PilkaOdznaczen statystyki={statystyki} nick={nick} avatar={statystyki.avatar} />
 
-        {/* Nazwa siedzi TUŻ POD PIŁKĄ - to jedna para, nie dwie osobne linijki. */}
-        <h1 className="nick-gracza mt-4 pb-1 text-[clamp(44px,9.5vw,94px)]">@{nick}</h1>
+        {/*
+          Nazwa siedzi TUŻ POD PIŁKĄ - to jedna para, nie dwie osobne linijki.
+
+          Liczba znaków idzie do arkusza, bo stopień pisma musi zależeć od DŁUGOŚCI NICKU,
+          a nie tylko od szerokości okna. Sam `clamp` na `vw` dobrany pod „@Basket" wyrzuciłby
+          piętnastoznakowy nick poza kolumnę na każdym ekranie. Plus jeden - za małpę.
+        */}
+        <h1
+          className="nick-gracza mt-4 pb-1"
+          style={{ ["--znaki" as string]: nick.length + 1 }}
+        >
+          @{nick}
+        </h1>
 
         <p className="text-[13px] text-muted">
           {statystyki.dolaczyl

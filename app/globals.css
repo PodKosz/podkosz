@@ -3673,7 +3673,27 @@ select option {
   display: inline-block;
   font-weight: 700;
   letter-spacing: -0.035em;
-  line-height: 1;
+  /*
+    Stopień pisma z trzech ograniczeń naraz. Środkowy człon jest tu najważniejszy:
+    `1400px / liczba znaków` pilnuje, żeby napis zajął mniej więcej tę samą szerokość
+    niezależnie od tego, czy nick ma pięć liter, czy osiemnaście. Stała wyliczona
+    z pomiaru - w tym kroju jedna litera zajmuje około 0,54 em, a kolumna profilu ma
+    1104 px, więc 1400 daje siedmioznakowemu nickowi 200 px i zostawia margines.
+  */
+  font-size: clamp(42px, min(16vw, calc(1400px / var(--znaki, 8))), 200px);
+  /*
+    Siatka bezpieczeństwa na nicki z samych szerokich liter - „WWWWWWWW" zajmuje przy tym
+    samym stopniu pisma o połowę więcej niż „iiiiiiii". Wtedy napis łamie się na dwie
+    linijki, zamiast dorzucać stronie poziome przewijanie.
+  */
+  max-width: 100%;
+  overflow-wrap: break-word;
+  /*
+    1.02, nie 1. Przy równej jedynce górna kreska „Ń" w nickach typu „Zbigniew Koń"
+    obcinała się o własne pole wiersza - przy dwustu pikselach byłoby to widać z drugiego
+    końca pokoju.
+  */
+  line-height: 1.02;
   background: linear-gradient(
     100deg,
     var(--color-glow-soft) 0%,
