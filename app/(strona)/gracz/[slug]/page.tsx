@@ -141,20 +141,26 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
           a nie tylko od szerokości okna. Sam `clamp` na `vw` dobrany pod „Basket" wyrzuciłby
           piętnastoznakowy nick poza kolumnę na każdym ekranie.
         */}
-        {/* `relative` bez `z-index` stawia nazwę w kolejności malowania PRZED kulą, która
-            ma własny `z-index` - dzięki temu litery wchodzą pod piłkę, a nie na nią. */}
-        <h1
-          className="nick-gracza relative pb-0"
-          style={{ ["--znaki" as string]: nick.length }}
-        >
-          {nick}
-        </h1>
+        {/*
+          Data podpisuje nazwę od prawej, jak sygnatura pod obrazem, zamiast stać
+          wyśrodkowana pod jej środkiem. Blok obejmuje oba napisy i zwęża się DO SAMEJ
+          NAZWY, bo data jest z niego wyjęta na pozycję bezwzględną - inaczej przy krótkim
+          nicku to ona wyznaczałaby szerokość i ściągnęła nazwę z osi piłki.
 
-        <p className="text-[13px] text-muted">
-          {statystyki.dolaczyl
-            ? `w PodKoszu od ${dataOpisowa(statystyki.dolaczyl)}`
-            : "autor boisk w bazie"}
-        </p>
+          `relative` bez `z-index` stawia nazwę w kolejności malowania PRZED kulą, która ma
+          własny `z-index` - dzięki temu litery wchodzą pod piłkę, a nie na nią.
+        */}
+        <div className="podpis-gracza relative">
+          <h1 className="nick-gracza pb-0" style={{ ["--znaki" as string]: nick.length }}>
+            {nick}
+          </h1>
+
+          <p className="odkad-gracza text-[13px] text-muted">
+            {statystyki.dolaczyl
+              ? `w PodKoszu od ${dataOpisowa(statystyki.dolaczyl)}`
+              : "autor boisk w bazie"}
+          </p>
+        </div>
       </header>
 
       {/* ---------- liczby ---------- */}

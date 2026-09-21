@@ -3690,6 +3690,27 @@ select option {
 
 /* ---------- nazwa gracza ---------- */
 /*
+  Blok podpisu zwęża się do samej nazwy: data jest z niego wyjęta na pozycję bezwzględną,
+  więc nie wpływa na szerokość. Gdyby została w toku, przy krótkim nicku to ona byłaby
+  szersza i przeciągnęłaby nazwę z osi piłki.
+
+  Dopełnienie u dołu odkłada miejsce, które data zabrała, wychodząc z toku - bez niego
+  kafelki z liczbami podskoczyłyby o wysokość wiersza.
+*/
+.podpis-gracza {
+  display: inline-block;
+  max-width: 100%;
+  padding-bottom: 21px;
+}
+.odkad-gracza {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: -19px;
+  white-space: nowrap;
+}
+
+/*
   Gradient ma pięć przystanków, nie dwa jak `.flame-text`, i jasne pasmo w środku. W spoczynku
   pasmo stoi poza literami (`background-position` przy prawej krawędzi), a najechanie
   przeciąga je przez cały napis - stąd wrażenie światła biegnącego po rozgrzanym metalu,
@@ -3720,10 +3741,12 @@ select option {
     węższa od samych liter po prawej stronie. Wyśrodkowana ramka znaczy wtedy litery
     przesunięte w prawo o połowę tej wartości - przy stopniu 200 px o 3,5 px.
 
-    Dodatni margines z prawej oddaje tę różnicę: powiększa pudełko marginesowe, które
-    układ centruje, więc same litery cofają się w lewo dokładnie o połowę.
+    Cofamy więc litery o połowę tej wartości PRZESUNIĘCIEM, nie marginesem. Margines
+    działał tak samo, ale wchodził do szerokości bloku podpisu - a to względem niej
+    wyrównuje się data pod spodem, która lądowała przez to 7 px za daleko w prawo.
+    Przesunięcie nie rusza układu, więc data trafia dokładnie w koniec nazwy.
   */
-  margin-right: 0.035em;
+  transform: translateX(-0.0175em);
   font-weight: 700;
   letter-spacing: -0.035em;
   /*

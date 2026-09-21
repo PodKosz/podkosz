@@ -407,10 +407,13 @@ export function PilkaOdznaczen({
             <stop offset=".45" stopColor="#ffffff" stopOpacity=".07" />
             <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
           </radialGradient>
+          {/* Ostatni przystanek jest mocniejszy niż przedtem: na dole skóra jest już
+              przezroczysta i to krawędź, sama jedna, trzyma sylwetkę kuli. Przy .16
+              dolny łuk po prostu znikał i piłka wyglądała na urwaną. */}
           <linearGradient id="kula-krawedz" x1="0" y1="0" x2=".85" y2="1">
             <stop offset="0" stopColor="#ffffff" stopOpacity=".62" />
             <stop offset=".42" stopColor="#ffffff" stopOpacity=".06" />
-            <stop offset="1" stopColor="#ffffff" stopOpacity=".16" />
+            <stop offset="1" stopColor="#ffffff" stopOpacity=".4" />
           </linearGradient>
           {/* Cień leży NA wypełnieniu, więc każdy jego punkt krycia zabiera barwie
               tyle samo jasności. Przy .46 dolna ćwiartka kuli gasła do brązu niezależnie
@@ -433,6 +436,21 @@ export function PilkaOdznaczen({
           <filter id="kula-poswiata" x="-40%" y="-40%" width="180%" height="180%">
             <feGaussianBlur stdDeviation={(BOK * 0.022).toFixed(2)} />
           </filter>
+
+          {/* Dno kuli przechodzi w szkło: skóra i cień gasną ku dołowi, więc widać przez
+              nie litery nazwy, która tam właśnie wchodzi. Rozmyte są już wcześniej, przez
+              `.kula-szyba` leżącą pod rysunkiem - tutaj tylko przestajemy je zasłaniać.
+              Szwy, obręcz, wypełnienia pól i refleks zostają nietknięte, bo to one trzymają
+              kształt: bez nich zamiast szklanego dna byłaby dziura. */}
+          <linearGradient id="kula-dno" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#ffffff" stopOpacity="1" />
+            <stop offset=".58" stopColor="#ffffff" stopOpacity="1" />
+            <stop offset=".80" stopColor="#ffffff" stopOpacity=".74" />
+            <stop offset="1" stopColor="#ffffff" stopOpacity=".34" />
+          </linearGradient>
+          <mask id="kula-maska-dna" maskUnits="userSpaceOnUse" x={CX - R} y={CY - R} width={R * 2} height={R * 2}>
+            <rect x={CX - R} y={CY - R} width={R * 2} height={R * 2} fill="url(#kula-dno)" />
+          </mask>
 
           <clipPath id="kula-kolo">
             <circle cx={CX} cy={CY} r={R} />
@@ -467,7 +485,7 @@ export function PilkaOdznaczen({
         </defs>
 
         {/* ————— korpus ————— */}
-        <circle cx={CX} cy={CY} r={R} fill="url(#kula-skora)" />
+        <circle cx={CX} cy={CY} r={R} fill="url(#kula-skora)" mask="url(#kula-maska-dna)" />
 
         {/* ————— osiem pól, każde nalane od rdzenia ————— */}
         {POLA.map((p, i) => {
@@ -563,7 +581,7 @@ export function PilkaOdznaczen({
             fill="url(#kula-szklo)"
             filter="url(#kula-poswiata)"
           />
-          <circle cx={CX} cy={CY} r={R} fill="url(#kula-cien)" />
+          <circle cx={CX} cy={CY} r={R} fill="url(#kula-cien)" mask="url(#kula-maska-dna)" />
         </g>
 
         {/* ————— szwy ————— */}
