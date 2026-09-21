@@ -3671,6 +3671,19 @@ select option {
 */
 .nick-gracza {
   display: inline-block;
+  /*
+    Nazwa podciąga się pod piłkę ujemnym marginesem, bo prawie cała przerwa między nimi
+    to PUSTE MIEJSCE, nie odstęp. Składają się na nią dwie rzeczy i obie zmieniają się
+    z rozmiarem, więc żadnej nie da się odjąć stałą liczbą pikseli:
+
+      - rysunek jest kwadratem o boku `min(86vw, 460px)`, a kula ma w nim promień 0,355
+        boku, czyli pod nią zostaje 0,145 boku pustego pola;
+      - nad wersalikami stoi jeszcze wznoszenie kroju, około 0,16 wysokości pisma.
+
+    Stąd margines złożony z trzech członów zamiast jednego. Ostatni, dodatni, to jedyny
+    prawdziwy odstęp - reszta tylko zdejmuje pustkę.
+  */
+  margin-top: calc(min(86vw, 460px) * -0.145 - 0.16em + 8px);
   font-weight: 700;
   letter-spacing: -0.035em;
   /*

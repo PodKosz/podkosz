@@ -141,7 +141,7 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
           piętnastoznakowy nick poza kolumnę na każdym ekranie. Plus jeden - za małpę.
         */}
         <h1
-          className="nick-gracza mt-4 pb-1"
+          className="nick-gracza pb-1"
           style={{ ["--znaki" as string]: nick.length + 1 }}
         >
           @{nick}
