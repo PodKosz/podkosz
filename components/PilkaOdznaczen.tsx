@@ -15,7 +15,7 @@ import {
  * Piłka odznaczeń - wizytówka profilu.
  *
  * Kula podzielona szwami na osiem pól. Każde pole to jedno odznaczenie progowe, a dziewiąte
- * - Odkrywca - siedzi na obręczy. Pole wypełnia się OD RDZENIA NA ZEWNĄTRZ i zatrzymuje
+ * - Odkrywca - siedzi pierścieniem wokół zdjęcia. Pole wypełnia się OD RDZENIA NA ZEWNĄTRZ i zatrzymuje
  * tam, dokąd doszło odznaczenie, więc barwa, przy której się kończy, jest jednocześnie jego
  * stopniem. Gradient jest jeden, wspólny dla całej piłki i przypisany do PROMIENIA, nie do
  * pola: dwa odznaczenia o tym samym stopniu kończą się dokładnie tą samą barwą, a różnicę
@@ -40,6 +40,10 @@ const CX = BOK / 2;
 const CY = BOK / 2;
 const R = BOK * 0.355;
 const R_AWATAR = R * 0.2;
+/** Pierścień Odkrywcy: tuż za zdjęciem, z włosową szczeliną, żeby nie zlał się z obwódką. */
+const R_PIERSCIEN = R_AWATAR * 1.19;
+const GRUB_PIERSCIEN = +(BOK * 0.0062).toFixed(2);
+const OBWOD_PIERSCIEN = 2 * Math.PI * R_PIERSCIEN;
 /** zasięg prostokątów przycinających - byle poza kulę */
 const D = 1.5;
 
@@ -152,16 +156,22 @@ export function PilkaOdznaczen({
   const kropki = punktySzwow(dodatkowe.length);
 
   const svgRef = useRef<SVGSVGElement>(null);
-  const scenaRef = useRef<HTMLDivElement>(null);
-  const kartaRef = useRef<HTMLDivElement>(null);
 
-  /** pole pod kursorem albo właśnie otwarte - 0 to obręcz */
+  /** pole pod kursorem - 0 to pierścień Odkrywcy przy zdjęciu */
   const [gorace, setGorace] = useState<number | null>(null);
+  /** co pokazuje okienko obok kuli */
   const [wybor, setWybor] = useState<Wybor | null>(null);
+  /**
+   * Czy okienko zostało PRZYPIĘTE kliknięciem.
+   *
+   * Bez tego rozróżnienia nie dałoby się obsłużyć obu urządzeń jedną kartą: na myszy ma
+   * chodzić za kursorem i znikać po zejściu z kuli, a na dotyku nie ma żadnego „zejścia",
+   * więc raz otwarta musi zostać, dopóki ktoś jej nie zamknie.
+   */
+  const [przypiete, setPrzypiete] = useState(false);
   /** fala światła: numer zmienia się przy każdym wyzwoleniu i przemontowuje kółko,
       co jest jedynym sposobem, żeby ta sama animacja CSS ruszyła drugi raz */
   const [fala, setFala] = useState<{ pole: number; x: number; y: number; nr: number } | null>(null);
-  const [poz, setPoz] = useState<{ x: number; y: number } | null>(null);
 
   const puszFale = (pole: number, punkt?: [number, number]) => {
     const p = POLA[pole - 1];
@@ -181,50 +191,30 @@ export function PilkaOdznaczen({
     return [p.x, p.y];
   };
 
-  const otworz = (w: Wybor, pole: number | null, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (wybor && wybor.rodzaj === w.rodzaj && wybor.nr === w.nr) return zamknij();
-    setWybor(w);
-    setGorace(pole);
-    if (pole !== null && pole > 0) puszFale(pole, doRysunku(e));
-    setPoz({ x: e.clientX, y: e.clientY });
-  };
-
   const zamknij = () => {
     setWybor(null);
     setGorace(null);
-    setPoz(null);
+    setPrzypiete(false);
   };
 
-  /*
-    Karta liczy pozycję z punktu kliknięcia, nie z ramki elementu: pola są przycięte przez
-    `clip-path`, a `getBoundingClientRect` przycięcia nie widzi i zwróciłby ramkę całej kuli
-    - karta lądowałaby zawsze w tym samym miejscu. Przycinamy dopiero po złożeniu treści,
-    bo dopiero wtedy znamy jej wysokość.
-  */
-  useLayoutEffect(() => {
-    const k = kartaRef.current;
-    const scena = scenaRef.current;
-    if (!k || !scena || !poz) return;
-    if (window.matchMedia("(max-width: 560px)").matches) {
-      k.style.left = "";
-      k.style.top = "";
-      return;
+  /** Najechanie: podświetl pole, puść falę i pokaż okienko - o ile nic nie jest przypięte. */
+  const najedz = (w: Wybor, pole: number | null) => {
+    if (pole !== null) {
+      if (gorace === pole) return;
+      setGorace(pole);
+      puszFale(pole);
     }
-    const bo = scena.getBoundingClientRect();
-    let x = poz.x - bo.left + 16;
-    const y = poz.y - bo.top + 14;
-    if (x + k.offsetWidth > bo.width) x = poz.x - bo.left - k.offsetWidth - 16;
-    k.style.left = `${Math.max(0, Math.min(x, bo.width - k.offsetWidth))}px`;
-    k.style.top = `${Math.max(0, Math.min(y, bo.height - k.offsetHeight * 0.25))}px`;
-  }, [poz, wybor]);
+    if (!przypiete) setWybor(w);
+  };
 
-  /* Zamykanie kliknięciem obok i Escape. Wisi na dokumencie, bo karta ma się zamykać
-     także wtedy, gdy ktoś kliknie zupełnie gdzie indziej na stronie. */
+  /* Zamykanie kliknięciem obok i Escape - tylko dla przypiętego okienka, bo tylko ono
+     zostaje na ekranie samo z siebie. Wisi na dokumencie, żeby działało także wtedy,
+     gdy ktoś kliknie zupełnie gdzie indziej na stronie. */
   useLayoutEffect(() => {
-    if (!wybor) return;
+    if (!przypiete) return;
     const obok = (e: MouseEvent) => {
-      if (!(e.target as HTMLElement).closest?.(".kula-karta")) zamknij();
+      const t = e.target as HTMLElement;
+      if (!t.closest?.(".kula-karta") && !t.closest?.(".kula")) zamknij();
     };
     const klawisz = (e: KeyboardEvent) => {
       if (e.key === "Escape") zamknij();
@@ -235,7 +225,7 @@ export function PilkaOdznaczen({
       document.removeEventListener("click", obok);
       document.removeEventListener("keydown", klawisz);
     };
-  }, [wybor]);
+  }, [przypiete]);
 
   const stopien0 = progowe[0].stopien;
 
@@ -254,7 +244,6 @@ export function PilkaOdznaczen({
 
   const grubosc = BOK * 0.019;
   const gruboscObreczy = BOK * 0.0092;
-  const obwod = 2 * Math.PI * R;
 
   /** Klasy pola: numer służy do zapalania obu warstw naraz - wypełnienia i pola trafień. */
   const klasaPola = (nr: number, extra = "") =>
@@ -286,27 +275,31 @@ export function PilkaOdznaczen({
   };
 
   return (
-    <div ref={scenaRef} className="kula-scena">
+    <div className="kula-scena">
       <svg
         ref={svgRef}
         className="kula"
         viewBox={`0 0 ${BOK} ${BOK}`}
         onMouseOver={(e) => {
           const nr = polePod(e);
-          if (nr === gorace) return;
-          if (nr === null) {
-            if (!wybor) setGorace(null);
-            return;
-          }
-          setGorace(nr);
-          if (nr > 0) puszFale(nr);
+          if (nr !== null) najedz({ rodzaj: "prog", nr }, nr);
         }}
         onMouseLeave={() => {
-          if (!wybor) setGorace(null);
+          if (przypiete) return;
+          setGorace(null);
+          setWybor(null);
         }}
         onClick={(e) => {
           const nr = polePod(e);
-          if (nr !== null) otworz({ rodzaj: "prog", nr }, nr, e);
+          if (nr === null) return;
+          e.stopPropagation();
+          /* Drugie kliknięcie w to samo pole odpina - inaczej na dotyku nie byłoby jak
+             zamknąć okienka bez celowania w krzyżyk. */
+          if (przypiete && wybor?.rodzaj === "prog" && wybor.nr === nr) return zamknij();
+          setGorace(nr);
+          setWybor({ rodzaj: "prog", nr });
+          setPrzypiete(true);
+          puszFale(nr, doRysunku(e));
         }}
         role="img"
         aria-label={`Piłka odznaczeń: ${progowe.filter((o) => o.stopien > 0).length} z ${
@@ -586,7 +579,10 @@ export function PilkaOdznaczen({
           </g>
         ))}
 
-        {/* ————— obręcz: dziewiąte odznaczenie ————— */}
+        {/* ————— krawędź szkła —————
+            Sama krawędź, bez barwy stopnia. Odkrywca siedział tu przedtem jako gruby
+            kolorowy pierścień obiegający całą kulę - i to on, a nie gradient, robił
+            z rysunku tarczę w obwódce. Przeniósł się pod zdjęcie, niżej. */}
         <circle
           cx={CX}
           cy={CY}
@@ -595,22 +591,6 @@ export function PilkaOdznaczen({
           stroke="url(#kula-krawedz)"
           strokeWidth={gruboscObreczy}
         />
-        {stopien0 > 0 && (
-          <g className={klasaPola(0, "kula-obrecz")}>
-            <circle
-              cx={CX}
-              cy={CY}
-              r={R}
-              fill="none"
-              stroke={`rgb(${STOPNIE[stopien0].barwa})`}
-              strokeWidth={gruboscObreczy}
-              strokeLinecap="round"
-              opacity=".92"
-              strokeDasharray={`${((obwod * stopien0) / 4).toFixed(1)} ${obwod.toFixed(1)}`}
-              transform={`rotate(-90 ${CX} ${CY})`}
-            />
-          </g>
-        )}
 
         {/* ————— pola do najeżdżania i klikania ————— */}
         {POLA.map((_, i) =>
@@ -620,19 +600,6 @@ export function PilkaOdznaczen({
             true
           )
         )}
-        {/* Obręcz jest cienka, więc dostaje własny gruby pierścień do łapania kursora -
-            w przeciwnym razie trafienie w dziewiąte odznaczenie byłoby loterią. */}
-        <g className={klasaPola(0, "kula-obrecz kula-traf")} data-pole={0}>
-          <circle
-            cx={CX}
-            cy={CY}
-            r={R}
-            fill="none"
-            stroke="transparent"
-            strokeWidth={+(gruboscObreczy * 2.6).toFixed(1)}
-            style={{ pointerEvents: "stroke" }}
-          />
-        </g>
 
         {/* ————— wyróżnienia na szwach ————— */}
         {kropki.map(([x, y], i) => {
@@ -650,7 +617,14 @@ export function PilkaOdznaczen({
                 fill={w.zdobyte ? "#FFF3E2" : "rgba(255,255,255,.18)"}
                 stroke={w.zdobyte ? "rgba(0,0,0,.35)" : "none"}
                 strokeWidth={+(grubosc * 0.08).toFixed(2)}
-                onClick={(e) => otworz({ rodzaj: "wyr", nr: i }, null, e)}
+                onMouseEnter={() => najedz({ rodzaj: "wyr", nr: i }, null)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (przypiete && wybor?.rodzaj === "wyr" && wybor.nr === i) return zamknij();
+                  setGorace(null);
+                  setWybor({ rodzaj: "wyr", nr: i });
+                  setPrzypiete(true);
+                }}
               />
             </g>
           );
@@ -690,14 +664,63 @@ export function PilkaOdznaczen({
           stroke="rgba(255,255,255,.26)"
           strokeWidth={+(BOK * 0.0026).toFixed(2)}
         />
+
+        {/* ————— Odkrywca: pierścień wokół zdjęcia —————
+            Dziewiąte odznaczenie nie mieści się w ośmiu polach, a jako gruba obwódka
+            obiegająca całą kulę przytłaczało rysunek. Tutaj mówi to samo - ćwiartkami
+            pierścienia i barwą stopnia - a zajmuje kilkadziesiąt razy mniej miejsca.
+            Trafia też najlepsze miejsce w sensie treści: dodane boiska są rdzeniem konta. */}
+        <circle
+          cx={CX}
+          cy={CY}
+          r={R_PIERSCIEN}
+          fill="none"
+          stroke="rgba(255,255,255,.1)"
+          strokeWidth={GRUB_PIERSCIEN}
+        />
+        {stopien0 > 0 && (
+          <g className={klasaPola(0, "kula-pierscien")}>
+            <circle
+              cx={CX}
+              cy={CY}
+              r={R_PIERSCIEN}
+              fill="none"
+              stroke={`rgb(${STOPNIE[stopien0].barwa})`}
+              strokeWidth={GRUB_PIERSCIEN}
+              strokeLinecap="round"
+              strokeDasharray={`${((OBWOD_PIERSCIEN * stopien0) / 4).toFixed(1)} ${OBWOD_PIERSCIEN.toFixed(1)}`}
+              transform={`rotate(-90 ${CX} ${CY})`}
+            />
+          </g>
+        )}
+        {/* Pierścień ma cztery piksele grubości, więc łapie kursor własnym, grubszym
+            śladem - inaczej trafienie w niego byłoby loterią. */}
+        <g className={klasaPola(0, "kula-pierscien kula-traf")} data-pole={0}>
+          <circle
+            cx={CX}
+            cy={CY}
+            r={R_PIERSCIEN}
+            fill="none"
+            stroke="transparent"
+            strokeWidth={+(GRUB_PIERSCIEN * 3.4).toFixed(1)}
+            style={{ pointerEvents: "stroke" }}
+          />
+        </g>
       </svg>
 
+      {/* Okienko stoi OBOK kuli, w stałym miejscu, a nie przy kursorze. Przy kursorze
+          skakało po ekranie przy każdym przejściu między polami - a że teraz pokazuje się
+          już od samego najechania, skakałoby bez przerwy. */}
       {wybor && (
-        <div ref={kartaRef} className="kula-karta widac" role="dialog" aria-label="Szczegóły odznaczenia">
+        <div
+          className={`kula-karta widac${przypiete ? " przypieta" : ""}`}
+          role="dialog"
+          aria-label="Szczegóły odznaczenia"
+        >
           {wybor.rodzaj === "prog" ? (
-            <KartaProgowa o={progowe[wybor.nr]} zamknij={zamknij} />
+            <KartaProgowa o={progowe[wybor.nr]} zamknij={zamknij} pokazZamknij={przypiete} />
           ) : (
-            <KartaWyroznienia w={dodatkowe[wybor.nr]} zamknij={zamknij} />
+            <KartaWyroznienia w={dodatkowe[wybor.nr]} zamknij={zamknij} pokazZamknij={przypiete} />
           )}
         </div>
       )}
@@ -705,7 +728,15 @@ export function PilkaOdznaczen({
   );
 }
 
-function KartaProgowa({ o, zamknij }: { o: Odznaczenie; zamknij: () => void }) {
+function KartaProgowa({
+  o,
+  zamknij,
+  pokazZamknij,
+}: {
+  o: Odznaczenie;
+  zamknij: () => void;
+  pokazZamknij: boolean;
+}) {
   const barwa = (o.poziom ?? STOPNIE[0]).barwa;
   return (
     <>
@@ -717,9 +748,11 @@ function KartaProgowa({ o, zamknij }: { o: Odznaczenie; zamknij: () => void }) {
             {(o.poziom ?? STOPNIE[0]).nazwa}
           </p>
         </div>
-        <button type="button" className="kula-karta-zamknij" onClick={zamknij} aria-label="Zamknij">
-          &times;
-        </button>
+        {pokazZamknij && (
+          <button type="button" className="kula-karta-zamknij" onClick={zamknij} aria-label="Zamknij">
+            &times;
+          </button>
+        )}
       </div>
 
       <div className="kula-segmenty">
@@ -745,7 +778,15 @@ function KartaProgowa({ o, zamknij }: { o: Odznaczenie; zamknij: () => void }) {
   );
 }
 
-function KartaWyroznienia({ w, zamknij }: { w: Wyroznienie; zamknij: () => void }) {
+function KartaWyroznienia({
+  w,
+  zamknij,
+  pokazZamknij,
+}: {
+  w: Wyroznienie;
+  zamknij: () => void;
+  pokazZamknij: boolean;
+}) {
   return (
     <>
       <div className="kula-karta-gora">
@@ -762,9 +803,11 @@ function KartaWyroznienia({ w, zamknij }: { w: Wyroznienie; zamknij: () => void 
             {w.zdobyte ? "Zdobyte" : "Jeszcze nie"}
           </p>
         </div>
-        <button type="button" className="kula-karta-zamknij" onClick={zamknij} aria-label="Zamknij">
-          &times;
-        </button>
+        {pokazZamknij && (
+          <button type="button" className="kula-karta-zamknij" onClick={zamknij} aria-label="Zamknij">
+            &times;
+          </button>
+        )}
       </div>
       <p className="kula-karta-cel">{w.zdobyte ? w.opis : w.warunek}</p>
       <p className="kula-karta-opis">

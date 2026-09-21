@@ -1212,12 +1212,12 @@ body {
 }
 .stopien-zar,
 .medal-zar {
-  --b: 255 84 52;
+  --b: 255 140 38;
   --pilka: url("/odznaczenia/zar.webp");
 }
 .stopien-plomien,
 .medal-plomien {
-  --b: 255 138 36;
+  --b: 255 66 45;
   --pilka: url("/odznaczenia/plomien.webp");
 }
 .stopien-niebieski,
@@ -3727,8 +3727,18 @@ select option {
 }
 
 /* ---------- karta pod piłką ---------- */
+/*
+  Karta stoi OBOK kuli, w jednym stałym miejscu, i nie chodzi za kursorem. Skoro pokazuje
+  się już od samego najechania, przy kursorze przeskakiwałaby przy każdym przejściu między
+  polami - osiem razy na jedno okrążenie piłki.
+
+  185 px to promień kuli na ekranie (460 × 0,355 ≈ 163) plus odstęp. Scena jest szeroka na
+  całą kolumnę, więc liczy się od jej środka, czyli od środka piłki.
+*/
 .kula-karta {
   position: absolute;
+  top: 50%;
+  left: calc(50% + 185px);
   z-index: 30;
   width: 296px;
   max-width: calc(100vw - 32px);
@@ -3741,7 +3751,12 @@ select option {
     0 26px 60px -18px rgb(0 0 0 / 0.9),
     inset 0 1px 0 rgb(255 255 255 / 0.1);
   opacity: 0;
-  transform: translateY(8px) scale(0.97);
+  transform: translate(10px, -50%) scale(0.98);
+  /*
+    Karta nie łapie kursora, dopóki nie zostanie przypięta kliknięciem. W trybie podglądu
+    leży tuż obok piłki, a każde jej muśnięcie myszą znaczyłoby zejście z pola - czyli
+    zniknięcie tego, po co ktoś tam jedzie.
+  */
   pointer-events: none;
   transition:
     opacity 0.2s ease,
@@ -3749,7 +3764,9 @@ select option {
 }
 .kula-karta.widac {
   opacity: 1;
-  transform: none;
+  transform: translate(0, -50%) scale(1);
+}
+.kula-karta.przypieta {
   pointer-events: auto;
 }
 .kula-karta-gora {
@@ -3841,7 +3858,12 @@ select option {
   Poniżej 560 px karta przestaje być dymkiem przy kursorze i siada jako szuflada na dole
   ekranu: palec i tak zasłania to, w co właśnie nacisnął.
 */
-@media (max-width: 560px) {
+/*
+  Miejsce obok piłki kończy się przy oknie około 1010 px: 185 px odstępu plus 296 px karty
+  to 481 px od środka, a scena ma połowę szerokości okna minus marginesy. Poniżej karta
+  siada jako szuflada na dole ekranu - tam nikomu nie wejdzie na piłkę ani na nazwę.
+*/
+@media (max-width: 1010px) {
   .kula-karta {
     position: fixed;
     left: 12px;
@@ -3849,7 +3871,9 @@ select option {
     bottom: 12px;
     top: auto;
     width: auto;
-    transform: translateY(16px);
+    max-width: 420px;
+    margin-inline: auto;
+    transform: translateY(16px) scale(1);
   }
   .kula-karta.widac {
     transform: none;

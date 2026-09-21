@@ -101,6 +101,16 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
     .map((w) => ({ day: w.day, court: poId.get(w.courtId) }))
     .filter((w) => w.court !== undefined);
 
+  /*
+    `overflow-x-clip` na `main` niżej jest naprawą, nie ozdobą. Dymki przy stemplach
+    wyróżnień mają `left-1/2` i stałą szerokość, więc ten z ostatniej kolumny wystaje poza
+    okno - przy 768 px o 35 px - i dokłada całej stronie poziome przewijanie. Sekcja
+    odznaczeń stała wcześniej wyłącznie na `/konto`, za logowaniem, więc nikt tego nie
+    widział; na publicznym profilu zobaczy każdy z telefonem.
+
+    `clip`, nie `hidden`: `hidden` na jednej osi zamienia drugą w `auto` i zabiłoby
+    przyklejanie się nagłówków. `clip` zostawia oś pionową nietkniętą.
+  */
   const kafelki: [string, number][] = [
     ["Boiska w bazie", statystyki.boiska],
     ["Zebrane podpalenia", statystyki.podpaleniaZebrane],
@@ -109,7 +119,7 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
   ];
 
   return (
-    <main className="relative mx-auto min-h-dvh max-w-6xl px-6 pb-24 pt-28">
+    <main className="relative mx-auto min-h-dvh max-w-6xl overflow-x-clip px-6 pb-24 pt-28">
       <TloPilki uid="gracz" />
 
       <Link

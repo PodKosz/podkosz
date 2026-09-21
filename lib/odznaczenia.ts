@@ -5,6 +5,12 @@
  * (pomarańcz), Płomień (czerwień) i Ogień. Ostatni jest odpowiednikiem diamentu -
  * najgorętszy płomień świeci na niebiesko, więc szczyt jako jedyny jest chłodny.
  *
+ * Barwy długo NIE ZGADZAŁY SIĘ z tym opisem: Żar był czerwony, a Płomień pomarańczowy,
+ * czyli na odwrót. Na pojedynczym kafelku nikt tego nie widział, ale piłka odznaczeń
+ * układa wszystkie cztery w jeden gradient od środka na zewnątrz i zamiana wychodziła
+ * jako zawrót w połowie drogi: złoto, czerwień, z powrotem pomarańcz, błękit. Teraz idzie
+ * po kolei, od najchłodniejszego złota do błękitu, i dopiero wtedy widać w tym skalę.
+ *
  * Każde odznaczenie to jedna liczba z profilu i cztery progi. Nie ma tu punktów ani
  * mnożników: patrzysz na kafelek i od razu wiesz, ile brakuje do kolejnego stopnia.
  * Kilka odznaczeń jest bez progów - dostaje się je raz, za konkretny wyczyn.
@@ -38,8 +44,8 @@ export const POPIOL: Poziom = { id: "popiol", nazwa: "Popiół", barwa: "176 180
 /** Kolejność ma znaczenie: indeks + 1 to numer stopnia. */
 export const POZIOMY: Poziom[] = [
   { id: "iskra", nazwa: "Iskra", barwa: "255 206 72" },
-  { id: "zar", nazwa: "Żar", barwa: "255 84 52" },
-  { id: "plomien", nazwa: "Płomień", barwa: "255 138 36" },
+  { id: "zar", nazwa: "Żar", barwa: "255 140 38" },
+  { id: "plomien", nazwa: "Płomień", barwa: "255 66 45" },
   { id: "niebieski", nazwa: "Ogień", barwa: "92 182 255" },
 ];
 
