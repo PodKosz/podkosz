@@ -3457,6 +3457,31 @@ select option {
   policzyć w locie - ruch i szkło karty.
 */
 /*
+  Szyba rozmywa BACKDROP, czyli to, co namalowano pod nią - u nas wierzchołki liter nazwy
+  gracza, która podchodzi pod kulę. Maska wygasza rozmycie pierścieniowo tuż za krawędzią
+  piłki: przy samej kuli litery są rozmyte, kilkadziesiąt pikseli niżej znów ostre.
+
+  `closest-side` daje promień równy połowie boku, więc 71% tego promienia to dokładnie
+  0,355 boku, czyli promień kuli - rozmycie jest pełne aż do jej krawędzi i dopiero za nią
+  zaczyna gasnąć.
+*/
+.kula-szyba {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 1;
+  width: min(86vw, 460px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+  -webkit-backdrop-filter: blur(9px) saturate(1.1);
+  backdrop-filter: blur(9px) saturate(1.1);
+  -webkit-mask-image: radial-gradient(circle closest-side, #000 0 71%, transparent 93%);
+  mask-image: radial-gradient(circle closest-side, #000 0 71%, transparent 93%);
+}
+
+/*
   Scena jest szeroka na całą kolumnę, choć piłka zajmuje jej środek. To układ odniesienia
   dla karty odznaczenia: gdyby sięgała tylko po obrys kuli, karta przycinana do jej
   szerokości lądowałaby przy każdym kliknięciu w tym samym rogu.
@@ -3468,8 +3493,13 @@ select option {
   width: 100%;
 }
 
+/*
+  Kula leży NAD nazwą gracza, a nazwa podchodzi pod nią - stąd `z-index`. Bez niego
+  `h1`, jako późniejsze rodzeństwo, malowałoby się na wierzchu i przykryło piłkę.
+*/
 .kula {
   position: relative;
+  z-index: 2;
   display: block;
   width: min(86vw, 460px);
   height: auto;
@@ -3683,7 +3713,7 @@ select option {
     Stąd margines złożony z trzech członów zamiast jednego. Ostatni, dodatni, to jedyny
     prawdziwy odstęp - reszta tylko zdejmuje pustkę.
   */
-  margin-top: calc(min(86vw, 460px) * -0.145 - 0.16em + 8px);
+  margin-top: calc(min(86vw, 460px) * -0.145 - 0.361em - 0.12em);
   /*
     Wyrównanie napisu do środka kuli. `letter-spacing` w CSS dokłada odstęp PO KAŻDYM
     znaku, także po ostatnim, więc przy wartości ujemnej ramka tekstu jest o te 0,035 em
@@ -3709,6 +3739,27 @@ select option {
     samym stopniu pisma o połowę więcej niż „iiiiiiii". Wtedy napis łamie się na dwie
     linijki, zamiast dorzucać stronie poziome przewijanie.
   */
+  /*
+    OGONKI I KRESKI MUSZĄ MIEĆ GDZIE SIĘ ZMIEŚCIĆ. Napis jest malowany gradientem
+    przyciętym do liter (`background-clip: text`), a obszarem malowania tła jest pudełko
+    dopełnienia - NIE pudełko liter. Przy stopniu 87,5 px tusz „ę" schodził 100,6 px od
+    góry ramki, a obszar kończył się na 93,25: brakujące 7 px ogonka po prostu nie
+    dostawało farby i wyglądało na ucięte.
+
+    Wartości nie są dobrane na oko, tylko policzone z metryk kroju. Interlinia 1,02 em
+    jest MNIEJSZA niż suma wzniesienia i zejścia pisma (około 1,33 em), więc pół firetu
+    wychodzi ujemne: około -0,153 em z każdej strony. Linia bazowa siedzi wtedy
+    `dopełnienie + 0,921 em` od góry ramki, najwyższy tusz sięga `linia - 1,074 em`,
+    a najniższy `linia + 0,251 em`. Stąd 0,2 em u góry i 0,22 em u dołu - z zapasem po
+    obu stronach. Bez dopełnienia górnego obcinałyby się kreski nad „Ń", tak samo jak
+    ogonek „ę" u dołu.
+
+    Ujemny margines dolny oddaje układowi to, co zabrało dopełnienie, więc odstęp do daty
+    zostaje ten sam. Górne dopełnienie jest już wliczone w margines nad napisem.
+  */
+  padding-top: 0.2em;
+  padding-bottom: 0.22em;
+  margin-bottom: -0.18em;
   max-width: 100%;
   overflow-wrap: break-word;
   /*

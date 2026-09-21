@@ -141,7 +141,12 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
           a nie tylko od szerokości okna. Sam `clamp` na `vw` dobrany pod „Basket" wyrzuciłby
           piętnastoznakowy nick poza kolumnę na każdym ekranie.
         */}
-        <h1 className="nick-gracza pb-1" style={{ ["--znaki" as string]: nick.length }}>
+        {/* `relative` bez `z-index` stawia nazwę w kolejności malowania PRZED kulą, która
+            ma własny `z-index` - dzięki temu litery wchodzą pod piłkę, a nie na nią. */}
+        <h1
+          className="nick-gracza relative pb-0"
+          style={{ ["--znaki" as string]: nick.length }}
+        >
           {nick}
         </h1>
 

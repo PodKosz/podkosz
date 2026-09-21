@@ -276,6 +276,13 @@ export function PilkaOdznaczen({
 
   return (
     <div className="kula-scena">
+      {/*
+        Szyba: krążek rozmywający TŁO, czyli wszystko, co namalowano pod nim - a nazwa
+        gracza podchodzi pod kulę i właśnie tam się znajduje. Litery gubią ostrość
+        w miarę zbliżania się do piłki i odzyskują ją niżej, bo maska wygasza rozmycie
+        pierścieniowo. Sama kula leży nad szybą, więc jej własny rysunek zostaje ostry.
+      */}
+      <div className="kula-szyba" aria-hidden />
       <svg
         ref={svgRef}
         className="kula"
