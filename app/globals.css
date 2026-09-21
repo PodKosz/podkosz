@@ -3846,13 +3846,30 @@ select option {
   width: 296px;
   max-width: calc(100vw - 32px);
   padding: 16px 17px 17px;
-  border-radius: 20px;
-  border: 1px solid rgb(255 255 255 / 0.14);
-  background: rgb(16 18 23 / 0.76);
-  backdrop-filter: blur(22px) saturate(1.5);
+  border-radius: 22px;
+  /*
+    Szkło, nie płyta. Wcześniej stała tu jednolita plama `rgb(16 18 23 / .76)` z jednym
+    rozmyciem - nieprzezroczysta na tyle, że tło pod nią przestawało istnieć. Teraz są
+    trzy warstwy, tak jak w `.szklo-plynne` wyżej: skośna smuga światła, ciepły refleks
+    z lewego górnego rogu i dopiero na spodzie rzadka podkładka, która daje szybie własną
+    gęstość. Barwy idą ze zmiennych motywu, więc skórki przemalują ją razem z resztą.
+  */
+  background:
+    linear-gradient(
+      128deg,
+      rgb(var(--rgb-szyba) / 0.16) 0%,
+      rgb(var(--rgb-szyba) / 0.045) 26%,
+      rgb(var(--rgb-szyba) / 0) 54%
+    ),
+    radial-gradient(130% 120% at 16% -14%, rgb(var(--rgb-glow) / 0.15), transparent 60%),
+    linear-gradient(
+      180deg,
+      rgb(var(--rgb-plyta) / 0.32) 0%,
+      rgb(var(--rgb-plyta) / 0.46) 100%
+    );
   box-shadow:
-    0 26px 60px -18px rgb(0 0 0 / 0.9),
-    inset 0 1px 0 rgb(255 255 255 / 0.1);
+    inset 0 -1px 0 rgb(var(--rgb-szyba) / 0.06),
+    0 28px 64px -22px rgb(0 0 0 / calc(0.92 * var(--moc-cienia)));
   opacity: 0;
   transform: translate(10px, -50%) scale(0.98);
   /*
@@ -3871,6 +3888,72 @@ select option {
 }
 .kula-karta.przypieta {
   pointer-events: auto;
+}
+
+/*
+  Warstwa rozmycia osobno, pod treścią. Maska z dwóch gradientów złożonych na przecięciu
+  wygasza filtr przy wszystkich czterech krawędziach, żeby rozmycie nie kończyło się
+  ostrą linią - ta sama sztuczka co w `.szklo-plynne`.
+
+  Przyciemnienie zamiast rozjaśnienia: karta wisi nad ciemnym tłem, ale tuż obok niej
+  świeci nazwa gracza i poświata kuli. Bez `brightness` poniżej jedynki szkło nad nimi
+  rozpływało się w plamę.
+*/
+.kula-karta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  -webkit-backdrop-filter: blur(34px) saturate(180%) brightness(0.78);
+  backdrop-filter: blur(34px) saturate(180%) brightness(0.78);
+  -webkit-mask-image:
+    linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%),
+    linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%),
+    linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+  mask-composite: intersect;
+}
+
+/*
+  Włosowa obwódka z gradientu, nie jednolita kreska. Szkło ma jasną krawędź tam, gdzie
+  pada światło, i ciemnieje po przeciwnej stronie; jednolite `border` spłaszczało kartę
+  do naklejki. Sztuczka z dwiema maskami złożonymi przez `xor` zostawia samą ramkę
+  o szerokości dopełnienia.
+*/
+.kula-karta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background: linear-gradient(
+    136deg,
+    rgb(var(--rgb-szyba) / 0.55) 0%,
+    rgb(var(--rgb-szyba) / 0.12) 24%,
+    rgb(var(--rgb-szyba) / 0.04) 48%,
+    rgb(var(--rgb-glow) / 0.18) 76%,
+    rgb(var(--rgb-szyba) / 0.34) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+/* Treść nad obiema warstwami szkła. */
+.kula-karta > * {
+  position: relative;
+  z-index: 1;
 }
 .kula-karta-gora {
   display: flex;

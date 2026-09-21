@@ -28,85 +28,93 @@ export function Odznaczenia({ statystyki }: { statystyki: StatystykiGracza }) {
   const { zdobyte, wszystkie } = podsumowanie(statystyki);
 
   return (
-    <section className="mt-14">
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-        <h2 className="text-[13px] uppercase tracking-[0.16em] text-faint">Odznaczenia</h2>
+    <>
+      {/*
+        Wyróżnienia stoją PRZED siatką odznaczeń progowych, choć to one są mniejsze.
+        Powód jest w tym, że są zero-jedynkowe: osiem stempli czyta się jednym rzutem
+        oka, a dziewięć kart z liczbami, paskami i progami wymaga zatrzymania.
+        Lżejsze idzie pierwsze, cięższe za nim.
+      */}
+      <Wyroznienia statystyki={statystyki} />
 
-        {/*
-          Skala stopni siedzi przy nagłówku, a nie w osobnej listwie nad siatką: to legenda,
-          czyli przypis, więc ma zajmować tyle miejsca co przypis. Nazwę pokazuje dymek.
-        */}
-        <span className="flex items-center gap-1.5">
-          {POZIOMY.map((p, i) => (
-            <SkalaStopnia key={p.id} id={p.id} nazwa={p.nazwa} numer={i + 1} />
-          ))}
-        </span>
+      <section className="mt-14">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+          <h2 className="text-[13px] uppercase tracking-[0.16em] text-faint">Odznaczenia</h2>
 
-        <p className="ml-auto rounded-full bg-white/5 px-3.5 py-1.5 text-[12px] text-muted shadow-[inset_0_0_0_1px_rgba(255,255,255,.06)]">
-          zdobyte <b className="text-ink">{zdobyte}</b> z {wszystkie}
-        </p>
-      </div>
+          {/*
+            Skala stopni siedzi przy nagłówku, a nie w osobnej listwie nad siatką: to legenda,
+            czyli przypis, więc ma zajmować tyle miejsca co przypis. Nazwę pokazuje dymek.
+          */}
+          <span className="flex items-center gap-1.5">
+            {POZIOMY.map((p, i) => (
+              <SkalaStopnia key={p.id} id={p.id} nazwa={p.nazwa} numer={i + 1} />
+            ))}
+          </span>
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {lista.map((o) => {
-          const stopien = o.poziom?.id ?? null;
+          <p className="ml-auto rounded-full bg-white/5 px-3.5 py-1.5 text-[12px] text-muted shadow-[inset_0_0_0_1px_rgba(255,255,255,.06)]">
+            zdobyte <b className="text-ink">{zdobyte}</b> z {wszystkie}
+          </p>
+        </div>
 
-          return (
-            <article
-              key={o.id}
-              className={`karta-odznaki p-5 ${stopien ? `karta-${stopien}` : "karta-bez opacity-[0.78]"}`}
-            >
-              <div className="flex items-center gap-3.5">
-                <span className={`medal medal-${stopien ?? "popiol"} h-12 w-12`}>
-                  <IkonaOdznaczenia id={o.id} className="h-[23px] w-[23px]" />
-                </span>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {lista.map((o) => {
+            const stopien = o.poziom?.id ?? null;
 
-                <div className="min-w-0">
-                  <p className="truncate text-[16px] font-semibold tracking-[-0.01em]">
-                    {o.nazwa}
-                  </p>
-                  <p className="text-[11px] uppercase tracking-[0.14em] text-faint">
-                    {o.poziom ? o.poziom.nazwa : POPIOL.nazwa}
+            return (
+              <article
+                key={o.id}
+                className={`karta-odznaki p-5 ${stopien ? `karta-${stopien}` : "karta-bez opacity-[0.78]"}`}
+              >
+                <div className="flex items-center gap-3.5">
+                  <span className={`medal medal-${stopien ?? "popiol"} h-12 w-12`}>
+                    <IkonaOdznaczenia id={o.id} className="h-[23px] w-[23px]" />
+                  </span>
+
+                  <div className="min-w-0">
+                    <p className="truncate text-[16px] font-semibold tracking-[-0.01em]">
+                      {o.nazwa}
+                    </p>
+                    <p className="text-[11px] uppercase tracking-[0.14em] text-faint">
+                      {o.poziom ? o.poziom.nazwa : POPIOL.nazwa}
+                    </p>
+                  </div>
+
+                  <p className="ml-auto pb-0.5 text-right text-[28px] font-semibold leading-none tabular-nums text-ink">
+                    {o.wartosc}
+                    <span className="mt-1 block text-[10px] font-normal uppercase tracking-[0.12em] text-faint">
+                      {o.licznik}
+                    </span>
                   </p>
                 </div>
 
-                <p className="ml-auto pb-0.5 text-right text-[28px] font-semibold leading-none tabular-nums text-ink">
-                  {o.wartosc}
-                  <span className="mt-1 block text-[10px] font-normal uppercase tracking-[0.12em] text-faint">
-                    {o.licznik}
-                  </span>
+                <p className="mt-4 text-[12.5px] leading-snug text-muted">{o.opis}</p>
+
+                {/*
+                  Wypełnienie i gradient dostają tę samą wartość: `--p` przesuwa też
+                  `background-size`, dzięki czemu barwa na końcu paska odpowiada wysokości
+                  zdobytego stopnia, a nie długości widocznego kawałka.
+                */}
+                <div className="tor mt-4">
+                  <span
+                    className="tor-wypelnienie"
+                    style={{
+                      width: `${Math.round(o.postepPelny * 100)}%`,
+                      ["--p" as string]: Math.max(o.postepPelny, 0.02).toFixed(3),
+                    }}
+                  />
+                </div>
+
+                <p className="mt-2.5 text-[11.5px] text-faint">
+                  {o.nastepny
+                    ? `jeszcze ${o.nastepny.brakuje} do stopnia „${o.nastepny.poziom.nazwa}”`
+                    : "wszystkie stopnie zdobyte"}
                 </p>
-              </div>
-
-              <p className="mt-4 text-[12.5px] leading-snug text-muted">{o.opis}</p>
-
-              {/*
-                Wypełnienie i gradient dostają tę samą wartość: `--p` przesuwa też
-                `background-size`, dzięki czemu barwa na końcu paska odpowiada wysokości
-                zdobytego stopnia, a nie długości widocznego kawałka.
-              */}
-              <div className="tor mt-4">
-                <span
-                  className="tor-wypelnienie"
-                  style={{
-                    width: `${Math.round(o.postepPelny * 100)}%`,
-                    ["--p" as string]: Math.max(o.postepPelny, 0.02).toFixed(3),
-                  }}
-                />
-              </div>
-
-              <p className="mt-2.5 text-[11.5px] text-faint">
-                {o.nastepny
-                  ? `jeszcze ${o.nastepny.brakuje} do stopnia „${o.nastepny.poziom.nazwa}”`
-                  : "wszystkie stopnie zdobyte"}
-              </p>
-            </article>
-          );
-        })}
-      </div>
-
-      <Wyroznienia statystyki={statystyki} />
-    </section>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+    </>
   );
 }
 
