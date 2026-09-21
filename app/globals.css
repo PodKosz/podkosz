@@ -3684,6 +3684,16 @@ select option {
     prawdziwy odstęp - reszta tylko zdejmuje pustkę.
   */
   margin-top: calc(min(86vw, 460px) * -0.145 - 0.16em + 8px);
+  /*
+    Wyrównanie napisu do środka kuli. `letter-spacing` w CSS dokłada odstęp PO KAŻDYM
+    znaku, także po ostatnim, więc przy wartości ujemnej ramka tekstu jest o te 0,035 em
+    węższa od samych liter po prawej stronie. Wyśrodkowana ramka znaczy wtedy litery
+    przesunięte w prawo o połowę tej wartości - przy stopniu 200 px o 3,5 px.
+
+    Dodatni margines z prawej oddaje tę różnicę: powiększa pudełko marginesowe, które
+    układ centruje, więc same litery cofają się w lewo dokładnie o połowę.
+  */
+  margin-right: 0.035em;
   font-weight: 700;
   letter-spacing: -0.035em;
   /*
