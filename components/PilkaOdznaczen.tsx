@@ -3,29 +3,28 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import {
   odznaczenia,
-  wyroznienia,
+  podsumowanie,
   POZIOMY,
   STOPNIE,
   type Odznaczenie,
   type StatystykiGracza,
-  type Wyroznienie,
 } from "@/lib/odznaczenia";
 
 /**
  * Piłka odznaczeń - wizytówka profilu.
  *
- * Kula podzielona szwami na osiem pól. Każde pole to jedno odznaczenie progowe, a dziewiąte
- * - Odkrywca - siedzi pierścieniem wokół zdjęcia. Pole wypełnia się OD RDZENIA NA ZEWNĄTRZ i zatrzymuje
- * tam, dokąd doszło odznaczenie, więc barwa, przy której się kończy, jest jednocześnie jego
- * stopniem. Gradient jest jeden, wspólny dla całej piłki i przypisany do PROMIENIA, nie do
- * pola: dwa odznaczenia o tym samym stopniu kończą się dokładnie tą samą barwą, a różnicę
- * jednego stopnia widać jako przeskok koloru, nie jako odcień.
+ * Kula podzielona szwami na osiem pól. Każde pole to jedno odznaczenie progowe. Pole
+ * wypełnia się OD RDZENIA NA ZEWNĄTRZ i zatrzymuje tam, dokąd doszło odznaczenie, więc
+ * barwa, przy której się kończy, jest jednocześnie jego stopniem. Gradient jest jeden,
+ * wspólny dla całej piłki i przypisany do PROMIENIA, nie do pola: dwa odznaczenia o tym
+ * samym stopniu kończą się dokładnie tą samą barwą, a różnicę jednego stopnia widać jako
+ * przeskok koloru, nie jako odcień.
  *
- * Siedemnaście wyróżnień leży kropkami na szwach. Zdobyte świecą, reszta jest przygaszona.
- *
- * Dzięki temu jedno spojrzenie mówi, jak „dopakowane" jest konto, bez czytania choćby jednej
- * liczby - a listy pod piłką podają te same dane słowami, dla kogoś, kto chce szczegółu,
- * i dla czytników ekranu.
+ * KULA POKAZUJE OSIEM ODZNACZEŃ Z DWUDZIESTU SZEŚCIU - tyle, ile ma pól. Dziewiąte
+ * progowe (Odkrywca) i siedemnaście wyróżnień miało tu kolejno obwódkę wokół piłki,
+ * pierścień przy zdjęciu i kropki na szwach; wszystkie trzy zostały zdjęte jako zbyt
+ * hałaśliwe. Komplet stoi w listach pod piłką i to one są źródłem prawdy - rysunek jest
+ * wrażeniem, nie spisem.
  */
 
 /* ————— geometria —————
@@ -40,10 +39,6 @@ const CX = BOK / 2;
 const CY = BOK / 2;
 const R = BOK * 0.355;
 const R_AWATAR = R * 0.2;
-/** Pierścień Odkrywcy: tuż za zdjęciem, z włosową szczeliną, żeby nie zlał się z obwódką. */
-const R_PIERSCIEN = R_AWATAR * 1.19;
-const GRUB_PIERSCIEN = +(BOK * 0.0062).toFixed(2);
-const OBWOD_PIERSCIEN = 2 * Math.PI * R_PIERSCIEN;
 /** zasięg prostokątów przycinających - byle poza kulę */
 const D = 1.5;
 
@@ -77,70 +72,11 @@ const POLA = [
     pierwszy stopień chowałby się pod zdjęciem i wyglądał identycznie jak brak stopnia. */
 const czolo = (stopien: number) => R_AWATAR + (R - R_AWATAR) * (stopien / POZIOMY.length);
 
-/**
- * Punkty rozłożone równomiernie po wszystkich czterech szwach.
- *
- * Liczone numerycznie, bez DOM-u: makieta brała je z `getPointAtLength()` na tymczasowych
- * ścieżkach, ale komponent renderuje się także na serwerze, gdzie nie ma czego mierzyć -
- * a rozjazd między serwerem a przeglądarką zerwałby uwodnienie. Łuk elipsy nie ma wzoru na
- * długość, więc próbkujemy gęsto i sumujemy odcinki.
- */
-function punktySzwow(ile: number): [number, number][] {
-  const PROBEK = 240;
-  const szwy: ((t: number) => [number, number])[] = [
-    (t) => [CX, CY - R + 2 * R * t],
-    (t) => [CX - R + 2 * R * t, CY],
-    (t) => [CX - EX * R * Math.cos(Math.PI * t), CY - EY * R - RY * R * Math.sin(Math.PI * t)],
-    (t) => [CX - EX * R * Math.cos(Math.PI * t), CY + EY * R + RY * R * Math.sin(Math.PI * t)],
-  ];
-
-  /* Każdy szew zamieniamy na łamaną z narastającą długością - z niej odczytamy punkt
-     w dowolnym miejscu przez interpolację między dwiema próbkami. */
-  const lamane = szwy.map((f) => {
-    const punkty: [number, number][] = [];
-    const dlugosci = [0];
-    for (let i = 0; i <= PROBEK; i++) {
-      const p = f(i / PROBEK);
-      punkty.push(p);
-      if (i > 0) {
-        const q = punkty[i - 1];
-        dlugosci.push(dlugosci[i - 1] + Math.hypot(p[0] - q[0], p[1] - q[1]));
-      }
-    }
-    return { punkty, dlugosci, dlugosc: dlugosci[PROBEK] };
-  });
-
-  const suma = lamane.reduce((a, l) => a + l.dlugosc, 0);
-  const out: [number, number][] = [];
-
-  for (let i = 0; i < ile; i++) {
-    let t = ((i + 0.5) / ile) * suma;
-    for (const l of lamane) {
-      if (t > l.dlugosc) {
-        t -= l.dlugosc;
-        continue;
-      }
-      let k = 1;
-      while (k < l.dlugosci.length - 1 && l.dlugosci[k] < t) k++;
-      const a = l.punkty[k - 1];
-      const b = l.punkty[k];
-      const odcinek = l.dlugosci[k] - l.dlugosci[k - 1];
-      const u = odcinek > 0 ? (t - l.dlugosci[k - 1]) / odcinek : 0;
-      out.push([a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u]);
-      break;
-    }
-  }
-  return out;
-}
-
 /** Barwa żaru. Popiół dostaje chłodną biel: jego własny grafit nad czarną kulą nie dałby
     żadnego światła, a pole bez stopnia ma reagować tak samo jak każde inne. */
 const zarBarwa = (stopien: number) =>
   stopien === 0 ? "220 230 242" : STOPNIE[stopien].barwa;
 
-type Wybor =
-  | { rodzaj: "prog"; nr: number }
-  | { rodzaj: "wyr"; nr: number };
 
 export function PilkaOdznaczen({
   statystyki,
@@ -152,15 +88,14 @@ export function PilkaOdznaczen({
   avatar: string | null;
 }) {
   const progowe = odznaczenia(statystyki);
-  const dodatkowe = wyroznienia(statystyki);
-  const kropki = punktySzwow(dodatkowe.length);
+  const razem = podsumowanie(statystyki);
 
   const svgRef = useRef<SVGSVGElement>(null);
 
   /** pole pod kursorem - 0 to pierścień Odkrywcy przy zdjęciu */
   const [gorace, setGorace] = useState<number | null>(null);
-  /** co pokazuje okienko obok kuli */
-  const [wybor, setWybor] = useState<Wybor | null>(null);
+  /** numer odznaczenia, które pokazuje okienko obok kuli */
+  const [wybor, setWybor] = useState<number | null>(null);
   /**
    * Czy okienko zostało PRZYPIĘTE kliknięciem.
    *
@@ -198,13 +133,11 @@ export function PilkaOdznaczen({
   };
 
   /** Najechanie: podświetl pole, puść falę i pokaż okienko - o ile nic nie jest przypięte. */
-  const najedz = (w: Wybor, pole: number | null) => {
-    if (pole !== null) {
-      if (gorace === pole) return;
-      setGorace(pole);
-      puszFale(pole);
-    }
-    if (!przypiete) setWybor(w);
+  const najedz = (pole: number) => {
+    if (gorace === pole) return;
+    setGorace(pole);
+    puszFale(pole);
+    if (!przypiete) setWybor(pole);
   };
 
   /* Zamykanie kliknięciem obok i Escape - tylko dla przypiętego okienka, bo tylko ono
@@ -226,8 +159,6 @@ export function PilkaOdznaczen({
       document.removeEventListener("keydown", klawisz);
     };
   }, [przypiete]);
-
-  const stopien0 = progowe[0].stopien;
 
   /* Pola przycinające i gradienty. Wszystko raz, w `<defs>`. */
   const nadG = `M${X(-D)} ${Y(-D)}H${X(D)}V${Y(-EY)}L${X(EX)} ${Y(-EY)}A${U(EX)} ${U(RY)} 0 0 1 ${X(-EX)} ${Y(-EY)}L${X(-D)} ${Y(-EY)}Z`;
@@ -289,7 +220,7 @@ export function PilkaOdznaczen({
         viewBox={`0 0 ${BOK} ${BOK}`}
         onMouseOver={(e) => {
           const nr = polePod(e);
-          if (nr !== null) najedz({ rodzaj: "prog", nr }, nr);
+          if (nr !== null) najedz(nr);
         }}
         onMouseLeave={() => {
           if (przypiete) return;
@@ -302,18 +233,14 @@ export function PilkaOdznaczen({
           e.stopPropagation();
           /* Drugie kliknięcie w to samo pole odpina - inaczej na dotyku nie byłoby jak
              zamknąć okienka bez celowania w krzyżyk. */
-          if (przypiete && wybor?.rodzaj === "prog" && wybor.nr === nr) return zamknij();
+          if (przypiete && wybor === nr) return zamknij();
           setGorace(nr);
-          setWybor({ rodzaj: "prog", nr });
+          setWybor(nr);
           setPrzypiete(true);
           puszFale(nr, doRysunku(e));
         }}
         role="img"
-        aria-label={`Piłka odznaczeń: ${progowe.filter((o) => o.stopien > 0).length} z ${
-          progowe.length
-        } odznaczeń progowych rozpalonych, ${dodatkowe.filter((w) => w.zdobyte).length} z ${
-          dodatkowe.length
-        } wyróżnień zdobytych. Szczegóły w listach pod piłką.`}
+        aria-label={`Piłka odznaczeń: ${razem.zdobyte} z ${razem.wszystkie} odznaczeń zdobytych. Pełna lista pod piłką.`}
       >
         <defs>
           {/* Widmo: rdzeń w barwie pierwszego stopnia, krawędź w barwie ostatniego.
@@ -626,35 +553,6 @@ export function PilkaOdznaczen({
           )
         )}
 
-        {/* ————— wyróżnienia na szwach ————— */}
-        {kropki.map(([x, y], i) => {
-          const w = dodatkowe[i];
-          return (
-            <g key={w.id}>
-              {w.zdobyte && (
-                <circle cx={+x.toFixed(1)} cy={+y.toFixed(1)} r={+(grubosc * 0.9).toFixed(1)} fill="#FFE9CC" opacity=".22" />
-              )}
-              <circle
-                className="kula-kropa"
-                cx={+x.toFixed(1)}
-                cy={+y.toFixed(1)}
-                r={+(grubosc * (w.zdobyte ? 0.38 : 0.26)).toFixed(1)}
-                fill={w.zdobyte ? "#FFF3E2" : "rgba(255,255,255,.18)"}
-                stroke={w.zdobyte ? "rgba(0,0,0,.35)" : "none"}
-                strokeWidth={+(grubosc * 0.08).toFixed(2)}
-                onMouseEnter={() => najedz({ rodzaj: "wyr", nr: i }, null)}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (przypiete && wybor?.rodzaj === "wyr" && wybor.nr === i) return zamknij();
-                  setGorace(null);
-                  setWybor({ rodzaj: "wyr", nr: i });
-                  setPrzypiete(true);
-                }}
-              />
-            </g>
-          );
-        })}
-
         {/* ————— awatar —————
             Litera zostaje pod spodem jako zapas: gdyby zdjęcie się nie wczytało, w rdzeniu
             kuli zostałaby dziura, a to najbardziej rzucające się w oczy miejsce na stronie. */}
@@ -690,47 +588,6 @@ export function PilkaOdznaczen({
           strokeWidth={+(BOK * 0.0026).toFixed(2)}
         />
 
-        {/* ————— Odkrywca: pierścień wokół zdjęcia —————
-            Dziewiąte odznaczenie nie mieści się w ośmiu polach, a jako gruba obwódka
-            obiegająca całą kulę przytłaczało rysunek. Tutaj mówi to samo - ćwiartkami
-            pierścienia i barwą stopnia - a zajmuje kilkadziesiąt razy mniej miejsca.
-            Trafia też najlepsze miejsce w sensie treści: dodane boiska są rdzeniem konta. */}
-        <circle
-          cx={CX}
-          cy={CY}
-          r={R_PIERSCIEN}
-          fill="none"
-          stroke="rgba(255,255,255,.1)"
-          strokeWidth={GRUB_PIERSCIEN}
-        />
-        {stopien0 > 0 && (
-          <g className={klasaPola(0, "kula-pierscien")}>
-            <circle
-              cx={CX}
-              cy={CY}
-              r={R_PIERSCIEN}
-              fill="none"
-              stroke={`rgb(${STOPNIE[stopien0].barwa})`}
-              strokeWidth={GRUB_PIERSCIEN}
-              strokeLinecap="round"
-              strokeDasharray={`${((OBWOD_PIERSCIEN * stopien0) / 4).toFixed(1)} ${OBWOD_PIERSCIEN.toFixed(1)}`}
-              transform={`rotate(-90 ${CX} ${CY})`}
-            />
-          </g>
-        )}
-        {/* Pierścień ma cztery piksele grubości, więc łapie kursor własnym, grubszym
-            śladem - inaczej trafienie w niego byłoby loterią. */}
-        <g className={klasaPola(0, "kula-pierscien kula-traf")} data-pole={0}>
-          <circle
-            cx={CX}
-            cy={CY}
-            r={R_PIERSCIEN}
-            fill="none"
-            stroke="transparent"
-            strokeWidth={+(GRUB_PIERSCIEN * 3.4).toFixed(1)}
-            style={{ pointerEvents: "stroke" }}
-          />
-        </g>
       </svg>
 
       {/* Okienko stoi OBOK kuli, w stałym miejscu, a nie przy kursorze. Przy kursorze
@@ -742,11 +599,7 @@ export function PilkaOdznaczen({
           role="dialog"
           aria-label="Szczegóły odznaczenia"
         >
-          {wybor.rodzaj === "prog" ? (
-            <KartaProgowa o={progowe[wybor.nr]} zamknij={zamknij} pokazZamknij={przypiete} />
-          ) : (
-            <KartaWyroznienia w={dodatkowe[wybor.nr]} zamknij={zamknij} pokazZamknij={przypiete} />
-          )}
+          <KartaProgowa o={progowe[wybor]} zamknij={zamknij} pokazZamknij={przypiete} />
         </div>
       )}
     </div>
@@ -799,46 +652,6 @@ function KartaProgowa({
           : "Najwyższy stopień osiągnięty - dalej już nie ma."}
       </p>
       <p className="kula-karta-opis">{o.opis}</p>
-    </>
-  );
-}
-
-function KartaWyroznienia({
-  w,
-  zamknij,
-  pokazZamknij,
-}: {
-  w: Wyroznienie;
-  zamknij: () => void;
-  pokazZamknij: boolean;
-}) {
-  return (
-    <>
-      <div className="kula-karta-gora">
-        <span
-          className="kula-karta-pkt"
-          style={{ background: w.zdobyte ? "#FFF3E2" : "rgba(255,255,255,.2)" }}
-        />
-        <div>
-          <h3>{w.nazwa}</h3>
-          <p
-            className="kula-karta-stopien"
-            style={{ color: w.zdobyte ? "rgb(var(--rgb-glow))" : undefined }}
-          >
-            {w.zdobyte ? "Zdobyte" : "Jeszcze nie"}
-          </p>
-        </div>
-        {pokazZamknij && (
-          <button type="button" className="kula-karta-zamknij" onClick={zamknij} aria-label="Zamknij">
-            &times;
-          </button>
-        )}
-      </div>
-      <p className="kula-karta-cel">{w.zdobyte ? w.opis : w.warunek}</p>
-      <p className="kula-karta-opis">
-        Wyróżnienia są zero-jedynkowe: albo się je ma, albo nie. Leżą kropkami na szwach piłki,
-        po jednej na każde.
-      </p>
     </>
   );
 }

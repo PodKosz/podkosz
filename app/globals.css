@@ -3523,16 +3523,6 @@ select option {
   filter: brightness(1.09) saturate(1.05);
 }
 
-.kula-kropa {
-  cursor: pointer;
-  transform-box: fill-box;
-  transform-origin: center;
-  transition: transform 0.22s cubic-bezier(0.22, 0.9, 0.24, 1);
-}
-.kula-kropa:hover {
-  transform: scale(1.55);
-}
-
 /*
   Żar pola - ten sam pomysł, co podświetlenie województwa wyżej. Najpierw przez pole
   przechodzi fala, której najjaśniejszy jest BRZEG, a nie środek; za nią, z ćwierćsekundową
@@ -3668,8 +3658,7 @@ select option {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .kula-pole,
-  .kula-kropa {
+  .kula-pole {
     transition: none;
   }
   .kula-fala {
@@ -3721,7 +3710,15 @@ select option {
   poza nią - rozciągnięty `h1` zapalałby napis przy kursorze pół ekranu dalej.
 */
 .nick-gracza {
-  display: inline-block;
+  /*
+    BLOK, nie `inline-block`. Element liniowy nie daje się przesunąć w górę dowolnie:
+    ujemny margines skraca jego udział w wysokości wiersza, ale sam wiersz ma swoje
+    minimum i dalej element nie pójdzie. Przy `inline-block` margines urywał się na
+    -79,7 px niezależnie od tego, ile mu kazano, więc nazwa pisana mniejszym stopniem
+    zatrzymywała się pod kulą zamiast pod nią wejść. Szerokość i tak zwęża się do treści,
+    bo blok podpisu jest elementem giętkim z `align-items: center`.
+  */
+  display: block;
   /*
     Nazwa podciąga się pod piłkę ujemnym marginesem, bo prawie cała przerwa między nimi
     to PUSTE MIEJSCE, nie odstęp. Składają się na nią dwie rzeczy i obie zmieniają się
@@ -3729,12 +3726,21 @@ select option {
 
       - rysunek jest kwadratem o boku `min(86vw, 460px)`, a kula ma w nim promień 0,355
         boku, czyli pod nią zostaje 0,145 boku pustego pola;
-      - nad wersalikami stoi jeszcze wznoszenie kroju, około 0,16 wysokości pisma.
+      - od górnej krawędzi ramki napisu do wierzchu wersalika jest 0,4129 em. To nie jest
+        wartość dobrana na oko, tylko suma zmierzonych składników: dopełnienie górne 0,2,
+        ujemne pół firetu -0,1529 (interlinia 1,02 przy piśmie o rozpiętości 1,3257)
+        i różnica między wzniesieniem kroju 1,0743 a wysokością wersalika 0,7086.
 
-    Stąd margines złożony z trzech członów zamiast jednego. Ostatni, dodatni, to jedyny
-    prawdziwy odstęp - reszta tylko zdejmuje pustkę.
+    Stąd margines złożony z członów zamiast jednej liczby.
+
+    Zachodzenie pod kulę jest tu ZAWARTE W CZŁONIE OD ROZMIARU RYSUNKU (0,18 zamiast
+    0,145, czyli 0,035 boku), a nie tylko w wysokości pisma. Wcześniej zależało wyłącznie
+    od stopnia pisma i przy krótkim nicku, pisanym wielkim krojem, wychodziło 24 px, a przy
+    długim, pisanym małym - 10 px. Dziesięć pikseli przy kuli o średnicy 326 px nie czyta
+    się jako wejście pod nią; wyglądało to po prostu na odstęp. Drobny człon od pisma
+    zostaje, żeby wielkie nazwy nurkowały odrobinę głębiej niż małe.
   */
-  margin-top: calc(min(86vw, 460px) * -0.145 - 0.361em - 0.12em);
+  margin-top: calc(min(86vw, 460px) * -0.18 - 0.4629em);
   /*
     Wyrównanie napisu do środka kuli. `letter-spacing` w CSS dokłada odstęp PO KAŻDYM
     znaku, także po ostatnim, więc przy wartości ujemnej ramka tekstu jest o te 0,035 em
