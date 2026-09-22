@@ -15,12 +15,24 @@
  * barwę z TEGO obrazka, który leży w drzewie. Zero dodatkowych żądań, zero kolumny w
  * bazie, zero przeliczania starych zdjęć przy wdrożeniu.
  *
- * Warunkiem jest, żeby obrazek dało się wczytać na płótno. Na produkcji jest, bo miniatury
- * idą przez `podkosz.pl/cdn-cgi/image/...`, czyli z tej samej domeny co strona. Gdy adres
- * jest z obcej domeny (np. lokalnie, gdzie skalowanie Cloudflare jest wyłączone i obrazek
- * leci wprost z kubełka), płótno jest „zatrute" i odczyt rzuca wyjątkiem. Wtedy oddajemy
- * `null`, a karta zostaje przy dotychczasowym błękicie. To jest pełnoprawna odpowiedź,
- * nie awaria - dlatego nie ma tu ani jednego `console.error`.
+ * ------------------------------------------------------------------ zatrute płótno
+ *
+ * Warunkiem jest, żeby obrazek dało się wczytać na płótno, a to wolno tylko dla obrazków
+ * Z TEJ SAMEJ DOMENY albo takich, które przysyłają nagłówek CORS. Zdjęcia boisk leżą na
+ * `zdjecia.podkosz.pl` i NIE przysyłają go wcale (sprawdzone `curl`-em: w odpowiedzi nie
+ * ma ani jednego `access-control-*`), więc `crossOrigin="anonymous"` nie jest wyjściem -
+ * przy takim żądaniu obrazek w ogóle by się nie wczytał i zamiast barwy byłaby dziura.
+ *
+ * Kiedy adres idzie przez `<nasza domena>/cdn-cgi/image/...`, płótno jest czyste i odczyt
+ * się udaje. Kiedy nie - a zależy to od ustawienia `NEXT_PUBLIC_CDN_OBRAZKI`, czyli od
+ * zmiennej środowiskowej, której kod nie kontroluje - odczyt rzuca `SecurityError`.
+ *
+ * Dlatego jest DRUGIE PODEJŚCIE: ten sam plik pobrany jeszcze raz przez adres WZGLĘDNY
+ * `/cdn-cgi/image/...`. Względny znaczy „z tej samej domeny co strona" z definicji, więc
+ * nie ma tu już czego konfigurować ani o czym zapomnieć. Gdy i to nie wyjdzie (lokalnie,
+ * gdzie Cloudflare nie stoi przed serwerem, adres oddaje 404), zostaje `null`, a wywołujący
+ * zostaje przy swojej barwie domyślnej. To pełnoprawna odpowiedź, nie awaria - dlatego nie
+ * ma tu ani jednego `console.error`.
  *
  * ------------------------------------------------------------------ czemu stała jasność i nasycenie
  *
@@ -30,6 +42,8 @@
  * że wszystkie wizytówki są równie czytelne i wyglądają jak jedna rodzina w różnych
  * barwach, a nie jak przypadkowy zbiór.
  */
+
+import { zapasowyAdres } from "./obrazy";
 
 /** Ile boisk pamiętamy. Barwa jest tania, ale liczymy ją raz na boisko na sesję. */
 const pamiec = new Map<string, string | null>();
@@ -70,11 +84,64 @@ export function barwaZObrazka(img: HTMLImageElement, idBoiska?: string): string 
   if (gotowa !== undefined) return gotowa;
 
   const wynik = policz(img);
+  if (wynik === ZATRUTE) return null;
   if (idBoiska) pamiec.set(idBoiska, wynik);
   return wynik;
 }
 
-function policz(img: HTMLImageElement): string | null {
+/** Szerokość kopii pobieranej na drugie podejście - do policzenia barwy więcej nie trzeba. */
+const SZEROKOSC_KOPII = 96;
+
+/**
+ * Barwa zdjęcia, z drugim podejściem przez adres z własnej domeny.
+ *
+ * Zwraca `null`, gdy nie da się jej ustalić - wywołujący zostaje przy swojej domyślnej.
+ * Wynik (także pusty) zapamiętujemy, więc na jedno boisko przypada najwyżej jedna próba
+ * na sesję, choćby kafelek pojawił się na pięciu stronach.
+ */
+export async function ustalBarwe(
+  img: HTMLImageElement,
+  adresOryginalu: string,
+  idBoiska: string
+): Promise<string | null> {
+  const gotowa = pamiec.get(idBoiska);
+  if (gotowa !== undefined) return gotowa;
+
+  const wprost = policz(img);
+  if (wprost !== ZATRUTE) {
+    pamiec.set(idBoiska, wprost);
+    return wprost;
+  }
+
+  /*
+    Adres WZGLĘDNY, celowo bez domeny: dzięki temu jest z tej samej domeny co strona
+    niezależnie od tego, czy i na co ustawiono `NEXT_PUBLIC_CDN_OBRAZKI`.
+  */
+  /*
+    Rozwijamy adres do surowego pliku, zanim go opakujemy. Wołający podaje to, co ma pod
+    ręką, a to bywa już przepuszczone przez Cloudflare - opakowanie takiego adresu drugi
+    raz dałoby `/cdn-cgi/image/.../cdn-cgi/image/...`, czyli 404.
+  */
+  const kopia = new Image();
+  kopia.decoding = "async";
+  kopia.src = `/cdn-cgi/image/width=${SZEROKOSC_KOPII},quality=60,format=auto,fit=scale-down/${zapasowyAdres(adresOryginalu)}`;
+
+  const wynik = await new Promise<string | null>((oddaj) => {
+    kopia.onload = () => {
+      const b = policz(kopia);
+      oddaj(b === ZATRUTE ? null : b);
+    };
+    kopia.onerror = () => oddaj(null);
+  });
+
+  pamiec.set(idBoiska, wynik);
+  return wynik;
+}
+
+/** Odróżnia „nie wolno czytać pikseli" od „przeczytane, ale bez dominującej barwy". */
+const ZATRUTE = Symbol("zatrute-plotno");
+
+function policz(img: HTMLImageElement): string | null | typeof ZATRUTE {
   /*
     32 x 32 wystarczy z zapasem: szukamy najczęstszej barwy, a nie szczegółu. Przy tym
     rozmiarze przeglądarka dodatkowo uśrednia sąsiednie piksele przy zmniejszaniu, co
@@ -93,8 +160,12 @@ function policz(img: HTMLImageElement): string | null {
     ctx.drawImage(img, 0, 0, BOK, BOK);
     dane = ctx.getImageData(0, 0, BOK, BOK).data;
   } catch {
-    // zatrute płótno (obrazek z obcej domeny) - to nie błąd, tylko brak odpowiedzi
-    return null;
+    /*
+      Zatrute płótno (obrazek z obcej domeny bez CORS). Oddajemy ZNACZNIK, a nie `null`:
+      to jedyny przypadek, w którym warto spróbować jeszcze raz innym adresem. „Zdjęcie
+      bez dominującej barwy" wygląda z zewnątrz tak samo, a ponawiać go nie ma po co.
+    */
+    return ZATRUTE;
   }
 
   const wagi = new Array<number>(KUBELKI).fill(0);

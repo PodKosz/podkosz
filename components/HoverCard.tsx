@@ -7,7 +7,7 @@ import { PhotoPlaceholder } from "./CourtPhoto";
 import { photoUrl } from "@/lib/supabase/config";
 import { godziny, kiedy, plakietka, wysokiPlakat, type Wydarzenie } from "@/lib/wydarzenia";
 import { ClockIcon, FireBallIcon, HoopIcon, BasketApprovedBadge, SurfaceIcon } from "./icons";
-import { barwaZObrazka, zapamietanaBarwa } from "@/lib/barwa-zdjecia";
+import { ustalBarwe, zapamietanaBarwa } from "@/lib/barwa-zdjecia";
 import { useState } from "react";
 
 /**
@@ -158,8 +158,9 @@ export function HoverCard({
                 poWczytaniu={
                   i === 0
                     ? (img) => {
-                        const b = barwaZObrazka(img, court.id);
-                        if (b) setAkcent(b);
+                        void ustalBarwe(img, p?.url ?? "", court.id).then((b) => {
+                          if (b) setAkcent(b);
+                        });
                       }
                     : undefined
                 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Court, TYPE_LABEL, surfaceLabel } from "@/lib/types";
-import { barwaZObrazka, zapamietanaBarwa } from "@/lib/barwa-zdjecia";
+import { ustalBarwe, zapamietanaBarwa } from "@/lib/barwa-zdjecia";
 import { CourtPhoto } from "./CourtPhoto";
 import { BasketApprovedBadge, FireBallIcon, FunnyBadge, PinIcon } from "./icons";
 
@@ -24,10 +24,12 @@ import { BasketApprovedBadge, FireBallIcon, FunnyBadge, PinIcon } from "./icons"
  * nad którym stoi. Czerwony tartan świeci czerwienią, trawa zielenią, zachód słońca
  * pomarańczem. Jeden wpisany na sztywno kolor byłby przy połowie boisk cudzą naklejką.
  *
- * Barwę liczy `lib/barwa-zdjecia.ts` z obrazka, który i tak leży już w drzewie - bez
- * dodatkowego żądania i bez kolumny w bazie. Gdy zdjęcia nie da się odczytać z płótna
- * (obcy adres, brak CORS) albo kadr nie ma dominującej barwy, zostaje `null` i kafelek
- * świeci domyślnym ogniem. To jest pełnoprawna odpowiedź, nie awaria.
+ * Barwę liczy `lib/barwa-zdjecia.ts` z obrazka, który i tak leży już w drzewie. Gdy pikseli
+ * nie wolno odczytać - a tak jest, kiedy miniatura idzie wprost z `zdjecia.podkosz.pl`,
+ * czyli z innej domeny niż strona i bez nagłówków CORS - sięga po ten sam plik jeszcze raz,
+ * adresem WZGLĘDNYM przez `/cdn-cgi/image/...`, który z definicji jest z naszej domeny.
+ * Dopiero gdy i to nie wyjdzie, kafelek świeci domyślnym ogniem. To jest pełnoprawna
+ * odpowiedź, nie awaria.
  *
  * Stan zaczyna od tego, co policzono dla tego boiska wcześniej w tej sesji: przy powrocie
  * na listę kafelek ma właściwą barwę od pierwszej klatki, zamiast się przebarwiać.
@@ -54,8 +56,9 @@ export function CourtCard({ court, showCity = true }: { court: Court; showCity?:
           seed={court.seed}
           sizes="(max-width: 640px) 100vw, 380px"
           poWczytaniu={(img) => {
-            const b = barwaZObrazka(img, court.id);
-            if (b) setAkcent(b);
+            void ustalBarwe(img, court.photos[0]?.url ?? "", court.id).then((b) => {
+              if (b) setAkcent(b);
+            });
           }}
         />
         {(court.basketApproved || court.funny) && (
