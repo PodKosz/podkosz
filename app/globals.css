@@ -924,12 +924,17 @@ body {
       rgb(var(--rgb-szyba) / 0.035) 13%,
       rgb(var(--rgb-szyba) / 0) 30%
     ),
-    /* i druga, słabsza, wstająca od dolnej */
-    linear-gradient(
-      0deg,
-      rgb(var(--rgb-szyba) / 0.16) 0,
-      rgb(var(--rgb-szyba) / 0.055) 5%,
-      rgb(var(--rgb-szyba) / 0) 19%
+    /*
+      Łuna wstająca od dolnej krawędzi. Promieniście, nie pasem: pas biegł równo przez całą
+      szerokość i razem z rantem czytał się jako narysowana kreska. Promień jest najjaśniejszy
+      na środku i gaśnie przy narożnikach, więc światło wygląda na odbite od krawędzi szkła,
+      a nie na domalowane.
+    */
+    radial-gradient(
+      135% 46% at 50% 100%,
+      rgb(var(--rgb-szyba) / 0.2) 0%,
+      rgb(var(--rgb-szyba) / 0.07) 34%,
+      rgb(var(--rgb-szyba) / 0) 72%
     ),
     /* skośna smuga światła - to ona robi z tafli szkło, a nie matową płytę */
     linear-gradient(
@@ -4397,8 +4402,27 @@ select option {
     rgb(var(--rgb-szyba) / 0.3) 7%,
     rgb(var(--rgb-szyba) / 0.1) 24%,
     rgb(var(--rgb-szyba) / 0.08) 72%,
-    rgb(var(--rgb-szyba) / 0.26) 90%,
-    rgb(var(--rgb-szyba) / 0.62) 100%
+    rgb(var(--rgb-szyba) / 0.18) 90%,
+    rgb(var(--rgb-szyba) / 0.34) 100%
+  );
+}
+
+/*
+  Dolna krawędź kafla boiska jest jeszcze słabsza niż na kafelku liczb. Kafelek jest mały
+  i ciemny, więc jasny rant czyta się tam jako grubość szkła; kafel boiska ma pod spodem
+  zdjęcie i szerokość trzech kolumn, na której ta sama jasność układała się w prostą,
+  równą kreskę przez cały spód - czyli w obrys, a nie w światło. Blask niesie tu radialna
+  łuna wyżej, a rant tylko zamyka krawędź.
+*/
+.szklo-krawedzie::after {
+  background: linear-gradient(
+    180deg,
+    rgb(var(--rgb-szyba) / 0.8) 0%,
+    rgb(var(--rgb-szyba) / 0.28) 7%,
+    rgb(var(--rgb-szyba) / 0.09) 24%,
+    rgb(var(--rgb-szyba) / 0.07) 74%,
+    rgb(var(--rgb-szyba) / 0.11) 92%,
+    rgb(var(--rgb-szyba) / 0.17) 100%
   );
 }
 
