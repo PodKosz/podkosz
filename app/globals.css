@@ -967,6 +967,50 @@ body {
     0 26px 54px -26px rgb(var(--rgb-flame) / 0.3);
 }
 
+/*
+  Poświata pod kursorem w barwie zdjęcia - ta sama myśl, co w wizytówce nad pinezką:
+  kafelek ma pasować do kadru, nad którym stoi. `--akcent` podaje `CourtCard`, licząc
+  dominujący odcień z miniatury; gdy nie ma czego policzyć, zostaje ogień serwisu, więc
+  kafelek nigdy nie jest bez odpowiedzi.
+
+  Światło wstaje OD DOŁU, spod napisów, a nie ze środka kafla. Środek zajmuje zdjęcie -
+  plama na nim czytałaby się jak zabrudzenie szkła; przy dolnej krawędzi wygląda jak
+  refleks odbity od blatu i nie przeszkadza w czytaniu nazwy boiska.
+*/
+.karta-poswiata {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0;
+  background:
+    radial-gradient(
+      120% 62% at 50% 116%,
+      rgb(var(--akcent, var(--rgb-flame)) / 0.55),
+      rgb(var(--akcent, var(--rgb-flame)) / 0.16) 46%,
+      transparent 74%
+    ),
+    linear-gradient(0deg, rgb(var(--akcent, var(--rgb-flame)) / 0.1), transparent 52%);
+  transition: opacity 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.karta-rankingu:hover .karta-poswiata,
+.karta-rankingu:focus-visible .karta-poswiata {
+  opacity: 1;
+}
+
+/*
+  Obwódka kafla boiska bierze barwę zdjęcia razem z poświatą - inaczej pod kursorem
+  świeciłoby się dno w zieleni, a rant nadal w pomarańczu serwisu.
+*/
+.karta-rankingu.kafel-szklo:hover,
+.karta-rankingu.kafel-szklo:focus-visible {
+  box-shadow:
+    inset 0 0 26px -6px rgb(var(--rgb-szyba) / 0.2),
+    0 40px 90px -34px rgb(0 0 0 / calc(0.96 * var(--moc-cienia))),
+    0 0 70px -24px rgb(var(--akcent, var(--rgb-flame)) / 0.45);
+}
+
 /* pierścień wokół avatara - gradient marki, nie zwykła obwódka */
 .awatar-ramka {
   position: relative;
@@ -4016,16 +4060,19 @@ select option {
   outline: none;
 }
 /*
-  Pod kursorem piłka wychodzi PRZED poręcz (z-index wyżej niż nakładka), a nie tylko rośnie.
-  Czyta się to jak wyjęcie piłki ze stojaka i od razu mówi, którą się właśnie ogląda.
+  Pod kursorem piłka ZOSTAJE W STOJAKU. Wcześniej wychodziła przed poręcz i unosiła się
+  o 9 px - czytało się to jak wyjęcie jej z półki, czyli jak zapowiedź, że zaraz zniknie.
+  A to jest gablota: piłka ma się w niej rozświetlić, a nie z niej wyskoczyć.
+
+  Zostaje więc pod nakładką z poręczami (z-index niższy niż jej 2) i tylko delikatnie
+  rośnie w miejscu - bez unoszenia, bo każdy ruch w pionie znów wypychałby ją zza szkła.
 */
 .stojak-pilka.gorace {
-  transform: translate(-50%, calc(-50% - 9px)) scale(1.07);
-  z-index: 4;
+  transform: translate(-50%, -50%) scale(1.06);
 }
 .stojak-pilka.gorace img {
-  filter: drop-shadow(0 14px 18px rgb(0 0 0 / calc(0.5 * var(--moc-cienia))))
-    brightness(1.08);
+  filter: drop-shadow(0 7px 11px rgb(0 0 0 / calc(0.5 * var(--moc-cienia))))
+    brightness(1.16) saturate(1.12);
 }
 .stojak-pilka.ma.gorace::before {
   opacity: 1;

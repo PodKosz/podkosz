@@ -4,10 +4,10 @@ import { notFound } from "next/navigation";
 import { boiskaPoId, getAuthor, listContributors } from "@/lib/repo";
 import { historiaGracza, nickZeSlugu, statystykiGracza, ulubioneGracza } from "@/lib/profil";
 import { CourtCard } from "@/components/CourtCard";
-import { Odznaczenia } from "@/components/Odznaczenia";
 import { PilkaOdznaczen } from "@/components/PilkaOdznaczen";
 import { TloPilki } from "@/components/TloPilki";
 import { NaglowekSekcji } from "@/components/NaglowekSekcji";
+import { Wyroznienia } from "@/components/Wyroznienia";
 import { czyAutorAnonimowy, dataOpisowa, SITE_NAME, plural, slugifyPlace } from "@/lib/site";
 import { ArrowLeftIcon, PinIcon } from "@/components/icons";
 
@@ -175,12 +175,18 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
         ))}
       </section>
 
+      <Wyroznienia statystyki={statystyki} />
+
       {/*
-        Ta sama treść, którą niesie piłka, tylko słowami: stopnie, liczniki, ile brakuje do
-        następnego progu i wyróżnienia. Piłka mówi „jak wysoko", lista mówi „ile dokładnie" -
-        i jako jedyna działa bez kursora oraz w czytniku ekranu.
+        Pod wyróżnieniami idą OD RAZU dodane boiska. Stała tu wcześniej pełna siatka
+        odznaczeń progowych - te same liczniki i progi, które niesie już piłka nad nazwą
+        gracza. Dwie opowieści o tym samym pod rząd rozciągały profil o ekran, zanim doszło
+        się do tego, co ktoś naprawdę zrobił. Siatka zostaje na `/konto`, czyli tam, gdzie
+        służy do pilnowania własnych postępów, a nie do pokazania się.
+
+        Stojak wyróżnień wchodzi tu wprost, a nie przez `<Odznaczenia>`: tamten komponent
+        renderował oba bloki naraz, więc usunięcie go zabrałoby razem z siatką także stojak.
       */}
-      <Odznaczenia statystyki={statystyki} />
 
       {/* ---------- dodane boiska ---------- */}
       <section className="mt-14">

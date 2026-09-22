@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import { Court, TYPE_LABEL, surfaceLabel } from "@/lib/types";
+import { barwaZObrazka, zapamietanaBarwa } from "@/lib/barwa-zdjecia";
 import { CourtPhoto } from "./CourtPhoto";
 import { BasketApprovedBadge, FireBallIcon, FunnyBadge, PinIcon } from "./icons";
 
@@ -13,19 +17,47 @@ import { BasketApprovedBadge, FireBallIcon, FunnyBadge, PinIcon } from "./icons"
  * podświetlenie wiersza w tabeli, a nie jak dotknięcie karty. Skoro ten sam gest jest już
  * opisany w arkuszu, nie ma powodu mieć dwóch różnych odpowiedzi na to samo najechanie.
  *
- * Kolejność warstw jest tu istotna: smuga leży NAD zdjęciem, ale pod treścią - dlatego
- * napisy dostają własny `z-index`, a smuga stoi w drzewie na końcu. Element pozycjonowany
- * maluje się nad niepozycjonowanym niezależnie od kolejności, więc bez tego `z-[2]`
- * światło przejeżdżałoby po nazwie boiska.
+ * ------------------------------------------------------------------ barwa spod kursora
+ *
+ * Pod kursorem w tle kafla rozświetla się poświata w DOMINUJĄCEJ BARWIE ZDJĘCIA - tak samo
+ * jak wizytówka nad pinezką na mapie, i z tego samego powodu: karta ma pasować do kadru,
+ * nad którym stoi. Czerwony tartan świeci czerwienią, trawa zielenią, zachód słońca
+ * pomarańczem. Jeden wpisany na sztywno kolor byłby przy połowie boisk cudzą naklejką.
+ *
+ * Barwę liczy `lib/barwa-zdjecia.ts` z obrazka, który i tak leży już w drzewie - bez
+ * dodatkowego żądania i bez kolumny w bazie. Gdy zdjęcia nie da się odczytać z płótna
+ * (obcy adres, brak CORS) albo kadr nie ma dominującej barwy, zostaje `null` i kafelek
+ * świeci domyślnym ogniem. To jest pełnoprawna odpowiedź, nie awaria.
+ *
+ * Stan zaczyna od tego, co policzono dla tego boiska wcześniej w tej sesji: przy powrocie
+ * na listę kafelek ma właściwą barwę od pierwszej klatki, zamiast się przebarwiać.
+ * Na serwerze pamięć jest pusta, więc pierwszy render wychodzi identycznie po obu
+ * stronach i hydracja się nie rozjeżdża.
+ *
+ * Kolejność warstw jest tu istotna: poświata i smuga leżą NAD zdjęciem, ale pod treścią -
+ * dlatego napisy dostają własny `z-index`, a obie warstwy stoją w drzewie na końcu.
+ * Element pozycjonowany maluje się nad niepozycjonowanym niezależnie od kolejności, więc
+ * bez tego `z-[2]` światło przejeżdżałoby po nazwie boiska.
  */
 export function CourtCard({ court, showCity = true }: { court: Court; showCity?: boolean }) {
+  const [akcent, setAkcent] = useState<string | null>(() => zapamietanaBarwa(court.id));
+
   return (
     <Link
       href={`/boisko/${court.slug}`}
-      className="karta-rankingu glass block overflow-hidden rounded-[22px]"
+      className="karta-rankingu kafel-szklo block overflow-hidden rounded-[22px]"
+      style={akcent ? ({ "--akcent": akcent } as React.CSSProperties) : undefined}
     >
       <div className="relative aspect-[16/10] overflow-hidden">
-        <CourtPhoto photo={court.photos[0]} seed={court.seed} sizes="(max-width: 640px) 100vw, 380px" />
+        <CourtPhoto
+          photo={court.photos[0]}
+          seed={court.seed}
+          sizes="(max-width: 640px) 100vw, 380px"
+          poWczytaniu={(img) => {
+            const b = barwaZObrazka(img, court.id);
+            if (b) setAkcent(b);
+          }}
+        />
         {(court.basketApproved || court.funny) && (
           <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
             {court.basketApproved && <BasketApprovedBadge />}
@@ -47,6 +79,7 @@ export function CourtCard({ court, showCity = true }: { court: Court; showCity?:
         </span>
       </div>
 
+      <span aria-hidden className="karta-poswiata" />
       <span aria-hidden className="karta-rankingu-blysk" />
     </Link>
   );

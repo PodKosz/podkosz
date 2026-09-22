@@ -19,6 +19,7 @@ export function CourtPhoto({
   alt,
   sizes = "100vw",
   priority = false,
+  poWczytaniu,
 }: {
   photo: CourtPhotoRef;
   seed: number;
@@ -28,6 +29,11 @@ export function CourtPhoto({
   sizes?: string;
   /** kadr tytułowy: wczytujemy od razu, bez czekania na przewinięcie */
   priority?: boolean;
+  /**
+   * Gotowy obrazek, do odczytania czegoś z pikseli (u nas: dominującej barwy kadru).
+   * Wywoływane tylko dla prawdziwego zdjęcia - grafika zastępcza nie ma czego oddać.
+   */
+  poWczytaniu?: (img: HTMLImageElement) => void;
 }) {
   if (photo.url) {
     return (
@@ -38,6 +44,7 @@ export function CourtPhoto({
         sizes={sizes}
         priority={priority}
         className={`object-cover ${className}`}
+        onLoad={poWczytaniu ? (e) => poWczytaniu(e.currentTarget) : undefined}
       />
     );
   }
