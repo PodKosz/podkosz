@@ -12,7 +12,7 @@ import { kafelkiPodkladu, podkladMapy } from "@/lib/podklad";
 import { ZarWojewodztwa, bboxWojewodztwa, stworzZarWojewodztwa } from "@/lib/zarWojewodztwa";
 import { useMotyw } from "@/lib/motyw";
 import { FiltrSzkla } from "./FiltrSzkla";
-import { czytajWidok, zapiszWidok } from "@/lib/adres";
+import { czytajWidok, ostatniKadr, zapamietajKadr, zapiszWidok } from "@/lib/adres";
 import { fetchCheckinyDzisiaj } from "@/lib/checkins";
 import { pobierzWydarzenia, type Wydarzenie } from "@/lib/wydarzenia";
 import { punktyWKadrze, type PunktOsm } from "@/lib/punkty-osm";
@@ -523,9 +523,25 @@ export function MapView({
     setDiag({ ...diag });
     const push = () => setDiag({ ...diag, errors: [...diag.errors] });
 
-    // Widok zapisany w adresie (m=lat,lng,zoom) ma pierwszeństwo nad kadrem na Polskę:
-    // dzięki temu link do konkretnego miejsca otwiera się tam, gdzie był wysłany.
-    const zAdresu = czytajWidok();
+    /*
+      Skąd bierzemy kadr, w kolejności:
+
+      1. adres (`m=lat,lng,zoom`) - link do konkretnego miejsca otwiera się tam, gdzie
+         został wysłany, i to bije wszystko inne;
+      2. pamięć sesji - powrót z karty boiska linkiem „Mapa" albo logiem prowadzi na gołe
+         `/`, więc bez tego mapa cofałaby się do widoku całej Polski przy każdym takim
+         wejściu; przycisk „wstecz" radził sobie sam, bo przywraca adres z historii;
+      3. nic - wtedy dopiero kadr na Polskę.
+    */
+    const zUrl = czytajWidok();
+    const zAdresu = zUrl ?? ostatniKadr();
+    /*
+      Kadr wzięty z pamięci sesji od razu wpisujemy do adresu. Inaczej pasek pokazywałby
+      gołe `/`, podczas gdy mapa stoi nad Krakowem - i link skopiowany z takiej strony
+      wysyłałby kogoś na widok całej Polski. `moveend` sam tego nie naprawi, bo mapa
+      postawiona od razu we właściwym miejscu nigdzie się nie rusza.
+    */
+    if (!zUrl && zAdresu) zapiszWidok(zAdresu);
 
     let map: MlMap;
     try {
@@ -682,11 +698,14 @@ export function MapView({
     });
     ro.observe(containerRef.current);
 
-    // po każdym przesunięciu zapisujemy kadr w adresie - widok da się wysłać linkiem
-    // i przetrwa odświeżenie strony
+    // Po każdym przesunięciu zapisujemy kadr w dwóch miejscach: w adresie - żeby widok dało
+    // się wysłać linkiem i żeby przetrwał odświeżenie - oraz w pamięci sesji, bo z niej
+    // odtwarza się powrót na mapę linkiem, który adresu ze sobą nie niesie.
     const zapiszKadr = () => {
       const c = map.getCenter();
-      zapiszWidok({ lat: c.lat, lng: c.lng, zoom: map.getZoom() });
+      const widok = { lat: c.lat, lng: c.lng, zoom: map.getZoom() };
+      zapiszWidok(widok);
+      zapamietajKadr(widok);
     };
     map.on("moveend", zapiszKadr);
 

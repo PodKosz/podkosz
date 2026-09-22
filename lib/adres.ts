@@ -127,10 +127,13 @@ export function useZapytanieFiltrow() {
   return useSyncExternalStore(subskrybuj, stanPrzegladarki, stanSerwera);
 }
 
-/** Położenie mapy z adresu (`m=lat,lng,zoom`). */
-export function czytajWidok(): MapaWidok | null {
-  if (typeof window === "undefined") return null;
-  const m = new URLSearchParams(window.location.search).get("m");
+/**
+ * Widok z zapisu tekstowego `lat,lng,zoom`, albo null, gdy zapis jest bez sensu.
+ *
+ * Sprawdzamy zakresy, bo źródło jest zawsze cudze: adres można wpisać ręcznie, a pamięć
+ * sesji przetrwa wdrożenie, które zmieni format. Mapa z `lat: 999` nie wstaje wcale.
+ */
+function widokZTekstu(m: string | null): MapaWidok | null {
   if (!m) return null;
 
   const [lat, lng, zoom] = m.split(",").map(Number);
@@ -138,6 +141,52 @@ export function czytajWidok(): MapaWidok | null {
   if (Math.abs(lat) > 90 || Math.abs(lng) > 180 || zoom < 3 || zoom > 20) return null;
 
   return { lat, lng, zoom };
+}
+
+/** Położenie mapy z adresu (`m=lat,lng,zoom`). */
+export function czytajWidok(): MapaWidok | null {
+  if (typeof window === "undefined") return null;
+  return widokZTekstu(new URLSearchParams(window.location.search).get("m"));
+}
+
+/*
+  OSTATNI KADR NA CZAS SESJI.
+
+  Adres wystarcza, dopóki ktoś wraca z boiska przyciskiem „wstecz" - wtedy przeglądarka
+  przywraca `/?m=...` razem z wpisem w historii. Ale w nagłówku jest link „Mapa", który
+  prowadzi na gołe `/`, i to samo robi logo. Kliknięcie któregokolwiek z nich odbierało
+  mapie wszystko: kadr Krakowa przy zoomie 14 zamieniał się w widok całej Polski, bo
+  `czytajWidok()` nie miało czego odczytać.
+
+  Zapisujemy więc kadr także w pamięci sesji i sięgamy po niego, gdy w adresie nic nie ma.
+
+  Pamięć SESJI, nie `localStorage`: to ma być ciągłość jednego odwiedzenia serwisu, a nie
+  stan zapamiętany na zawsze. Ktoś, kto wróci jutro, powinien zobaczyć całą Polskę - a nie
+  ulicę, na której skończył poprzednim razem i o której zdążył zapomnieć.
+*/
+const KLUCZ_KADRU = "podkosz:kadr-mapy";
+
+/** Zapamiętuje kadr na czas tej sesji przeglądarki. */
+export function zapamietajKadr(view: MapaWidok) {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(
+      KLUCZ_KADRU,
+      `${view.lat.toFixed(4)},${view.lng.toFixed(4)},${view.zoom.toFixed(1)}`
+    );
+  } catch {
+    /* tryb prywatny albo zablokowane dane witryny - mapa ma wtedy po prostu wstać na Polsce */
+  }
+}
+
+/** Kadr z poprzedniej strony w tej sesji. */
+export function ostatniKadr(): MapaWidok | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return widokZTekstu(sessionStorage.getItem(KLUCZ_KADRU));
+  } catch {
+    return null;
+  }
 }
 
 /** Aktualizuje wskazane klucze adresu, zostawiając pozostałe bez zmian. */
