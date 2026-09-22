@@ -92,19 +92,78 @@ async function stojak(zrodlo) {
 
   const rgb = await kolor.raw().toBuffer({ resolveWithObject: true });
   const { width: w, height: h, channels } = rgb.info;
+
+  /*
+    PRÓG MGŁY. Samo przeniesienie jasności do alfy zostawia na CAŁEJ klatce cienką białą
+    mgiełkę - w pierwszej wersji 63% pikseli miało alfę poniżej 32. Na czarnym tle nie widać
+    jej wcale, ale na jasnym motywie robi z obrazka wyraźny jaśniejszy prostokąt z ostrymi
+    krawędziami: stojak wygląda, jakby był wklejony na łatce.
+
+    Odejmujemy więc próg i rozciągamy resztę z powrotem do pełnej skali. Próg, a nie krzywa
+    gamma, bo gamma ścięłaby razem z mgłą także łunę wokół szkła (przy alfie 60 zostawia
+    ledwie 17), a to ona robi tu połowę wrażenia.
+  */
+  const MGLA = 24;
   const wyjscie = Buffer.alloc(w * h * 4);
   for (let i = 0; i < w * h; i++) {
     wyjscie[i * 4] = rgb.data[i * channels];
     wyjscie[i * 4 + 1] = rgb.data[i * channels + 1];
     wyjscie[i * 4 + 2] = rgb.data[i * channels + 2];
-    wyjscie[i * 4 + 3] = alfa[i];
+    wyjscie[i * 4 + 3] = alfa[i] <= MGLA ? 0 : Math.round(((alfa[i] - MGLA) * 255) / (255 - MGLA));
   }
 
+  /*
+    PODŁOGA SCHODZI DO ZERA. Zdjęcie ma pod stojakiem odbicie na blacie - na czerni czytało
+    się jako martwy pas pod sekcją, a na jasnym motywie jako szara wstęga z prostą dolną
+    krawędzią. Ucięcie jej równo zostawiłoby tę krawędź, więc zamiast tego wygaszamy alfę
+    stopniowo, zaraz poniżej stopek. Kilkanaście pikseli odbicia zostaje i stojak nadal na
+    czymś stoi, ale nic się nie kończy linią.
+
+    Stopki znajdujemy pomiarem - ostatni wiersz, w którym szkło jeszcze świeci pełnią.
+  */
+  let stopy = 0;
+  for (let y = h - 1; y >= 0 && !stopy; y--) {
+    for (let x = 0; x < w; x++) {
+      if (wyjscie[(y * w + x) * 4 + 3] >= 200) {
+        stopy = y;
+        break;
+      }
+    }
+  }
+  const ZANIK = Math.round(h * 0.07);
+  for (let y = stopy + 1; y < h; y++) {
+    const k = Math.max(0, 1 - (y - stopy) / ZANIK);
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4 + 3;
+      wyjscie[i] = Math.round(wyjscie[i] * k * k);
+    }
+  }
+
+  /*
+    Dopiero teraz da się przyciąć kadr uczciwie: ramkę liczymy z WYCZYSZCZONEJ alfy, więc
+    obejmuje to, co naprawdę widać, a nie zasięg mgły. Bez tego u góry zostawało 48 px, a na
+    dole ponad 90 px pustego pasa, który w układzie strony czytał się jako dziura pod sekcją.
+  */
+  let ax0 = w, ay0 = h, ax1 = 0, ay1 = 0;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (wyjscie[(y * w + x) * 4 + 3] > 0) {
+        if (x < ax0) ax0 = x;
+        if (x > ax1) ax1 = x;
+        if (y < ay0) ay0 = y;
+        if (y > ay1) ay1 = y;
+      }
+    }
+  }
+  const ciasny = { left: ax0, top: ay0, width: ax1 - ax0 + 1, height: ay1 - ay0 + 1 };
+
   await sharp(wyjscie, { raw: { width: w, height: h, channels: 4 } })
+    .extract(ciasny)
     .webp({ quality: 82, alphaQuality: 88 })
     .toFile(path.join(KATALOG, "stojak.webp"));
 
-  return { kadr, w, h };
+  /* `ciasny` przelicza stałe w komponencie: siatka odniesienia to właśnie ten prostokąt. */
+  return { kadr, ciasny, w, h };
 }
 
 /** Piłka: kadr do kuli, maska koła, odbarwienie - i osiem odmian barwnych. */

@@ -17,26 +17,23 @@ import type { Wyroznienie } from "@/lib/odznaczenia";
  * barwnych piłek powstaje z JEDNEGO zdjęcia przez odbarwienie i pomalowanie - dzięki temu
  * wszystkie mają dokładnie to samo światło i wyglądają jak komplet, a nie zbieranina.
  *
- * Liczby niżej są w siatce odniesienia 1600 × 1015 - tyle miał plik stojaka, zanim zeszedł
- * do 1280 px dla wagi. Nie trzeba ich było przeliczać, bo wszystkie zamieniają się na
- * PROCENTY, a proporcje kadru zostały te same; siatka opisuje więc obrazek, nie jego
- * rozdzielczość. Dzięki temu całość skaluje się z szerokością kolumny i nie ma tu ani
- * jednego piksela na sztywno.
+ * Liczby niżej są w pikselach pliku stojaka i zamieniają się na PROCENTY, więc całość
+ * skaluje się z szerokością kolumny i nie ma tu ani jednego piksela na sztywno.
  */
 
-/* ————— siatka odniesienia stojaka ————— */
-const PLIK_SZER = 1600;
-const PLIK_WYS = 1015;
-/** poziomy przednich poręczy - odczytane ze zdjęcia, nie dobrane na oko */
-const BLATY = [277, 525, 786];
+/* ————— siatka odniesienia: piksele pliku `stojak.webp` ————— */
+const PLIK_SZER = 1236;
+const PLIK_WYS = 735;
+/** poziomy przednich poręczy - zmierzone w pliku (jasne pasma szkła), nie dobrane na oko */
+const BLATY = [182, 380, 589];
 /** ile piłek na kolejnych półkach, od góry */
 const POLKI = [6, 6, 5];
 /** wnętrze stojaka, między słupami */
-const LEWO = 152;
-const PRAWO = 1447;
-const SREDNICA = 187;
+const LEWO = 99;
+const PRAWO = 1135;
+const SREDNICA = 150;
 /** o tyle środek piłki leży nad poręczą, żeby poręcz zasłoniła jej spód */
-const NAD_PORECZA = 69.5;
+const NAD_PORECZA = 55.6;
 
 /** Środki piłek w procentach pliku - po kolei, od górnej półki, od lewej. */
 function miejscaPilek(ile: number): { x: number; y: number }[] {
@@ -181,7 +178,7 @@ export function StojakWyroznien({ lista }: { lista: Wyroznienie[] }) {
           spodem, więc każda piłka zasłaniała poręcz, o którą powinna się opierać - wyglądało
           to tak, jakby piłki były doklejone do zdjęcia. Tutaj kładziemy stojak DRUGI RAZ,
           przycięty maską do trzech pasów z przednimi poręczami (zmierzonych w pliku:
-          264-302, 508-535, 770-796). Szkło przechodzi więc przed dolną częścią piłki i ta
+          171-202, 366-388, 576-597). Szkło przechodzi więc przed dolną częścią piłki i ta
           wreszcie siedzi na półce.
 
           Drugi plik nie był potrzebny - ta sama grafika, tylko inaczej przycięta, a wszystko

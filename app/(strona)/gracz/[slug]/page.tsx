@@ -166,7 +166,7 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
       {/* ---------- liczby ---------- */}
       <section className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {kafelki.map(([label, wartosc]) => (
-          <div key={label} className="kafel p-5 text-center">
+          <div key={label} className="kafel kafel-szklo p-5 text-center">
             <p className="flame-text pb-1 text-[34px] font-bold leading-none tabular-nums">
               {wartosc}
             </p>

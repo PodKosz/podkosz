@@ -925,6 +925,48 @@ body {
     0 26px 54px -26px rgb(var(--rgb-flame) / 0.34);
 }
 
+/*
+  Kafelek z tego samego szkła, co stojak wyróżnień - stoją na profilu jeden nad drugim, więc
+  nie mogą być z dwóch różnych materiałów.
+
+  Cały trik stojaka to nie przezroczystość, tylko DWA JASNE RĄBKI: wąskie pasmo światła tuż
+  pod górną krawędzią i drugie, słabsze, tuż nad dolną. To one każą oku odczytać płaską
+  taflę jako grubą, giętą rurę. Reszta - rozmycie tła, włosowa obwódka, treść nad szkłem -
+  jest wspólna z kartami przy piłce, więc tylko dopisujemy się do tamtych reguł niżej.
+
+  Osobna klasa, a nie przemalowany `.kafel`, bo ten sam kafelek stoi też na `/konto` i
+  w panelu admina, gdzie żadnego stojaka obok nie ma.
+*/
+.kafel-szklo {
+  background:
+    linear-gradient(
+      180deg,
+      rgb(var(--rgb-szyba) / 0.52) 0,
+      rgb(var(--rgb-szyba) / 0.16) 2px,
+      rgb(var(--rgb-szyba) / 0.03) 10px,
+      rgb(var(--rgb-szyba) / 0) 34%,
+      rgb(var(--rgb-szyba) / 0) 72%,
+      rgb(var(--rgb-szyba) / 0.07) calc(100% - 8px),
+      rgb(var(--rgb-szyba) / 0.3) calc(100% - 2px),
+      rgb(var(--rgb-szyba) / 0.14) 100%
+    ),
+    linear-gradient(
+      128deg,
+      rgb(var(--rgb-szyba) / 0.14) 0%,
+      rgb(var(--rgb-szyba) / 0.035) 28%,
+      rgb(var(--rgb-szyba) / 0) 56%
+    ),
+    linear-gradient(180deg, rgb(var(--rgb-plyta) / 0.22) 0%, rgb(var(--rgb-plyta) / 0.36) 100%);
+  box-shadow:
+    inset 0 0 22px -6px rgb(var(--rgb-szyba) / 0.14),
+    0 18px 40px -26px rgb(0 0 0 / calc(0.9 * var(--moc-cienia)));
+}
+.kafel-szklo:hover {
+  box-shadow:
+    inset 0 0 26px -6px rgb(var(--rgb-szyba) / 0.2),
+    0 26px 54px -26px rgb(var(--rgb-flame) / 0.3);
+}
+
 /* pierścień wokół avatara - gradient marki, nie zwykła obwódka */
 .awatar-ramka {
   position: relative;
@@ -3845,18 +3887,18 @@ select option {
   */
   --pasy-poreczy: linear-gradient(
     180deg,
-    transparent 25.4%,
-    #000 26.4%,
-    #000 29.6%,
-    transparent 31%,
-    transparent 49.5%,
-    #000 50.4%,
-    #000 52.6%,
-    transparent 54%,
-    transparent 75.2%,
-    #000 76.1%,
-    #000 78.3%,
-    transparent 79.7%
+    transparent 22.6%,
+    #000 23.7%,
+    #000 27.3%,
+    transparent 28.8%,
+    transparent 49.2%,
+    #000 50.2%,
+    #000 52.7%,
+    transparent 54.2%,
+    transparent 77.6%,
+    #000 78.6%,
+    #000 81.1%,
+    transparent 82.6%
   );
 }
 
@@ -4177,7 +4219,8 @@ select option {
   rozpływało się w plamę.
 */
 .kula-karta::before,
-.stojak-karta::before {
+.stojak-karta::before,
+.kafel-szklo::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -4203,7 +4246,8 @@ select option {
   o szerokości dopełnienia.
 */
 .kula-karta::after,
-.stojak-karta::after {
+.stojak-karta::after,
+.kafel-szklo::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -4231,7 +4275,8 @@ select option {
 
 /* Treść nad obiema warstwami szkła. */
 .kula-karta > *,
-.stojak-karta > * {
+.stojak-karta > *,
+.kafel-szklo > * {
   position: relative;
   z-index: 1;
 }
