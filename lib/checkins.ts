@@ -64,6 +64,14 @@ export interface PanelDeklaracji {
   slots: CheckinSlot[];
   osoby: number;
   moje: number[];
+  /**
+   * Godziny zajęte dziś na INNYM boisku.
+   *
+   * Nikt nie gra w dwóch miejscach naraz, więc te godziny są tu niewybieralne. Lista
+   * celowo nie obejmuje własnych godzin na TYM boisku - te siedzą w `moje` i mają
+   * zostać wybieralne, bo przesunięcie własnego zakresu w miejscu to nie kolizja.
+   */
+  zajete: number[];
   blokada: string | null;
 }
 
@@ -78,6 +86,7 @@ export async function fetchPanel(courtId: string): Promise<PanelDeklaracji | nul
     godziny?: { hour: number; people: number }[];
     osoby?: number;
     moje?: number[];
+    zajete?: number[];
     blokada?: string | null;
   };
 
@@ -85,8 +94,23 @@ export async function fetchPanel(courtId: string): Promise<PanelDeklaracji | nul
     slots: (w.godziny ?? []).map((r) => ({ hour: r.hour, people: r.people })),
     osoby: typeof w.osoby === "number" ? w.osoby : 0,
     moje: w.moje ?? [],
+    zajete: w.zajete ?? [],
     blokada: typeof w.blokada === "string" && w.blokada ? w.blokada : null,
   };
+}
+
+/**
+ * Godziny, na które zalogowany użytkownik zapisał się dziś na INNE boiska.
+ *
+ * Używane tylko przez zapasową ścieżkę panelu, tę z czterema osobnymi wywołaniami.
+ * Zwykle ta sama lista przychodzi jednym zapytaniem, w `fetchPanel`.
+ */
+export async function fetchZajete(courtId: string): Promise<number[]> {
+  const supabase = await supabaseBrowser();
+  if (!supabase) return [];
+
+  const { data, error } = await supabase.rpc("checkin_zajete", { in_court: courtId });
+  return !error && Array.isArray(data) ? (data as number[]) : [];
 }
 
 /** Godziny, na które zalogowany użytkownik zapisał się dziś na to boisko. */
@@ -127,7 +151,19 @@ export async function fetchBlokada(courtId: string): Promise<string | null> {
  * Zapisuje deklarację na dziś dla zakresu godzin (włącznie z końcem).
  * Nowa deklaracja zastępuje poprzednią na tym boisku.
  */
-export async function declareToday(courtId: string, od: number, doGodziny = od): Promise<void> {
+export async function declareToday(
+  courtId: string,
+  od: number,
+  doGodziny = od,
+  /**
+   * Godziny zajęte dziś gdzie indziej. Podaje je panel, który i tak je zna.
+   *
+   * Sprawdzenie tutaj nie jest zaporą - zaporą jest indeks unikatowy `(user_id, day,
+   * hour)` w bazie, bo tabela jest zapisywalna z przeglądarki. Tu chodzi o to, żeby nie
+   * skasować poprzedniej deklaracji przed zderzeniem, którego dało się uniknąć.
+   */
+  zajete: number[] = []
+): Promise<void> {
   const supabase = await supabaseBrowser();
   if (!supabase) throw new Error("Brak połączenia z bazą.");
 
@@ -140,6 +176,16 @@ export async function declareToday(courtId: string, od: number, doGodziny = od):
   const koniec = Math.max(od, doGodziny);
   if (koniec - start + 1 > MAX_GODZIN) {
     throw new Error(`Najwyżej ${MAX_GODZIN} godzin na jednym boisku w ciągu dnia.`);
+  }
+
+  const kolizje = zajete.filter((h) => h >= start && h <= koniec).sort((a, b) => a - b);
+  if (kolizje.length) {
+    const g = (h: number) => `${String(h).padStart(2, "0")}:00`;
+    throw new Error(
+      kolizje.length === 1
+        ? `O ${g(kolizje[0])} jesteś już na innym boisku.`
+        : `Na innym boisku jesteś już w godzinach ${kolizje.map(g).join(", ")}.`
+    );
   }
 
   /*

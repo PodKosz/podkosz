@@ -9,6 +9,7 @@ import {
   fetchBlokada,
   fetchCheckins,
   fetchMyHours,
+  fetchZajete,
   fetchOsoby,
   fetchPanel,
   opisGodzin,
@@ -36,6 +37,8 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
   const [slots, setSlots] = useState<CheckinSlot[]>([]);
   const [osoby, setOsoby] = useState(0);
   const [mine, setMine] = useState<number[]>([]);
+  /** godziny zajęte dziś na INNYM boisku - nie da się grać w dwóch miejscach naraz */
+  const [zajete, setZajete] = useState<number[]>([]);
   const [picking, setPicking] = useState(false);
   /** pierwsza kliknięta godzina - czekamy na drugą, żeby zamknąć zakres */
   const [od, setOd] = useState<number | null>(null);
@@ -72,19 +75,21 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
       fetchCheckins(courtId).catch(() => [] as CheckinSlot[]),
       fetchOsoby(courtId).catch(() => 0),
     ]);
-    if (!signedIn) return { slots, osoby: ilu, moje: [], blokada: null };
+    if (!signedIn) return { slots, osoby: ilu, moje: [], zajete: [], blokada: null };
 
-    const [moje, powod] = await Promise.all([
+    const [moje, zajete, powod] = await Promise.all([
       fetchMyHours(courtId).catch(() => [] as number[]),
+      fetchZajete(courtId).catch(() => [] as number[]),
       fetchBlokada(courtId).catch(() => null),
     ]);
-    return { slots, osoby: ilu, moje, blokada: powod };
+    return { slots, osoby: ilu, moje, zajete, blokada: powod };
   }, [courtId, signedIn]);
 
   const przypisz = useCallback((p: PanelDeklaracji) => {
     setSlots(p.slots);
     setOsoby(p.osoby);
     setMine(p.moje);
+    setZajete(p.zajete);
     setBlokada(p.blokada);
   }, []);
 
@@ -113,7 +118,7 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
     setBusy(true);
     setHint(null);
     try {
-      await declareToday(courtId, start, koniec);
+      await declareToday(courtId, start, koniec, zajete);
       setPicking(false);
       setOd(null);
       setPodKursorem(null);
@@ -123,6 +128,23 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
     } finally {
       setBusy(false);
     }
+  };
+
+  /*
+    Zakres nie może PRZESKOCZYĆ godziny zajętej gdzie indziej. Sprawdzamy cały przedział,
+    a nie tylko jego końce: wybór 14-20 przy zajętym 16 wyglądałby na dozwolony, bo ani
+    14, ani 20 nie jest zajęte, a zapisałby trzy godziny w dwóch miejscach naraz.
+  */
+  const wolnyZakres = (a: number, b: number) =>
+    !zajete.some((g) => g >= Math.min(a, b) && g <= Math.max(a, b));
+
+  /** Czy tej godziny nie da się teraz kliknąć - i dlaczego, do podpowiedzi pod kursorem. */
+  const niedostepna = (h: number): string | null => {
+    if (zajete.includes(h)) return "Jesteś już o tej godzinie na innym boisku.";
+    if (od !== null && !wolnyZakres(od, h)) {
+      return "Między tymi godzinami jesteś już na innym boisku.";
+    }
+    return null;
   };
 
   /* pierwsze kliknięcie zaznacza początek, drugie zamyka zakres i zapisuje */
@@ -211,7 +233,9 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
         >
           <p className="mb-2 text-[11px] leading-snug text-muted">
             {od === null
-              ? "Kliknij godzinę, od której grasz."
+              ? zajete.length
+                ? "Kliknij godzinę, od której grasz. Przekreślone masz już zajęte na innym boisku."
+                : "Kliknij godzinę, od której grasz."
               : podKursorem !== null && podKursorem !== od
                 ? `${String(Math.min(od, podKursorem)).padStart(2, "0")}:00-${String(
                     Math.max(od, podKursorem) + 1
@@ -228,6 +252,7 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
           <div className="grid grid-cols-4 gap-1.5" onPointerLeave={() => setPodKursorem(null)}>
             {HOURS.map((h) => {
               const wybrana = od === h;
+              const powod = niedostepna(h);
               const wZakresie =
                 od !== null &&
                 podKursorem !== null &&
@@ -238,15 +263,20 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
                 <button
                   key={h}
                   onClick={() => klik(h)}
-                  onPointerEnter={() => setPodKursorem(h)}
-                  onFocus={() => setPodKursorem(h)}
-                  disabled={busy}
+                  /* zablokowanej godziny nie bierzemy pod kursor - inaczej zakres
+                     rysowałby się do miejsca, w którym i tak nie da się kliknąć */
+                  onPointerEnter={() => setPodKursorem(powod ? null : h)}
+                  onFocus={() => setPodKursorem(powod ? null : h)}
+                  disabled={busy || powod !== null}
+                  title={powod ?? undefined}
                   className={`rounded-xl border py-2 text-[12px] font-semibold tabular-nums transition ${
-                    wybrana
-                      ? "border-transparent flame-gradient text-black"
-                      : wZakresie
-                        ? "border-flame/40 bg-flame/12 text-glow hover:border-flame/70"
-                        : "border-hairline bg-white/6 hover:border-flame/50 hover:text-glow"
+                    powod
+                      ? "cursor-not-allowed border-hairline bg-white/[0.02] text-faint line-through"
+                      : wybrana
+                        ? "border-transparent flame-gradient text-black"
+                        : wZakresie
+                          ? "border-flame/40 bg-flame/12 text-glow hover:border-flame/70"
+                          : "border-hairline bg-white/6 hover:border-flame/50 hover:text-glow"
                   }`}
                 >
                   {h}:00

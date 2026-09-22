@@ -51,6 +51,18 @@ część nazwy pliku.
 | 32 | `migration-wydarzenia.sql` | wydarzenia na boiskach: tabela `wydarzenia`, odczyt dla wszystkich, zapis tylko dla administratora, plakaty w katalogu `wydarzenia/` bucketa zdjęć |
 | 33 | `migration-wydarzenia-powiadomienia.sql` | maile o wydarzeniu do osób, które podpaliły boisko albo okolicę: `wydarzenie_odbiorcy`, zaklepywanie wysyłki (`powiadomiono_at`) i wyłącznik `profiles.powiadomienia` |
 | 34 | `migration-wydarzenia-proporcje.sql` | proporcja plakatu wydarzenia (`zdjecie_proporcje`) - od niej zależy układ boxa na karcie boiska: pion daje wysoką kartę w prawej kolumnie, poziom szeroki pas nad kafelkami |
+| 35 | `migration-jedna-godzina-jedno-boisko.sql` | nie da się zadeklarować gry na dwóch boiskach w tej samej godzinie: indeks unikatowy `(user_id, day, hour)`, komunikat po polsku w wyzwalaczu i lista zajętych godzin w `checkin_panel`. **Wymaga `migration-checkin-panel.sql`** (tego w tej tabeli brakuje - patrz niżej). Jeśli w danych są już kolizje, indeks nie powstanie, dopóki nie uruchomisz bloku porządkującego z punktu 2 w pliku |
+
+## Brakujące w tabeli
+
+Trzy pliki są uruchomione na produkcji, ale nigdy nie trafiły na listę powyżej. Nie
+dopisuję ich na ślepo, bo nie znam ich miejsca w kolejności na tyle pewnie, żeby ktoś
+mógł odtworzyć bazę od zera według tej tabeli — a właśnie do tego ona służy. Do
+uzupełnienia przy okazji, po sprawdzeniu zależności każdego z nich:
+
+- `migration-checkin-panel.sql` — nagłówek pliku mówi: po `migration-limit-boisk-dziennie.sql` (#25)
+- `migration-poprawki-zdjec.sql`
+- `migration-sufit-poczty.sql`
 
 ## Nieuruchomione (świadomie)
 
