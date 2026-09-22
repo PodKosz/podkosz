@@ -3834,55 +3834,89 @@ select option {
   position: relative;
   margin-top: 20px;
 }
-.stojak {
+/* Na szerokim ekranie plansza jest po prostu całą sceną. */
+.stojak-plansza {
+  position: relative;
+}
+/* Mebel nadaje planszy wysokość - piłki są nad nim, wyjęte z układu. */
+.stojak-mebel {
   display: block;
   width: 100%;
   height: auto;
-  overflow: visible;
+  pointer-events: none;
+  user-select: none;
 }
 
 /*
-  Piłka reaguje na kursor podniesieniem i mocniejszą poświatą. Skala idzie z `fill-box`,
-  więc każdy `<g>` rośnie wokół własnego środka, a nie wokół środka rysunku.
+  Piłka siedzi w punkcie podanym w procentach pliku stojaka, więc trzyma swoje miejsce na
+  półce przy każdej szerokości kolumny. Cofnięcie o połowę własnego rozmiaru idzie przez
+  `transform`, a nie przez ujemne marginesy: procentowy `margin-top` liczy się od SZEROKOŚCI
+  rodzica, co akurat tutaj by zadziałało (piłka jest kwadratowa), ale tylko przypadkiem.
 */
 .stojak-pilka {
+  position: absolute;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  background: none;
+  overflow: visible;
   cursor: pointer;
-  transform-box: fill-box;
-  transform-origin: center;
+  transform: translate(-50%, -50%);
+  transition: transform 0.3s cubic-bezier(0.22, 0.9, 0.24, 1);
+}
+.stojak-pilka img {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: auto;
+  /* cień kontaktowy - bez niego piłka wisi nad półką zamiast na niej leżeć */
+  filter: drop-shadow(0 7px 11px rgb(0 0 0 / calc(0.5 * var(--moc-cienia))));
+  transition: filter 0.3s ease;
+}
+
+/*
+  SZKŁO ŁAPIE KOLOR PIŁKI. Poświata to rozmyta plama w barwie wyróżnienia, położona POD
+  piłką, a NAD stojakiem - więc pada na szkło półki i słupy, dokładnie tak, jak światło
+  odbite od kolorowej kuli. Jest wyłącznie pod zdobytymi: z drugiego końca pokoju to
+  jedyna rzecz, która odróżnia półkę pełną od pustej, a wygaszone mają zostać ciche.
+
+  Bez `mix-blend-mode`. Ładniejszy byłby `screen`, ale blendowanie działa w obrębie
+  kontekstu układania, a ten przycisk tworzy własny (ma `transform`) - plama nie miałaby
+  z czym się zmieszać poza sobą samą. Zwykła półprzezroczysta warstwa na jasnym szkle daje
+  ten sam efekt i nie zależy od tego, jak akurat poukładają się warstwy.
+*/
+.stojak-pilka.ma::before {
+  content: "";
+  position: absolute;
+  inset: -46%;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgb(var(--b) / 0.5),
+    rgb(var(--b) / 0.16) 52%,
+    transparent 78%
+  );
+  filter: blur(14px);
+  opacity: 0.85;
   transition:
-    transform 0.28s cubic-bezier(0.22, 0.9, 0.24, 1),
-    filter 0.28s ease;
+    opacity 0.3s ease,
+    transform 0.3s ease;
 }
 .stojak-pilka:focus-visible {
   outline: none;
 }
-/*
-  Nasycenie tylko na ZDOBYTYCH. Paleta wyróżnień jest z natury pastelowa - dobierano ją
-  do drobnych stempli, gdzie mocny kolor byłby krzykiem. Piłka ma osiem razy większą
-  powierzchnię i przy tych samych wartościach wychodziła wyblakła, a miała być soczysta.
-  Wygaszone zostają bez filtru: one mają być ciche.
-*/
-.stojak-pilka.ma {
-  filter: saturate(1.5) brightness(1.04);
-}
 .stojak-pilka.gorace {
-  transform: translateY(-7px) scale(1.06);
-  filter: brightness(1.12);
+  transform: translate(-50%, calc(-50% - 9px)) scale(1.07);
+  z-index: 2;
 }
-.stojak-pilka.ma.gorace {
-  filter: saturate(1.6) brightness(1.14);
+.stojak-pilka.gorace img {
+  filter: drop-shadow(0 14px 18px rgb(0 0 0 / calc(0.5 * var(--moc-cienia))))
+    brightness(1.08);
 }
-
-/*
-  Poświata jest WYŁĄCZNIE pod zdobytymi. To jedyna rzecz, która odróżnia półkę pełną od
-  pustej z drugiego końca pokoju - wygaszone piłki mają zostać ciche.
-*/
-.stojak-luna {
-  opacity: 0.55;
-  transition: opacity 0.28s ease;
-}
-.stojak-pilka.gorace .stojak-luna {
-  opacity: 0.95;
+.stojak-pilka.ma.gorace::before {
+  opacity: 1;
+  transform: scale(1.14);
 }
 
 /* ---------- karta wyróżnienia nad piłką ---------- */
@@ -3958,6 +3992,31 @@ select option {
   font-size: 12.5px;
   line-height: 1.55;
   opacity: 0.8;
+}
+
+/*
+  Na wąskim ekranie stojak nie mieści się w naturalnej wielkości i nie ma sensu go ściskać:
+  przy szerokości kolumny 327 px piłka miałaby 38 px, czyli mniej niż połowę pola, w które
+  da się trafić palcem. Zamiast tego plansza zostaje duża, a przewija się w bok - ruch znany
+  z każdej karuzeli, a przy półce z piłkami wręcz naturalny.
+
+  `overflow-x` tylko tutaj, bo na szerokim ekranie przycięłoby kartę, która celowo wystaje
+  ponad stojak. Na telefonie karta jest `fixed`, więc przycinanie jej nie dotyczy.
+*/
+@media (max-width: 640px) {
+  .stojak-scena {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    /* brzegi rozmyte do zera - widać, że jest co przesuwać */
+    mask-image: linear-gradient(90deg, transparent, #000 22px, #000 calc(100% - 22px), transparent);
+  }
+  .stojak-scena::-webkit-scrollbar {
+    display: none;
+  }
+  .stojak-plansza {
+    min-width: 620px;
+  }
 }
 
 /* Na wąskim ekranie karta nie ma gdzie stanąć nad piłką - siada na dole. */
