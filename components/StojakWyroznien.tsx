@@ -24,21 +24,31 @@ import type { Wyroznienie } from "@/lib/odznaczenia";
 /* ————— siatka odniesienia: piksele pliku `stojak.webp` ————— */
 const PLIK_SZER = 1236;
 const PLIK_WYS = 735;
-/** poziomy przednich poręczy - zmierzone w pliku (jasne pasma szkła), nie dobrane na oko */
-const BLATY = [182, 380, 589];
+/*
+  GÓRNA KRAWĘDŹ ZESPOŁU PORĘCZY każdej półki - zmierzona w pliku, nie dobrana na oko.
+
+  Każda półka to PARA rur, a nie jedna: piłka leży w korycie między nimi. Wcześniej liczyłem
+  pozycję od rury dolnej i dwie górne półki wyszły dobrze, ale najniższa się rozjechała -
+  widać ją najbardziej z góry, więc jej rury są rozsunięte o 66 px zamiast o 50, i piłka
+  siadała o 19 px za nisko, z poręczą w poprzek środka.
+
+  Górne krawędzie są rozstawione równo (146, 341, 534 - co ~194 px), więc to one są uczciwą
+  kotwicą: perspektywa rozsuwa rury w parze, ale nie rusza początku półki.
+*/
+const KRAWEDZIE = [146, 341, 534];
 /** ile piłek na kolejnych półkach, od góry */
 const POLKI = [6, 6, 5];
 /** wnętrze stojaka, między słupami */
 const LEWO = 99;
 const PRAWO = 1135;
 const SREDNICA = 150;
-/** o tyle środek piłki leży nad poręczą, żeby poręcz zasłoniła jej spód */
-const NAD_PORECZA = 55.6;
+/** o tyle środek piłki leży nad krawędzią półki, żeby poręcz zasłoniła jej dolną ćwiartkę */
+const NAD_KRAWEDZIA = 19.6;
 
 /** Środki piłek w procentach pliku - po kolei, od górnej półki, od lewej. */
 function miejscaPilek(ile: number): { x: number; y: number }[] {
   const out: { x: number; y: number }[] = [];
-  const ostatnia = BLATY.length - 1;
+  const ostatnia = KRAWEDZIE.length - 1;
   /* Ile piłek faktycznie ląduje na której półce. Nadmiar ponad pojemność dosiada się do
      dolnej - ciaśniej, ale w kadrze; lepsze to niż piłka poza stojakiem. */
   const naPolce = [...POLKI];
@@ -46,7 +56,7 @@ function miejscaPilek(ile: number): { x: number; y: number }[] {
   if (ile > pojemnosc) naPolce[ostatnia] += ile - pojemnosc;
 
   let zostalo = ile;
-  BLATY.forEach((blat, nr) => {
+  KRAWEDZIE.forEach((krawedz, nr) => {
     const tyle = Math.min(naPolce[nr], zostalo);
     if (tyle <= 0) return;
     zostalo -= tyle;
@@ -54,7 +64,7 @@ function miejscaPilek(ile: number): { x: number; y: number }[] {
     for (let i = 0; i < tyle; i++) {
       out.push({
         x: ((LEWO + krok * (i + 0.5)) / PLIK_SZER) * 100,
-        y: ((blat - NAD_PORECZA) / PLIK_WYS) * 100,
+        y: ((krawedz - NAD_KRAWEDZIA) / PLIK_WYS) * 100,
       });
     }
   });
@@ -177,9 +187,9 @@ export function StojakWyroznien({ lista }: { lista: Wyroznienie[] }) {
           PIŁKA MA LEŻEĆ W STOJAKU, NIE NA NIM. Sam obrazek stojaka jest jednym plikiem pod
           spodem, więc każda piłka zasłaniała poręcz, o którą powinna się opierać - wyglądało
           to tak, jakby piłki były doklejone do zdjęcia. Tutaj kładziemy stojak DRUGI RAZ,
-          przycięty maską do trzech pasów z przednimi poręczami (zmierzonych w pliku:
-          171-202, 366-388, 576-597). Szkło przechodzi więc przed dolną częścią piłki i ta
-          wreszcie siedzi na półce.
+          przycięty maską do trzech pasów z CAŁYMI zespołami poręczy (zmierzonymi w pliku:
+          147-199, 342-387, 535-597) - obie rury pary, nie tylko dolna. Szkło przechodzi
+          więc przed dolną częścią piłki i ta wreszcie siedzi na półce.
 
           Drugi plik nie był potrzebny - ta sama grafika, tylko inaczej przycięta, a wszystko
           poza poręczami jest w niej i tak przezroczyste.
