@@ -916,29 +916,29 @@ body {
 .szklo-krawedzie {
   border-radius: inherit;
   background:
+    /* łuna schodząca od górnej krawędzi - miękka, nie kreska */
     linear-gradient(
       180deg,
-      rgb(var(--rgb-szyba) / 0.52) 0,
-      rgb(var(--rgb-szyba) / 0.16) 2px,
-      rgb(var(--rgb-szyba) / 0.03) 10px,
-      rgb(var(--rgb-szyba) / 0) 34%,
-      rgb(var(--rgb-szyba) / 0) 72%,
-      rgb(var(--rgb-szyba) / 0.07) calc(100% - 8px),
-      rgb(var(--rgb-szyba) / 0.3) calc(100% - 2px),
-      rgb(var(--rgb-szyba) / 0.14) 100%
+      rgb(var(--rgb-szyba) / 0.26) 0,
+      rgb(var(--rgb-szyba) / 0.1) 5%,
+      rgb(var(--rgb-szyba) / 0.035) 13%,
+      rgb(var(--rgb-szyba) / 0) 30%
     ),
+    /* i druga, słabsza, wstająca od dolnej */
+    linear-gradient(
+      0deg,
+      rgb(var(--rgb-szyba) / 0.16) 0,
+      rgb(var(--rgb-szyba) / 0.055) 5%,
+      rgb(var(--rgb-szyba) / 0) 19%
+    ),
+    /* skośna smuga światła - to ona robi z tafli szkło, a nie matową płytę */
     linear-gradient(
       128deg,
-      rgb(var(--rgb-szyba) / 0.13) 0%,
-      rgb(var(--rgb-szyba) / 0.03) 28%,
-      rgb(var(--rgb-szyba) / 0) 56%
+      rgb(var(--rgb-szyba) / 0.12) 0%,
+      rgb(var(--rgb-szyba) / 0.03) 26%,
+      rgb(var(--rgb-szyba) / 0) 54%
     );
-  box-shadow: inset 0 0 0 1px rgb(var(--rgb-szyba) / 0.12);
-  transition: box-shadow 340ms ease;
-}
-.karta-rankingu:hover .szklo-krawedzie,
-.karta-rankingu:focus-visible .szklo-krawedzie {
-  box-shadow: inset 0 0 0 1px rgb(var(--rgb-szyba) / 0.22);
+  transition: opacity 340ms ease;
 }
 
 /* kafelek liczby - to samo szkło, ale reaguje na kursor */
@@ -4350,7 +4350,8 @@ select option {
 */
 .kula-karta::after,
 .stojak-karta::after,
-.kafel-szklo::after {
+.kafel-szklo::after,
+.szklo-krawedzie::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -4377,16 +4378,18 @@ select option {
 }
 
 /*
-  Kafelek liczb dostaje MOCNIEJSZĄ obwódkę niż karty przy piłce. Karta wisi nad ciemnym tłem
-  i ma świecić delikatnie, żeby nie konkurowała z nazwą gracza; kafelek stoi w rzędzie tuż
-  nad stojakiem, którego szkło ma jasne krawędzie na całym obwodzie - przy cienkim rancie
-  czytał się obok niego jak zwykły ciemny prostokąt.
+  Kafelek liczb i kafel boiska w rankingu dostają MOCNIEJSZĄ obwódkę niż karty przy piłce.
+  Karta wisi nad ciemnym tłem i ma świecić delikatnie, żeby nie konkurowała z nazwą gracza;
+  te dwa stoją jako samodzielne bloki i przy cienkim rancie czytają się jak ciemne
+  prostokąty. Jedna reguła na oba, nie dwie kopie: mają wyglądać identycznie, więc nie
+  wolno im mieć osobnych liczb, które kiedyś się rozejdą.
 
   Gradient idzie pionowo, nie na ukos: w stojaku najjaśniejsze są krawędź górna i dolna, bo
   to po nich ślizga się światło wzdłuż rury. Boki zostają ciemniejsze - inaczej wyszłaby
   jednolita ramka, czyli naklejka, a nie szkło.
 */
-.kafel-szklo::after {
+.kafel-szklo::after,
+.szklo-krawedzie::after {
   padding: 1.5px;
   background: linear-gradient(
     180deg,
