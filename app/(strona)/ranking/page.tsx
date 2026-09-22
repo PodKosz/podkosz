@@ -3,6 +3,7 @@ import Link from "next/link";
 import { topBoiska } from "@/lib/repo";
 import { RankingBoisk, RANKING_DO } from "@/components/ranking/RankingBoisk";
 import { HoopOutline } from "@/components/HoopOutline";
+import { Wjazdy } from "@/components/Wjazdy";
 
 export const metadata: Metadata = {
   title: "Ranking boisk - PodKosz",
@@ -26,17 +27,24 @@ export default async function RankingPage() {
     */
     <main className="relative mx-auto min-h-dvh w-full max-w-[1600px] px-5 pb-28 pt-28 sm:px-8">
       <Tlo />
+      <Wjazdy />
 
       <header className="mb-14 max-w-2xl">
-        <p className="text-[12px] uppercase tracking-[0.22em] text-flame">Ranking</p>
-        <h1 className="mt-3 text-[clamp(34px,5.5vw,62px)] font-semibold leading-[1.02] tracking-[-0.03em]">
+        <p data-wjazd="zar" className="text-[12px] uppercase tracking-[0.22em] text-flame">Ranking</p>
+        <h1
+          data-wjazd="zar"
+          className="mt-3 text-[clamp(34px,5.5vw,62px)] font-semibold leading-[1.02] tracking-[-0.03em]">
           Najgorętsze boiska w Polsce
         </h1>
-        <p className="mt-5 text-[clamp(15px,1.4vw,17px)] leading-relaxed text-muted">
+        <p
+          data-wjazd="zar"
+          className="mt-5 text-[clamp(15px,1.4vw,17px)] leading-relaxed text-muted"
+        >
           Kolejność wyznaczają płonące piłki od społeczności. Podpalaj boiska, na których
           dobrze się gra - to jedyne, co przesuwa je w górę.
         </p>
         <Link
+          data-wjazd="zar"
           href="/gracze"
           className="mt-6 inline-flex items-center gap-2 text-[13px] uppercase tracking-[0.16em] text-muted transition hover:text-flame"
         >

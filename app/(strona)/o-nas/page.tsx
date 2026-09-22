@@ -6,6 +6,7 @@ import { FireBallIcon } from "@/components/icons";
 import { countCourts } from "@/lib/repo";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { CourtOutline } from "@/components/CourtOutline";
+import { Wjazdy } from "@/components/Wjazdy";
 
 export const metadata: Metadata = {
   title: "O nas - PodKosz",
@@ -25,6 +26,7 @@ export default async function AboutPage() {
 
   return (
     <main className="mx-auto min-h-dvh max-w-4xl px-6 pb-24 pt-28">
+      <Wjazdy />
       {/*
         Obrys boiska pod całą stroną - ten sam kadr co na „Już niedługo": przekrzywiony,
         szerszy niż ekran, więc linie wybiegają poza kadr zamiast kończyć się w powietrzu.
@@ -33,7 +35,7 @@ export default async function AboutPage() {
         leżał na nich jeden napis, tu cała kolumna tekstu.
       */}
       <div
-        className="kontur-rysowany pointer-events-none fixed left-1/2 top-1/2 -z-10 aspect-[108/58] w-[190vw] opacity-[0.3] sm:w-[108vw]"
+        className="boisko-tlo kontur-rysowany pointer-events-none fixed left-1/2 top-1/2 -z-10 aspect-[108/58] w-[190vw] opacity-[0.3] sm:w-[108vw]"
         style={{ translate: "calc(-50% + 8vw) calc(-50% - 2vh)", rotate: "-11deg" }}
         aria-hidden
       >
@@ -83,7 +85,9 @@ export default async function AboutPage() {
         />
       </div>
 
-      <p className="text-[12px] uppercase tracking-[0.2em] text-flame">O projekcie</p>
+      <p data-wjazd="odslona" className="text-[12px] uppercase tracking-[0.2em] text-flame">
+        O projekcie
+      </p>
       {/*
         Nadtytuł „Chcemy zbudować" siedzi w tym samym `h1`, tylko mniejszym stopniem pisma:
         zdanie zostaje jedno, a wielki tekst rozkłada się na dwa wiersze podobnej długości
@@ -92,45 +96,47 @@ export default async function AboutPage() {
 
         Twarda spacja po „w" pilnuje reguły, że jednoliterowe słowo nie kończy wiersza.
       */}
-      <h1 className="mt-3 max-w-[24ch] text-balance text-[clamp(34px,5.6vw,60px)] font-semibold leading-[1.04] tracking-[-0.03em]">
+      <h1
+        data-wjazd="odslona"
+        className="mt-3 max-w-[24ch] text-balance text-[clamp(34px,5.6vw,60px)] font-semibold leading-[1.04] tracking-[-0.03em]">
         <span className="mb-1 block text-[0.44em] font-normal leading-tight tracking-[-0.01em] text-muted">
           Chcemy zbudować
         </span>
         Największą mapę boisk do koszykówki w&nbsp;Polsce
       </h1>
       <div className="mt-5 max-w-2xl space-y-4 text-[17px] leading-relaxed text-muted">
-        <p>
+        <p data-wjazd="odslona">
           Szukanie boiska w obcym mieście wygląda zwykle tak samo: mapa pokazuje pinezkę bez
           zdjęcia, forum pamięta stan sprzed ośmiu lat, a na miejscu okazuje się, że obręcz
           jest wygięta, brama zamknięta albo płyta rozbita. Dojeżdżasz z piłką i wracasz
           z niczym.
         </p>
-        <p className="text-ink/90">
+        <p data-wjazd="odslona" className="text-ink/90">
           Chcemy to zmienić. PodKosz to jedna wielka baza i mapa boisk z całej Polski, którą
           piszą jej użytkownicy: zdjęcia, opis, godziny, dodatkowe uwagi o miejscu - wszystko
           przychodzi od ludzi, którzy tam grają. Zgłoszenie robisz telefonem, stojąc na boisku,
           w trzy minuty i bez zakładania konta.
         </p>
-        <p>
+        <p data-wjazd="odslona">
           Każde boisko ma komplet kadrów z różnych stron: całe boisko z narożnika, osobno każdy
           kosz, zbliżenie na obręcz i siatkę oraz detal nawierzchni. Widzisz, czy obręcz jest
           prosta i czy beton nie jest spękany, zanim pojedziesz na boisko.
         </p>
-        <p>
+        <p data-wjazd="odslona">
           Do zdjęć dokładamy to, co decyduje o tym, czy warto tam jechać: rodzaj nawierzchni,
           liczbę koszy, oświetlenie, ogrodzenie, godziny i zasady dostępu oraz dokładną pinezkę
           z GPS-u. Mapę przefiltrujesz po nawierzchni, typie boiska, województwie i dostępności,
           sprawdzisz prognozę na dziś dla boisk odkrytych, zobaczysz, kto wybiera się tam zagrać
           i o której, podpalisz swoje ulubione miejsca i zapiszesz je na własną listę.
         </p>
-        <p>
+        <p data-wjazd="odslona">
           Są też dwa rankingi. W rankingu boisk kolejność ustala społeczność - im więcej
           płonących piłek, tym wyżej stoi miejsce, na którym naprawdę dobrze się gra. W rankingu
           graczy liczy się to, ile boisk ktoś dodał i opublikował. Tu potrzebne jest konto:
           zgłoszenia bez logowania trafiają na mapę, ale nie mają właściciela, więc nie wchodzą
           do rankingu.
         </p>
-        <p className="text-ink/90">
+        <p data-wjazd="odslona" className="text-ink/90">
           Najważniejsze: tej bazy nie tworzy żadna instytucja. Buduje ją społeczność, boisko po
           boisku. Każde zgłoszenie sprawdzamy i publikujemy, a Ty trafiasz do rankingu odkrywców.
         </p>
@@ -150,7 +156,7 @@ export default async function AboutPage() {
           }}
         />
 
-        <div className="relative">
+        <div data-wjazd="odslona-licznik" className="relative">
           <p className="text-[14px] font-medium uppercase tracking-[0.36em] text-white/70 sm:text-[17px]">
             Boisk w bazie
           </p>
@@ -172,8 +178,11 @@ export default async function AboutPage() {
       </section>
 
       <section className="mt-16">
-        <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">Jak dodać boisko</h2>
-        <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-muted">
+        <h2 data-wjazd="odslona" className="text-[13px] uppercase tracking-[0.18em] text-faint">Jak dodać boisko</h2>
+        <p
+          data-wjazd="odslona"
+          className="mt-3 max-w-2xl text-[15px] leading-relaxed text-muted"
+        >
           Cały proces robisz telefonem, stojąc na boisku. Kreator prowadzi krok po kroku i nie
           puści dalej, dopóki nie masz obowiązkowego zestawu kadrów - dzięki temu wszystkie karty
           w bazie wyglądają tak samo dobrze.
@@ -202,7 +211,7 @@ export default async function AboutPage() {
               "Przeglądam zgłoszenia zwykle w ciągu doby. Po publikacji dostajesz maila z linkiem do swojej karty boiska.",
             ],
           ].map(([t, d], i) => (
-            <li key={t} className="glass flex gap-4 rounded-[20px] p-5">
+            <li key={t} data-wjazd="odslona-krok" className="glass flex gap-4 rounded-[20px] p-5">
               <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-flame/50 bg-flame/12 text-[13px] font-bold text-glow">
                 {i + 1}
               </span>
@@ -216,14 +225,14 @@ export default async function AboutPage() {
       </section>
 
       <section className="mt-16">
-        <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">Standard zdjęć</h2>
-        <p className="mt-3 max-w-2xl text-[15px] text-muted">
+        <h2 data-wjazd="odslona" className="text-[13px] uppercase tracking-[0.18em] text-faint">Standard zdjęć</h2>
+        <p data-wjazd="odslona" className="mt-3 max-w-2xl text-[15px] text-muted">
           Każde boisko w bazie ma ten sam zestaw ujęć, zawsze w tej samej kolejności. To dlatego
           karty boisk da się ze sobą porównywać.
         </p>
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {REQUIRED_PHOTO_STEPS.map((s, i) => (
-            <div key={s.kind} className="glass overflow-hidden rounded-2xl">
+            <div key={s.kind} data-wjazd="odslona-karta" className="glass overflow-hidden rounded-2xl">
               <div className="relative aspect-[4/3]">
                 <ShotDiagram kind={s.kind} />
                 <span className="absolute left-2.5 top-2.5 grid h-6 w-6 place-items-center rounded-full bg-black/70 text-[11px] font-bold">
@@ -242,13 +251,16 @@ export default async function AboutPage() {
             </div>
           ))}
         </div>
-        <p className="mt-4 text-[13px] text-faint">
+        <p data-wjazd="odslona" className="mt-4 text-[13px] text-faint">
           Do obowiązkowego zestawu można dorzucić maksymalnie trzy dodatkowe ujęcia ogólne -
           otoczenie, wejście, lampy albo widok z drugiego narożnika.
         </p>
       </section>
 
-      <section className="glass mt-16 flex flex-wrap items-center gap-5 rounded-[26px] p-7">
+      <section
+        data-wjazd="odslona"
+        className="glass mt-16 flex flex-wrap items-center gap-5 rounded-[26px] p-7"
+      >
         <FireBallIcon className="h-12 w-12" />
         <div className="min-w-[240px] flex-1">
           <h2 className="text-[20px] font-semibold">Znasz boisko, którego u nas nie ma?</h2>
@@ -264,7 +276,10 @@ export default async function AboutPage() {
         </Link>
       </section>
 
-      <section className="mt-6 flex flex-wrap items-center gap-5 rounded-[26px] border border-hairline bg-white/4 p-7">
+      <section
+        data-wjazd="odslona"
+        className="mt-6 flex flex-wrap items-center gap-5 rounded-[26px] border border-hairline bg-white/4 p-7"
+      >
         <div className="min-w-[240px] flex-1">
           <h2 className="text-[20px] font-semibold">Co możemy poprawić?</h2>
           <p className="mt-1 text-[14px] text-muted">
@@ -275,7 +290,7 @@ export default async function AboutPage() {
         <FeedbackDialog label="Napisz opinię" />
       </section>
 
-      <p className="mt-12 text-[13px] text-faint">
+      <p data-wjazd="odslona" className="mt-12 text-[13px] text-faint">
         Kontakt: podkoszpl@gmail.com · © 2026 PodKosz
       </p>
     </main>

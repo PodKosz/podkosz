@@ -8,6 +8,7 @@ import { PilkaOdznaczen } from "@/components/PilkaOdznaczen";
 import { TloPilki } from "@/components/TloPilki";
 import { NaglowekSekcji } from "@/components/NaglowekSekcji";
 import { Wyroznienia } from "@/components/Wyroznienia";
+import { Wjazdy } from "@/components/Wjazdy";
 import { czyAutorAnonimowy, dataOpisowa, SITE_NAME, plural, slugifyPlace } from "@/lib/site";
 import { ArrowLeftIcon, PinIcon } from "@/components/icons";
 
@@ -121,8 +122,10 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
   return (
     <main className="relative mx-auto min-h-dvh max-w-6xl overflow-x-clip px-6 pb-24 pt-28">
       <TloPilki uid="gracz" />
+      <Wjazdy />
 
       <Link
+        data-wjazd="rozkwit"
         href="/ranking"
         className="szklo-pro inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12px] uppercase tracking-[0.14em] text-muted transition hover:text-ink"
       >
@@ -131,7 +134,14 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
 
       {/* ---------- wizytówka ---------- */}
       <header className="mt-10 flex flex-col items-center text-center">
-        <PilkaOdznaczen statystyki={statystyki} nick={nick} avatar={statystyki.avatar} />
+        {/*
+          Opakowanie ma na stałe ten sam poziom co kula (`z-index: 2`). Wejście obraca je
+          i skaluje, a przekształcony element tworzy własny stos warstw - bez tego poziomu
+          nick, który stoi w drzewie dalej, wszedłby na czas animacji NA piłkę zamiast pod nią.
+        */}
+        <div data-wjazd="rozkwit-pilka" className="relative z-[2]">
+          <PilkaOdznaczen statystyki={statystyki} nick={nick} avatar={statystyki.avatar} />
+        </div>
 
         {/*
           Nazwa siedzi TUŻ POD PIŁKĄ - to jedna para, nie dwie osobne linijki. Bez małpy:
@@ -150,7 +160,7 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
           `relative` bez `z-index` stawia nazwę w kolejności malowania PRZED kulą, która ma
           własny `z-index` - dzięki temu litery wchodzą pod piłkę, a nie na nią.
         */}
-        <div className="podpis-gracza relative">
+        <div data-wjazd="rozkwit-podpis" className="podpis-gracza relative">
           <h1 className="nick-gracza pb-0" style={{ ["--znaki" as string]: nick.length }}>
             {nick}
           </h1>
@@ -166,7 +176,7 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
       {/* ---------- liczby ---------- */}
       <section className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {kafelki.map(([label, wartosc]) => (
-          <div key={label} className="kafel kafel-szklo p-5 text-center">
+          <div key={label} data-wjazd="rozkwit-kafel" className="kafel kafel-szklo p-5 text-center">
             <p className="flame-text pb-1 text-[34px] font-bold leading-none tabular-nums">
               {wartosc}
             </p>
@@ -175,7 +185,9 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
         ))}
       </section>
 
-      <Wyroznienia statystyki={statystyki} />
+      <div data-wjazd="rozkwit">
+        <Wyroznienia statystyki={statystyki} />
+      </div>
 
       {/*
         Pod wyróżnieniami idą OD RAZU dodane boiska. Stała tu wcześniej pełna siatka
@@ -190,16 +202,20 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
 
       {/* ---------- dodane boiska ---------- */}
       <section className="mt-14">
-        <NaglowekSekcji tytul={`Dodane boiska (${boiska.length})`} />
+        <div data-wjazd="kreska">
+          <NaglowekSekcji tytul={`Dodane boiska (${boiska.length})`} />
+        </div>
 
         {boiska.length ? (
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {boiska.map((court) => (
-              <CourtCard key={court.id} court={court} />
+              <div key={court.id} data-wjazd="rozkwit-boisko">
+                <CourtCard court={court} />
+              </div>
             ))}
           </div>
         ) : (
-          <div className="szklo-pro mt-4 rounded-[28px] p-8 text-center">
+          <div data-wjazd="rozkwit" className="szklo-pro mt-4 rounded-[28px] p-8 text-center">
             <p className="text-[15px] text-muted">
               Tu jeszcze nic nie ma. Pierwsze boisko zamienia pusty profil w pierwszy stopień
               odznaczenia „Odkrywca”.
@@ -217,10 +233,14 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
       {/* ---------- ulubione ---------- */}
       {ulubione.length > 0 && (
         <section className="mt-14">
-          <NaglowekSekcji tytul={`Ulubione boiska (${ulubione.length})`} />
+          <div data-wjazd="kreska">
+            <NaglowekSekcji tytul={`Ulubione boiska (${ulubione.length})`} />
+          </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {ulubione.map((court) => (
-              <CourtCard key={court.id} court={court} />
+              <div key={court.id} data-wjazd="rozkwit-boisko">
+                <CourtCard court={court} />
+              </div>
             ))}
           </div>
         </section>
@@ -229,11 +249,14 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
       {/* ---------- gdzie ostatnio grał ---------- */}
       {wizyty.length > 0 && (
         <section className="mt-14">
-          <NaglowekSekcji tytul="Gdzie ostatnio grał" />
+          <div data-wjazd="kreska">
+            <NaglowekSekcji tytul="Gdzie ostatnio grał" />
+          </div>
           <ul className="mt-4 space-y-2">
             {wizyty.map((w, i) => (
               <li
                 key={`${w.day}-${w.court?.slug ?? i}`}
+                data-wjazd="rozkwit"
                 className="kafel flex items-center gap-4 px-5 py-4"
               >
                 <span className="w-24 shrink-0 text-[13px] tabular-nums text-muted">

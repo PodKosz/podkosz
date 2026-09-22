@@ -100,4 +100,10 @@ export function useMotyw(): Motyw {
  * przeskok widać jak mrugnięcie. Skrypt jest w `<body>` przed treścią, wykonuje się
  * w trakcie parsowania i cały mieści się w jednej linijce, bo blokuje rysowanie.
  */
-export const SKRYPT_MOTYWU = `try{var m=localStorage.getItem("${KLUCZ_MOTYWU}");if(m&&m!=="${DOMYSLNY}")document.documentElement.dataset.motyw=m}catch(e){}`;
+/*
+  Na końcu skryptu klasa `wjazdy`: od niej arkusz ukrywa elementy podstron, które mają
+  dopiero wejść (patrz `components/Wjazdy.tsx`). Musi paść PRZED pierwszym malowaniem -
+  dopisana z Reactem, po hydracji, pozwoliłaby treści mignąć w stanie końcowym i zniknąć.
+  Poza `try`, bo nie zależy od pamięci przeglądarki, którą prywatne okno potrafi zablokować.
+*/
+export const SKRYPT_MOTYWU = `try{var m=localStorage.getItem("${KLUCZ_MOTYWU}");if(m&&m!=="${DOMYSLNY}")document.documentElement.dataset.motyw=m}catch(e){}document.documentElement.classList.add("wjazdy")`;

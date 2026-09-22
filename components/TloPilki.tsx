@@ -15,7 +15,7 @@ export function TloPilki({ uid = "profil" }: { uid?: string }) {
   return (
     <>
       <div
-        className="pilka-tlo pointer-events-none fixed bottom-[-26vh] right-[-32vw] -z-10 aspect-square w-[min(1300px,165vw)] sm:bottom-[-24vh] sm:right-[-16vw] sm:w-[min(1560px,104vw)]"
+        className="pilka-tlo kontur-rysowany pointer-events-none fixed bottom-[-26vh] right-[-32vw] -z-10 aspect-square w-[min(1300px,165vw)] sm:bottom-[-24vh] sm:right-[-16vw] sm:w-[min(1560px,104vw)]"
         aria-hidden
       >
         <BallOutline uid={uid} />

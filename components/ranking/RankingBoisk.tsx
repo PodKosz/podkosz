@@ -31,7 +31,7 @@ import {
  * pojedynczą kartę i pustkę obok niej - a nic nie psuje siatki tak, jak niedomknięty rząd.
  *
  * Całość jest zwykłym HTML-em bez stanu. Pojawianie się przy przewijaniu, reakcje na
- * kursor i potwierdzenie kliknięcia robi CSS (patrz `.wjazd`, `.karta-rankingu`), więc
+ * kursor i potwierdzenie kliknięcia robi CSS (patrz `data-wjazd`, `.karta-rankingu`), więc
  * strona renderuje się na serwerze, wyszukiwarka widzi pełną listę, a przeglądarka nie
  * dostaje ani jednego nasłuchu przewijania.
  */
@@ -64,14 +64,14 @@ export function RankingBoisk({ courts }: { courts: Court[] }) {
 
   return (
     <div className="space-y-24">
-      <section className="wjazd">
+      <section data-wjazd="zar">
         <KartaBoiska court={pierwszy} miejsce={1} wariant="zwyciezca" />
       </section>
 
       {trojka.length > 0 && (
         <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
           {trojka.map((c, i) => (
-            <div key={c.id} className="wjazd">
+            <div key={c.id} data-wjazd="zar">
               <KartaBoiska court={c} miejsce={i + 2} wariant="trojka" />
             </div>
           ))}
@@ -83,7 +83,7 @@ export function RankingBoisk({ courts }: { courts: Court[] }) {
           <Naglowek tytul="Goniący" opis={`Miejsca 5-${4 + siatka.length}`} />
           <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3 xl:gap-6">
             {siatka.map((c, i) => (
-              <div key={c.id} className="wjazd">
+              <div key={c.id} data-wjazd="zar">
                 <KartaBoiska court={c} miejsce={i + 5} />
               </div>
             ))}
@@ -115,7 +115,7 @@ export function RankingBoisk({ courts }: { courts: Court[] }) {
 
 function Naglowek({ tytul, opis }: { tytul: string; opis: string }) {
   return (
-    <div className="wjazd-boczny flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-hairline pb-4">
+    <div data-wjazd="kreska" className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-hairline pb-4">
       <h2 className="text-[clamp(20px,2.2vw,28px)] font-semibold tracking-[-0.02em]">{tytul}</h2>
       <p className="text-[12px] uppercase tracking-[0.2em] text-faint">{opis}</p>
     </div>
@@ -253,7 +253,7 @@ function KartaBoiska({
  */
 function WierszBoiska({ court, miejsce }: { court: Court; miejsce: number }) {
   return (
-    <li className="min-w-0">
+    <li data-wjazd="zar-wiersz" className="min-w-0">
       <Link
         href={`/boisko/${court.slug}`}
         className="wiersz-rankingu group flex items-center gap-4 py-3 pr-2"

@@ -53,10 +53,10 @@ export function BallOutline({
       </defs>
 
       {/* obwód piłki */}
-      <circle cx="200" cy="200" r="176" stroke={poziom} strokeWidth="2.6" />
+      <circle pathLength={1} cx="200" cy="200" r="176" stroke={poziom} strokeWidth="2.6" />
 
       {/* szew poziomy - równik, jedyna linia, która przy obrocie stoi w miejscu */}
-      <path d="M24 200h352" stroke={poziom} strokeWidth="1.6" />
+      <path pathLength={1} d="M24 200h352" stroke={poziom} strokeWidth="1.6" />
 
       {/*
         Sześć południków. Każdy jest tym samym łukiem wybrzuszonym w prawo, a CSS przesuwa

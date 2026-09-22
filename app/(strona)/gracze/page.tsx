@@ -3,6 +3,7 @@ import Link from "next/link";
 import { listRankingOdkrywcow } from "@/lib/repo";
 import { RankingGraczy } from "@/components/ranking/RankingGraczy";
 import { RzutOutline } from "@/components/RzutOutline";
+import { Wjazdy } from "@/components/Wjazdy";
 
 export const metadata: Metadata = {
   title: "Ranking graczy - PodKosz",
@@ -19,17 +20,24 @@ export default async function GraczePage() {
   return (
     <main className="relative mx-auto min-h-dvh w-full max-w-[1600px] px-5 pb-28 pt-28 sm:px-8">
       <Tlo />
+      <Wjazdy />
 
       <header className="mb-14 max-w-2xl">
-        <p className="text-[12px] uppercase tracking-[0.22em] text-flame">Gracze</p>
-        <h1 className="mt-3 text-[clamp(34px,5.5vw,62px)] font-semibold leading-[1.02] tracking-[-0.03em]">
+        <p data-wjazd="glebia-tekst" className="text-[12px] uppercase tracking-[0.22em] text-flame">Gracze</p>
+        <h1
+          data-wjazd="glebia-tekst"
+          className="mt-3 text-[clamp(34px,5.5vw,62px)] font-semibold leading-[1.02] tracking-[-0.03em]">
           Ci, którzy zbudowali tę mapę
         </h1>
-        <p className="mt-5 text-[clamp(15px,1.4vw,17px)] leading-relaxed text-muted">
+        <p
+          data-wjazd="glebia-tekst"
+          className="mt-5 text-[clamp(15px,1.4vw,17px)] leading-relaxed text-muted"
+        >
           Liczą się tylko zalogowani. Miejsce zależy od liczby opublikowanych boisk, a przy
           równej liczbie wyżej stoi ten, kogo boiska częściej podpalano.
         </p>
         <Link
+          data-wjazd="glebia-tekst"
           href="/ranking"
           className="mt-6 inline-flex items-center gap-2 text-[13px] uppercase tracking-[0.16em] text-muted transition hover:text-flame"
         >

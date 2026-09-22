@@ -1158,55 +1158,6 @@ body {
 }
 
 /*
-  Kontur boiska „rysuje się" przy przewijaniu strony.
-
-  Każdy kształt ma `pathLength=1`, więc jedna reguła obsługuje i prostą kreskę, i łuk za
-  trzy punkty: `stroke-dasharray: 1` daje kreskę długą jak cała ścieżka, a `stroke-dashoffset`
-  odsuwa ją poza widok. Na górze strony linie są dociągnięte tylko częściowo (różne wartości
-  startowe dla kolejnych elementów, więc kończą w różnych momentach), a na dole rysunek jest
-  kompletny.
-
-  Postępem sterują same piksele przewijania (`animation-timeline`), więc nie ma tu nasłuchu
-  w JS - a gdzie tej funkcji nie ma, kontur od początku jest pełny. Dlatego `dasharray`
-  siedzi w środku `@supports`: bez animacji zostałby sam przerywany, niedokończony rysunek.
-*/
-@supports (animation-timeline: scroll()) {
-  .kontur-rysowany svg :is(path, rect, circle, ellipse) {
-    stroke-dasharray: 1;
-    animation: rysuj-kontur linear both;
-    animation-timeline: scroll(root block);
-    animation-range: 0 92%;
-  }
-
-  /* różne stopnie „niedokończenia" na starcie - rysunek ma wyglądać jak w trakcie kreślenia */
-  .kontur-rysowany svg :is(path, rect, circle, ellipse):nth-child(3n) {
-    --start: 0.78;
-  }
-  .kontur-rysowany svg :is(path, rect, circle, ellipse):nth-child(3n + 1) {
-    --start: 0.52;
-  }
-  .kontur-rysowany svg :is(path, rect, circle, ellipse):nth-child(3n + 2) {
-    --start: 0.66;
-  }
-
-  @keyframes rysuj-kontur {
-    from {
-      stroke-dashoffset: var(--start, 0.6);
-    }
-    to {
-      stroke-dashoffset: 0;
-    }
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .kontur-rysowany svg :is(path, rect, circle, ellipse) {
-    stroke-dasharray: none;
-    animation: none;
-  }
-}
-
-/*
   Piłka kręci się w lewo przy przewijaniu.
 
   Południk kuli w rzucie prostokątnym to łuk o szerokości R·cos(kąt), więc obrót w lewo to
@@ -2936,64 +2887,11 @@ select option {
   więc krawędzie, reakcje na kursor i sposób pojawiania się są tu opisane raz.
 
   Zasada nadrzędna: w spoczynku strona jest cicha. Kolor, ruch i światło pojawiają się
-  dopiero w reakcji na coś - na przewinięcie, na kursor, na dotknięcie. Dzięki temu przy
+  dopiero w reakcji na coś - na wejście w kadr, na kursor, na dotknięcie. Dzięki temu przy
   dwudziestu pięciu kartach naraz nic nie krzyczy, a każda pojedyncza reaguje wyraźnie.
 */
 
-/* ---- pojawianie się przy przewijaniu ---- */
-/*
-  Karty wjeżdżają, kiedy wchodzą w kadr. Steruje tym `animation-timeline: view()`, czyli
-  sama pozycja elementu względem okna - ani jednego nasłuchu w JS, ani jednego
-  IntersectionObservera. Przeglądarka liczy to na wątku kompozytora, więc dwadzieścia pięć
-  kart animuje się bez zająknięcia.
-
-  Ruch jest krótki i jednokierunkowy: dwadzieścia osiem pikseli w górę i cztery procent
-  skali. Większy skok wygląda jak karuzela z szablonu, mniejszy nie jest zauważalny.
-  Elementy widoczne zaraz po wejściu na stronę mają swój przedział już za sobą, więc
-  rysują się od razu w stanie końcowym - nikt nie patrzy na puste miejsce.
-*/
-.wjazd {
-  opacity: 1;
-}
-
-@supports (animation-timeline: view()) {
-  .wjazd {
-    animation: wjazd-elementu linear both;
-    animation-timeline: view();
-    animation-range: entry 5% entry 55%;
-  }
-
-  @keyframes wjazd-elementu {
-    from {
-      opacity: 0;
-      translate: 0 28px;
-      scale: 0.96;
-    }
-    to {
-      opacity: 1;
-      translate: 0 0;
-      scale: 1;
-    }
-  }
-
-  /* nagłówki sekcji wjeżdżają z boku - inny kierunek niż karty, więc pas się rozdziela */
-  .wjazd-boczny {
-    animation: wjazd-boczny linear both;
-    animation-timeline: view();
-    animation-range: entry 0% entry 45%;
-  }
-
-  @keyframes wjazd-boczny {
-    from {
-      opacity: 0;
-      translate: -22px 0;
-    }
-    to {
-      opacity: 1;
-      translate: 0 0;
-    }
-  }
-}
+/* ---- pojawianie się: wspólna mechanika podstron, patrz `components/Wjazdy.tsx` ---- */
 
 /* ---- karta ---- */
 .karta-rankingu {
@@ -3263,14 +3161,6 @@ select option {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .wjazd,
-  .wjazd-boczny {
-    animation: none;
-    opacity: 1;
-    translate: none;
-    scale: 1;
-  }
-
   .karta-rankingu,
   .karta-rankingu:hover,
   .karta-rankingu:active,
@@ -5349,5 +5239,277 @@ input.suwak-podpalen {
 
   .pastylka::after {
     display: none;
+  }
+}
+
+/* ---------- pojawianie się elementów podstron (components/Wjazdy.tsx) ---------- */
+/*
+  Każda podstrona ma własny charakter wejścia, dobrany do tego, o czym jest:
+
+    ranking boisk  - „żar":       karty wznoszą się z dołu i wyostrzają jak powietrze nad
+                                  rozgrzanym boiskiem, wiersze wysuwają się z lewej;
+    ranking graczy - „głębia":    karty wyjeżdżają z głębi ekranu, lekko pochylone, a pismo
+                                  nagłówka zbliża się z rozmycia; wiersze wchodzą z prawej;
+    o nas          - „odsłona":   tekst odsłania się od dołu jak w piśmie, kafle standardu
+                                  zdjęć rozdają się obrotem jak karty, licznik rozbłyskuje;
+    profil gracza  - „rozkwit":   piłka rozwija się z obrotem i sprężyną, kafle liczb
+                                  odchylają się jak tablica wyników, boiska spadają kaskadą.
+
+  Klatki mają tylko punkt startowy (`from`), a wypełnienie jest `backwards`. Dzięki temu
+  po wejściu element wraca do WŁASNYCH stylów: nie zostaje na nim ani przekształcenie, ani
+  filtr, ani przycięcie. To ważne, bo karty mają własne ruchy po najechaniu, szkło ma
+  własne cienie, a przekształcenie trwale zostawione na opakowaniu zmieniłoby kolejność
+  warstw (nick wszedłby na piłkę zamiast pod nią).
+*/
+@media (prefers-reduced-motion: no-preference) {
+  .wjazdy [data-wjazd]:not(.widac) {
+    opacity: 0;
+  }
+  /* awaryjnie: gdyby skrypt mechanizmu nie dojechał, strona nie może zostać pusta */
+  .wjazdy:not(.wjazdy-zywe) [data-wjazd]:not(.widac) {
+    animation: wjazd-awaryjny 0.4s 3.5s forwards;
+  }
+}
+@keyframes wjazd-awaryjny {
+  to {
+    opacity: 1;
+  }
+}
+
+[data-wjazd].widac {
+  animation-duration: 0.9s;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: backwards;
+  animation-delay: var(--wj-op, 0ms);
+}
+
+/* ——— ranking boisk: żar ——— */
+[data-wjazd="zar"].widac {
+  animation-name: wj-zar;
+  animation-duration: 1.05s;
+}
+@keyframes wj-zar {
+  from {
+    opacity: 0;
+    transform: translateY(48px) scale(0.97);
+    filter: blur(10px) brightness(1.35);
+  }
+}
+[data-wjazd="zar-wiersz"].widac {
+  animation-name: wj-zar-wiersz;
+  animation-duration: 0.7s;
+}
+@keyframes wj-zar-wiersz {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+}
+
+/* ——— ranking graczy: głębia ——— */
+[data-wjazd="glebia"].widac {
+  animation-name: wj-glebia;
+  animation-duration: 1.1s;
+}
+@keyframes wj-glebia {
+  from {
+    opacity: 0;
+    transform: perspective(1100px) translateZ(-220px) rotateX(12deg);
+  }
+}
+[data-wjazd="glebia-tekst"].widac {
+  animation-name: wj-glebia-tekst;
+}
+@keyframes wj-glebia-tekst {
+  from {
+    opacity: 0;
+    transform: scale(1.12);
+    filter: blur(8px);
+  }
+}
+[data-wjazd="glebia-wiersz"].widac {
+  animation-name: wj-glebia-wiersz;
+  animation-duration: 0.75s;
+}
+@keyframes wj-glebia-wiersz {
+  from {
+    opacity: 0;
+    transform: translateX(34px);
+  }
+}
+
+/* ——— wspólne dla obu rankingów: nagłówek sekcji z kreską, która się rozciąga ——— */
+[data-wjazd="kreska"].widac {
+  animation-name: wj-kreska;
+  animation-duration: 1.1s;
+}
+@keyframes wj-kreska {
+  from {
+    opacity: 0;
+    clip-path: inset(0 100% 0 0);
+  }
+}
+
+/* ——— o nas: odsłona ——— */
+[data-wjazd="odslona"].widac {
+  animation-name: wj-odslona;
+  animation-duration: 1s;
+}
+@keyframes wj-odslona {
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+    clip-path: inset(0 0 100% 0);
+  }
+  /* przycięcie schodzi przed końcem ruchu - reszta to już tylko dociągnięcie na miejsce */
+  70% {
+    clip-path: inset(0 0 0 0);
+  }
+}
+[data-wjazd="odslona-krok"].widac {
+  animation-name: wj-odslona-krok;
+  animation-duration: 0.85s;
+}
+@keyframes wj-odslona-krok {
+  from {
+    opacity: 0;
+    transform: translateX(-40px) scale(0.98);
+  }
+}
+[data-wjazd="odslona-karta"].widac {
+  animation-name: wj-odslona-karta;
+  animation-duration: 1s;
+}
+@keyframes wj-odslona-karta {
+  from {
+    opacity: 0;
+    transform: perspective(900px) rotateY(-62deg) translateX(-24px);
+    transform-origin: 0% 50%;
+  }
+}
+[data-wjazd="odslona-licznik"].widac {
+  animation-name: wj-odslona-licznik;
+  animation-duration: 1.4s;
+}
+@keyframes wj-odslona-licznik {
+  from {
+    opacity: 0;
+    transform: scale(0.72);
+    filter: blur(14px) brightness(1.8);
+  }
+}
+
+/* ——— profil gracza: rozkwit ——— */
+[data-wjazd="rozkwit-pilka"].widac {
+  animation-name: wj-rozkwit-pilka;
+  animation-duration: 1.2s;
+  /* sprężyna: piłka przeskakuje odrobinę za rozmiar i wraca */
+  animation-timing-function: cubic-bezier(0.34, 1.5, 0.5, 1);
+}
+@keyframes wj-rozkwit-pilka {
+  from {
+    opacity: 0;
+    transform: scale(0.5) rotate(-28deg);
+  }
+}
+[data-wjazd="rozkwit-podpis"].widac {
+  animation-name: wj-rozkwit-podpis;
+}
+@keyframes wj-rozkwit-podpis {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+    letter-spacing: 0.08em;
+  }
+}
+[data-wjazd="rozkwit-kafel"].widac {
+  animation-name: wj-rozkwit-kafel;
+  animation-duration: 0.95s;
+}
+@keyframes wj-rozkwit-kafel {
+  from {
+    opacity: 0;
+    transform: perspective(700px) rotateX(-78deg);
+    transform-origin: 50% 0%;
+  }
+}
+[data-wjazd="rozkwit"].widac {
+  animation-name: wj-rozkwit;
+}
+@keyframes wj-rozkwit {
+  from {
+    opacity: 0;
+    transform: translateY(34px) scale(0.96);
+  }
+}
+[data-wjazd="rozkwit-boisko"].widac {
+  animation-name: wj-rozkwit-boisko;
+}
+@keyframes wj-rozkwit-boisko {
+  from {
+    opacity: 0;
+    transform: translate(-22px, 36px) rotate(-2.5deg);
+  }
+}
+
+/*
+  Obrysy w tle rysują się przy wejściu na stronę.
+
+  Wcześniej linie domykało przewijanie - na krótkiej stronie albo przed pierwszym ruchem
+  kółkiem rysunek stał więc w połowie i czytał się jak niedokończony. Teraz kreślą się same,
+  kształt po kształcie w kolejności dokumentu: kolejność elementów w SVG JEST kolejnością
+  rysowania (dlatego w rzucie piłka jest pierwsza, tor drugi, a kosz na końcu).
+
+  Każdy rysunek ma własne tempo: kosz stawia się spokojnie, rzut „leci" szybciej, obrys
+  boiska rozchodzi się najdłużej, a piłka profilu kreśli się najkrócej, bo jej szwy
+  i tak ożywa potem przewijanie. `backwards`, żeby po narysowaniu nic nie trzymało linii.
+*/
+.kontur-rysowany svg :is(path, rect, circle, ellipse):not(.pilka-szew) {
+  stroke-dasharray: 1;
+  animation: kontur-wejscie var(--kontur-czas, 1.6s) cubic-bezier(0.45, 0.05, 0.2, 1) backwards;
+  animation-delay: calc(var(--kontur-start, 150ms) + var(--kontur-nr, 0) * var(--kontur-krok, 90ms));
+}
+@keyframes kontur-wejscie {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+/* numer kształtu wśród rodzeństwa - drabinka zamiast `sibling-index()`, którego nie ma wszędzie */
+.kontur-rysowany svg :nth-child(2) { --kontur-nr: 1; }
+.kontur-rysowany svg :nth-child(3) { --kontur-nr: 2; }
+.kontur-rysowany svg :nth-child(4) { --kontur-nr: 3; }
+.kontur-rysowany svg :nth-child(5) { --kontur-nr: 4; }
+.kontur-rysowany svg :nth-child(6) { --kontur-nr: 5; }
+.kontur-rysowany svg :nth-child(7) { --kontur-nr: 6; }
+.kontur-rysowany svg :nth-child(8) { --kontur-nr: 7; }
+.kontur-rysowany svg :nth-child(9) { --kontur-nr: 8; }
+.kontur-rysowany svg :nth-child(10) { --kontur-nr: 9; }
+.kontur-rysowany svg :nth-child(11) { --kontur-nr: 10; }
+.kontur-rysowany svg :nth-child(n + 12) { --kontur-nr: 11; }
+
+.kosz-tlo {
+  --kontur-czas: 1.9s;
+  --kontur-krok: 120ms;
+}
+.rzut-tlo {
+  --kontur-czas: 1.3s;
+  --kontur-krok: 70ms;
+}
+.boisko-tlo {
+  --kontur-czas: 2.4s;
+  --kontur-krok: 140ms;
+}
+.pilka-tlo {
+  --kontur-czas: 1.5s;
+  --kontur-krok: 160ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kontur-rysowany svg :is(path, rect, circle, ellipse) {
+    stroke-dasharray: none;
+    animation: none;
   }
 }

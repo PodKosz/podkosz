@@ -45,18 +45,18 @@ export function RankingGraczy({ odkrywcy }: { odkrywcy: OdkrywcaRanking[] }) {
 
   return (
     <div className="space-y-24">
-      <section className="wjazd">
+      <section data-wjazd="glebia">
         <KartaGracza odkrywca={pierwszy} miejsce={1} wariant="zwyciezca" />
       </section>
 
       <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
         {trojka.map((o, i) => (
-          <div key={o.slug} className="wjazd">
+          <div key={o.slug} data-wjazd="glebia">
             <KartaGracza odkrywca={o} miejsce={i + 2} wariant="trojka" />
           </div>
         ))}
         {Array.from({ length: wolneWTrojce }, (_, i) => (
-          <div key={`wolna-trio-${i}`} className="wjazd">
+          <div key={`wolna-trio-${i}`} data-wjazd="glebia">
             <WolnaKarta miejsce={2 + trojka.length + i} duza />
           </div>
         ))}
@@ -66,12 +66,12 @@ export function RankingGraczy({ odkrywcy }: { odkrywcy: OdkrywcaRanking[] }) {
         <Naglowek tytul="Goniący" opis={`Miejsca 5-${SIATKA_DO}`} />
         <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3 xl:gap-6">
           {siatka.map((o, i) => (
-            <div key={o.slug} className="wjazd">
+            <div key={o.slug} data-wjazd="glebia">
               <KartaGracza odkrywca={o} miejsce={i + 5} />
             </div>
           ))}
           {Array.from({ length: wolneWSiatce }, (_, i) => (
-            <div key={`wolna-${i}`} className="wjazd">
+            <div key={`wolna-${i}`} data-wjazd="glebia">
               <WolnaKarta miejsce={5 + siatka.length + i} />
             </div>
           ))}
@@ -97,7 +97,7 @@ export function RankingGraczy({ odkrywcy }: { odkrywcy: OdkrywcaRanking[] }) {
 
 function Naglowek({ tytul, opis }: { tytul: string; opis: string }) {
   return (
-    <div className="wjazd-boczny flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-hairline pb-4">
+    <div data-wjazd="kreska" className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-hairline pb-4">
       <h2 className="text-[clamp(20px,2.2vw,28px)] font-semibold tracking-[-0.02em]">{tytul}</h2>
       <p className="text-[12px] uppercase tracking-[0.2em] text-faint">{opis}</p>
     </div>
@@ -288,7 +288,7 @@ function WolnaKarta({ miejsce, duza = false }: { miejsce: number; duza?: boolean
 
 function WierszGracza({ odkrywca, miejsce }: { odkrywca: OdkrywcaRanking; miejsce: number }) {
   return (
-    <li className="min-w-0">
+    <li data-wjazd="glebia-wiersz" className="min-w-0">
       <Link
         href={`/gracz/${odkrywca.slug}`}
         className="wiersz-rankingu group flex items-center gap-4 py-3 pr-2"
@@ -324,7 +324,7 @@ function WierszGracza({ odkrywca, miejsce }: { odkrywca: OdkrywcaRanking; miejsc
 /** Wolne miejsce - przerywany wiersz, który mówi wprost, ile jest do wzięcia. */
 function WolneMiejsce({ miejsce }: { miejsce: number }) {
   return (
-    <li className="min-w-0">
+    <li data-wjazd="glebia-wiersz" className="min-w-0">
       <div className="flex items-center gap-4 border-b border-white/[0.04] py-3 pr-2">
         <span className="w-10 shrink-0 text-center text-[14px] font-semibold tabular-nums text-white/12">
           {String(miejsce).padStart(2, "0")}
