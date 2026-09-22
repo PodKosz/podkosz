@@ -1,6 +1,8 @@
 import { Explorer } from "@/components/Explorer";
 import { SiteStructuredData } from "@/components/StructuredData";
+import { preconnect } from "react-dom";
 import { listMapCourts } from "@/lib/repo";
+import { kafelkiPodkladu } from "@/lib/podklad";
 
 /*
   Mapa jest jednakowa dla wszystkich - kto jest administratorem i co ma podpalone, Explorer
@@ -12,6 +14,17 @@ export const revalidate = 300;
 
 export default async function Home() {
   const courts = await listMapCourts();
+
+  /*
+    Połączenie z serwerem kafelków otwieramy od razu, razem z HTML-em. Inaczej przeglądarka
+    robi DNS, TCP i TLS dopiero wtedy, gdy mapa poprosi o pierwszy kafelek - a to jest po
+    pobraniu i uruchomieniu MapLibre, czyli kilkaset milisekund stracone na czekanie
+    w kolejce. `crossOrigin`, bo MapLibre pobiera kafelki przez `fetch` w trybie CORS,
+    a połączenie otwarte bez niego nie zostałoby użyte.
+  */
+  for (const host of new Set(kafelkiPodkladu("dark_nolabels", false).map((u) => new URL(u).origin))) {
+    preconnect(host, { crossOrigin: "anonymous" });
+  }
 
   return (
     <>

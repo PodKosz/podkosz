@@ -7,6 +7,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 import { ZASLONA } from "@/lib/zaslona";
 import { SKRYPT_MOTYWU } from "@/lib/motyw";
+import { SKRYPT_STARTU } from "@/lib/adres";
 
 const TITLE = "PodKosz - baza boisk do koszykówki w Polsce";
 
@@ -56,6 +57,8 @@ export default function StronaLayout({ children }: Readonly<{ children: React.Re
           ciemnym tle widać jak mrugnięcie.
         */}
         <script dangerouslySetInnerHTML={{ __html: SKRYPT_MOTYWU }} />
+        {/* który wariant zasłony mapy: gotowy obrazek Polski czy kontur - patrz ZaslonaMapy */}
+        <script dangerouslySetInnerHTML={{ __html: SKRYPT_STARTU }} />
         {/*
           Bramka logowania obejmuje CAŁĄ stronę, razem z paskiem nawigacji i stopką: okno
           „musisz się zalogować" pojawia się na środku ekranu i rozmywa wszystko pod sobą,

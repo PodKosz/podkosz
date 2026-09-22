@@ -179,6 +179,21 @@ export function zapamietajKadr(view: MapaWidok) {
   }
 }
 
+/**
+ * Kasuje zapisany kadr - z adresu i z pamięci sesji. Wołane, gdy mapa stoi na domyślnym
+ * kadrze całej Polski: ten nie potrzebuje zapisu, bo mapa i tak na nim wstaje, a zapisany
+ * udawałby link do konkretnego miejsca i blokował obrazek startowy (`czyKadrStartowy`).
+ */
+export function zapomnijKadr() {
+  if (typeof window === "undefined") return;
+  if (new URLSearchParams(window.location.search).has("m")) zapiszAdres({ m: null });
+  try {
+    sessionStorage.removeItem(KLUCZ_KADRU);
+  } catch {
+    /* bez pamięci sesji nie ma też czego kasować */
+  }
+}
+
 /** Kadr z poprzedniej strony w tej sesji. */
 export function ostatniKadr(): MapaWidok | null {
   if (typeof window === "undefined") return null;
@@ -188,6 +203,26 @@ export function ostatniKadr(): MapaWidok | null {
     return null;
   }
 }
+
+/**
+ * Czy mapa wstanie na kadrze całej Polski - czyli czy można pokazać przed nią gotowy
+ * obrazek (`ZaslonaMapy`). Ta sama kolejność co w MapView: adres, potem pamięć sesji,
+ * a dopiero bez obu - Polska.
+ */
+export function czyKadrStartowy(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.location.pathname === "/" && !czytajWidok() && !ostatniKadr();
+}
+
+/*
+  To samo, tylko jako skrypt w <head> - wykonuje się, zanim przeglądarka cokolwiek narysuje.
+  Z Reactem, po hydracji, przez pierwsze klatki stałby kontur boiska zamiast mapy, a przy
+  powrocie z karty boiska odwrotnie: Polska, która zaraz przeskoczy na Kraków.
+
+  Sprawdza tylko obecność kadru, bez jego poprawności - rzadki zepsuty wpis da kontur zamiast
+  obrazka, a nie odwrotnie, więc nic się nie przesunie. Klucze MUSZĄ być te same co wyżej.
+*/
+export const SKRYPT_STARTU = `try{var d=document.documentElement,q=new URLSearchParams(location.search),k=null;try{k=sessionStorage.getItem("${KLUCZ_KADRU}")}catch(e){}if(location.pathname==="/"&&!q.get("m")&&!k)d.classList.add("start-polska")}catch(e){}`;
 
 /** Aktualizuje wskazane klucze adresu, zostawiając pozostałe bez zmian. */
 export function zapiszAdres(patch: Record<string, string | null>) {

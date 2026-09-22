@@ -32,18 +32,20 @@ import type { LeadPoint } from "@/lib/leads";
   chwilę później. Bez tego przeglądarka musiała najpierw pobrać i sparsować cały MapLibre,
   zanim cokolwiek dało się kliknąć.
 */
-const MapView = dynamic(() => import("./MapView").then((m) => m.MapView), {
+const wczytajMape = () => import("./MapView");
+/*
+  Pobieranie paczki mapy ruszamy już przy wczytaniu tego modułu, a nie przy pierwszym
+  renderze po hydracji - `dynamic()` zaczyna dopiero wtedy, a to bywa kilkaset milisekund
+  później. Oba miejsca biorą ten sam moduł, więc nic nie jest pobierane dwa razy.
+*/
+if (typeof window !== "undefined") void wczytajMape();
+const MapView = dynamic(() => wczytajMape().then((m) => m.MapView), {
   ssr: false,
-  loading: () => (
-    <div className="absolute inset-0 grid place-items-center bg-void">
-      <div className="w-[min(560px,72vw)] opacity-25">
-        <CourtOutline uid="mapa-szkielet" />
-      </div>
-    </div>
-  ),
+  // szkieletu nie ma, bo nad mapą od pierwszej klatki stoi `ZaslonaMapy`
+  loading: () => null,
 });
 import { Sidebar } from "./Sidebar";
-import { CourtOutline } from "./CourtOutline";
+import { ZaslonaMapy } from "./ZaslonaMapy";
 
 export function Explorer({ courts }: { courts: MapCourt[] }) {
   /* uprawnienia dociągamy w przeglądarce - inaczej cała mapa musiałaby powstawać na żądanie */
@@ -74,6 +76,9 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
   const filters = zmiany ?? zAdresu;
   const setFilters = useCallback((f: Filters) => setZmiany(f), []);
   const [activeId, setActiveId] = useState<string | null>(null);
+  /** mapa narysowała pierwszy kadr w całości - zasłona może zejść */
+  const [mapaWstala, setMapaWstala] = useState(false);
+  const mapaGotowa = useCallback(() => setMapaWstala(true), []);
   /** Na telefonie panel z filtrami startuje zwinięty, żeby mapa miała cały ekran. */
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -253,7 +258,9 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
         onSelectLead={setActiveLead}
         registerClearCard={registerClearCard}
         sheetOpen={sheetOpen}
+        onGotowa={mapaGotowa}
       />
+      <ZaslonaMapy gotowa={mapaWstala} />
       <Sidebar
         filters={filters}
         setFilters={setFilters}

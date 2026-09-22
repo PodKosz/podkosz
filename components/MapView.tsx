@@ -11,9 +11,8 @@ import { HoverCard } from "./HoverCard";
 import { kafelkiPodkladu, podkladMapy } from "@/lib/podklad";
 import { ZarWojewodztwa, bboxWojewodztwa, stworzZarWojewodztwa } from "@/lib/zarWojewodztwa";
 import { useMotyw } from "@/lib/motyw";
-import { CourtOutline } from "./CourtOutline";
 import { FiltrSzkla } from "./FiltrSzkla";
-import { czytajWidok, ostatniKadr, zapamietajKadr, zapiszWidok } from "@/lib/adres";
+import { czytajWidok, ostatniKadr, zapamietajKadr, zapiszWidok, zapomnijKadr } from "@/lib/adres";
 import { fetchCheckinyDzisiaj } from "@/lib/checkins";
 import { pobierzWydarzenia, type Wydarzenie } from "@/lib/wydarzenia";
 import { punktyWKadrze, type PunktOsm } from "@/lib/punkty-osm";
@@ -67,7 +66,7 @@ function zeStylu(nazwa: string, awaryjna: string) {
   return v || awaryjna;
 }
 
-const POLAND_BOUNDS: [number, number, number, number] = [13.9, 48.9, 24.3, 55.0];
+export const POLAND_BOUNDS: [number, number, number, number] = [13.9, 48.9, 24.3, 55.0];
 
 /**
  * Zapas na panel: po lewej, gdy panel stoi z boku; od dołu, gdy wysuwa się jako arkusz.
@@ -79,11 +78,20 @@ const POLAND_BOUNDS: [number, number, number, number] = [13.9, 48.9, 24.3, 55.0]
  * 768 - 430 - 70 = 268 pikseli szerokości, więc mapa musiała oddalić się tak, żeby zmieścić
  * w tym cały kraj: na ekranie widać było pół Europy, a Polska była małym kształtem z boku.
  * Panel o stałej szerokości 386 pikseli zajmował tam ponad połowę ekranu.
+ *
+ * Na komputerze margines jest SYMETRYCZNY. Stało tu 430 pikseli z lewej - miejsce na panel
+ * filtrów - tyle że panel domyślnie jest zwinięty: w lewym górnym rogu leży tylko logo,
+ * wyszukiwarka i dwa przyciski, a pod nimi jest czysta mapa. Polska stała więc 180 pikseli
+ * na prawo od środka ekranu i wyglądało to na błąd. Górny margines jest odrobinę większy
+ * od dolnego, bo u góry wisi pasek nawigacji.
+ *
+ * Te same liczby siedzą w `scripts/kadr-startowy.mjs` (MARGINESY) - zmieniać razem
+ * i puścić skrypt, inaczej obrazek startowy przestanie pasować do mapy.
  */
-const fitPadding = (width: number) =>
+export const fitPadding = (width: number) =>
   width < 1024
     ? { top: 90, bottom: 200, left: 24, right: 24 }
-    : { top: 70, bottom: 70, left: 430, right: 70 };
+    : { top: 90, bottom: 70, left: 70, right: 70 };
 
 /** Od tylu boisk mapa przechodzi z pinezek HTML na warstwę GeoJSON z klastrami. */
 const CLUSTER_FROM = 300;
@@ -193,7 +201,7 @@ const ZAKRES_GASNIECIA = 1;
 // Worker MapLibre serwujemy z /public - patrz scripts/copy-maplibre-worker.mjs.
 setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
-const STYLE: StyleSpecification = {
+export const STYLE: StyleSpecification = {
   version: 8,
   // fonts.openmaptiles.org oddaje HTML zamiast pliku .pbf - Protomaps serwuje poprawne glify
   /*
@@ -299,6 +307,51 @@ interface MapDiag {
   errors: string[];
 }
 
+/**
+ * Barwy warstw i podkład pod aktualny motyw strony (`data-motyw` na `html`).
+ *
+ * Osobna funkcja, bo woła ją nie tylko mapa, ale też generator kadru startowego
+ * (`scripts/kadr-startowy.mjs` przez `/zrzut-mapy`) - obrazek, który stoi na ekranie przed
+ * mapą, musi być pomalowany DOKŁADNIE tak jak ona, inaczej przy podmianie zmieniłby barwę.
+ */
+export function pomalujWgMotywu(map: MlMap) {
+  const barwy = {
+    flame: zeStylu("--color-flame", BARWY_MAPY.flame),
+    glow: zeStylu("--color-glow", BARWY_MAPY.glow),
+    tlo: zeStylu("--color-void", BARWY_MAPY.tlo),
+    atrament: zeStylu("--color-ink", BARWY_MAPY.atrament),
+  };
+
+  for (const [warstwa, wlasciwosc, barwa] of WARSTWY_MOTYWU) {
+    if (map.getLayer(warstwa)) map.setPaintProperty(warstwa, wlasciwosc, barwy[barwa]);
+  }
+
+  /*
+    Podkład też musi iść za motywem: ciemna mapa pod jasnym interfejsem wygląda jak
+    dziura wycięta w stronie. O jasność pytamy `color-scheme`, bo to arkusz wie, który
+    motyw jest jasny - komponent nie musi trzymać drugiej listy.
+
+    Same kafelki podmieniamy przez `setTiles`, bez przebudowy stylu: przebudowa zdejmuje
+    wszystkie warstwy dołożone później (boiska, klastry, żar) i trzeba by je stawiać od
+    nowa razem z ich obsługą zdarzeń.
+  */
+  const jasny = getComputedStyle(document.documentElement).colorScheme === "light";
+  const zrodlo = map.getSource("carto");
+  if (zrodlo && "setTiles" in zrodlo) {
+    (zrodlo as { setTiles: (t: string[]) => void }).setTiles(
+      kafelkiPodkladu("dark_nolabels", jasny)
+    );
+  }
+
+  /* ocieplenie kafelków było dobrane pod ciemny podkład - na jasnym gasi mapę do szarości */
+  if (map.getLayer("carto")) {
+    map.setPaintProperty("carto", "raster-saturation", jasny ? -0.12 : -0.35);
+    map.setPaintProperty("carto", "raster-brightness-max", jasny ? 1 : 0.94);
+    map.setPaintProperty("carto", "raster-hue-rotate", jasny ? 0 : -12);
+  }
+}
+
+
 export function MapView({
   courts,
   activeId,
@@ -310,6 +363,7 @@ export function MapView({
   onSelectLead,
   registerClearCard,
   sheetOpen = false,
+  onGotowa,
 }: {
   courts: MapCourt[];
   activeId: string | null;
@@ -325,18 +379,18 @@ export function MapView({
   registerClearCard?: (fn: () => void) => void;
   /** arkusz z filtrami na telefonie jest rozwinięty - wizytówki wtedy nie pokazujemy */
   sheetOpen?: boolean;
+  /** pierwszy kadr narysowany w całości (albo ktoś już ruszył mapę) - zasłona może zejść */
+  onGotowa?: () => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MlMap | null>(null);
   const markersRef = useRef<Record<string, { marker: Marker; el: HTMLDivElement }>>({});
   const [ready, setReady] = useState(false);
-  /**
-   * Podkład ma komplet kafelków kadru - dopiero wtedy zdejmujemy zasłonę z konturem boiska.
-   * `ready` to za mało: przychodzi z samym stylem, zanim poleci pierwszy kafelek.
-   */
-  const [odslonieta, setOdslonieta] = useState(false);
-  /** zasłona już przeniknęła - zdejmujemy ją z drzewa, żeby nie wisiała niewidzialna */
-  const [zaslonaZeszla, setZaslonaZeszla] = useState(false);
+  /* w referencji, żeby nowa funkcja od rodzica nie budowała mapy od nowa */
+  const onGotowaRef = useRef(onGotowa);
+  useEffect(() => {
+    onGotowaRef.current = onGotowa;
+  }, [onGotowa]);
   const [diag, setDiag] = useState<MapDiag | null>(null);
   const [showDiag, setShowDiag] = useState(false);
   type Karta = { court: MapCourt; x: number; y: number };
@@ -564,6 +618,7 @@ export function MapView({
                 padding: fitPadding(containerRef.current.clientWidth || 1024),
               },
             }),
+        // ta sama liczba siedzi w `scripts/kadr-startowy.mjs` (MIN_ZOOM) - zmieniać razem
         minZoom: 4.5,
         maxZoom: 18,
         attributionControl: { compact: true },
@@ -599,23 +654,32 @@ export function MapView({
       setReady(true);
     });
     /*
-      Podkład to kafelki rastrowe, które przychodzą po kolei - bez zasłony mapa wstawała
-      kwadrat po kwadracie. Czekamy na `idle` z kompletem kafelków (samo `load` przychodzi,
-      gdy gotowy jest styl, a kafelki dopiero ruszają) i odsłaniamy wszystko naraz.
+      Sygnał dla zasłony nad mapą (`ZaslonaMapy` w Explorerze). Podkład to kafelki rastrowe,
+      które przychodzą po kolei - bez zasłony mapa wstawała kwadrat po kwadracie. Czekamy na
+      `idle` z kompletem kafelków (samo `load` przychodzi, gdy gotowy jest styl, a kafelki
+      dopiero ruszają) i dopiero wtedy żywa mapa zastępuje to, co stało przed nią.
 
-      Awaryjnie po ośmiu sekundach odsłaniamy i tak: na bardzo wolnym łączu lepiej pokazać
-      mapę na raty niż zostawić ekran z samym konturem.
+      Dwa wyjścia awaryjne. Osiem sekund - na bardzo wolnym łączu lepiej pokazać mapę na raty
+      niż zostawić ekran z samym konturem. I pierwszy gest: kadr startowy jest obrazkiem,
+      więc gdyby ktoś zaczął przesuwać mapę pod nim, żywa mapa jechałaby pod nieruchomym
+      zdjęciem. Ruch ręką zdejmuje zasłonę od razu - niech już widać to, co się rusza.
     */
     const odslon = () => {
       clearTimeout(awaryjnie);
       map.off("idle", poGotowosci);
-      setOdslonieta(true);
+      map.off("movestart", poGescie);
+      onGotowaRef.current?.();
     };
     const poGotowosci = () => {
       if (map.areTilesLoaded()) odslon();
     };
+    // `originalEvent` mają tylko ruchy od człowieka - nie kadrowanie ustawiane z kodu
+    const poGescie = (e: { originalEvent?: Event }) => {
+      if (e.originalEvent) odslon();
+    };
     const awaryjnie = window.setTimeout(odslon, 8000);
     map.on("idle", poGotowosci);
+    map.on("movestart", poGescie);
 
     map.on("move", reposition);
     // dotknięcie samej mapy zamyka wizytówkę boiska (na markerach zatrzymujemy zdarzenie)
@@ -729,6 +793,25 @@ export function MapView({
     // się wysłać linkiem i żeby przetrwał odświeżenie - oraz w pamięci sesji, bo z niej
     // odtwarza się powrót na mapę linkiem, który adresu ze sobą nie niesie.
     const zapiszKadr = () => {
+      /*
+        Z jednym wyjątkiem: kadr całej Polski - ten, na którym mapa wstaje sama - NIE jest
+        zapisywany, a dotychczasowy zapis znika. Wcześniej trafiał do adresu już przy starcie
+        (samo ustawienie kadru to też przesunięcie), więc po odświeżeniu strony w adresie
+        stało `m=...` i mapa brała to za link do konkretnego miejsca: zamiast gotowego
+        obrazka Polski pokazywała kontur i czekała na kafelki. To samo po powrocie przyciskiem
+        z globusem albo po wyjściu z województwa.
+      */
+      const polska = map.cameraForBounds(POLAND_BOUNDS, {
+        padding: fitPadding(map.getContainer().clientWidth),
+      });
+      if (polska?.center && polska.zoom !== undefined) {
+        const tu = map.project(map.getCenter());
+        const tam = map.project(polska.center);
+        if (Math.abs(map.getZoom() - polska.zoom) < 0.02 && tu.dist(tam) < 2) {
+          zapomnijKadr();
+          return;
+        }
+      }
       const c = map.getCenter();
       const widok = { lat: c.lat, lng: c.lng, zoom: map.getZoom() };
       zapiszWidok(widok);
@@ -746,6 +829,7 @@ export function MapView({
     return () => {
       clearTimeout(awaryjnie);
       map.off("idle", poGotowosci);
+      map.off("movestart", poGescie);
       ro.disconnect();
       map.off("moveend", zapiszKadr);
       map.remove();
@@ -1349,41 +1433,7 @@ export function MapView({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
-
-    const barwy = {
-      flame: zeStylu("--color-flame", BARWY_MAPY.flame),
-      glow: zeStylu("--color-glow", BARWY_MAPY.glow),
-      tlo: zeStylu("--color-void", BARWY_MAPY.tlo),
-      atrament: zeStylu("--color-ink", BARWY_MAPY.atrament),
-    };
-
-    for (const [warstwa, wlasciwosc, barwa] of WARSTWY_MOTYWU) {
-      if (map.getLayer(warstwa)) map.setPaintProperty(warstwa, wlasciwosc, barwy[barwa]);
-    }
-
-    /*
-      Podkład też musi iść za motywem: ciemna mapa pod jasnym interfejsem wygląda jak
-      dziura wycięta w stronie. O jasność pytamy `color-scheme`, bo to arkusz wie, który
-      motyw jest jasny - komponent nie musi trzymać drugiej listy.
-
-      Same kafelki podmieniamy przez `setTiles`, bez przebudowy stylu: przebudowa zdejmuje
-      wszystkie warstwy dołożone później (boiska, klastry, żar) i trzeba by je stawiać od
-      nowa razem z ich obsługą zdarzeń.
-    */
-    const jasny = getComputedStyle(document.documentElement).colorScheme === "light";
-    const zrodlo = map.getSource("carto");
-    if (zrodlo && "setTiles" in zrodlo) {
-      (zrodlo as { setTiles: (t: string[]) => void }).setTiles(
-        kafelkiPodkladu("dark_nolabels", jasny)
-      );
-    }
-
-    /* ocieplenie kafelków było dobrane pod ciemny podkład - na jasnym gasi mapę do szarości */
-    if (map.getLayer("carto")) {
-      map.setPaintProperty("carto", "raster-saturation", jasny ? -0.12 : -0.35);
-      map.setPaintProperty("carto", "raster-brightness-max", jasny ? 1 : 0.94);
-      map.setPaintProperty("carto", "raster-hue-rotate", jasny ? 0 : -12);
-    }
+    pomalujWgMotywu(map);
   }, [motyw, ready, courts]);
 
   /* ---- podświetlenie województwa ---- */
@@ -1532,28 +1582,6 @@ export function MapView({
       {/* h-full/w-full, a nie absolute inset-0: maplibre-gl.css wymusza na tym divie
           position:relative, przez co inset-0 nie działa i kontener ma wysokość 0. */}
       <div ref={containerRef} className="h-full w-full" />
-
-      {/*
-        Zasłona na czas wczytywania podkładu - ten sam kontur boiska, który stoi, zanim
-        dojedzie paczka z MapLibre (szkielet w `Explorer.tsx`), więc przejście między nimi
-        jest niewidoczne. Przykrywa też pinezki: bez tego wisiałyby nad pustym tłem, zanim
-        pojawi się pod nimi kraj. Panel z filtrami i przyciski zostają nad nią i działają.
-      */}
-      {!zaslonaZeszla && (
-        <div
-          aria-hidden
-          className={`pointer-events-none absolute inset-0 z-[15] grid place-items-center bg-void transition-opacity duration-500 ease-out motion-reduce:duration-200 ${
-            odslonieta ? "opacity-0" : ""
-          }`}
-          onTransitionEnd={(e) => {
-            if (e.target === e.currentTarget && odslonieta) setZaslonaZeszla(true);
-          }}
-        >
-          <div className="w-[min(560px,72vw)] opacity-25">
-            <CourtOutline uid="mapa-zaslona" />
-          </div>
-        </div>
-      )}
 
       {/* filtr zaginający tło pod wizytówką - musi być w drzewie, sam nic nie rysuje */}
       <FiltrSzkla />
