@@ -3583,6 +3583,18 @@ select option {
   Kula leży NAD nazwą gracza, a nazwa podchodzi pod nią - stąd `z-index`. Bez niego
   `h1`, jako późniejsze rodzeństwo, malowałoby się na wierzchu i przykryło piłkę.
 */
+/*
+  Piłka jako znak rozpoznawczy gracza w rankingu: rozmiar bierze z pudełka, w którym stoi,
+  a nie z szerokości okna. Kursora nie łapie wcale - kliknięcie ma prowadzić na profil,
+  a nie otwierać okienko odznaczenia, którego w kafelku i tak nie ma gdzie postawić.
+*/
+.kula-wizytowka {
+  pointer-events: none;
+}
+.kula-wizytowka .kula {
+  width: 100%;
+}
+
 .kula {
   position: relative;
   z-index: 2;

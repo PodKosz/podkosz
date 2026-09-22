@@ -6,7 +6,12 @@ import { supabaseServer } from "./supabase/server";
 import { supabasePublic } from "./supabase/publiczny";
 import { unstable_cache } from "next/cache";
 import { czyAutorAnonimowy, slugifyPlace } from "./site";
-import { odznaczenia, type IdPoziomu } from "./odznaczenia";
+import {
+  odznaczenia,
+  PUSTE_STATYSTYKI,
+  type IdPoziomu,
+  type StatystykiGracza,
+} from "./odznaczenia";
 import { statystykiGracza } from "./profil";
 import type { CourtRow } from "./supabase/types";
 
@@ -462,6 +467,8 @@ export interface OdkrywcaRanking {
   kadry: KadrOdkrywcy[];
   /** najwyższe zdobyte odznaczenia - tylko dla czołówki, którą rysuje konstelacja */
   plakietki: Plakietka[];
+  /** liczby, z których rysuje się piłka odznaczeń stojąca przy każdym graczu */
+  statystyki: StatystykiGracza;
 }
 
 export interface Plakietka {
@@ -589,16 +596,25 @@ export async function listRankingOdkrywcow(ile = 25): Promise<OdkrywcaRanking[]>
           likes: c.likes,
         })),
         plakietki: [] as Plakietka[],
+        statystyki: PUSTE_STATYSTYKI,
       };
     });
 
   /*
-    Odznaczenia dociągamy tylko dla czołówki, którą rysuje konstelacja: każdy wiersz to
-    osobne pytanie do bazy, a na liście miejsc 6-25 plakietki i tak się nie pokazują.
-  */
-  const czolowka = lista.slice(0, ZE_PLAKIETKAMI);
-  const statystyki = await Promise.all(czolowka.map((o) => statystykiGracza(o.name)));
+    Statystyki dociągamy dla CAŁEJ listy, bo przy każdym graczu stoi teraz jego piłka
+    odznaczeń - a ta rysuje się właśnie z tych liczb. Wcześniej wystarczyła pierwsza
+    piątka, której konstelacja pokazywała plakietki.
 
+    Każdy gracz to osobne pytanie do bazy, więc przy dwudziestu pięciu jest ich
+    dwadzieścia pięć - ale lecą równolegle i tylko przy odświeżeniu strony, która
+    przez pięć minut idzie z pamięci podręcznej (`revalidate` na `/ranking`).
+  */
+  const statystyki = await Promise.all(lista.map((o) => statystykiGracza(o.name)));
+  lista.forEach((o, i) => {
+    o.statystyki = statystyki[i];
+  });
+
+  const czolowka = lista.slice(0, ZE_PLAKIETKAMI);
   czolowka.forEach((o, i) => {
     o.plakietki = odznaczenia(statystyki[i])
       .filter((od) => od.poziom !== null)

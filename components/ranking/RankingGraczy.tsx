@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { KadrOdkrywcy, OdkrywcaRanking } from "@/lib/repo";
 import { plural } from "@/lib/site";
 import { CourtPhoto } from "@/components/CourtPhoto";
-import { IkonaOdznaczenia } from "@/components/IkonaOdznaczenia";
+import { PilkaOdznaczen } from "@/components/PilkaOdznaczen";
 import { FireBallIcon } from "@/components/icons";
 
 /**
@@ -194,23 +194,32 @@ function KartaGracza({
       </span>
 
       <span className="relative z-[2] flex w-full flex-col items-center justify-center gap-4 px-6 py-8 text-center">
+        {/*
+          Zdjęcie profilowe siedzi w środku PIŁKI ODZNACZEŃ - tej samej, którą gracz ma na
+          swoim profilu. Ranking mówi więc dwie rzeczy naraz: kto dodał najwięcej boisk
+          (miejsce i liczby) oraz jak daleko zaszedł (ile pól piłki się pali). Wcześniej
+          stały tu trzy najwyższe plakietki pod nazwą - trzy z dwudziestu sześciu, czyli
+          wycinek, który niczego nie podsumowywał, a zajmował cały rząd.
+
+          Kula jest szersza niż dawne zdjęcie, bo zdjęcie jest teraz jej środkiem: sama
+          piłka zajmuje 71% rysunku, więc pudełko musi być o tyle większe, żeby twarz
+          została tej samej wielkości co przedtem.
+        */}
         <span
-          className={`avatar-rankingu relative grid place-items-center overflow-hidden rounded-full ${
+          className={`relative grid place-items-center ${
             zwyciezca
-              ? "h-[clamp(104px,11vw,168px)] w-[clamp(104px,11vw,168px)]"
+              ? "h-[clamp(150px,15.5vw,238px)] w-[clamp(150px,15.5vw,238px)]"
               : trojka
-                ? "h-[clamp(80px,7.5vw,110px)] w-[clamp(80px,7.5vw,110px)]"
-                : "h-[70px] w-[70px]"
+                ? "h-[clamp(114px,10.6vw,156px)] w-[clamp(114px,10.6vw,156px)]"
+                : "h-[99px] w-[99px]"
           }`}
         >
-          {odkrywca.avatar ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={odkrywca.avatar} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <span className="flame-gradient grid h-full w-full place-items-center text-[26px] font-bold text-black">
-              {odkrywca.name.slice(0, 1).toUpperCase()}
-            </span>
-          )}
+          <PilkaOdznaczen
+            statystyki={odkrywca.statystyki}
+            nick={odkrywca.name}
+            avatar={odkrywca.avatar}
+            wizytowka
+          />
         </span>
 
         <span className="block max-w-full">
@@ -223,7 +232,7 @@ function KartaGracza({
                   : "text-[16px]"
             }`}
           >
-            @{odkrywca.name}
+            {odkrywca.name}
           </span>
 
           <span className="mt-3 flex items-center justify-center gap-4">
@@ -249,15 +258,6 @@ function KartaGracza({
           </span>
         </span>
 
-        {odkrywca.plakietki.length > 0 && (
-          <span className="flex flex-wrap items-center justify-center gap-1.5">
-            {odkrywca.plakietki.slice(0, zwyciezca ? 5 : trojka ? 3 : 2).map((p) => (
-              <span key={p.id} title={p.nazwa} className={`medal medal-${p.poziom} h-8 w-8`}>
-                <IkonaOdznaczenia id={p.id} className="h-[17px] w-[17px]" />
-              </span>
-            ))}
-          </span>
-        )}
       </span>
     </Link>
   );
@@ -295,19 +295,17 @@ function WierszGracza({ odkrywca, miejsce }: { odkrywca: OdkrywcaRanking; miejsc
           {String(miejsce).padStart(2, "0")}
         </span>
 
-        <span className="avatar-rankingu relative grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full">
-          {odkrywca.avatar ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={odkrywca.avatar} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <span className="flame-gradient grid h-full w-full place-items-center text-[15px] font-bold text-black">
-              {odkrywca.name.slice(0, 1).toUpperCase()}
-            </span>
-          )}
+        <span className="relative grid h-[68px] w-[68px] shrink-0 place-items-center">
+          <PilkaOdznaczen
+            statystyki={odkrywca.statystyki}
+            nick={odkrywca.name}
+            avatar={odkrywca.avatar}
+            wizytowka
+          />
         </span>
 
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[15px] font-medium">@{odkrywca.name}</span>
+          <span className="block truncate text-[15px] font-medium">{odkrywca.name}</span>
           <span className="block truncate text-[13px] text-faint">
             {odkrywca.courts} {plural(odkrywca.courts, ["boisko", "boiska", "boisk"])}
           </span>

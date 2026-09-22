@@ -82,10 +82,20 @@ export function PilkaOdznaczen({
   statystyki,
   nick,
   avatar,
+  wizytowka = false,
 }: {
   statystyki: StatystykiGracza;
   nick: string;
   avatar: string | null;
+  /**
+   * Tryb wizytówki: sam rysunek, bez okienek pod kursorem i bez szyby rozmywającej tło.
+   *
+   * Tak piłka stoi przy graczach w rankingu. Tam jest znakiem rozpoznawczym, a nie
+   * przyrządem: okienko z opisem odznaczenia wychodziłoby poza kafelek i przechwytywało
+   * kliknięcie, które ma prowadzić na profil. Szyba odpada, bo rozmywa nazwę podchodzącą
+   * pod kulę - a w rankingu pod kulą nie ma nazwy, jest tylko kafelek.
+   */
+  wizytowka?: boolean;
 }) {
   const progowe = odznaczenia(statystyki);
   const razem = podsumowanie(statystyki);
@@ -206,39 +216,51 @@ export function PilkaOdznaczen({
   };
 
   return (
-    <div className="kula-scena">
+    <div className={`kula-scena${wizytowka ? " kula-wizytowka" : ""}`}>
       {/*
         Szyba: krążek rozmywający TŁO, czyli wszystko, co namalowano pod nim - a nazwa
         gracza podchodzi pod kulę i właśnie tam się znajduje. Litery gubią ostrość
         w miarę zbliżania się do piłki i odzyskują ją niżej, bo maska wygasza rozmycie
         pierścieniowo. Sama kula leży nad szybą, więc jej własny rysunek zostaje ostry.
       */}
-      <div className="kula-szyba" aria-hidden />
+      {!wizytowka && <div className="kula-szyba" aria-hidden />}
       <svg
         ref={svgRef}
         className="kula"
         viewBox={`0 0 ${BOK} ${BOK}`}
-        onMouseOver={(e) => {
-          const nr = polePod(e);
-          if (nr !== null) najedz(nr);
-        }}
-        onMouseLeave={() => {
-          if (przypiete) return;
-          setGorace(null);
-          setWybor(null);
-        }}
-        onClick={(e) => {
-          const nr = polePod(e);
-          if (nr === null) return;
-          e.stopPropagation();
-          /* Drugie kliknięcie w to samo pole odpina - inaczej na dotyku nie byłoby jak
-             zamknąć okienka bez celowania w krzyżyk. */
-          if (przypiete && wybor === nr) return zamknij();
-          setGorace(nr);
-          setWybor(nr);
-          setPrzypiete(true);
-          puszFale(nr, doRysunku(e));
-        }}
+        onMouseOver={
+          wizytowka
+            ? undefined
+            : (e) => {
+                const nr = polePod(e);
+                if (nr !== null) najedz(nr);
+              }
+        }
+        onMouseLeave={
+          wizytowka
+            ? undefined
+            : () => {
+                if (przypiete) return;
+                setGorace(null);
+                setWybor(null);
+              }
+        }
+        onClick={
+          wizytowka
+            ? undefined
+            : (e) => {
+                const nr = polePod(e);
+                if (nr === null) return;
+                e.stopPropagation();
+                /* Drugie kliknięcie w to samo pole odpina - inaczej na dotyku nie byłoby jak
+                   zamknąć okienka bez celowania w krzyżyk. */
+                if (przypiete && wybor === nr) return zamknij();
+                setGorace(nr);
+                setWybor(nr);
+                setPrzypiete(true);
+                puszFale(nr, doRysunku(e));
+              }
+        }
         role="img"
         aria-label={`Piłka odznaczeń: ${razem.zdobyte} z ${razem.wszystkie} odznaczeń zdobytych. Pełna lista pod piłką.`}
       >
