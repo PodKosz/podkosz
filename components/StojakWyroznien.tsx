@@ -21,6 +21,20 @@ import type { Wyroznienie } from "@/lib/odznaczenia";
  * skaluje się z szerokością kolumny i nie ma tu ani jednego piksela na sztywno.
  */
 
+/*
+  WERSJA GRAFIK W ADRESIE. Pliki stojaka i piłek mają stałe nazwy, a Vercel serwuje je
+  z nagłówkiem `max-age=14400` - cztery godziny. Przy podmianie zawartości pod tym samym
+  adresem przeglądarka przez te cztery godziny nie pyta serwera o nic i dalej rysuje stare
+  piłki, choć na serwerze leżą już nowe. Zdarzyło się dokładnie to: wdrożenie było
+  poprawne, suma kontrolna pliku na produkcji zgadzała się z nową, a na ekranie nadal
+  siedziały poprzednie kule.
+
+  Numer doklejony do adresu zmienia adres, więc pamięć podręczna nie ma czego dopasować.
+  PRZY KAŻDYM PRZEGENEROWANIU GRAFIK TRZEBA GO PODNIEŚĆ - inaczej wróci ten sam objaw,
+  a jest on mylący: wygląda jak niewdrożona zmiana, a nie jak stara kopia w przeglądarce.
+*/
+const WERSJA = 2;
+
 /* ————— siatka odniesienia: piksele pliku `stojak.webp` ————— */
 const PLIK_SZER = 1236;
 const PLIK_WYS = 735;
@@ -132,7 +146,7 @@ export function StojakWyroznien({ lista }: { lista: Wyroznienie[] }) {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           className="stojak-mebel"
-          src="/wyroznienia/stojak.webp"
+          src={`/wyroznienia/stojak.webp?v=${WERSJA}`}
           alt=""
           width={PLIK_SZER}
           height={PLIK_WYS}
@@ -172,7 +186,7 @@ export function StojakWyroznien({ lista }: { lista: Wyroznienie[] }) {
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={`/wyroznienia/pilka-${w.zdobyte ? w.barwa : "zimna"}.webp`}
+                src={`/wyroznienia/pilka-${w.zdobyte ? w.barwa : "zimna"}.webp?v=${WERSJA}`}
                 alt=""
                 width={320}
                 height={320}
@@ -197,7 +211,7 @@ export function StojakWyroznien({ lista }: { lista: Wyroznienie[] }) {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           className="stojak-przod"
-          src="/wyroznienia/stojak.webp"
+          src={`/wyroznienia/stojak.webp?v=${WERSJA}`}
           alt=""
           width={PLIK_SZER}
           height={PLIK_WYS}

@@ -7,6 +7,9 @@
  *
  *   node scripts/stojak-wyroznien.mjs <zdjęcie-stojaka> <zdjęcie-piłki>
  *
+ * PO PRZEGENEROWANIU PODNIEŚ `WERSJA` w `components/StojakWyroznien.tsx` - inaczej
+ * przeglądarki przez cztery godziny będą rysować poprzednią wersję spod tego samego adresu.
+ *
  * CO POWSTAJE
  *
  *   public/wyroznienia/stojak.webp   - stojak z TŁEM WYCIĘTYM DO PRZEZROCZYSTOŚCI

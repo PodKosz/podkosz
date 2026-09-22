@@ -8,6 +8,10 @@
  *   public/wyroznienia/pilka-<barwa>.webp  - osiem barw wyróżnień
  *   public/wyroznienia/pilka-zimna.webp    - wygaszona, dla niezdobytych
  *
+ * PO PRZEGENEROWANIU PODNIEŚ `WERSJA` w `components/StojakWyroznien.tsx`. Nazwy plików są
+ * stałe, a przeglądarka trzyma je cztery godziny - bez zmiany adresu dalej rysuje stare
+ * kule, choć na serwerze leżą już nowe. Objaw myli, bo wygląda jak niewdrożona zmiana.
+ *
  * KAŻDA PIŁKA MA WŁASNE UŁOŻENIE. Poprzednia wersja robiła osiem barw z JEDNEGO zdjęcia,
  * więc wszystkie kule na półce były identyczne co do szwu - komplet, owszem, ale i osiem
  * kopii tej samej rzeczy. Tutaj każdy kolor bierze INNĄ kulę z arkusza, obróconą inaczej,
