@@ -43,6 +43,31 @@ export function pobierzSesje(): Promise<Sesja> {
   return obietnica;
 }
 
+/**
+ * Zapisuje w pamięci sesji, że ktoś właśnie coś podpalił albo dodał do ulubionych.
+ *
+ * Bez tego kliknięcie potrafiło się cofnąć samo. Przyciski biorą stan początkowy z sesji
+ * i są przemontowywane przez `key`, gdy ta wreszcie przyjdzie - a odpowiedź wyruszyła po
+ * sieć ZANIM ktoś kliknął, więc nic o tym kliknięciu nie wie i przywraca stan sprzed niego.
+ *
+ * Listę zmieniamy W MIEJSCU, a nie przez podmianę obiektu. To jedyny sposób, żeby dotarło
+ * to także do `useSesja`, które trzyma referencję na obiekcie z pierwszego rozwiązania
+ * obietnicy. Podmiana samej obietnicy załatwia z kolei tych, którzy przyjdą później.
+ */
+export function zapamietajReakcje(
+  rodzaj: "likes" | "favorites",
+  courtId: string,
+  jest: boolean
+): void {
+  obietnica = pobierzSesje().then((s) => {
+    const lista = s[rodzaj];
+    const gdzie = lista.indexOf(courtId);
+    if (jest && gdzie === -1) lista.push(courtId);
+    if (!jest && gdzie !== -1) lista.splice(gdzie, 1);
+    return s;
+  });
+}
+
 /** `undefined` dopóki odpowiedź nie wróci - stan „jeszcze nie wiemy". */
 export function useSesja(): Sesja | undefined {
   const [sesja, setSesja] = useState<Sesja | undefined>(undefined);

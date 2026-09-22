@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { DUPLIKAT, komunikatZapisu } from "@/lib/bledy-zapisu";
+import { zapamietajReakcje } from "@/lib/sesja";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { useBramka } from "./BramkaLogowania";
 import { FireBallIcon } from "./icons";
@@ -42,16 +44,33 @@ export function LikeButton({
     if (!supabase) return; // tryb testowy: zostaje stan lokalny
 
     setBusy(true);
+    const kto = await uid(supabase);
     const { error } = next
-      ? await supabase.from("likes").insert({ court_id: courtId, user_id: await uid(supabase) })
-      : await supabase.from("likes").delete().eq("court_id", courtId);
+      ? await supabase.from("likes").insert({ court_id: courtId, user_id: kto })
+      : await supabase.from("likes").delete().eq("court_id", courtId).eq("user_id", kto);
     setBusy(false);
+
+    /*
+      Duplikat znaczy, że wiersz już jest, czyli boisko JEST podpalone - a o to chodziło.
+      To samo okienko co przy ulubionych: karta leci z pamięci podręcznej, a stan podpaleń
+      dociąga `/api/sesja`, więc kliknięcie zaraz po wejściu trafia w przycisk pokazujący
+      jeszcze „podpal". Licznik cofamy, bo podpalenie nie jest nowe - tylko ekran o nim
+      nie wiedział.
+    */
+    if (error?.code === DUPLIKAT) {
+      setCount((c) => c - 1);
+      zapamietajReakcje("likes", courtId, true);
+      return;
+    }
 
     if (error) {
       setLiked(!next);
       setCount((c) => c + (next ? -1 : 1));
-      setHint(error.message);
+      setHint(komunikatZapisu(error));
+      return;
     }
+
+    zapamietajReakcje("likes", courtId, next);
   };
 
   return (

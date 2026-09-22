@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { DUPLIKAT, komunikatZapisu } from "@/lib/bledy-zapisu";
+import { zapamietajReakcje } from "@/lib/sesja";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { useBramka } from "./BramkaLogowania";
 
@@ -35,13 +37,29 @@ export function FavoriteButton({
 
     const next = !fav;
     setFav(next);
+    setHint(null);
+
     const { error } = next
       ? await supabase.from("favorites").insert({ court_id: courtId, user_id: user.id })
-      : await supabase.from("favorites").delete().eq("court_id", courtId);
-    if (error) {
+      : await supabase.from("favorites").delete().eq("court_id", courtId).eq("user_id", user.id);
+
+    /*
+      DUPLIKAT NIE JEST BŁĘDEM, tylko informacją, że stan docelowy już obowiązuje: wiersz
+      w `favorites` istnieje, czyli boisko JEST w ulubionych - a o to właśnie chodziło.
+
+      Zdarza się to naprawdę, i to nie z winy klikającego. Karta boiska leci z pamięci
+      podręcznej, a stan ulubionych dociąga osobne żądanie do `/api/sesja`; zanim wróci,
+      przycisk pokazuje „Do ulubionych" niezależnie od prawdy. Kliknięcie w tym okienku
+      wysyłało `insert` na wiersz, który już był, i pod przyciskiem lądowało
+      „duplicate key value violates unique constraint".
+    */
+    if (error && error.code !== DUPLIKAT) {
       setFav(!next);
-      setHint(error.message);
+      setHint(komunikatZapisu(error));
+      return;
     }
+
+    zapamietajReakcje("favorites", courtId, next);
   };
 
   return (

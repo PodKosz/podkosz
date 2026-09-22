@@ -1,5 +1,6 @@
 "use client";
 
+import { komunikatZapisu } from "./bledy-zapisu";
 import { supabaseBrowser } from "./supabase/client";
 
 export interface CheckinSlot {
@@ -207,7 +208,12 @@ export async function declareToday(
   }
 
   const { error } = await supabase.from("checkins").insert(wiersze);
-  if (error) throw new Error(error.message);
+  /*
+    Komunikaty z naszych wyzwalaczy (limity deklaracji, „nie da się grać w dwóch miejscach
+    naraz") idą do człowieka bez zmian - rozpoznaje je po kodzie `komunikatZapisu`.
+    Surowe błędy silnika zamienia na jedno zdanie, zamiast pokazywać nazwę indeksu.
+  */
+  if (error) throw new Error(komunikatZapisu(error));
 }
 
 /** Odwołuje własną deklarację na dziś - wszystkie godziny na tym boisku. */
