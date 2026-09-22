@@ -176,6 +176,50 @@ export function StojakWyroznien({ lista }: { lista: Wyroznienie[] }) {
           );
         })}
 
+        {/*
+          PIŁKA MA LEŻEĆ W STOJAKU, NIE NA NIM. Sam obrazek stojaka jest jednym plikiem pod
+          spodem, więc każda piłka zasłaniała poręcz, o którą powinna się opierać - wyglądało
+          to tak, jakby piłki były doklejone do zdjęcia. Tutaj kładziemy stojak DRUGI RAZ,
+          przycięty maską do trzech pasów z przednimi poręczami (zmierzonych w pliku:
+          264-302, 508-535, 770-796). Szkło przechodzi więc przed dolną częścią piłki i ta
+          wreszcie siedzi na półce.
+
+          Drugi plik nie był potrzebny - ta sama grafika, tylko inaczej przycięta, a wszystko
+          poza poręczami jest w niej i tak przezroczyste.
+        */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          className="stojak-przod"
+          src="/wyroznienia/stojak.webp"
+          alt=""
+          width={PLIK_SZER}
+          height={PLIK_WYS}
+          aria-hidden
+        />
+
+        {/*
+          A skoro poręcz jest przed piłką, to musi też świecić jej kolorem - inaczej kolorowa
+          piłka stoi za bezbarwną szybą i cały efekt się rozjeżdża. Ta warstwa to plamy
+          w barwach piłek, przycięte tą samą maską, więc widać je WYŁĄCZNIE na szkle poręczy.
+        */}
+        <div className="stojak-refleks" aria-hidden>
+          {lista.map((w, i) => {
+            const p = miejsca[i];
+            if (!p || !w.zdobyte) return null;
+            return (
+              <span
+                key={w.id}
+                className={`barwa-${w.barwa}${nadKtora === i ? " gorace" : ""}`}
+                style={{
+                  left: `${p.x}%`,
+                  top: `${p.y}%`,
+                  width: `${(SREDNICA / PLIK_SZER) * 100}%`,
+                }}
+              />
+            );
+          })}
+        </div>
+
         {wybrana && punkt && (
           <div
             className={`stojak-karta widac barwa-${wybrana.barwa}${
