@@ -49,22 +49,13 @@ interface WierszStatystyk {
   pierwszy_w_miescie: boolean;
 }
 
-export async function statystykiGracza(nick: string): Promise<ProfilGracza> {
-  const puste: ProfilGracza = {
-    ...PUSTE_STATYSTYKI,
-    userId: null,
-    nick,
-    avatar: null,
-    dolaczyl: null,
-  };
+/** Pusty profil - gdy nie ma bazy albo pod tym nickiem nie ma nikogo. */
+function pustyProfil(nick: string): ProfilGracza {
+  return { ...PUSTE_STATYSTYKI, userId: null, nick, avatar: null, dolaczyl: null };
+}
 
-  const supabase = supabasePublic();
-  if (!supabase) return puste;
-
-  const { data } = await supabase.rpc("statystyki_gracza", { p_nick: nick });
-  const w = (data as WierszStatystyk[] | null)?.[0];
-  if (!w) return puste;
-
+/** Wiersz z bazy na kształt, którego używa reszta aplikacji. */
+function zWiersza(w: WierszStatystyk, nick: string): ProfilGracza {
   return {
     userId: w.user_id,
     nick: w.nick || nick,
@@ -100,6 +91,58 @@ export async function statystykiGracza(nick: string): Promise<ProfilGracza> {
     typy: w.typy ?? 0,
     pierwszyWMiescie: w.pierwszy_w_miescie ?? false,
   };
+}
+
+export async function statystykiGracza(nick: string): Promise<ProfilGracza> {
+  const supabase = supabasePublic();
+  if (!supabase) return pustyProfil(nick);
+
+  const { data } = await supabase.rpc("statystyki_gracza", { p_nick: nick });
+  const w = (data as WierszStatystyk[] | null)?.[0];
+  return w ? zWiersza(w, nick) : pustyProfil(nick);
+}
+
+/** Klucz dopasowania - baza porównuje nicki bez wielkości liter i bez spacji po bokach. */
+const klucz = (nick: string) => nick.trim().toLowerCase();
+
+/**
+ * Statystyki wielu graczy JEDNYM zapytaniem.
+ *
+ * Ranking pokazuje przy każdym graczu jego piłkę odznaczeń, a ta rysuje się z tych liczb.
+ * Pytanie o każdego z osobna znaczyło dwadzieścia pięć podróży przez sieć na jedno
+ * zbudowanie strony; `statystyki_graczy` odpytuje wszystkich naraz.
+ *
+ * Wynik dobieramy PO NAZWIE, nie po pozycji: baza nie obiecuje kolejności wierszy, a przy
+ * dobieraniu po indeksie pomyłka byłaby cicha - ranking pokazałby cudze odznaczenia przy
+ * czyjejś twarzy i nikt by tego nie zauważył.
+ *
+ * Gdy funkcji jeszcze nie ma (kod wgrany przed migracją `migration-statystyki-zbiorczo.sql`),
+ * cofamy się do pytania o każdego osobno. Wolniej, ale strona działa - a wdrożenie i migracja
+ * nigdy nie dzieją się w tej samej sekundzie.
+ */
+export async function statystykiGraczy(nicki: string[]): Promise<Map<string, ProfilGracza>> {
+  const unikalne = [...new Map(nicki.map((n) => [klucz(n), n])).values()];
+  const wynik = new Map<string, ProfilGracza>();
+  if (!unikalne.length) return wynik;
+
+  const supabase = supabasePublic();
+  if (!supabase) {
+    for (const n of unikalne) wynik.set(klucz(n), pustyProfil(n));
+    return wynik;
+  }
+
+  const { data, error } = await supabase.rpc("statystyki_graczy", { p_nicki: unikalne });
+
+  if (error || !Array.isArray(data)) {
+    const osobno = await Promise.all(unikalne.map((n) => statystykiGracza(n)));
+    unikalne.forEach((n, i) => wynik.set(klucz(n), osobno[i]));
+    return wynik;
+  }
+
+  for (const w of data as WierszStatystyk[]) wynik.set(klucz(w.nick), zWiersza(w, w.nick));
+  /* Nazwy, których baza nie zwróciła, dostają pusty profil - wołający ma dostać komplet. */
+  for (const n of unikalne) if (!wynik.has(klucz(n))) wynik.set(klucz(n), pustyProfil(n));
+  return wynik;
 }
 
 /**

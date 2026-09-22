@@ -12,7 +12,7 @@ import {
   type IdPoziomu,
   type StatystykiGracza,
 } from "./odznaczenia";
-import { statystykiGracza } from "./profil";
+import { statystykiGraczy } from "./profil";
 import type { CourtRow } from "./supabase/types";
 
 export const COURT_SELECT =
@@ -605,18 +605,17 @@ export async function listRankingOdkrywcow(ile = 25): Promise<OdkrywcaRanking[]>
     odznaczeń - a ta rysuje się właśnie z tych liczb. Wcześniej wystarczyła pierwsza
     piątka, której konstelacja pokazywała plakietki.
 
-    Każdy gracz to osobne pytanie do bazy, więc przy dwudziestu pięciu jest ich
-    dwadzieścia pięć - ale lecą równolegle i tylko przy odświeżeniu strony, która
-    przez pięć minut idzie z pamięci podręcznej (`revalidate` na `/ranking`).
+    Jednym zapytaniem, nie dwudziestoma pięcioma: `statystyki_graczy` bierze tablicę nazw
+    i oddaje po wierszu na każdą. Baza liczy tyle samo co przedtem, ale podróż przez sieć
+    jest jedna - a to ona była kosztem.
   */
-  const statystyki = await Promise.all(lista.map((o) => statystykiGracza(o.name)));
-  lista.forEach((o, i) => {
-    o.statystyki = statystyki[i];
-  });
+  const statystyki = await statystykiGraczy(lista.map((o) => o.name));
+  const dla = (nazwa: string) => statystyki.get(nazwa.trim().toLowerCase()) ?? PUSTE_STATYSTYKI;
+  for (const o of lista) o.statystyki = dla(o.name);
 
   const czolowka = lista.slice(0, ZE_PLAKIETKAMI);
-  czolowka.forEach((o, i) => {
-    o.plakietki = odznaczenia(statystyki[i])
+  czolowka.forEach((o) => {
+    o.plakietki = odznaczenia(dla(o.name))
       .filter((od) => od.poziom !== null)
       .sort((a, b) => b.stopien - a.stopien)
       .slice(0, 3)
