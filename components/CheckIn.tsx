@@ -141,16 +141,27 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
   /** Czy tej godziny nie da się teraz kliknąć - i dlaczego, do podpowiedzi pod kursorem. */
   const niedostepna = (h: number): string | null => {
     if (zajete.includes(h)) return "Jesteś już o tej godzinie na innym boisku.";
-    if (od !== null && !wolnyZakres(od, h)) {
+    /* godzina przed początkiem nie domyka zakresu, tylko go przestawia - więc to, co
+       leży między nią a starym początkiem, nie ma tu znaczenia */
+    if (od !== null && h > od && !wolnyZakres(od, h)) {
       return "Między tymi godzinami jesteś już na innym boisku.";
     }
     return null;
   };
 
-  /* pierwsze kliknięcie zaznacza początek, drugie zamyka zakres i zapisuje */
+  /* Po wyborze początku liczą się już tylko godziny PO nim - wcześniejsze gasną. */
+  const przedPoczatkiem = (h: number) => od !== null && h < od;
+
+  /*
+    Pierwsze kliknięcie zaznacza początek, drugie zamyka zakres i zapisuje. Kliknięcie
+    godziny wcześniejszej niż początek nie zapisuje niczego - przestawia początek. Kiedyś
+    domykało zakres wstecz, ale skoro te godziny są wygaszone, zapis po ich kliknięciu byłby
+    niespodzianką; przesunięcie startu jest tym, czego ktoś wtedy naprawdę chce.
+  */
   const klik = (h: number) => {
-    if (od === null) {
+    if (od === null || h < od) {
       setOd(h);
+      setPodKursorem(null);
       return;
     }
     void zapisz(od, h);
@@ -236,47 +247,47 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
               ? zajete.length
                 ? "Kliknij godzinę, od której grasz. Przekreślone masz już zajęte na innym boisku."
                 : "Kliknij godzinę, od której grasz."
-              : podKursorem !== null && podKursorem !== od
-                ? `${String(Math.min(od, podKursorem)).padStart(2, "0")}:00-${String(
-                    Math.max(od, podKursorem) + 1
-                  ).padStart(2, "0")}:00 - kliknij, żeby zapisać.`
-                : `Od ${String(od).padStart(2, "0")}:00 - przesuń kursor i kliknij godzinę końca.`}
+              : podKursorem !== null && podKursorem > od
+                ? `${String(od).padStart(2, "0")}:00-${String(podKursorem + 1).padStart(
+                    2,
+                    "0"
+                  )}:00 - kliknij, żeby zapisać.`
+                : `Od ${String(od).padStart(2, "0")}:00 - kliknij godzinę końca.`}
           </p>
 
           {/*
             Zakres podświetlamy tylko do godziny pod kursorem - wcześniej po pierwszym
             kliknięciu zapalały się wszystkie późniejsze, więc nie było widać, co właściwie
-            się zapisze. Działa w obie strony: kliknięcie wcześniejszej godziny też domyka
-            przedział (kolejność i tak porządkuje `declareToday`).
+            się zapisze. Godziny przed początkiem są wygaszone: widać od razu, że koniec
+            wybiera się tylko spośród późniejszych.
           */}
           <div className="grid grid-cols-4 gap-1.5" onPointerLeave={() => setPodKursorem(null)}>
             {HOURS.map((h) => {
               const wybrana = od === h;
               const powod = niedostepna(h);
+              const wczesniej = przedPoczatkiem(h);
               const wZakresie =
-                od !== null &&
-                podKursorem !== null &&
-                h !== od &&
-                h >= Math.min(od, podKursorem) &&
-                h <= Math.max(od, podKursorem);
+                od !== null && podKursorem !== null && h > od && h <= podKursorem;
               return (
                 <button
                   key={h}
                   onClick={() => klik(h)}
-                  /* zablokowanej godziny nie bierzemy pod kursor - inaczej zakres
-                     rysowałby się do miejsca, w którym i tak nie da się kliknąć */
-                  onPointerEnter={() => setPodKursorem(powod ? null : h)}
-                  onFocus={() => setPodKursorem(powod ? null : h)}
+                  /* zablokowanej ani wcześniejszej godziny nie bierzemy pod kursor - zakres
+                     rysowałby się do miejsca, którym i tak nie da się go domknąć */
+                  onPointerEnter={() => setPodKursorem(powod || wczesniej ? null : h)}
+                  onFocus={() => setPodKursorem(powod || wczesniej ? null : h)}
                   disabled={busy || powod !== null}
-                  title={powod ?? undefined}
+                  title={powod ?? (wczesniej ? "Zacznij od tej godziny" : undefined)}
                   className={`rounded-xl border py-2 text-[12px] font-semibold tabular-nums transition ${
                     powod
                       ? "cursor-not-allowed border-hairline bg-white/[0.02] text-faint line-through"
                       : wybrana
                         ? "border-transparent flame-gradient text-black"
-                        : wZakresie
-                          ? "border-flame/40 bg-flame/12 text-glow hover:border-flame/70"
-                          : "border-hairline bg-white/6 hover:border-flame/50 hover:text-glow"
+                        : wczesniej
+                          ? "border-hairline/50 bg-white/[0.02] text-faint opacity-45 hover:opacity-80"
+                          : wZakresie
+                            ? "border-flame/40 bg-flame/12 text-glow hover:border-flame/70"
+                            : "border-hairline bg-white/6 hover:border-flame/50 hover:text-glow"
                   }`}
                 >
                   {h}:00
