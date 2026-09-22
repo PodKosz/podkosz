@@ -9,9 +9,9 @@ import { CITIES_GEOJSON } from "@/lib/cities";
 import type { LeadPoint } from "@/lib/leads";
 import { HoverCard } from "./HoverCard";
 import { kafelkiPodkladu, podkladMapy } from "@/lib/podklad";
-import { blyskiKafelkow } from "@/lib/blyski-kafelkow";
 import { ZarWojewodztwa, bboxWojewodztwa, stworzZarWojewodztwa } from "@/lib/zarWojewodztwa";
 import { useMotyw } from "@/lib/motyw";
+import { CourtOutline } from "./CourtOutline";
 import { FiltrSzkla } from "./FiltrSzkla";
 import { czytajWidok, ostatniKadr, zapamietajKadr, zapiszWidok } from "@/lib/adres";
 import { fetchCheckinyDzisiaj } from "@/lib/checkins";
@@ -225,9 +225,6 @@ const STYLE: StyleSpecification = {
         "raster-hue-rotate": -12,
         "raster-contrast": 0.08,
         "raster-brightness-max": 0.94,
-        // dłuższe przenikanie niż domyślne 300 ms - kafelek ma wyjść spod swojego błysku,
-        // a nie wskoczyć, zanim błysk zdąży się zapalić (patrz `lib/blyski-kafelkow.ts`)
-        "raster-fade-duration": 520,
       },
     },
     {
@@ -333,6 +330,13 @@ export function MapView({
   const mapRef = useRef<MlMap | null>(null);
   const markersRef = useRef<Record<string, { marker: Marker; el: HTMLDivElement }>>({});
   const [ready, setReady] = useState(false);
+  /**
+   * Podkład ma komplet kafelków kadru - dopiero wtedy zdejmujemy zasłonę z konturem boiska.
+   * `ready` to za mało: przychodzi z samym stylem, zanim poleci pierwszy kafelek.
+   */
+  const [odslonieta, setOdslonieta] = useState(false);
+  /** zasłona już przeniknęła - zdejmujemy ją z drzewa, żeby nie wisiała niewidzialna */
+  const [zaslonaZeszla, setZaslonaZeszla] = useState(false);
   const [diag, setDiag] = useState<MapDiag | null>(null);
   const [showDiag, setShowDiag] = useState(false);
   type Karta = { court: MapCourt; x: number; y: number };
@@ -594,7 +598,24 @@ export function MapView({
       push();
       setReady(true);
     });
-    const zgasBlyski = blyskiKafelkow(map, "carto");
+    /*
+      Podkład to kafelki rastrowe, które przychodzą po kolei - bez zasłony mapa wstawała
+      kwadrat po kwadracie. Czekamy na `idle` z kompletem kafelków (samo `load` przychodzi,
+      gdy gotowy jest styl, a kafelki dopiero ruszają) i odsłaniamy wszystko naraz.
+
+      Awaryjnie po ośmiu sekundach odsłaniamy i tak: na bardzo wolnym łączu lepiej pokazać
+      mapę na raty niż zostawić ekran z samym konturem.
+    */
+    const odslon = () => {
+      clearTimeout(awaryjnie);
+      map.off("idle", poGotowosci);
+      setOdslonieta(true);
+    };
+    const poGotowosci = () => {
+      if (map.areTilesLoaded()) odslon();
+    };
+    const awaryjnie = window.setTimeout(odslon, 8000);
+    map.on("idle", poGotowosci);
 
     map.on("move", reposition);
     // dotknięcie samej mapy zamyka wizytówkę boiska (na markerach zatrzymujemy zdarzenie)
@@ -723,7 +744,8 @@ export function MapView({
     }
 
     return () => {
-      zgasBlyski();
+      clearTimeout(awaryjnie);
+      map.off("idle", poGotowosci);
       ro.disconnect();
       map.off("moveend", zapiszKadr);
       map.remove();
@@ -1510,6 +1532,28 @@ export function MapView({
       {/* h-full/w-full, a nie absolute inset-0: maplibre-gl.css wymusza na tym divie
           position:relative, przez co inset-0 nie działa i kontener ma wysokość 0. */}
       <div ref={containerRef} className="h-full w-full" />
+
+      {/*
+        Zasłona na czas wczytywania podkładu - ten sam kontur boiska, który stoi, zanim
+        dojedzie paczka z MapLibre (szkielet w `Explorer.tsx`), więc przejście między nimi
+        jest niewidoczne. Przykrywa też pinezki: bez tego wisiałyby nad pustym tłem, zanim
+        pojawi się pod nimi kraj. Panel z filtrami i przyciski zostają nad nią i działają.
+      */}
+      {!zaslonaZeszla && (
+        <div
+          aria-hidden
+          className={`pointer-events-none absolute inset-0 z-[15] grid place-items-center bg-void transition-opacity duration-500 ease-out motion-reduce:duration-200 ${
+            odslonieta ? "opacity-0" : ""
+          }`}
+          onTransitionEnd={(e) => {
+            if (e.target === e.currentTarget && odslonieta) setZaslonaZeszla(true);
+          }}
+        >
+          <div className="w-[min(560px,72vw)] opacity-25">
+            <CourtOutline uid="mapa-zaslona" />
+          </div>
+        </div>
+      )}
 
       {/* filtr zaginający tło pod wizytówką - musi być w drzewie, sam nic nie rysuje */}
       <FiltrSzkla />
