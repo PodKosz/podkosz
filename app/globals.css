@@ -900,6 +900,47 @@ body {
   border-top: 1px solid rgb(var(--rgb-szyba) / 0.1);
 }
 
+/*
+  SZKŁO NA KAFLU WYPEŁNIONYM ZDJĘCIEM - te same dwa jasne rąbki, co w `.kafel-szklo`:
+  pasmo światła tuż pod górną krawędzią i słabsze tuż nad dolną. To one każą oku odczytać
+  płaski kadr jako taflę szkła, a nie jako wklejone zdjęcie.
+
+  Osobna klasa, bo tu szkło musi być NAKŁADKĄ, a nie tłem. W kafelku z liczbą wystarczyło
+  tło, bo pod spodem nie ma nic; tutaj całą powierzchnię zajmuje zdjęcie, które jest
+  dzieckiem kafla i maluje się nad jego tłem. Element leży więc w drzewie nad zdjęciem,
+  a pod treścią - napisy i plakietki mają własny `z-index`.
+
+  Włosowa obwódka jest w tym samym elemencie, nie osobno: szkło ma krawędź i światło z tej
+  samej strony, więc rozdzielanie ich na dwie warstwy tylko mnożyłoby miejsca do zmiany.
+*/
+.szklo-krawedzie {
+  border-radius: inherit;
+  background:
+    linear-gradient(
+      180deg,
+      rgb(var(--rgb-szyba) / 0.52) 0,
+      rgb(var(--rgb-szyba) / 0.16) 2px,
+      rgb(var(--rgb-szyba) / 0.03) 10px,
+      rgb(var(--rgb-szyba) / 0) 34%,
+      rgb(var(--rgb-szyba) / 0) 72%,
+      rgb(var(--rgb-szyba) / 0.07) calc(100% - 8px),
+      rgb(var(--rgb-szyba) / 0.3) calc(100% - 2px),
+      rgb(var(--rgb-szyba) / 0.14) 100%
+    ),
+    linear-gradient(
+      128deg,
+      rgb(var(--rgb-szyba) / 0.13) 0%,
+      rgb(var(--rgb-szyba) / 0.03) 28%,
+      rgb(var(--rgb-szyba) / 0) 56%
+    );
+  box-shadow: inset 0 0 0 1px rgb(var(--rgb-szyba) / 0.12);
+  transition: box-shadow 340ms ease;
+}
+.karta-rankingu:hover .szklo-krawedzie,
+.karta-rankingu:focus-visible .szklo-krawedzie {
+  box-shadow: inset 0 0 0 1px rgb(var(--rgb-szyba) / 0.22);
+}
+
 /* kafelek liczby - to samo szkło, ale reaguje na kursor */
 .kafel {
   position: relative;

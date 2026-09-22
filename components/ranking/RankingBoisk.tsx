@@ -173,11 +173,12 @@ function KartaBoiska({
       <span className="karta-rankingu-zaslona pointer-events-none absolute inset-0" />
       <span aria-hidden className="karta-rankingu-blysk" />
 
-      {/* włosowa obwódka od środka - szkło ma krawędź, ale nie ramkę */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-0 rounded-[28px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.09),inset_0_1px_0_rgba(255,255,255,0.14)]"
-      />
+      {/*
+        Szkło: dwa jasne rąbki przy górnej i dolnej krawędzi plus włosowa obwódka od środka -
+        dokładnie to, co na kafelkach z liczbami na profilu gracza. Kafel boiska i kafelek
+        liczby stoją w serwisie obok siebie i mają być z jednego materiału.
+      */}
+      <span aria-hidden className="szklo-krawedzie pointer-events-none absolute inset-0" />
 
       {(court.basketApproved || court.funny) && (
         <span className="absolute left-5 top-5 z-[2] flex flex-wrap gap-1.5">

@@ -164,8 +164,8 @@ function KartaGracza({
   const wysokosc = zwyciezca
     ? "clamp(380px, 42vw, 620px)"
     : trojka
-      ? "clamp(300px, 29vw, 440px)"
-      : "clamp(240px, 21vw, 320px)";
+      ? "clamp(370px, 36vw, 560px)"
+      : "clamp(300px, 27vw, 410px)";
 
   return (
     <Link
@@ -201,17 +201,19 @@ function KartaGracza({
           stały tu trzy najwyższe plakietki pod nazwą - trzy z dwudziestu sześciu, czyli
           wycinek, który niczego nie podsumowywał, a zajmował cały rząd.
 
-          Kula jest szersza niż dawne zdjęcie, bo zdjęcie jest teraz jej środkiem: sama
-          piłka zajmuje 71% rysunku, więc pudełko musi być o tyle większe, żeby twarz
-          została tej samej wielkości co przedtem.
+          Kula jest dużo szersza niż dawne zdjęcie i to celowo. Zdjęcie jest teraz JEJ
+          ŚRODKIEM i zajmuje stałą część rysunku, więc rośnie razem z nią w tej samej
+          proporcji - nie da się powiększyć twarzy bez powiększenia kuli. Karty czołówki
+          dostały przez to większą wysokość: mają sztywną, a przy poprzedniej piłka
+          z nazwą i liczbami przestałyby się mieścić.
         */}
         <span
           className={`relative grid place-items-center ${
             zwyciezca
-              ? "h-[clamp(150px,15.5vw,238px)] w-[clamp(150px,15.5vw,238px)]"
+              ? "h-[clamp(215px,23vw,340px)] w-[clamp(215px,23vw,340px)]"
               : trojka
-                ? "h-[clamp(114px,10.6vw,156px)] w-[clamp(114px,10.6vw,156px)]"
-                : "h-[99px] w-[99px]"
+                ? "h-[clamp(168px,16vw,228px)] w-[clamp(168px,16vw,228px)]"
+                : "h-[132px] w-[132px]"
           }`}
         >
           <PilkaOdznaczen
@@ -268,7 +270,7 @@ function WolnaKarta({ miejsce, duza = false }: { miejsce: number; duza?: boolean
   return (
     <div
       className="flex flex-col items-center justify-center gap-4 rounded-[28px] border border-dashed border-white/10 p-6 text-center"
-      style={{ height: duza ? "clamp(300px, 29vw, 440px)" : "clamp(240px, 21vw, 320px)" }}
+      style={{ height: duza ? "clamp(370px, 36vw, 560px)" : "clamp(300px, 27vw, 410px)" }}
     >
       <span className="text-[26px] font-semibold tabular-nums text-white/15">
         {String(miejsce).padStart(2, "0")}
@@ -295,7 +297,7 @@ function WierszGracza({ odkrywca, miejsce }: { odkrywca: OdkrywcaRanking; miejsc
           {String(miejsce).padStart(2, "0")}
         </span>
 
-        <span className="relative grid h-[68px] w-[68px] shrink-0 place-items-center">
+        <span className="relative grid h-[92px] w-[92px] shrink-0 place-items-center">
           <PilkaOdznaczen
             statystyki={odkrywca.statystyki}
             nick={odkrywca.name}
