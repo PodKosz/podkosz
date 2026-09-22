@@ -5,14 +5,14 @@
  *
  * CO POWSTAJE
  *
- *   public/wyroznienia/pilka-<barwa>.webp  - osiem barw wyróżnień
+ *   public/wyroznienia/pilka-<barwa>.webp  - siedemnaście barw wyróżnień
  *   public/wyroznienia/pilka-zimna.webp    - wygaszona, dla niezdobytych
  *
  * PO PRZEGENEROWANIU PODNIEŚ `WERSJA` w `components/StojakWyroznien.tsx`. Nazwy plików są
  * stałe, a przeglądarka trzyma je cztery godziny - bez zmiany adresu dalej rysuje stare
  * kule, choć na serwerze leżą już nowe. Objaw myli, bo wygląda jak niewdrożona zmiana.
  *
- * KAŻDA PIŁKA MA WŁASNE UŁOŻENIE. Poprzednia wersja robiła osiem barw z JEDNEGO zdjęcia,
+ * KULE MAJĄ RÓŻNE UŁOŻENIA. Poprzednia wersja robiła wszystkie barwy z JEDNEGO zdjęcia,
  * więc wszystkie kule na półce były identyczne co do szwu - komplet, owszem, ale i osiem
  * kopii tej samej rzeczy. Tutaj każdy kolor bierze INNĄ kulę z arkusza, obróconą inaczej,
  * a do palety serwisu dostraja się samym obrotem odcienia. Światło, szkło i połysk zostają
@@ -33,21 +33,36 @@ const KATALOG = "public/wyroznienia";
 const BOK = 320;
 
 /*
-  Skąd którą kulę bierzemy i na jaki odcień ją przestrajamy. Pary dobrane tak, żeby obrót
-  odcienia był jak najmniejszy - zielona kula na limonkę, nie na róż. Przy dużym obrocie
-  barwne refleksy w szkle zaczynają kłócić się z rdzeniem.
+  Skąd którą kulę bierzemy i na jaki odcień ją przestrajamy. Każde z siedemnastu wyróżnień
+  ma WŁASNĄ barwę, a kul w arkuszu jest dziewięć - więc źródła się powtarzają i część kul
+  dzieli ułożenie. To świadoma zgoda: siedemnaście różnych kolorów czyta się jako
+  siedemnaście różnych rzeczy nawet przy powtórzonym szwie, a odwrotnie już nie.
+
+  Źródło dobiera NAJBLIŻSZY odcień, żeby obrót był jak najmniejszy - zielona kula na
+  limonkę, nie na róż; przy dużym obrocie barwne refleksy w szkle kłócą się z rdzeniem.
+  Z jednym zastrzeżeniem: sąsiedzi na liście nie mogą mieć tego samego źródła, bo na półce
+  stoją obok siebie i powtórzone ułożenie widać wtedy od razu.
 
   Pozycje w arkuszu liczone od zera, [wiersz, kolumna].
 */
 const PRZYDZIAL = [
-  { nazwa: "roza", zrodlo: [0, 0], cel: [255, 138, 178] },
+  { nazwa: "czerwien", zrodlo: [2, 1], cel: [245, 117, 117] },
   { nazwa: "miedz", zrodlo: [0, 1], cel: [226, 146, 96] },
   { nazwa: "zloto", zrodlo: [0, 2], cel: [255, 197, 106] },
+  { nazwa: "bursztyn", zrodlo: [0, 1], cel: [245, 228, 117] },
+  { nazwa: "cytryna", zrodlo: [0, 2], cel: [232, 245, 117] },
   { nazwa: "limonka", zrodlo: [1, 0], cel: [190, 234, 96] },
-  { nazwa: "lazur", zrodlo: [1, 1], cel: [108, 204, 255] },
-  { nazwa: "fiolet", zrodlo: [1, 2], cel: [178, 138, 255] },
+  { nazwa: "trawa", zrodlo: [0, 2], cel: [151, 245, 117] },
+  { nazwa: "szmaragd", zrodlo: [1, 0], cel: [117, 245, 151] },
   { nazwa: "mieta", zrodlo: [2, 0], cel: [106, 232, 190] },
-  { nazwa: "blekit", zrodlo: [2, 2], cel: [126, 166, 255] },
+  { nazwa: "turkus", zrodlo: [1, 1], cel: [117, 245, 245] },
+  { nazwa: "lazur", zrodlo: [2, 0], cel: [108, 204, 255] },
+  { nazwa: "blekit", zrodlo: [1, 1], cel: [126, 166, 255] },
+  { nazwa: "szafir", zrodlo: [1, 2], cel: [117, 117, 245] },
+  { nazwa: "fiolet", zrodlo: [2, 2], cel: [178, 138, 255] },
+  { nazwa: "ametyst", zrodlo: [1, 2], cel: [213, 117, 245] },
+  { nazwa: "magenta", zrodlo: [0, 0], cel: [245, 117, 219] },
+  { nazwa: "roza", zrodlo: [2, 1], cel: [255, 138, 178] },
 ];
 /* Dziewiąta kula zostaje na wygaszoną - żadna barwa wyróżnień jej nie potrzebuje. */
 const ZIMNA = [2, 1];

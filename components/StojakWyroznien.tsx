@@ -13,9 +13,10 @@ import type { Wyroznienie } from "@/lib/odznaczenia";
  * Stojak i piłki są ZDJĘCIAMI, nie rysunkiem - i to była świadoma zmiana. Poprzednia wersja
  * rysowała jedno i drugie w SVG; działała, ale szkło złożone z gradientów zawsze wygląda na
  * gradienty, a piłka bez ziarna skóry jest kółkiem w kolorze. Pliki robi
- * `scripts/stojak-wyroznien.mjs`: stojak ma tło wycięte do przezroczystości, a osiem
- * barwnych piłek powstaje z JEDNEGO zdjęcia przez odbarwienie i pomalowanie - dzięki temu
- * wszystkie mają dokładnie to samo światło i wyglądają jak komplet, a nie zbieranina.
+ * `scripts/stojak-wyroznien.mjs` (stojak, z tłem wyciętym do przezroczystości) oraz
+ * `scripts/pilki-wyroznien.mjs` (siedemnaście barwnych kul z arkusza dziewięciu szklanych
+ * piłek, przestrojonych obrotem odcienia - dzięki temu wszystkie mają to samo światło
+ * i wyglądają jak komplet, a nie zbieranina).
  *
  * Liczby niżej są w pikselach pliku stojaka i zamieniają się na PROCENTY, więc całość
  * skaluje się z szerokością kolumny i nie ma tu ani jednego piksela na sztywno.
@@ -33,7 +34,7 @@ import type { Wyroznienie } from "@/lib/odznaczenia";
   PRZY KAŻDYM PRZEGENEROWANIU GRAFIK TRZEBA GO PODNIEŚĆ - inaczej wróci ten sam objaw,
   a jest on mylący: wygląda jak niewdrożona zmiana, a nie jak stara kopia w przeglądarce.
 */
-const WERSJA = 2;
+const WERSJA = 3;
 
 /* ————— siatka odniesienia: piksele pliku `stojak.webp` ————— */
 const PLIK_SZER = 1236;

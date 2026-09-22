@@ -2364,29 +2364,56 @@ body {
   całym kole barw właśnie dlatego, że nie tworzą skali: gdyby chodziły odcieniami jednego
   koloru, oko szukałoby w nich porządku, którego tu nie ma.
 */
+.barwa-czerwien {
+  --b: 245 117 117;
+}
+.barwa-miedz {
+  --b: 226 146 96;
+}
 .barwa-zloto {
   --b: 255 197 106;
+}
+.barwa-bursztyn {
+  --b: 245 228 117;
+}
+.barwa-cytryna {
+  --b: 232 245 117;
 }
 .barwa-limonka {
   --b: 190 234 96;
 }
-.barwa-fiolet {
-  --b: 178 138 255;
+.barwa-trawa {
+  --b: 151 245 117;
 }
-.barwa-lazur {
-  --b: 108 204 255;
-}
-.barwa-roza {
-  --b: 255 138 178;
+.barwa-szmaragd {
+  --b: 117 245 151;
 }
 .barwa-mieta {
   --b: 106 232 190;
 }
+.barwa-turkus {
+  --b: 117 245 245;
+}
+.barwa-lazur {
+  --b: 108 204 255;
+}
 .barwa-blekit {
   --b: 126 166 255;
 }
-.barwa-miedz {
-  --b: 226 146 96;
+.barwa-szafir {
+  --b: 117 117 245;
+}
+.barwa-fiolet {
+  --b: 178 138 255;
+}
+.barwa-ametyst {
+  --b: 213 117 245;
+}
+.barwa-magenta {
+  --b: 245 117 219;
+}
+.barwa-roza {
+  --b: 255 138 178;
 }
 
 @media (prefers-reduced-motion: reduce) {

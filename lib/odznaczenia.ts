@@ -236,14 +236,23 @@ export interface Odznaczenie {
  * to progi, cała reszta to jednorazowe wyczyny.
  */
 export type BarwaWyroznienia =
+  | "czerwien"
+  | "miedz"
   | "zloto"
+  | "bursztyn"
+  | "cytryna"
   | "limonka"
-  | "fiolet"
-  | "lazur"
-  | "roza"
+  | "trawa"
+  | "szmaragd"
   | "mieta"
+  | "turkus"
+  | "lazur"
   | "blekit"
-  | "miedz";
+  | "szafir"
+  | "fiolet"
+  | "ametyst"
+  | "magenta"
+  | "roza";
 
 /** Odznaczenie bez progów - albo je masz, albo nie. */
 export interface Wyroznienie {
@@ -325,7 +334,7 @@ export function wyroznienia(s: StatystykiGracza): Wyroznienie[] {
       nazwa: "Pod światłami",
       opis: "Własne boisko z oświetleniem.",
       warunek: "Dodaj boisko, na którym da się grać po zmroku.",
-      barwa: "fiolet",
+      barwa: "bursztyn",
       zdobyte: s.oswietlone,
     },
     {
@@ -333,7 +342,7 @@ export function wyroznienia(s: StatystykiGracza): Wyroznienie[] {
       nazwa: "Basket Approved",
       opis: "Własne boisko z plakietką twórcy serwisu.",
       warunek: "Dodaj boisko, które dostanie plakietkę Basket Approved.",
-      barwa: "zloto",
+      barwa: "fiolet",
       zdobyte: s.approved,
     },
     {
@@ -349,7 +358,7 @@ export function wyroznienia(s: StatystykiGracza): Wyroznienie[] {
       nazwa: "Komplet kadrów",
       opis: "Boisko sfotografowane w całości, bez braków.",
       warunek: "Dodaj boisko z co najmniej sześcioma różnymi kadrami.",
-      barwa: "mieta",
+      barwa: "turkus",
       zdobyte: s.komplet,
     },
     {
@@ -357,7 +366,7 @@ export function wyroznienia(s: StatystykiGracza): Wyroznienie[] {
       nazwa: "Korektor",
       opis: "Trzy zgłoszone poprawki, które trafiły na mapę.",
       warunek: "Zgłoś trzy poprawki do boisk - liczą się te, które zostaną przyjęte.",
-      barwa: "lazur",
+      barwa: "czerwien",
       zdobyte: s.poprawki >= 3,
     },
     {
@@ -365,7 +374,7 @@ export function wyroznienia(s: StatystykiGracza): Wyroznienie[] {
       nazwa: "Znawca nawierzchni",
       opis: "Cztery różne nawierzchnie w dodanych boiskach.",
       warunek: "Dodaj boiska o czterech różnych nawierzchniach.",
-      barwa: "miedz",
+      barwa: "trawa",
       zdobyte: s.nawierzchnie >= 4,
     },
     {
@@ -381,7 +390,7 @@ export function wyroznienia(s: StatystykiGracza): Wyroznienie[] {
       nazwa: "Pełna mapa",
       opis: "Boisko w każdym z 16 województw.",
       warunek: "Dodaj boisko w każdym województwie.",
-      barwa: "mieta",
+      barwa: "szmaragd",
       zdobyte: s.wojewodztwa >= 16,
     },
     {
@@ -389,7 +398,7 @@ export function wyroznienia(s: StatystykiGracza): Wyroznienie[] {
       nazwa: "Nocny marek",
       opis: "Zapis na grę o 21:00 albo później.",
       warunek: "Zapisz się na grę na 21:00 albo później.",
-      barwa: "fiolet",
+      barwa: "szafir",
       zdobyte: s.nocne,
     },
     {
@@ -397,7 +406,7 @@ export function wyroznienia(s: StatystykiGracza): Wyroznienie[] {
       nazwa: "Ranny ptaszek",
       opis: "Zapis na grę o 8:00 albo wcześniej.",
       warunek: "Zapisz się na grę na 8:00 albo wcześniej.",
-      barwa: "lazur",
+      barwa: "cytryna",
       zdobyte: s.ranne,
     },
     {
@@ -405,7 +414,7 @@ export function wyroznienia(s: StatystykiGracza): Wyroznienie[] {
       nazwa: "Od świtu do nocy",
       opis: "Gra i o świcie, i po zmroku.",
       warunek: "Zdobądź Nocnego marka i Rannego ptaszka.",
-      barwa: "blekit",
+      barwa: "magenta",
       zdobyte: s.nocne && s.ranne,
     },
     {
@@ -413,7 +422,7 @@ export function wyroznienia(s: StatystykiGracza): Wyroznienie[] {
       nazwa: "Weekendowy wojownik",
       opis: "Gra w sobotę albo w niedzielę.",
       warunek: "Zapisz się na grę w weekend.",
-      barwa: "roza",
+      barwa: "miedz",
       zdobyte: s.weekend,
     },
     {
@@ -421,7 +430,7 @@ export function wyroznienia(s: StatystykiGracza): Wyroznienie[] {
       nazwa: "Maratończyk",
       opis: "Sześć godzin gry w jednym dniu.",
       warunek: "Zaznacz sześciogodzinny zakres gry w jednym dniu.",
-      barwa: "miedz",
+      barwa: "ametyst",
       zdobyte: s.maraton,
     },
     {
@@ -429,7 +438,7 @@ export function wyroznienia(s: StatystykiGracza): Wyroznienie[] {
       nazwa: "Tydzień pod koszem",
       opis: "Siedem dni z grą jeden po drugim.",
       warunek: "Zapisz się na grę w siedmiu kolejnych dniach.",
-      barwa: "limonka",
+      barwa: "lazur",
       zdobyte: s.seria >= 7,
     },
     {
@@ -437,7 +446,7 @@ export function wyroznienia(s: StatystykiGracza): Wyroznienie[] {
       nazwa: "Mrozoodporny",
       opis: "Gra w grudniu, styczniu albo lutym.",
       warunek: "Zapisz się na grę w miesiącu zimowym.",
-      barwa: "lazur",
+      barwa: "mieta",
       zdobyte: s.zima,
     },
   ];
