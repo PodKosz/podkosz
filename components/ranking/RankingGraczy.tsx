@@ -164,8 +164,8 @@ function KartaGracza({
   const wysokosc = zwyciezca
     ? "clamp(380px, 42vw, 620px)"
     : trojka
-      ? "clamp(370px, 36vw, 560px)"
-      : "clamp(300px, 27vw, 410px)";
+      ? "clamp(430px, 42vw, 650px)"
+      : "clamp(345px, 32vw, 480px)";
 
   return (
     <Link
@@ -210,10 +210,10 @@ function KartaGracza({
         <span
           className={`relative grid place-items-center ${
             zwyciezca
-              ? "h-[clamp(215px,23vw,340px)] w-[clamp(215px,23vw,340px)]"
+              ? "h-[clamp(260px,28vw,430px)] w-[clamp(260px,28vw,430px)]"
               : trojka
-                ? "h-[clamp(168px,16vw,228px)] w-[clamp(168px,16vw,228px)]"
-                : "h-[132px] w-[132px]"
+                ? "h-[clamp(200px,19vw,285px)] w-[clamp(200px,19vw,285px)]"
+                : "h-[142px] w-[142px]"
           }`}
         >
           <PilkaOdznaczen
@@ -270,7 +270,7 @@ function WolnaKarta({ miejsce, duza = false }: { miejsce: number; duza?: boolean
   return (
     <div
       className="flex flex-col items-center justify-center gap-4 rounded-[28px] border border-dashed border-white/10 p-6 text-center"
-      style={{ height: duza ? "clamp(370px, 36vw, 560px)" : "clamp(300px, 27vw, 410px)" }}
+      style={{ height: duza ? "clamp(430px, 42vw, 650px)" : "clamp(345px, 32vw, 480px)" }}
     >
       <span className="text-[26px] font-semibold tabular-nums text-white/15">
         {String(miejsce).padStart(2, "0")}

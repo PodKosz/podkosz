@@ -38,7 +38,13 @@ const RY = 0.285;
 const CX = BOK / 2;
 const CY = BOK / 2;
 const R = BOK * 0.355;
-const R_AWATAR = R * 0.2;
+/*
+  Promień zdjęcia w środku kuli. 0,28 zamiast 0,2: przy mniejszym twarz w rankingu ginęła -
+  piłka stoi tam jako znak rozpoznawczy gracza, więc to po niej trzeba go poznać. Wszystko
+  inne w rysunku liczy się OD TEJ STAŁEJ (wypełnienie pól, przystanki gradientu, obrys), więc
+  wystarczy jedna liczba i proporcje same się ułożą - na profilu tak samo jak w rankingu.
+*/
+const R_AWATAR = R * 0.28;
 /** zasięg prostokątów przycinających - byle poza kulę */
 const D = 1.5;
 
