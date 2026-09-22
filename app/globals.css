@@ -3829,6 +3829,155 @@ select option {
   }
 }
 
+/* ---------- stojak z wyróżnieniami ---------- */
+.stojak-scena {
+  position: relative;
+  margin-top: 20px;
+}
+.stojak {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/*
+  Piłka reaguje na kursor podniesieniem i mocniejszą poświatą. Skala idzie z `fill-box`,
+  więc każdy `<g>` rośnie wokół własnego środka, a nie wokół środka rysunku.
+*/
+.stojak-pilka {
+  cursor: pointer;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    transform 0.28s cubic-bezier(0.22, 0.9, 0.24, 1),
+    filter 0.28s ease;
+}
+.stojak-pilka:focus-visible {
+  outline: none;
+}
+/*
+  Nasycenie tylko na ZDOBYTYCH. Paleta wyróżnień jest z natury pastelowa - dobierano ją
+  do drobnych stempli, gdzie mocny kolor byłby krzykiem. Piłka ma osiem razy większą
+  powierzchnię i przy tych samych wartościach wychodziła wyblakła, a miała być soczysta.
+  Wygaszone zostają bez filtru: one mają być ciche.
+*/
+.stojak-pilka.ma {
+  filter: saturate(1.5) brightness(1.04);
+}
+.stojak-pilka.gorace {
+  transform: translateY(-7px) scale(1.06);
+  filter: brightness(1.12);
+}
+.stojak-pilka.ma.gorace {
+  filter: saturate(1.6) brightness(1.14);
+}
+
+/*
+  Poświata jest WYŁĄCZNIE pod zdobytymi. To jedyna rzecz, która odróżnia półkę pełną od
+  pustej z drugiego końca pokoju - wygaszone piłki mają zostać ciche.
+*/
+.stojak-luna {
+  opacity: 0.55;
+  transition: opacity 0.28s ease;
+}
+.stojak-pilka.gorace .stojak-luna {
+  opacity: 0.95;
+}
+
+/* ---------- karta wyróżnienia nad piłką ---------- */
+.stojak-karta {
+  position: absolute;
+  z-index: 30;
+  width: 268px;
+  max-width: calc(100vw - 32px);
+  padding: 14px 15px 15px;
+  border-radius: 20px;
+  background:
+    linear-gradient(
+      128deg,
+      rgb(var(--rgb-szyba) / 0.16) 0%,
+      rgb(var(--rgb-szyba) / 0.045) 26%,
+      rgb(var(--rgb-szyba) / 0) 54%
+    ),
+    radial-gradient(130% 120% at 16% -14%, rgb(var(--b) / 0.18), transparent 60%),
+    linear-gradient(
+      180deg,
+      rgb(var(--rgb-plyta) / 0.32) 0%,
+      rgb(var(--rgb-plyta) / 0.46) 100%
+    );
+  box-shadow:
+    inset 0 -1px 0 rgb(var(--rgb-szyba) / 0.06),
+    0 26px 58px -22px rgb(0 0 0 / calc(0.92 * var(--moc-cienia)));
+  opacity: 0;
+  transform: translate(-50%, 6px);
+  pointer-events: none;
+  transition:
+    opacity 0.18s ease,
+    transform 0.22s cubic-bezier(0.22, 0.9, 0.24, 1);
+}
+.stojak-karta.widac {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+.stojak-karta.przypieta {
+  pointer-events: auto;
+}
+.stojak-karta-gora {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.stojak-karta-gora h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+.stojak-karta-kropka {
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  flex: none;
+  border-radius: 50%;
+  background: rgb(var(--b));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.45);
+}
+.stojak-karta-stan {
+  margin: 3px 0 0;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgb(var(--b));
+}
+.stojak-karta-opis {
+  margin: 11px 0 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  opacity: 0.8;
+}
+
+/* Na wąskim ekranie karta nie ma gdzie stanąć nad piłką - siada na dole. */
+@media (max-width: 640px) {
+  .stojak-karta {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    top: auto;
+    width: auto;
+    max-width: 420px;
+    margin-inline: auto;
+    transform: translateY(14px);
+  }
+  .stojak-karta.widac {
+    transform: none;
+  }
+}
+
 /* ---------- karta pod piłką ---------- */
 /*
   Karta stoi OBOK kuli, w jednym stałym miejscu, i nie chodzi za kursorem. Skoro pokazuje
@@ -3899,7 +4048,8 @@ select option {
   świeci nazwa gracza i poświata kuli. Bez `brightness` poniżej jedynki szkło nad nimi
   rozpływało się w plamę.
 */
-.kula-karta::before {
+.kula-karta::before,
+.stojak-karta::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -3924,7 +4074,8 @@ select option {
   do naklejki. Sztuczka z dwiema maskami złożonymi przez `xor` zostawia samą ramkę
   o szerokości dopełnienia.
 */
-.kula-karta::after {
+.kula-karta::after,
+.stojak-karta::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -3951,7 +4102,8 @@ select option {
 }
 
 /* Treść nad obiema warstwami szkła. */
-.kula-karta > * {
+.kula-karta > *,
+.stojak-karta > * {
   position: relative;
   z-index: 1;
 }
