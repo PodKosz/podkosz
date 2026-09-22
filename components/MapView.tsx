@@ -309,6 +309,7 @@ export function MapView({
   onSelectLead,
   registerClearCard,
   sheetOpen = false,
+  onGotowa,
 }: {
   courts: MapCourt[];
   activeId: string | null;
@@ -324,6 +325,8 @@ export function MapView({
   registerClearCard?: (fn: () => void) => void;
   /** arkusz z filtrami na telefonie jest rozwinięty - wizytówki wtedy nie pokazujemy */
   sheetOpen?: boolean;
+  /** mapa ma komplet kafelków pierwszego kadru - można zdjąć kurtynę wejścia */
+  onGotowa?: () => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MlMap | null>(null);
@@ -354,6 +357,11 @@ export function MapView({
       window.matchMedia("(hover: none), (pointer: coarse)").matches
   );
   const clearCardRef = useRef(() => undefined as void);
+  /* w referencji, żeby zmiana funkcji u rodzica nie budowała mapy od nowa */
+  const onGotowaRef = useRef(onGotowa);
+  useEffect(() => {
+    onGotowaRef.current = onGotowa;
+  }, [onGotowa]);
   /** wybrany motyw - warstwy mapy trzeba przy jego zmianie przemalować ręcznie */
   const motyw = useMotyw();
   /** warstwa z żywym gradientem w obrysie województwa */
@@ -590,6 +598,29 @@ export function MapView({
       push();
       setReady(true);
     });
+    /*
+      Sygnał dla kurtyny wejścia. Samo `load` nie wystarcza - przychodzi, gdy styl jest
+      gotowy, a kafelki podkładu dopiero ruszają, i kurtyna odsłoniłaby właśnie te
+      wskakujące kwadraty, które miała schować. `idle` z kompletem kafelków znaczy: kadr
+      narysowany do końca.
+
+      Awaryjnie po ośmiu sekundach odsłaniamy i tak. Wolne łącze nie może zamienić mapy
+      w wieczny ekran ładowania - lepiej pokazać ją na raty niż wcale.
+    */
+    let odslonieta = false;
+    const odslon = () => {
+      if (odslonieta) return;
+      odslonieta = true;
+      clearTimeout(awaryjnie);
+      map.off("idle", poGotowosci);
+      onGotowaRef.current?.();
+    };
+    const poGotowosci = () => {
+      if (map.areTilesLoaded()) odslon();
+    };
+    const awaryjnie = window.setTimeout(odslon, 8000);
+    map.on("idle", poGotowosci);
+
     map.on("move", reposition);
     // dotknięcie samej mapy zamyka wizytówkę boiska (na markerach zatrzymujemy zdarzenie)
     map.on("click", (e) => {
@@ -717,6 +748,7 @@ export function MapView({
     }
 
     return () => {
+      clearTimeout(awaryjnie);
       ro.disconnect();
       map.off("moveend", zapiszKadr);
       map.remove();

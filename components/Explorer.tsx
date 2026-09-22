@@ -34,16 +34,11 @@ import type { LeadPoint } from "@/lib/leads";
 */
 const MapView = dynamic(() => import("./MapView").then((m) => m.MapView), {
   ssr: false,
-  loading: () => (
-    <div className="absolute inset-0 grid place-items-center bg-void">
-      <div className="w-[min(560px,72vw)] opacity-25">
-        <CourtOutline uid="mapa-szkielet" />
-      </div>
-    </div>
-  ),
+  // szkielet rysuje `MapaWejscie` - stoi nad mapą od pierwszej klatki aż do odsłonięcia
+  loading: () => <div className="absolute inset-0 bg-void" />,
 });
 import { Sidebar } from "./Sidebar";
-import { CourtOutline } from "./CourtOutline";
+import { MapaWejscie } from "./MapaWejscie";
 
 export function Explorer({ courts }: { courts: MapCourt[] }) {
   /* uprawnienia dociągamy w przeglądarce - inaczej cała mapa musiałaby powstawać na żądanie */
@@ -74,6 +69,9 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
   const filters = zmiany ?? zAdresu;
   const setFilters = useCallback((f: Filters) => setZmiany(f), []);
   const [activeId, setActiveId] = useState<string | null>(null);
+  /** mapa narysowała pierwszy kadr w całości - kurtyna wejścia może zejść */
+  const [mapaWstala, setMapaWstala] = useState(false);
+  const mapaGotowa = useCallback(() => setMapaWstala(true), []);
   /** Na telefonie panel z filtrami startuje zwinięty, żeby mapa miała cały ekran. */
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -253,7 +251,9 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
         onSelectLead={setActiveLead}
         registerClearCard={registerClearCard}
         sheetOpen={sheetOpen}
+        onGotowa={mapaGotowa}
       />
+      <MapaWejscie gotowa={mapaWstala} />
       <Sidebar
         filters={filters}
         setFilters={setFilters}

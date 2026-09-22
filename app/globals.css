@@ -5351,3 +5351,211 @@ input.suwak-podpalen {
     display: none;
   }
 }
+
+/* ---------- wejście mapy: żar, kontur boiska i odsłonięcie od środka ---------- */
+/*
+  Promień odsłonięcia jako zarejestrowana własność - tylko wtedy przeglądarka umie ją
+  płynnie animować. Zwykła zmienna przeskoczyłaby z 0 na 116% w jednej klatce. Gdzie
+  `@property` nie ma, kurtyna po prostu znika na końcu animacji: bez efektu, ale i bez szkody.
+
+  Dziedziczona celowo: kurtynę i świetlny brzeg liczymy od TEJ SAMEJ wartości, a animujemy
+  ją raz, na rodzicu. Dwie osobne animacje prędzej czy później rozjechałyby się o klatkę
+  i pierścień światła odkleiłby się od krawędzi odsłonięcia.
+*/
+@property --odslon {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 0%;
+}
+
+.mapa-wejscie {
+  position: absolute;
+  inset: 0;
+  /* nad pinezkami (do 7) i pod panelem z filtrami (25+) - panel ma działać od razu */
+  z-index: 15;
+  pointer-events: none;
+  --odslon: 0%;
+  --czas-odslonu: 1.25s;
+}
+.mapa-wejscie[data-krotko] {
+  --czas-odslonu: 0.6s;
+}
+
+/*
+  Kurtyna to tło mapy z dziurą w środku. Maska jest przezroczysta do promienia odsłonięcia
+  i pełna tuż za nim - z miękkim przejściem, bo ostra krawędź koła wyglądałaby jak wycięta
+  nożyczkami, a nie jak rozchodzące się światło.
+*/
+.mapa-wejscie-kurtyna {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background-color: var(--color-void);
+  -webkit-mask-image: radial-gradient(
+    circle farthest-corner at 50% 50%,
+    transparent calc(var(--odslon) - 7%),
+    #000 var(--odslon)
+  );
+  mask-image: radial-gradient(
+    circle farthest-corner at 50% 50%,
+    transparent calc(var(--odslon) - 7%),
+    #000 var(--odslon)
+  );
+}
+
+/* ciepła łuna pod konturem - oddycha, póki trwa ładowanie */
+.mapa-wejscie-luna {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(760px, 110vw);
+  height: min(420px, 70vw);
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgb(var(--rgb-ember) / calc(0.42 * var(--moc-poswiaty))) 0%,
+    rgb(var(--rgb-flame) / calc(0.17 * var(--moc-poswiaty))) 46%,
+    transparent 100%
+  );
+  filter: blur(40px);
+  animation: mapa-luna 2.8s ease-in-out infinite;
+}
+@keyframes mapa-luna {
+  0%,
+  100% {
+    opacity: 0.6;
+    scale: 0.92;
+  }
+  50% {
+    opacity: 1;
+    scale: 1.06;
+  }
+}
+
+.mapa-wejscie-kontur {
+  position: relative;
+  width: min(560px, 72vw);
+  aspect-ratio: 840 / 460;
+  /* wchodzi z opóźnieniem: szybka mapa odsłania się, zanim kontur zdąży mignąć */
+  animation: mapa-kontur-wejscie 0.5s 0.2s ease-out both;
+}
+@keyframes mapa-kontur-wejscie {
+  from {
+    opacity: 0;
+    scale: 0.96;
+  }
+}
+
+/*
+  Linie kreślą się, stoją chwilę i zwijają dalej w tę samą stronę - kreska przejeżdża przez
+  rysunek i wraca od początku. Przesunięcie od 1 przez 0 do -1 daje właśnie to: najpierw
+  kreska wysuwa się z początku ścieżki, potem jej ogon ucieka za koniec. Kolejne linie mają
+  inne opóźnienia, więc boisko rysuje się warstwami, a nie wszystko jednym ruchem.
+*/
+.mapa-wejscie-kontur svg > g :is(path, rect, circle) {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: mapa-kreska 3s cubic-bezier(0.55, 0.1, 0.3, 1) infinite;
+}
+.mapa-wejscie-kontur svg > g > :nth-child(2n) {
+  animation-delay: 0.18s;
+}
+.mapa-wejscie-kontur svg > g > :nth-child(3n) {
+  animation-delay: 0.36s;
+}
+.mapa-wejscie-kontur svg > g > g > * {
+  animation-delay: 0.5s;
+}
+@keyframes mapa-kreska {
+  0% {
+    stroke-dashoffset: 1;
+  }
+  46%,
+  72% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -1;
+  }
+}
+
+/*
+  Świetlny brzeg odsłonięcia: pierścień w barwie marki, który jedzie razem z krawędzią
+  kurtyny, a za sobą zostawia słaby, gasnący nalot - jakby mapę zapalało to światło.
+  Leży POZA kurtyną, bo w niej maska wycięłaby go razem z tłem.
+*/
+.mapa-wejscie-brzeg {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: radial-gradient(
+    circle farthest-corner at 50% 50%,
+    rgb(var(--rgb-flame) / 0.04) 0%,
+    rgb(var(--rgb-flame) / 0.03) calc(var(--odslon) - 15%),
+    rgb(var(--rgb-flame) / calc(0.16 * var(--moc-poswiaty))) calc(var(--odslon) - 7%),
+    rgb(var(--rgb-glow) / calc(0.6 * var(--moc-poswiaty))) calc(var(--odslon) - 3%),
+    rgb(var(--rgb-glow-soft) / calc(0.5 * var(--moc-poswiaty))) calc(var(--odslon) - 1.2%),
+    transparent calc(var(--odslon) + 1%)
+  );
+}
+
+.mapa-wejscie.odslania {
+  animation: mapa-odslon var(--czas-odslonu) cubic-bezier(0.6, 0.04, 0.24, 1) forwards;
+}
+@keyframes mapa-odslon {
+  to {
+    --odslon: 118%;
+  }
+}
+.mapa-wejscie.odslania .mapa-wejscie-brzeg {
+  animation: mapa-brzeg var(--czas-odslonu) ease-out forwards;
+}
+@keyframes mapa-brzeg {
+  0% {
+    opacity: 0;
+  }
+  14%,
+  62% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+/* w chwili odsłonięcia kontur rozbłyska i rośnie - to z niego „wychodzi" światło */
+.mapa-wejscie.odslania .mapa-wejscie-kontur {
+  animation: mapa-kontur-rozblysk calc(var(--czas-odslonu) * 0.5) ease-out forwards;
+}
+@keyframes mapa-kontur-rozblysk {
+  to {
+    scale: 1.12;
+    filter: brightness(1.8);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mapa-wejscie-luna,
+  .mapa-wejscie-kontur,
+  .mapa-wejscie-kontur svg > g :is(path, rect, circle) {
+    animation: none;
+  }
+  .mapa-wejscie-kontur svg > g :is(path, rect, circle) {
+    stroke-dashoffset: 0;
+  }
+  .mapa-wejscie-brzeg {
+    display: none;
+  }
+  /* zamiast rozchodzącego się koła - zwykłe, krótkie przenikanie */
+  .mapa-wejscie.odslania,
+  .mapa-wejscie.odslania .mapa-wejscie-kontur {
+    animation: mapa-przenik 0.35s ease-out forwards;
+  }
+  @keyframes mapa-przenik {
+    to {
+      opacity: 0;
+    }
+  }
+}
