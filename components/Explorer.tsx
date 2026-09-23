@@ -41,11 +41,16 @@ const wczytajMape = () => import("./MapView");
 if (typeof window !== "undefined") void wczytajMape();
 const MapView = dynamic(() => wczytajMape().then((m) => m.MapView), {
   ssr: false,
-  // szkieletu nie ma, bo nad mapą od pierwszej klatki stoi `ZaslonaMapy`
-  loading: () => null,
+  loading: () => (
+    <div className="absolute inset-0 grid place-items-center bg-void">
+      <div className="w-[min(560px,72vw)] opacity-25">
+        <CourtOutline uid="mapa-szkielet" />
+      </div>
+    </div>
+  ),
 });
 import { Sidebar } from "./Sidebar";
-import { ZaslonaMapy } from "./ZaslonaMapy";
+import { CourtOutline } from "./CourtOutline";
 
 export function Explorer({ courts }: { courts: MapCourt[] }) {
   /* uprawnienia dociągamy w przeglądarce - inaczej cała mapa musiałaby powstawać na żądanie */
@@ -76,9 +81,6 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
   const filters = zmiany ?? zAdresu;
   const setFilters = useCallback((f: Filters) => setZmiany(f), []);
   const [activeId, setActiveId] = useState<string | null>(null);
-  /** mapa narysowała pierwszy kadr w całości - zasłona może zejść */
-  const [mapaWstala, setMapaWstala] = useState(false);
-  const mapaGotowa = useCallback(() => setMapaWstala(true), []);
   /** Na telefonie panel z filtrami startuje zwinięty, żeby mapa miała cały ekran. */
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -258,9 +260,7 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
         onSelectLead={setActiveLead}
         registerClearCard={registerClearCard}
         sheetOpen={sheetOpen}
-        onGotowa={mapaGotowa}
       />
-      <ZaslonaMapy gotowa={mapaWstala} />
       <Sidebar
         filters={filters}
         setFilters={setFilters}

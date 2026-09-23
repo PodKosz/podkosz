@@ -66,7 +66,7 @@ function zeStylu(nazwa: string, awaryjna: string) {
   return v || awaryjna;
 }
 
-export const POLAND_BOUNDS: [number, number, number, number] = [13.9, 48.9, 24.3, 55.0];
+const POLAND_BOUNDS: [number, number, number, number] = [13.9, 48.9, 24.3, 55.0];
 
 /**
  * Zapas na panel: po lewej, gdy panel stoi z boku; od dołu, gdy wysuwa się jako arkusz.
@@ -84,11 +84,8 @@ export const POLAND_BOUNDS: [number, number, number, number] = [13.9, 48.9, 24.3
  * wyszukiwarka i dwa przyciski, a pod nimi jest czysta mapa. Polska stała więc 180 pikseli
  * na prawo od środka ekranu i wyglądało to na błąd. Górny margines jest odrobinę większy
  * od dolnego, bo u góry wisi pasek nawigacji.
- *
- * Te same liczby siedzą w `scripts/kadr-startowy.mjs` (MARGINESY) - zmieniać razem
- * i puścić skrypt, inaczej obrazek startowy przestanie pasować do mapy.
  */
-export const fitPadding = (width: number) =>
+const fitPadding = (width: number) =>
   width < 1024
     ? { top: 90, bottom: 200, left: 24, right: 24 }
     : { top: 90, bottom: 70, left: 70, right: 70 };
@@ -201,7 +198,7 @@ const ZAKRES_GASNIECIA = 1;
 // Worker MapLibre serwujemy z /public - patrz scripts/copy-maplibre-worker.mjs.
 setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
-export const STYLE: StyleSpecification = {
+const STYLE: StyleSpecification = {
   version: 8,
   // fonts.openmaptiles.org oddaje HTML zamiast pliku .pbf - Protomaps serwuje poprawne glify
   /*
@@ -307,14 +304,8 @@ interface MapDiag {
   errors: string[];
 }
 
-/**
- * Barwy warstw i podkład pod aktualny motyw strony (`data-motyw` na `html`).
- *
- * Osobna funkcja, bo woła ją nie tylko mapa, ale też generator kadru startowego
- * (`scripts/kadr-startowy.mjs` przez `/zrzut-mapy`) - obrazek, który stoi na ekranie przed
- * mapą, musi być pomalowany DOKŁADNIE tak jak ona, inaczej przy podmianie zmieniłby barwę.
- */
-export function pomalujWgMotywu(map: MlMap) {
+/** Barwy warstw i podkład pod aktualny motyw strony (`data-motyw` na `html`). */
+function pomalujWgMotywu(map: MlMap) {
   const barwy = {
     flame: zeStylu("--color-flame", BARWY_MAPY.flame),
     glow: zeStylu("--color-glow", BARWY_MAPY.glow),
@@ -351,7 +342,6 @@ export function pomalujWgMotywu(map: MlMap) {
   }
 }
 
-
 export function MapView({
   courts,
   activeId,
@@ -363,7 +353,6 @@ export function MapView({
   onSelectLead,
   registerClearCard,
   sheetOpen = false,
-  onGotowa,
 }: {
   courts: MapCourt[];
   activeId: string | null;
@@ -379,18 +368,11 @@ export function MapView({
   registerClearCard?: (fn: () => void) => void;
   /** arkusz z filtrami na telefonie jest rozwinięty - wizytówki wtedy nie pokazujemy */
   sheetOpen?: boolean;
-  /** pierwszy kadr narysowany w całości (albo ktoś już ruszył mapę) - zasłona może zejść */
-  onGotowa?: () => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MlMap | null>(null);
   const markersRef = useRef<Record<string, { marker: Marker; el: HTMLDivElement }>>({});
   const [ready, setReady] = useState(false);
-  /* w referencji, żeby nowa funkcja od rodzica nie budowała mapy od nowa */
-  const onGotowaRef = useRef(onGotowa);
-  useEffect(() => {
-    onGotowaRef.current = onGotowa;
-  }, [onGotowa]);
   const [diag, setDiag] = useState<MapDiag | null>(null);
   const [showDiag, setShowDiag] = useState(false);
   type Karta = { court: MapCourt; x: number; y: number };
@@ -618,7 +600,6 @@ export function MapView({
                 padding: fitPadding(containerRef.current.clientWidth || 1024),
               },
             }),
-        // ta sama liczba siedzi w `scripts/kadr-startowy.mjs` (MIN_ZOOM) - zmieniać razem
         minZoom: 4.5,
         maxZoom: 18,
         attributionControl: { compact: true },
@@ -653,34 +634,6 @@ export function MapView({
       push();
       setReady(true);
     });
-    /*
-      Sygnał dla zasłony nad mapą (`ZaslonaMapy` w Explorerze). Podkład to kafelki rastrowe,
-      które przychodzą po kolei - bez zasłony mapa wstawała kwadrat po kwadracie. Czekamy na
-      `idle` z kompletem kafelków (samo `load` przychodzi, gdy gotowy jest styl, a kafelki
-      dopiero ruszają) i dopiero wtedy żywa mapa zastępuje to, co stało przed nią.
-
-      Dwa wyjścia awaryjne. Osiem sekund - na bardzo wolnym łączu lepiej pokazać mapę na raty
-      niż zostawić ekran z samym konturem. I pierwszy gest: kadr startowy jest obrazkiem,
-      więc gdyby ktoś zaczął przesuwać mapę pod nim, żywa mapa jechałaby pod nieruchomym
-      zdjęciem. Ruch ręką zdejmuje zasłonę od razu - niech już widać to, co się rusza.
-    */
-    const odslon = () => {
-      clearTimeout(awaryjnie);
-      map.off("idle", poGotowosci);
-      map.off("movestart", poGescie);
-      onGotowaRef.current?.();
-    };
-    const poGotowosci = () => {
-      if (map.areTilesLoaded()) odslon();
-    };
-    // `originalEvent` mają tylko ruchy od człowieka - nie kadrowanie ustawiane z kodu
-    const poGescie = (e: { originalEvent?: Event }) => {
-      if (e.originalEvent) odslon();
-    };
-    const awaryjnie = window.setTimeout(odslon, 8000);
-    map.on("idle", poGotowosci);
-    map.on("movestart", poGescie);
-
     map.on("move", reposition);
     // dotknięcie samej mapy zamyka wizytówkę boiska (na markerach zatrzymujemy zdarzenie)
     map.on("click", (e) => {
@@ -797,9 +750,9 @@ export function MapView({
         Z jednym wyjątkiem: kadr całej Polski - ten, na którym mapa wstaje sama - NIE jest
         zapisywany, a dotychczasowy zapis znika. Wcześniej trafiał do adresu już przy starcie
         (samo ustawienie kadru to też przesunięcie), więc po odświeżeniu strony w adresie
-        stało `m=...` i mapa brała to za link do konkretnego miejsca: zamiast gotowego
-        obrazka Polski pokazywała kontur i czekała na kafelki. To samo po powrocie przyciskiem
-        z globusem albo po wyjściu z województwa.
+        stało `m=...` i mapa brała to za link do konkretnego miejsca - adres wyglądał na
+        zapisany widok, choć nikt mapy nie ruszył. To samo po powrocie przyciskiem z globusem
+        albo po wyjściu z województwa.
       */
       const polska = map.cameraForBounds(POLAND_BOUNDS, {
         padding: fitPadding(map.getContainer().clientWidth),
@@ -827,9 +780,6 @@ export function MapView({
     }
 
     return () => {
-      clearTimeout(awaryjnie);
-      map.off("idle", poGotowosci);
-      map.off("movestart", poGescie);
       ro.disconnect();
       map.off("moveend", zapiszKadr);
       map.remove();
