@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import type { Wyroznienie } from "@/lib/odznaczenia";
 
 /**
@@ -128,6 +129,39 @@ export function StojakWyroznien({ lista }: { lista: Wyroznienie[] }) {
   const punkt = nadKtora !== null ? miejsca[nadKtora] : null;
   const zdobyte = lista.filter((w) => w.zdobyte).length;
 
+  const karta =
+    wybrana && punkt ? (
+      <div
+        className={`stojak-karta widac barwa-${wybrana.barwa}${
+          przypieta ? " przypieta" : ""
+        }`}
+        role="dialog"
+        aria-label={wybrana.nazwa}
+        style={
+          szuflada
+            ? undefined
+            : {
+                /* Skrajne piłki dosuwają kartę do środka, żeby nie wyszła poza stojak. */
+                left: `${Math.min(Math.max(punkt.x, 17), 83)}%`,
+                bottom: `${100 - punkt.y + (SREDNICA / PLIK_WYS) * 50 + 1}%`,
+              }
+        }
+      >
+        <div className="stojak-karta-gora">
+          <span className="stojak-karta-kropka" />
+          <div>
+            <h3>{wybrana.nazwa}</h3>
+            <p className="stojak-karta-stan">
+              {wybrana.zdobyte ? "Zdobyte" : "Jeszcze nie zdobyte"}
+            </p>
+          </div>
+        </div>
+        <p className="stojak-karta-opis">
+          {wybrana.zdobyte ? wybrana.opis : wybrana.warunek}
+        </p>
+      </div>
+    ) : null;
+
   return (
     <div
       className="stojak-scena"
@@ -241,38 +275,15 @@ export function StojakWyroznien({ lista }: { lista: Wyroznienie[] }) {
           })}
         </div>
 
-        {wybrana && punkt && (
-          <div
-            className={`stojak-karta widac barwa-${wybrana.barwa}${
-              przypieta ? " przypieta" : ""
-            }`}
-            role="dialog"
-            aria-label={wybrana.nazwa}
-            style={
-              szuflada
-                ? undefined
-                : {
-                    /* Skrajne piłki dosuwają kartę do środka, żeby nie wyszła poza stojak. */
-                    left: `${Math.min(Math.max(punkt.x, 17), 83)}%`,
-                    bottom: `${100 - punkt.y + (SREDNICA / PLIK_WYS) * 50 + 1}%`,
-                  }
-            }
-          >
-            <div className="stojak-karta-gora">
-              <span className="stojak-karta-kropka" />
-              <div>
-                <h3>{wybrana.nazwa}</h3>
-                <p className="stojak-karta-stan">
-                  {wybrana.zdobyte ? "Zdobyte" : "Jeszcze nie zdobyte"}
-                </p>
-              </div>
-            </div>
-            <p className="stojak-karta-opis">
-              {wybrana.zdobyte ? wybrana.opis : wybrana.warunek}
-            </p>
-          </div>
-        )}
+        {/*
+          Na szerokim ekranie karta stoi nad piłką, więc mieszka w planszy - liczy położenie
+          od jej procentów. Na telefonie jest szufladą przyklejoną do dołu ekranu i idzie
+          portalem do <body>: w planszy każdy przekształcony przodek (choćby animacja wejścia
+          sekcji) odbierałby jej `position: fixed` i szuflada lądowała w połowie strony.
+        */}
+        {karta && !szuflada && karta}
       </div>
+      {karta && szuflada && typeof document !== "undefined" && createPortal(karta, document.body)}
     </div>
   );
 }

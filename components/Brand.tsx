@@ -13,7 +13,11 @@ export function Brand({ compact = false }: { compact?: boolean }) {
   const gradientId = `brand-court-${useId()}`;
 
   return (
-    <Link href="/" className="flex items-center gap-3 transition hover:opacity-90">
+    <Link
+      href="/"
+      aria-label="PodKosz - mapa boisk"
+      className="flex items-center gap-3 transition hover:opacity-90"
+    >
       <span
         className="grid place-items-center"
         style={{ filter: "drop-shadow(0 6px 18px rgb(var(--rgb-ember) / .45))" }}

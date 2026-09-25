@@ -135,11 +135,15 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
       {/* ---------- wizytówka ---------- */}
       <header className="mt-10 flex flex-col items-center text-center">
         {/*
-          Opakowanie ma na stałe ten sam poziom co kula (`z-index: 2`). Wejście obraca je
-          i skaluje, a przekształcony element tworzy własny stos warstw - bez tego poziomu
-          nick, który stoi w drzewie dalej, wszedłby na czas animacji NA piłkę zamiast pod nią.
+          Opakowanie tylko nosi znacznik wejścia - samo NIE jest ani przekształcane, ani
+          warstwowane. Ruch dostaje sama kula (patrz `rozkwit-pilka` w globals.css). Wcześniej
+          obracało się i skalowało całe opakowanie, a przekształcony przodek odbiera elementom
+          `position: fixed` przyklejenie do ekranu: dymek pola piłki, który na telefonie ma
+          siadać jako szuflada na dole, stał w połowie kuli, pod nią i pod nickiem. Stała
+          warstwa `z-[2]` na opakowaniu dokładała drugi kłopot - zamykała szufladę pod
+          poręczami stojaka, które mają `z-index: 3`.
         */}
-        <div data-wjazd="rozkwit-pilka" className="relative z-[2]">
+        <div data-wjazd="rozkwit-pilka">
           <PilkaOdznaczen statystyki={statystyki} nick={nick} avatar={statystyki.avatar} />
         </div>
 

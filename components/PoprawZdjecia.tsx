@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { NadWszystkim } from "@/components/NadWszystkim";
 import Image from "next/image";
 import { CourtPhotoRef, PHOTO_STEPS, PhotoKind } from "@/lib/types";
 import { PHOTO_DISPLAY_ORDER } from "@/lib/photos";
@@ -177,218 +178,220 @@ export function PoprawZdjecia({
       </button>
 
       {otwarte && (
-        <div
-          onClick={() => setOtwarte(false)}
-          className="fixed inset-0 z-[80] grid place-items-center overflow-y-auto bg-void/60 p-5 backdrop-blur-xl"
-        >
+        <NadWszystkim>
           <div
-            onClick={(e) => e.stopPropagation()}
-            className="szklo-pro my-auto w-full max-w-2xl overflow-hidden rounded-[30px] p-6 sm:p-7"
-            style={{ animation: "rise 380ms cubic-bezier(0.16, 1, 0.3, 1)" }}
+            onClick={() => setOtwarte(false)}
+            className="fixed inset-0 z-[80] grid place-items-center overflow-y-auto bg-void/60 p-5 backdrop-blur-xl"
           >
-            {krok === "kadr" && (
-              <>
-                <p className="text-[11px] uppercase tracking-[0.32em] text-flame">Lepszy kadr</p>
-                <h2 className="mt-3 text-[23px] font-semibold leading-tight tracking-[-0.02em]">
-                  Który kadr chcesz poprawić?
-                </h2>
-                <p className="mt-2 text-[13.5px] leading-relaxed text-muted">
-                  Boisko zostaje przypisane osobie, która je dodała - zmieniasz jedno zdjęcie,
-                  nie wpis. Kadr zrobisz za chwilę aparatem, stojąc na boisku.
-                </p>
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="szklo-pro my-auto w-full max-w-2xl overflow-hidden rounded-[30px] p-6 sm:p-7"
+              style={{ animation: "rise 380ms cubic-bezier(0.16, 1, 0.3, 1)" }}
+            >
+              {krok === "kadr" && (
+                <>
+                  <p className="text-[11px] uppercase tracking-[0.32em] text-flame">Lepszy kadr</p>
+                  <h2 className="mt-3 text-[23px] font-semibold leading-tight tracking-[-0.02em]">
+                    Który kadr chcesz poprawić?
+                  </h2>
+                  <p className="mt-2 text-[13.5px] leading-relaxed text-muted">
+                    Boisko zostaje przypisane osobie, która je dodała - zmieniasz jedno zdjęcie,
+                    nie wpis. Kadr zrobisz za chwilę aparatem, stojąc na boisku.
+                  </p>
 
-                <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {maKadry.map((k) => {
-                    const p = obecne(k)!;
-                    return (
-                      <button
-                        key={k}
-                        onClick={() => {
-                          setKind(k);
-                          setKrok("obecnosc");
-                        }}
-                        className="group relative aspect-[4/3] overflow-hidden rounded-[18px] border border-hairline text-left transition hover:border-flame/60"
-                      >
-                        {p.url && (
-                          <Image
-                            src={adresMiniatury(p.url, 320)}
-                            alt={p.caption}
-                            fill
-                            sizes="(max-width: 640px) 45vw, 220px"
-                            className="object-cover transition duration-700 group-hover:scale-[1.045]"
-                          />
-                        )}
-                        <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-2.5 text-[10.5px] uppercase tracking-[0.1em] text-ink/90">
-                          {p.caption}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {brakujace.length > 0 && (
-                  <>
-                    <p className="mt-7 text-[11px] uppercase tracking-[0.18em] text-faint">
-                      Albo dołóż kadr, którego tu jeszcze nie ma
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {brakujace.map((k) => (
+                  <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {maKadry.map((k) => {
+                      const p = obecne(k)!;
+                      return (
                         <button
                           key={k}
                           onClick={() => {
                             setKind(k);
                             setKrok("obecnosc");
                           }}
-                          className="rounded-full border border-hairline bg-white/5 px-4 py-2 text-[12.5px] text-muted transition hover:border-flame/50 hover:text-ink"
+                          className="group relative aspect-[4/3] overflow-hidden rounded-[18px] border border-hairline text-left transition hover:border-flame/60"
                         >
-                          {KROK_STEP(k)?.title ?? k}
+                          {p.url && (
+                            <Image
+                              src={adresMiniatury(p.url, 320)}
+                              alt={p.caption}
+                              fill
+                              sizes="(max-width: 640px) 45vw, 220px"
+                              className="object-cover transition duration-700 group-hover:scale-[1.045]"
+                            />
+                          )}
+                          <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-2.5 text-[10.5px] uppercase tracking-[0.1em] text-ink/90">
+                            {p.caption}
+                          </span>
                         </button>
-                      ))}
-                    </div>
-                  </>
-                )}
+                      );
+                    })}
+                  </div>
 
-                {!supabaseEnabled && (
-                  <p className="mt-5 text-[12px] text-faint">
-                    Tryb testowy - poprawki ruszą po podpięciu bazy.
+                  {brakujace.length > 0 && (
+                    <>
+                      <p className="mt-7 text-[11px] uppercase tracking-[0.18em] text-faint">
+                        Albo dołóż kadr, którego tu jeszcze nie ma
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {brakujace.map((k) => (
+                          <button
+                            key={k}
+                            onClick={() => {
+                              setKind(k);
+                              setKrok("obecnosc");
+                            }}
+                            className="rounded-full border border-hairline bg-white/5 px-4 py-2 text-[12.5px] text-muted transition hover:border-flame/50 hover:text-ink"
+                          >
+                            {KROK_STEP(k)?.title ?? k}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+
+                  {!supabaseEnabled && (
+                    <p className="mt-5 text-[12px] text-faint">
+                      Tryb testowy - poprawki ruszą po podpięciu bazy.
+                    </p>
+                  )}
+
+                  <button
+                    onClick={() => setOtwarte(false)}
+                    className="mt-7 w-full rounded-2xl border border-hairline bg-white/5 px-5 py-3 text-[14px] font-medium text-muted transition hover:text-ink"
+                  >
+                    Anuluj
+                  </button>
+                </>
+              )}
+
+              {krok === "obecnosc" && step && (
+                <div className="text-center">
+                  <p className="text-[11px] uppercase tracking-[0.32em] text-flame">
+                    {step.title}
                   </p>
-                )}
-
-                <button
-                  onClick={() => setOtwarte(false)}
-                  className="mt-7 w-full rounded-2xl border border-hairline bg-white/5 px-5 py-3 text-[14px] font-medium text-muted transition hover:text-ink"
-                >
-                  Anuluj
-                </button>
-              </>
-            )}
-
-            {krok === "obecnosc" && step && (
-              <div className="text-center">
-                <p className="text-[11px] uppercase tracking-[0.32em] text-flame">
-                  {step.title}
-                </p>
-                <h2 className="mt-3 text-[23px] font-semibold leading-tight tracking-[-0.02em]">
-                  Stoisz na tym boisku?
-                </h2>
-                <p className="mx-auto mt-3 max-w-md text-[13.5px] leading-relaxed text-muted">
-                  Zdjęcie do poprawki robi się na miejscu. Sprawdzimy tylko, czy telefon jest
-                  przy boisku - pozycja nigdzie nie jest zapisywana poza tym jednym pomiarem.
-                </p>
-
-                {blad && (
-                  <p className="mt-5 rounded-2xl border border-ember/40 bg-ember/10 px-4 py-3 text-left text-[13px] leading-relaxed text-ember">
-                    {blad}
+                  <h2 className="mt-3 text-[23px] font-semibold leading-tight tracking-[-0.02em]">
+                    Stoisz na tym boisku?
+                  </h2>
+                  <p className="mx-auto mt-3 max-w-md text-[13.5px] leading-relaxed text-muted">
+                    Zdjęcie do poprawki robi się na miejscu. Sprawdzimy tylko, czy telefon jest
+                    przy boisku - pozycja nigdzie nie jest zapisywana poza tym jednym pomiarem.
                   </p>
-                )}
 
-                <button
-                  onClick={sprawdzObecnosc}
-                  disabled={szuka}
-                  className="mt-6 w-full rounded-2xl flame-gradient px-5 py-3.5 text-[14px] font-bold text-black disabled:opacity-50"
-                >
-                  {szuka ? "Szukam sygnału…" : blad ? "Sprawdź jeszcze raz" : "Sprawdź lokalizację"}
-                </button>
-                <button
-                  onClick={() => {
-                    setBlad(null);
-                    setKrok("kadr");
-                  }}
-                  className="mt-3 w-full rounded-2xl px-5 py-3 text-[13px] text-faint transition hover:text-muted"
-                >
-                  Wróć do wyboru kadru
-                </button>
-              </div>
-            )}
+                  {blad && (
+                    <p className="mt-5 rounded-2xl border border-ember/40 bg-ember/10 px-4 py-3 text-left text-[13px] leading-relaxed text-ember">
+                      {blad}
+                    </p>
+                  )}
 
-            {krok === "aparat" && kind && step && (
-              <>
-                <p className="text-[11px] uppercase tracking-[0.32em] text-flame">{step.title}</p>
-                <h2 className="mt-3 text-[21px] font-semibold leading-tight tracking-[-0.02em]">
-                  Zrób zdjęcie
-                </h2>
-                <div className="mt-5">
-                  <CameraCapture
-                    kind={kind}
-                    hint={step.tip}
-                    szeroki={step.szeroki}
-                    onCapture={(dataUrl) => {
-                      setKadr(dataUrl);
-                      setKrok("podglad");
+                  <button
+                    onClick={sprawdzObecnosc}
+                    disabled={szuka}
+                    className="mt-6 w-full rounded-2xl flame-gradient px-5 py-3.5 text-[14px] font-bold text-black disabled:opacity-50"
+                  >
+                    {szuka ? "Szukam sygnału…" : blad ? "Sprawdź jeszcze raz" : "Sprawdź lokalizację"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setBlad(null);
+                      setKrok("kadr");
                     }}
-                  />
+                    className="mt-3 w-full rounded-2xl px-5 py-3 text-[13px] text-faint transition hover:text-muted"
+                  >
+                    Wróć do wyboru kadru
+                  </button>
                 </div>
-                <button
-                  onClick={() => setKrok("obecnosc")}
-                  className="mt-4 w-full rounded-2xl px-5 py-3 text-[13px] text-faint transition hover:text-muted"
-                >
-                  Wróć
-                </button>
-              </>
-            )}
+              )}
 
-            {krok === "podglad" && kind && kadr && (
-              <>
-                <p className="text-[11px] uppercase tracking-[0.32em] text-flame">
-                  {step?.title ?? kind}
-                </p>
-                <h2 className="mt-3 text-[23px] font-semibold leading-tight tracking-[-0.02em]">
-                  {obecne(kind) ? "Tak to podmienimy" : "Tak dołożymy ten kadr"}
-                </h2>
+              {krok === "aparat" && kind && step && (
+                <>
+                  <p className="text-[11px] uppercase tracking-[0.32em] text-flame">{step.title}</p>
+                  <h2 className="mt-3 text-[21px] font-semibold leading-tight tracking-[-0.02em]">
+                    Zrób zdjęcie
+                  </h2>
+                  <div className="mt-5">
+                    <CameraCapture
+                      kind={kind}
+                      hint={step.tip}
+                      szeroki={step.szeroki}
+                      onCapture={(dataUrl) => {
+                        setKadr(dataUrl);
+                        setKrok("podglad");
+                      }}
+                    />
+                  </div>
+                  <button
+                    onClick={() => setKrok("obecnosc")}
+                    className="mt-4 w-full rounded-2xl px-5 py-3 text-[13px] text-faint transition hover:text-muted"
+                  >
+                    Wróć
+                  </button>
+                </>
+              )}
 
-                {/* to samo zestawienie, które za chwilę zobaczy panel - obok siebie, w tej samej skali */}
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  <Zestawienie
-                    etykieta="Jest teraz"
-                    url={obecne(kind)?.url ? adresMiniatury(obecne(kind)!.url!, 640) : null}
-                  />
-                  <Zestawienie etykieta="Twoje zdjęcie" url={kadr} wyrozniony />
-                </div>
-
-                {blad && (
-                  <p className="mt-4 rounded-2xl border border-ember/40 bg-ember/10 px-4 py-3 text-[13px] leading-relaxed text-ember">
-                    {blad}
+              {krok === "podglad" && kind && kadr && (
+                <>
+                  <p className="text-[11px] uppercase tracking-[0.32em] text-flame">
+                    {step?.title ?? kind}
                   </p>
-                )}
+                  <h2 className="mt-3 text-[23px] font-semibold leading-tight tracking-[-0.02em]">
+                    {obecne(kind) ? "Tak to podmienimy" : "Tak dołożymy ten kadr"}
+                  </h2>
 
-                <div className="mt-5 flex gap-3">
+                  {/* to samo zestawienie, które za chwilę zobaczy panel - obok siebie, w tej samej skali */}
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    <Zestawienie
+                      etykieta="Jest teraz"
+                      url={obecne(kind)?.url ? adresMiniatury(obecne(kind)!.url!, 640) : null}
+                    />
+                    <Zestawienie etykieta="Twoje zdjęcie" url={kadr} wyrozniony />
+                  </div>
+
+                  {blad && (
+                    <p className="mt-4 rounded-2xl border border-ember/40 bg-ember/10 px-4 py-3 text-[13px] leading-relaxed text-ember">
+                      {blad}
+                    </p>
+                  )}
+
+                  <div className="mt-5 flex gap-3">
+                    <button
+                      onClick={() => setKrok("aparat")}
+                      className="rounded-2xl border border-hairline bg-white/5 px-5 py-3 text-[14px] font-medium text-muted transition hover:text-ink"
+                    >
+                      Jeszcze raz
+                    </button>
+                    <button
+                      onClick={wyslij}
+                      disabled={wysyla}
+                      className="flex-1 rounded-2xl flame-gradient px-5 py-3 text-[14px] font-bold text-black disabled:opacity-40"
+                    >
+                      {wysyla ? "Wysyłam…" : "Wyślij poprawkę"}
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {krok === "gotowe" && (
+                <div className="text-center">
+                  <span className="mx-auto grid h-14 w-14 place-items-center rounded-full flame-gradient text-[26px] text-black">
+                    ✓
+                  </span>
+                  <h2 className="mt-4 text-[22px] font-semibold tracking-tight">Dzięki!</h2>
+                  <p className="mx-auto mt-2 max-w-md text-[14px] leading-relaxed text-muted">
+                    Zdjęcie czeka w panelu obok tego, które ma zastąpić. Jak wejdzie na boisko,
+                    zostanie przy nim podpisane Twoje konto.
+                  </p>
                   <button
-                    onClick={() => setKrok("aparat")}
-                    className="rounded-2xl border border-hairline bg-white/5 px-5 py-3 text-[14px] font-medium text-muted transition hover:text-ink"
+                    onClick={() => setOtwarte(false)}
+                    className="mt-6 w-full rounded-2xl flame-gradient px-5 py-3 text-[14px] font-bold text-black"
                   >
-                    Jeszcze raz
-                  </button>
-                  <button
-                    onClick={wyslij}
-                    disabled={wysyla}
-                    className="flex-1 rounded-2xl flame-gradient px-5 py-3 text-[14px] font-bold text-black disabled:opacity-40"
-                  >
-                    {wysyla ? "Wysyłam…" : "Wyślij poprawkę"}
+                    Zamknij
                   </button>
                 </div>
-              </>
-            )}
-
-            {krok === "gotowe" && (
-              <div className="text-center">
-                <span className="mx-auto grid h-14 w-14 place-items-center rounded-full flame-gradient text-[26px] text-black">
-                  ✓
-                </span>
-                <h2 className="mt-4 text-[22px] font-semibold tracking-tight">Dzięki!</h2>
-                <p className="mx-auto mt-2 max-w-md text-[14px] leading-relaxed text-muted">
-                  Zdjęcie czeka w panelu obok tego, które ma zastąpić. Jak wejdzie na boisko,
-                  zostanie przy nim podpisane Twoje konto.
-                </p>
-                <button
-                  onClick={() => setOtwarte(false)}
-                  className="mt-6 w-full rounded-2xl flame-gradient px-5 py-3 text-[14px] font-bold text-black"
-                >
-                  Zamknij
-                </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
+        </NadWszystkim>
       )}
     </>
   );

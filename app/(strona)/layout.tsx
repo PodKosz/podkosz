@@ -63,7 +63,13 @@ export default function StronaLayout({ children }: Readonly<{ children: React.Re
         */}
         <BramkaLogowania>
           <TopNav />
-          <div className="relative z-10">{children}</div>
+          {/*
+            `overflow-x-clip` (nie `hidden`): elementy wjeżdżające z boku (wiersze rankingu
+            graczy, kafle „O nas") na chwilę wystają poza ekran i na telefonie cała strona
+            pływała wtedy na boki. `clip` ucina bez tworzenia pola przewijania, więc nie
+            psuje przyklejonych elementów ani przewijania w pionie.
+          */}
+          <div className="relative z-10 overflow-x-clip">{children}</div>
           <SiteFooter />
         </BramkaLogowania>
         <VisitPing />

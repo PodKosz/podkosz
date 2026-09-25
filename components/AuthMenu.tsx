@@ -78,6 +78,8 @@ export function AuthMenu({ user }: { user: AuthUser | null }) {
             signInWithGoogle(path).catch((e: Error) => setError(e.message))
           }
           title={supabaseEnabled ? "Zaloguj się przez Google" : "Wymaga podpięcia bazy"}
+          /* na telefonie widać samą ikonę Google - bez nazwy czytnik ekranu mówi tylko „przycisk" */
+          aria-label="Zaloguj się przez Google"
           className="flex items-center gap-2 rounded-full border border-hairline bg-white/6 px-2 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em] text-muted transition hover:text-ink lg:px-3 lg:py-2 lg:text-[12px] lg:tracking-[0.1em]"
         >
           <GoogleMark className="h-5 w-5" />
@@ -97,6 +99,7 @@ export function AuthMenu({ user }: { user: AuthUser | null }) {
       <button
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-label="Menu konta"
         onClick={() => setOtwarteNa((o) => (o === path ? null : path))}
         className="flex items-center gap-2 rounded-full border border-hairline bg-white/6 p-1 transition hover:bg-white/10 lg:py-1 lg:pl-1 lg:pr-3"
       >

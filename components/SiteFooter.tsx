@@ -24,7 +24,9 @@ export function SiteFooter() {
     <footer className="border-t border-hairline px-6 pb-10 pt-10">
       <div className="mx-auto max-w-6xl">
         <p className="text-[11px] uppercase tracking-[0.18em] text-faint">Boiska po województwach</p>
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
+        {/* odstęp w pionie siedzi w samych linkach (py-1): ten sam rytm, a pole pod palec
+            ma 28 px zamiast 20 */}
+        <div className="mt-2 flex flex-wrap gap-x-4">
           {/*
             Zwykłe `<a>`, nie `<Link>`, i to nie z przeoczenia.
 
@@ -42,33 +44,33 @@ export function SiteFooter() {
             <a
               key={v}
               href={linkNaMape(v)}
-              className="text-[13px] text-muted transition hover:text-flame"
+              className="py-1 text-[13px] text-muted transition hover:text-flame"
             >
               {v}
             </a>
           ))}
         </div>
 
-        <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-hairline pt-6 text-[13px] text-muted">
-          <Link href="/" className="transition hover:text-flame">
+        <div className="mt-8 flex flex-wrap items-center gap-x-5 border-t border-hairline pt-5 text-[13px] text-muted">
+          <Link href="/" className="py-1 transition hover:text-flame">
             mapa
           </Link>
-          <Link href="/ranking" className="transition hover:text-flame">
+          <Link href="/ranking" className="py-1 transition hover:text-flame">
             ranking boisk
           </Link>
-          <Link href="/gracze" className="transition hover:text-flame">
+          <Link href="/gracze" className="py-1 transition hover:text-flame">
             ranking graczy
           </Link>
-          <Link href="/dodaj" className="transition hover:text-flame">
+          <Link href="/dodaj" className="py-1 transition hover:text-flame">
             dodaj boisko
           </Link>
-          <Link href="/o-nas" className="transition hover:text-flame">
+          <Link href="/o-nas" className="py-1 transition hover:text-flame">
             o nas
           </Link>
-          <Link href="/prywatnosc" className="transition hover:text-flame">
+          <Link href="/prywatnosc" className="py-1 transition hover:text-flame">
             prywatność
           </Link>
-          <Link href="/regulamin" className="transition hover:text-flame">
+          <Link href="/regulamin" className="py-1 transition hover:text-flame">
             regulamin
           </Link>
           <span className="ml-auto text-faint">© 2026 PODKOSZ.PL</span>

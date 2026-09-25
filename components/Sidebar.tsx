@@ -269,7 +269,7 @@ export function Sidebar({
         <div ref={stripRef}>
         <button
           onClick={() => setSheetOpen(!sheetOpen)}
-          className="flex w-full flex-col items-center gap-1.5 pb-1 pt-2.5"
+          className="flex min-h-7 w-full flex-col items-center justify-center gap-1.5 pb-1.5 pt-3"
           aria-label={sheetOpen ? "Zwiń panel" : "Rozwiń panel"}
         >
           <span className="h-1 w-10 rounded-full bg-white/25" />

@@ -5292,6 +5292,13 @@ input.suwak-podpalen {
     opacity: 1;
   }
 }
+/* bez ruchu na życzenie systemu: elementy stoją od razu, więc i żadna animacja nie gra */
+@media (prefers-reduced-motion: reduce) {
+  [data-wjazd].widac,
+  [data-wjazd].widac :is(.kula, .kula-szyba) {
+    animation: none;
+  }
+}
 
 [data-wjazd].widac {
   animation-duration: 0.9s;
@@ -5417,11 +5424,27 @@ input.suwak-podpalen {
 }
 
 /* ——— profil gracza: rozkwit ——— */
+/*
+  Ruch dostaje SAMA KULA, nie opakowanie ze znacznikiem - patrz komentarz na profilu gracza.
+  Przekształcony przodek odbierałby dymkowi pola `position: fixed`. Szyba pod kulą centruje
+  się przez `transform`, więc ona tylko przenika - przekształcenie z animacji by ją przesunęło.
+*/
 [data-wjazd="rozkwit-pilka"].widac {
-  animation-name: wj-rozkwit-pilka;
-  animation-duration: 1.2s;
-  /* sprężyna: piłka przeskakuje odrobinę za rozmiar i wraca */
-  animation-timing-function: cubic-bezier(0.34, 1.5, 0.5, 1);
+  animation: none;
+}
+[data-wjazd="rozkwit-pilka"].widac .kula {
+  animation: wj-rozkwit-pilka 1.2s cubic-bezier(0.34, 1.5, 0.5, 1) backwards;
+  animation-delay: var(--wj-op, 0ms);
+  transform-origin: 50% 50%;
+}
+[data-wjazd="rozkwit-pilka"].widac .kula-szyba {
+  animation: wj-przenik 1.2s ease-out backwards;
+  animation-delay: var(--wj-op, 0ms);
+}
+@keyframes wj-przenik {
+  from {
+    opacity: 0;
+  }
 }
 @keyframes wj-rozkwit-pilka {
   from {

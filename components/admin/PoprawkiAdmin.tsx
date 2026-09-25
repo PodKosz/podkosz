@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { NadWszystkim } from "@/components/NadWszystkim";
 import Link from "next/link";
 import { usePoprawki, type Poprawka } from "@/lib/poprawki";
 import { adresMiniatury } from "@/lib/obrazy";
@@ -214,49 +215,51 @@ function Powiekszenie({
   }, [onZamknij]);
 
   return (
-    <div
-      onClick={onZamknij}
-      className="fixed inset-0 z-[90] flex flex-col bg-void/92 p-4 backdrop-blur-xl sm:p-7"
-    >
-      <div className="flex shrink-0 items-center gap-4 pb-4">
-        <span className="text-[15px] font-semibold">
-          {poprawka.nazwa} · {poprawka.kadr}
-        </span>
-        <button
-          onClick={onZamknij}
-          aria-label="Zamknij"
-          className="ml-auto grid h-9 w-9 place-items-center rounded-full border border-hairline bg-white/6 text-[15px] text-muted transition hover:text-ink"
-        >
-          &times;
-        </button>
-      </div>
-
+    <NadWszystkim>
       <div
-        onClick={(e) => e.stopPropagation()}
-        className="grid min-h-0 flex-1 gap-4 lg:grid-cols-2"
+        onClick={onZamknij}
+        className="fixed inset-0 z-[90] flex flex-col bg-void/92 p-4 backdrop-blur-xl sm:p-7"
       >
-        <DuzyKadr etykieta="Jest teraz" url={poprawka.obecne} />
-        <DuzyKadr etykieta="Propozycja" url={poprawka.nowe} wyrozniony />
-      </div>
+        <div className="flex shrink-0 items-center gap-4 pb-4">
+          <span className="text-[15px] font-semibold">
+            {poprawka.nazwa} · {poprawka.kadr}
+          </span>
+          <button
+            onClick={onZamknij}
+            aria-label="Zamknij"
+            className="ml-auto grid h-9 w-9 place-items-center rounded-full border border-hairline bg-white/6 text-[15px] text-muted transition hover:text-ink"
+          >
+            &times;
+          </button>
+        </div>
 
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="flex shrink-0 justify-center gap-3 pt-4"
-      >
-        <button
-          onClick={onPrzyjmij}
-          className="rounded-2xl flame-gradient px-8 py-3.5 text-[14px] font-bold text-black"
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="grid min-h-0 flex-1 gap-4 lg:grid-cols-2"
         >
-          {poprawka.obecne ? "Przyjmij i podmień" : "Przyjmij i dołóż"}
-        </button>
-        <button
-          onClick={onZamknij}
-          className="rounded-2xl border border-hairline bg-white/6 px-6 py-3.5 text-[14px] font-medium text-muted transition hover:text-ink"
+          <DuzyKadr etykieta="Jest teraz" url={poprawka.obecne} />
+          <DuzyKadr etykieta="Propozycja" url={poprawka.nowe} wyrozniony />
+        </div>
+
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="flex shrink-0 justify-center gap-3 pt-4"
         >
-          Wróć do listy
-        </button>
+          <button
+            onClick={onPrzyjmij}
+            className="rounded-2xl flame-gradient px-8 py-3.5 text-[14px] font-bold text-black"
+          >
+            {poprawka.obecne ? "Przyjmij i podmień" : "Przyjmij i dołóż"}
+          </button>
+          <button
+            onClick={onZamknij}
+            className="rounded-2xl border border-hairline bg-white/6 px-6 py-3.5 text-[14px] font-medium text-muted transition hover:text-ink"
+          >
+            Wróć do listy
+          </button>
+        </div>
       </div>
-    </div>
+    </NadWszystkim>
   );
 }
 

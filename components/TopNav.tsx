@@ -72,7 +72,7 @@ export function TopNav() {
           <Link
             key={l.href}
             href={l.href}
-            className={`whitespace-nowrap rounded-full px-1 py-1.5 text-[10px] font-medium uppercase tracking-[0.01em] transition lg:px-3.5 lg:py-2 lg:text-[12px] lg:tracking-[0.11em] ${
+            className={`whitespace-nowrap rounded-full px-1 py-2.5 text-[10px] font-medium uppercase tracking-[0.01em] transition lg:px-3.5 lg:py-2 lg:text-[12px] lg:tracking-[0.11em] ${
               isActive(path, l.href) ? "text-ink" : "text-muted hover:text-ink"
             }`}
           >
