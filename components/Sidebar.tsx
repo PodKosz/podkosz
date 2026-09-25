@@ -262,6 +262,8 @@ export function Sidebar({
           transition: "transform 460ms cubic-bezier(.32,.72,0,1)",
           willChange: "transform",
         }}
+        // od górnej krawędzi zwiniętego arkusza mapa na telefonie liczy dolny margines kadru
+        data-kadr="dol"
         className="panel-filtrow pointer-events-auto fixed inset-x-0 bottom-0 top-[68px] z-30 flex flex-col rounded-t-[26px] lg:hidden"
       >
         <div ref={stripRef}>

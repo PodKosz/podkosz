@@ -4130,28 +4130,17 @@ select option {
 }
 
 /*
-  Na wąskim ekranie stojak nie mieści się w naturalnej wielkości i nie ma sensu go ściskać:
-  przy szerokości kolumny 327 px piłka miałaby 38 px, czyli mniej niż połowę pola, w które
-  da się trafić palcem. Zamiast tego plansza zostaje duża, a przewija się w bok - ruch znany
-  z każdej karuzeli, a przy półce z piłkami wręcz naturalny.
+  Na wąskim ekranie stojak mieści się W CAŁOŚCI - bez przewijania w bok. Wcześniej plansza
+  miała stałe 620 px i jeździła jak karuzela, ale wtedy nie widać było naraz całego zbioru,
+  a właśnie po to jest stojak: rzut oka i wiadomo, ile zdobyte, ile zostało.
 
-  `overflow-x` tylko tutaj, bo na szerokim ekranie przycięłoby kartę, która celowo wystaje
-  ponad stojak. Na telefonie karta jest `fixed`, więc przycinanie jej nie dotyczy.
+  Żeby piłki nie zmalały poniżej pola dla palca, stojak wychodzi w marginesy strony (24 px
+  z każdej strony) i zajmuje prawie cały ekran. Przy 390 px piłka ma wtedy ok. 46 px, przy
+  360 px - 42. Szkło stojaka i tak rozpływa się na brzegach, więc brak marginesu nie razi.
 */
 @media (max-width: 640px) {
   .stojak-scena {
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-    /* brzegi rozmyte do zera - widać, że jest co przesuwać */
-    -webkit-mask-image: linear-gradient(90deg, transparent, #000 22px, #000 calc(100% - 22px), transparent);
-    mask-image: linear-gradient(90deg, transparent, #000 22px, #000 calc(100% - 22px), transparent);
-  }
-  .stojak-scena::-webkit-scrollbar {
-    display: none;
-  }
-  .stojak-plansza {
-    min-width: 620px;
+    margin-inline: -20px;
   }
 }
 
@@ -4349,6 +4338,34 @@ select option {
 .kafel-szklo > * {
   position: relative;
   z-index: 1;
+}
+
+/*
+  Kafel szkła, którego górę zajmuje rysunek z własnym, kryjącym tłem („Standard zdjęć"
+  w „O nas"). Tło `.kafel-szklo` maluje się POD dziećmi, więc górny rąbek światła i smuga
+  zniknęłyby pod rysunkiem i szkło świeciłoby tylko wokół podpisu. Ta warstwa kładzie te same
+  dwa elementy nad rysunkiem - z tymi samymi liczbami co tło kafla, żeby tafla była jedna.
+*/
+.kafel-szklo > .szklo-nad-rysunkiem {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      180deg,
+      rgb(var(--rgb-szyba) / 0.52) 0,
+      rgb(var(--rgb-szyba) / 0.16) 2px,
+      rgb(var(--rgb-szyba) / 0.03) 10px,
+      rgb(var(--rgb-szyba) / 0) 34%
+    ),
+    linear-gradient(
+      128deg,
+      rgb(var(--rgb-szyba) / 0.14) 0%,
+      rgb(var(--rgb-szyba) / 0.035) 28%,
+      rgb(var(--rgb-szyba) / 0) 56%
+    );
 }
 .kula-karta-gora {
   display: flex;

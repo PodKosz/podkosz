@@ -48,7 +48,11 @@ export function TopNav() {
   if (path.startsWith("/gra/")) return null;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-0 z-40 flex items-center justify-between gap-2 p-3 sm:p-5">
+    /* `data-kadr` - od dolnej krawędzi paska mapa na telefonie liczy górny margines kadru */
+    <div
+      data-kadr="gora"
+      className="pointer-events-none fixed inset-x-0 top-0 z-40 flex items-center justify-between gap-2 p-3 sm:p-5"
+    >
       {/* na telefonie logo jest zawsze, także na mapie - inaczej nie ma jak wrócić */}
       <div className="pointer-events-auto shrink-0">
         <span className="lg:hidden">

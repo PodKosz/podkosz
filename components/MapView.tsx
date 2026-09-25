@@ -85,10 +85,35 @@ const POLAND_BOUNDS: [number, number, number, number] = [13.9, 48.9, 24.3, 55.0]
  * na prawo od środka ekranu i wyglądało to na błąd. Górny margines jest odrobinę większy
  * od dolnego, bo u góry wisi pasek nawigacji.
  */
-const fitPadding = (width: number) =>
-  width < 1024
-    ? { top: 90, bottom: 200, left: 24, right: 24 }
-    : { top: 90, bottom: 70, left: 70, right: 70 };
+/*
+  Na telefonie marginesy pionowe są MIERZONE, nie wpisane. Stało tu 90 z góry i 200 z dołu,
+  dobrane pod jeden ekran; na telefonie z paskiem przeglądarki albo paskiem gestów arkusz
+  filtrów zaczyna się gdzie indziej i Polska lądowała wyżej lub niżej niż środek tego, co
+  widać. Teraz kadr bierze dolną krawędź paska nawigacji (`data-kadr="gora"`) i górną
+  krawędź zwiniętego arkusza (`data-kadr="dol"`), więc kraj stoi dokładnie pośrodku mapy
+  między nimi. Boki to 8% szerokości ekranu - Polska jest o kilka procent mniejsza niż
+  przy dawnych 24 px, przy których dotykała krawędzi.
+*/
+const ODSTEP_KADRU = 20;
+const fitPadding = (width: number) => {
+  if (width >= 1024) return { top: 90, bottom: 70, left: 70, right: 70 };
+
+  const bok = Math.max(28, Math.round(width * 0.08));
+  if (typeof document === "undefined") return { top: 90, bottom: 190, left: bok, right: bok };
+
+  const wys = window.innerHeight;
+  const gora = document.querySelector('[data-kadr="gora"]')?.getBoundingClientRect().bottom;
+  const dol = document.querySelector('[data-kadr="dol"]')?.getBoundingClientRect().top;
+  /* zmierzone tylko, gdy ma sens - arkusz rozwinięty albo jeszcze niewyrenderowany dałby bzdurę */
+  const top = gora && gora < wys / 3 ? gora : 68;
+  const dolKadru = dol && dol > wys / 2 && dol <= wys ? dol : wys - 170;
+  return {
+    top: Math.round(top + ODSTEP_KADRU),
+    bottom: Math.round(wys - dolKadru + ODSTEP_KADRU),
+    left: bok,
+    right: bok,
+  };
+};
 
 /** Od tylu boisk mapa przechodzi z pinezek HTML na warstwę GeoJSON z klastrami. */
 const CLUSTER_FROM = 300;
@@ -600,7 +625,8 @@ export function MapView({
                 padding: fitPadding(containerRef.current.clientWidth || 1024),
               },
             }),
-        minZoom: 4.5,
+        /* 4,2, nie 4,5: na wąskim telefonie cała Polska z marginesami potrzebuje ok. 4,3 */
+        minZoom: 4.2,
         maxZoom: 18,
         attributionControl: { compact: true },
         dragRotate: false,
@@ -742,6 +768,25 @@ export function MapView({
     });
     ro.observe(containerRef.current);
 
+    /*
+      Drugie, ciche dokadrowanie po pierwszym narysowaniu - tylko na kadrze startowym i tylko,
+      dopóki nikt mapy nie ruszył. Na telefonie marginesy liczymy od paska i arkusza filtrów
+      (patrz `fitPadding`), a arkusz układa się jeszcze chwilę po tym, jak mapa ustawi kadr:
+      zmierzony za wcześnie dawał Polskę kilka pikseli nad środkiem.
+    */
+    let ruszona = false;
+    const poGescie = (e: { originalEvent?: Event }) => {
+      if (e.originalEvent) ruszona = true;
+    };
+    map.on("movestart", poGescie);
+    if (!zAdresu) {
+      map.once("idle", () => {
+        if (ruszona || wojKlikRef.current) return;
+        const szer = map.getContainer().clientWidth;
+        map.fitBounds(POLAND_BOUNDS, { padding: fitPadding(szer), duration: 0 });
+      });
+    }
+
     // Po każdym przesunięciu zapisujemy kadr w dwóch miejscach: w adresie - żeby widok dało
     // się wysłać linkiem i żeby przetrwał odświeżenie - oraz w pamięci sesji, bo z niej
     // odtwarza się powrót na mapę linkiem, który adresu ze sobą nie niesie.
@@ -780,6 +825,7 @@ export function MapView({
     }
 
     return () => {
+      map.off("movestart", poGescie);
       ro.disconnect();
       map.off("moveend", zapiszKadr);
       map.remove();
@@ -1556,6 +1602,26 @@ export function MapView({
               <Link href={`/boisko/${karta.court.slug}`} className="block">
                 <HoverCard court={karta.court} wydarzenie={wydarzenia[karta.court.id]} tapHint stan={stan} />
               </Link>
+              {/*
+                Zamknięcie wprost na karcie. Bez niego jedynym sposobem było dotknięcie mapy
+                obok - a dotknięcie mapy wybiera województwo i kamera odjeżdżała w region,
+                choć ktoś chciał tylko schować wizytówkę. Przycisk leży POZA linkiem, żeby
+                dotknięcie go nie otwierało karty boiska.
+              */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  clearCard();
+                }}
+                aria-label="Zamknij podgląd boiska"
+                className="glass absolute right-2 top-2 z-10 grid h-8 w-8 place-items-center rounded-full text-ink/85 transition active:scale-90"
+              >
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </svg>
+              </button>
             </div>
           ) : (
             <div
@@ -1596,27 +1662,32 @@ export function MapView({
         </div>
       )}
 
-      <div className="absolute bottom-[168px] right-4 z-20 flex flex-col gap-2 lg:bottom-8 lg:right-6">
+      {/*
+        Na telefonie przyciski są mniejsze i wciśnięte w róg: 36 px zamiast 44 i 10 px od
+        krawędzi. Pełne 44 px zajmowały pas mapy, po którym przesuwa się palcem, a przybliżanie
+        i tak robi się tam szczypaniem - przyciski są dodatkiem, nie głównym sterowaniem.
+      */}
+      <div className="absolute bottom-[160px] right-2.5 z-20 flex flex-col gap-1.5 lg:bottom-8 lg:right-6 lg:gap-2">
         <button
           onClick={() => zoomBy(1)}
-          className="glass grid h-11 w-11 place-items-center rounded-2xl text-xl text-ink/80 transition hover:text-ink active:scale-95"
+          className="glass grid h-9 w-9 place-items-center rounded-xl text-lg text-ink/80 transition hover:text-ink active:scale-95 lg:h-11 lg:w-11 lg:rounded-2xl lg:text-xl"
           aria-label="Przybliż"
         >
           +
         </button>
         <button
           onClick={() => zoomBy(-1)}
-          className="glass grid h-11 w-11 place-items-center rounded-2xl text-xl text-ink/80 transition hover:text-ink active:scale-95"
+          className="glass grid h-9 w-9 place-items-center rounded-xl text-lg text-ink/80 transition hover:text-ink active:scale-95 lg:h-11 lg:w-11 lg:rounded-2xl lg:text-xl"
           aria-label="Oddal"
         >
           −
         </button>
         <button
           onClick={resetView}
-          className="glass grid h-11 w-11 place-items-center rounded-2xl text-ink/70 transition hover:text-ink active:scale-95"
+          className="glass grid h-9 w-9 place-items-center rounded-xl text-ink/70 transition hover:text-ink active:scale-95 lg:h-11 lg:w-11 lg:rounded-2xl"
           aria-label="Cała Polska"
         >
-          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.6">
+          <svg viewBox="0 0 24 24" className="h-4 w-4 lg:h-5 lg:w-5" fill="none" stroke="currentColor" strokeWidth="1.6">
             <circle cx="12" cy="12" r="8.5" />
             <path d="M3.5 12h17M12 3.5c4.5 5 4.5 12 0 17M12 3.5c-4.5 5-4.5 12 0 17" />
           </svg>

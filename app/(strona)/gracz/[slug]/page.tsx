@@ -208,8 +208,13 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
 
         {boiska.length ? (
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {/*
+              `min-w-0` na opakowaniu: karta ma `overflow-hidden`, więc sama jako komórka
+              siatki mogła się zwężać, a opakowanie bez tego rozpychało kolumnę do szerokości
+              zdjęcia - na telefonie karty wychodziły daleko poza ekran.
+            */}
             {boiska.map((court) => (
-              <div key={court.id} data-wjazd="rozkwit-boisko">
+              <div key={court.id} data-wjazd="rozkwit-boisko" className="min-w-0">
                 <CourtCard court={court} />
               </div>
             ))}
@@ -238,7 +243,7 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {ulubione.map((court) => (
-              <div key={court.id} data-wjazd="rozkwit-boisko">
+              <div key={court.id} data-wjazd="rozkwit-boisko" className="min-w-0">
                 <CourtCard court={court} />
               </div>
             ))}

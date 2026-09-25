@@ -232,7 +232,7 @@ export default async function AboutPage() {
         </p>
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {REQUIRED_PHOTO_STEPS.map((s, i) => (
-            <div key={s.kind} data-wjazd="odslona-karta" className="glass overflow-hidden rounded-2xl">
+            <div key={s.kind} data-wjazd="odslona-karta" className="kafel kafel-szklo">
               <div className="relative aspect-[4/3]">
                 <ShotDiagram kind={s.kind} />
                 <span className="absolute left-2.5 top-2.5 grid h-6 w-6 place-items-center rounded-full bg-black/70 text-[11px] font-bold">
@@ -248,6 +248,8 @@ export default async function AboutPage() {
                 <p className="text-[12px] font-semibold leading-tight">{s.title}</p>
                 <p className="mt-1 text-[11px] leading-snug text-muted">{s.hint}</p>
               </div>
+              {/* rąbek światła i smuga także NAD rysunkiem - ten ma własne, kryjące tło */}
+              <span aria-hidden className="szklo-nad-rysunkiem" />
             </div>
           ))}
         </div>

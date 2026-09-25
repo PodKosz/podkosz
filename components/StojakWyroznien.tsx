@@ -138,10 +138,9 @@ export function StojakWyroznien({ lista }: { lista: Wyroznienie[] }) {
       }}
     >
       {/*
-        Osobna plansza w środku sceny, bo na telefonie stojak MUSI być szerszy niż ekran.
-        Siedemnaście piłek w kolumnie o szerokości 327 px wychodzi po 38 px - za mało,
-        żeby w którąkolwiek trafić palcem. Plansza dostaje więc minimalną szerokość i
-        przesuwa się w bok, jak prawdziwa półka; scena tylko ją przycina i przewija.
+        Osobna plansza w środku sceny - to ona niesie siatkę procentów, w której stoją piłki
+        i poręcze. Na telefonie scena wychodzi w marginesy strony, żeby piłki nie zmalały
+        poniżej pola dla palca (patrz `.stojak-scena` w globals.css).
       */}
       <div className="stojak-plansza">
         {/* eslint-disable-next-line @next/next/no-img-element */}
