@@ -245,6 +245,9 @@ export function HoverCard({
           </p>
         )}
       </div>
+
+      {/* poświata na krawędziach - ta sama tafla, co kafle rankingu i liczby na profilu */}
+      <span aria-hidden className="szklo-krawedzie" />
     </div>
   );
 }
@@ -462,6 +465,8 @@ function WizytowkaWydarzenia({
           </p>
         )}
       </div>
+
+      <span aria-hidden className="szklo-krawedzie" />
     </div>
   );
 }

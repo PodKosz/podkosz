@@ -813,6 +813,21 @@ body {
 }
 
 /*
+  Poświata na krawędziach wizytówki nad pinezką - ta sama nakładka `.szklo-krawedzie`, co na
+  kaflach rankingu: jasny rąbek u góry, łuna wstająca od dołu i pionowa obwódka. Leży nad
+  zdjęciem i treścią, bo zdjęcie zajmuje całą górę karty i przykryłoby światło zza siebie.
+
+  Osobna reguła z pozycją, bo `.szklo-plynne > *` wyżej robi z każdego dziecka warstwę
+  `relative` - nakładka musi się rozciągnąć na całą kartę, a nie stanąć w rzędzie z treścią.
+*/
+.szklo-plynne > .szklo-krawedzie {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/*
   Prawdziwe zaginanie pikseli tła. Deklaracja jest w osobnym bloku, żeby przeglądarka,
   która nie umie filtra w `backdrop-filter`, po prostu ją pominęła i została przy rozmyciu
   z reguły wyżej.
