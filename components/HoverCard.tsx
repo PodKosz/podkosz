@@ -1,7 +1,7 @@
 "use client";
 
-import { MapCourt, TYPE_LABEL, surfaceLabel, type CourtPhotoRef } from "@/lib/types";
-import { thumbUrl, thumbWidth, useCourtPhotos } from "@/lib/galeria";
+import { MapCourt, surfaceLabel, type CourtPhotoRef } from "@/lib/types";
+import { KADROW_WIZYTOWKI, thumbUrl, thumbWidth, useCourtPhotos } from "@/lib/galeria";
 import { zapasowyAdres } from "@/lib/obrazy";
 import { PhotoPlaceholder } from "./CourtPhoto";
 import { photoUrl } from "@/lib/supabase/config";
@@ -77,7 +77,7 @@ export function HoverCard({
     Nadmiarowy kadr nic nie kosztuje, bo zapytanie i tak idzie po całą galerię boiska -
     ale zwykła wizytówka MUSI go odciąć, i robi to niżej, przy `kadry`.
   */
-  const thumbs = useCourtPhotos(court.id, 4);
+  const thumbs = useCourtPhotos(court.id, KADROW_WIZYTOWKI);
 
   /*
     Barwa refleksu na szkle, zdjęta z największego kadru (patrz `lib/barwa-zdjecia.ts`).
@@ -115,19 +115,29 @@ export function HoverCard({
   }
 
   /*
-    DOKŁADNIE TRZY KADRY, ani mniej, ani więcej.
+    UKŁAD: DUŻY KADR NA CAŁĄ SZEROKOŚĆ I TRZY MAŁE POD NIM.
 
-    Siatka zwykłej wizytówki ma trzy kolumny i dwa rzędy: jeden kafel 2x2 po lewej i dwa
-    po prawej, czyli sześć komórek zajętych w całości. Czwarty kadr zaczynał trzeci rząd
-    i zostawiał obok siebie DWA PUSTE MIEJSCA - tak wyglądała ta wizytówka po tym, jak
-    pobieranie podniosłem z trzech kadrów na cztery dla siatki wydarzenia (ta potrzebuje
-    czterech przy pionowym plakacie).
+    Wcześniej duży kadr zajmował dwie trzecie szerokości, a dwa małe stały obok w kolumnie.
+    Teraz zdjęcie tytułowe - to, po którym poznaje się boisko - dostaje całą szerokość
+    wizytówki, a nazwa boiska leży wprost na nim, przy dolnej krawędzi, jak podpis na
+    okładce. Pod spodem rząd trzech kadrów: kosze i nawierzchnia, czyli to, o co pyta się
+    przed wyjazdem.
 
-    Dopełnienie `null` załatwia drugi kierunek: boisko z jednym albo dwoma zdjęciami
-    i moment, w którym zdjęcia jeszcze lecą z serwera, dostają grafikę zastępczą na
-    brakujących miejscach - a nie dziurę.
+    Zawsze cztery miejsca - brakujące (i te, których zdjęcia jeszcze lecą z serwera)
+    dostają grafikę zastępczą, więc wizytówka nie zmienia wysokości w trakcie ładowania.
+
+    Linijki „miasto · typ boiska" nie ma: miasto widać na mapie tuż pod pinezką, a typ
+    i tak niesie kafel z godzinami - dwa razy to samo tylko zabierało miejsce nazwie.
   */
-  const kadry = [thumbs[0] ?? null, thumbs[1] ?? null, thumbs[2] ?? null];
+  const kadry = Array.from({ length: KADROW_WIZYTOWKI }, (_, i) => thumbs[i] ?? null);
+  const [tytulowy, ...male] = kadry;
+
+  /* barwę liczymy tylko z kadru tytułowego - on niesie kolor boiska */
+  const poTytulowym = (img: HTMLImageElement) => {
+    void ustalBarwe(img, tytulowy?.url ?? "", court.id).then((b) => {
+      if (b) setAkcent(b);
+    });
+  };
 
   return (
     <div
@@ -136,59 +146,53 @@ export function HoverCard({
       } ${tapHint ? "w-full" : "w-[320px]"}`}
       style={akcent ? ({ "--szklo-akcent": akcent } as React.CSSProperties) : undefined}
     >
-      <div className="grid grid-cols-3 gap-[2px] bg-white/5">
-        {kadry.map((p, i) => (
-          <div
-            key={i}
-            className={`relative aspect-[4/3] overflow-hidden ${
-              i === 0 ? "col-span-2 row-span-2" : ""
-            }`}
-          >
-            {p?.url ? (
-              /*
-                Zwykły <img> ze stałym adresem miniatury, a nie next/image: ten sam adres
-                rozgrzewamy z góry (patrz prefetchCourtPhotos), więc obrazek jest już
-                w pamięci przeglądarki i wizytówka pojawia się bez migania.
-              */
-              <Miniatura
-                url={p.url}
-                opis={p.caption}
-                szerokosc={thumbWidth(i)}
-                /* barwę liczymy tylko z pierwszego, największego kadru - on niesie kolor boiska */
-                poWczytaniu={
-                  i === 0
-                    ? (img) => {
-                        void ustalBarwe(img, p?.url ?? "", court.id).then((b) => {
-                          if (b) setAkcent(b);
-                        });
-                      }
-                    : undefined
-                }
-              />
-            ) : (
-              // póki zdjęcia lecą z serwera, stoi grafika zastępcza - nic nie przeskakuje
-              <PhotoPlaceholder kind={i === 0 ? "narożnik" : "kosz-a"} seed={court.seed + i} />
-            )}
-          </div>
-        ))}
-      </div>
+      {/* ---- kadr tytułowy z nazwą przy dolnej krawędzi ---- */}
+      <div className="relative aspect-[16/10] overflow-hidden">
+        {tytulowy?.url ? (
+          /*
+            Zwykły <img> ze stałym adresem miniatury, a nie next/image: ten sam adres
+            rozgrzewamy z góry (patrz prefetchCourtPhotos), więc obrazek jest już
+            w pamięci przeglądarki i wizytówka pojawia się bez migania.
+          */
+          <Miniatura
+            url={tytulowy.url}
+            opis={tytulowy.caption}
+            szerokosc={thumbWidth(0)}
+            poWczytaniu={poTytulowym}
+          />
+        ) : (
+          <PhotoPlaceholder kind="narożnik" seed={court.seed} />
+        )}
 
-      <div className={tapHint ? "p-2.5" : "p-3.5"}>
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <h3
-              className={`truncate font-semibold tracking-tight ${
-                tapHint ? "text-[13px]" : "text-[15px]"
-              }`}
-            >
-              {court.name}
-            </h3>
-            <p className={`truncate text-muted ${tapHint ? "text-[11px]" : "text-[12px]"}`}>
-              {court.city} · {TYPE_LABEL[court.type]}
-            </p>
-          </div>
+        {/* przyciemnienie od dołu - nazwa leży na zdjęciu i musi być czytelna na każdym */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-3/5"
+          style={{
+            background:
+              "linear-gradient(0deg, rgb(var(--rgb-zaslona) / .86) 0%, rgb(var(--rgb-zaslona) / .45) 45%, transparent 100%)",
+          }}
+        />
+
+        {court.basketApproved && (
+          <BasketApprovedBadge className={`absolute left-2 ${tapHint ? "top-2" : "top-2.5"}`} />
+        )}
+
+        <div
+          className={`absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 ${
+            tapHint ? "px-2.5 pb-2" : "px-3.5 pb-2.5"
+          }`}
+        >
+          <h3
+            className={`min-w-0 truncate font-semibold leading-tight tracking-tight text-kadr ${
+              tapHint ? "text-[14px]" : "text-[16px]"
+            }`}
+            style={{ textShadow: "0 1px 10px rgb(0 0 0 / .55)" }}
+          >
+            {court.name}
+          </h3>
           <span
-            className={`flex shrink-0 items-center gap-1 rounded-full bg-white/8 px-2 font-semibold ${
+            className={`flex shrink-0 items-center gap-1 rounded-full bg-black/45 px-2 font-semibold text-kadr backdrop-blur-sm ${
               tapHint ? "py-0.5 text-[11px]" : "py-1 text-[12px]"
             }`}
           >
@@ -196,29 +200,39 @@ export function HoverCard({
             {court.likes}
           </span>
         </div>
+      </div>
 
-        {court.basketApproved && <BasketApprovedBadge className={tapHint ? "mt-2" : "mt-2.5"} />}
+      {/* ---- trzy kadry pod spodem ---- */}
+      <div className="mt-[2px] grid grid-cols-3 gap-[2px]">
+        {male.map((p, i) => (
+          <div key={i} className="relative aspect-[4/3] overflow-hidden">
+            {p?.url ? (
+              /* `object-cover` ze środkiem kadru - kosz i obręcz zwykle siedzą pośrodku */
+              <Miniatura url={p.url} opis={p.caption} szerokosc={thumbWidth(i + 1)} />
+            ) : (
+              <PhotoPlaceholder kind={i === 2 ? "nawierzchnia" : "kosz-a"} seed={court.seed + i + 1} />
+            )}
+          </div>
+        ))}
+      </div>
 
-        <div
-          className={`grid grid-cols-3 ${
-            tapHint ? "mt-2 gap-1.5 text-[10px]" : "mt-3 gap-2 text-[11px]"
-          }`}
-        >
+      <div className={tapHint ? "p-2.5" : "p-3"}>
+        <div className={`grid grid-cols-3 ${tapHint ? "gap-1.5" : "gap-2"}`}>
           <Fact
             compact={tapHint}
-            icon={<HoopIcon className={tapHint ? "h-3 w-3" : "h-3.5 w-3.5"} />}
+            icon={<HoopIcon className={tapHint ? "h-3.5 w-3.5" : "h-4 w-4"} />}
             label="kosze"
             value={String(court.hoops)}
           />
           <Fact
             compact={tapHint}
-            icon={<ClockIcon className={tapHint ? "h-3 w-3" : "h-3.5 w-3.5"} />}
+            icon={<ClockIcon className={tapHint ? "h-3.5 w-3.5" : "h-4 w-4"} />}
             label="otwarte"
             value={court.hours}
           />
           <Fact
             compact={tapHint}
-            icon={<SurfaceIcon className={tapHint ? "h-3 w-3" : "h-3.5 w-3.5"} />}
+            icon={<SurfaceIcon className={tapHint ? "h-3.5 w-3.5" : "h-4 w-4"} />}
             label="podłoże"
             value={surfaceLabel(court.surface)}
           />
@@ -235,6 +249,14 @@ export function HoverCard({
   );
 }
 
+/**
+ * Kafel z jednym parametrem boiska - z tego samego szkła co kafle liczb na profilu gracza
+ * (`.kafel-szklo`: jasny rąbek u góry i u dołu, rozmycie, włosowa obwódka).
+ *
+ * Pismo jest wyraźnie większe niż wcześniej. Przy 10 px wartości i 9 px podpisu kafle były
+ * nieczytelne na telefonie, a to przecież trzy rzeczy, dla których w ogóle zagląda się
+ * w wizytówkę: ile koszy, kiedy otwarte, na czym się gra.
+ */
 function Fact({
   icon,
   label,
@@ -248,16 +270,22 @@ function Fact({
 }) {
   return (
     <div
-      className={`rounded-xl border border-hairline bg-white/4 ${
-        compact ? "px-1.5 py-1" : "px-2 py-1.5"
+      className={`kafel-szklo relative overflow-hidden rounded-[14px] ${
+        compact ? "px-2 py-1.5" : "px-2.5 py-2"
       }`}
     >
-      <div className="flex items-center gap-1 text-flame/90">{icon}</div>
-      <div className={`truncate font-medium leading-tight ${compact ? "mt-0.5" : "mt-1"}`}>
+      <div className="text-flame">{icon}</div>
+      <div
+        className={`truncate font-semibold leading-tight ${
+          compact ? "mt-1 text-[12.5px]" : "mt-1.5 text-[14px]"
+        }`}
+      >
         {value}
       </div>
       <div
-        className={`uppercase tracking-wider text-faint ${compact ? "text-[9px]" : "text-[10px]"}`}
+        className={`mt-0.5 uppercase tracking-[0.1em] text-faint ${
+          compact ? "text-[9.5px]" : "text-[10px]"
+        }`}
       >
         {label}
       </div>

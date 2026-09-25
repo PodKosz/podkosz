@@ -172,18 +172,27 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
   useEffect(() => {
     if (!all.length || all.length > SZUKANIE_W_BAZIE_OD) return;
 
-    // na dotyku nie ma najeżdżania - tam wizytówka pojawia się po świadomym dotknięciu
-    // pinezki i może dociągnąć swoje trzy miniatury sama; nie ma po co zużywać danych
+    /*
+      Na dotyku rozgrzewamy mniej, ale NIE nic. Kiedyś telefon był z tego całkiem wyłączony
+      („wizytówka i tak pojawia się po świadomym dotknięciu"), tyle że wtedy po dotknięciu
+      pinezki musiała najpierw dojechać biblioteka Supabase i odpowiedź z bazy, a dopiero
+      potem zdjęcia - prawie sekunda pustych kadrów, podczas gdy na komputerze wizytówka
+      była od razu. Adresy zdjęć to kilka bajtów na boisko, więc idą dla wszystkich; same
+      pliki - tylko dla ośmiu boisk z czoła listy. Resztę dociąga dotknięcie pinezki, już
+      przy przyłożeniu palca (`rozgrzejBoisko`).
+
+      Tryb oszczędzania danych wyłącza to w całości - o to ktoś prosił wprost.
+    */
     const dotyk = window.matchMedia("(hover: none), (pointer: coarse)").matches;
     const oszczedzanie = (
       navigator as unknown as { connection?: { saveData?: boolean } }
     ).connection?.saveData;
-    if (dotyk || oszczedzanie) return;
+    if (oszczedzanie) return;
 
     const ids = all.map((c) => c.id);
 
     const start = () => {
-      void prefetchCourtPhotos(ids).catch(() => undefined);
+      void prefetchCourtPhotos(ids, undefined, dotyk ? 8 : undefined).catch(() => undefined);
     };
 
     const idle = (window as unknown as { requestIdleCallback?: (cb: () => void) => number })

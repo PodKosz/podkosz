@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 export interface LightboxItem {
   url?: string;
@@ -76,12 +77,19 @@ export function Lightbox({
   };
 
   const current = items[index];
-  if (!current) return null;
+  if (!current || typeof document === "undefined") return null;
 
-  return (
+  /*
+    PORTAL DO <body>. Podgląd otwiera się z wnętrza strony, a cała treść strony leży w warstwie
+    `relative z-10` z układu - pod paskiem nawigacji, który ma `z-40`. Własne `z-50` niczego
+    tu nie zmieniało: liczy się tylko wewnątrz tamtej warstwy. Skutek widać było na telefonie
+    przy pionowym zdjęciu: jego górny róg, a z nim „X", chował się pod paskiem i nie dało się
+    wyjść. Wyniesiony do <body> podgląd stoi nad wszystkim.
+  */
+  return createPortal(
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-black/90 p-4 backdrop-blur-xl sm:p-8"
+      className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-3 bg-black/90 p-4 backdrop-blur-xl sm:p-8"
     >
       <div
         onClick={(e) => e.stopPropagation()}
@@ -89,7 +97,7 @@ export function Lightbox({
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
         onTouchCancel={onTouchEnd}
-        className="relative flex max-h-[82vh] w-full max-w-6xl flex-1 touch-pan-y items-center justify-center"
+        className="relative flex max-h-[74dvh] w-full max-w-6xl flex-1 touch-pan-y items-center justify-center sm:max-h-[82vh]"
       >
         {current.url ? (
           /*
@@ -110,8 +118,16 @@ export function Lightbox({
               src={current.url}
               alt={current.caption ?? ""}
               draggable={false}
-              className="block max-h-[82vh] w-auto max-w-full select-none rounded-[20px] object-contain"
+              /* na telefonie niżej niż pełny ekran - pionowy kadr zostawia wtedy margines
+                 na górze i na dole, a „X" w jego rogu jest zawsze w zasięgu kciuka */
+              className="block max-h-[74dvh] w-auto max-w-full select-none rounded-[20px] object-contain sm:max-h-[82vh]"
             />
+            {/* licznik na zdjęciu tylko na telefonie - tam dolny pasek z podpisem jest schowany */}
+            {wielo && (
+              <span className="glass absolute left-2.5 top-2.5 rounded-full px-2.5 py-1 text-[11px] font-semibold tabular-nums text-ink/85 sm:hidden">
+                {index + 1} / {items.length}
+              </span>
+            )}
             <button
               onClick={onClose}
               aria-label="Zamknij zdjęcie"
@@ -146,22 +162,26 @@ export function Lightbox({
         )}
       </div>
 
+      {/*
+        Podpis kadru („Całe boisko z narożnika", „Kosz A na wprost") tylko od tabletu w górę.
+        Na telefonie zabierał wysokość zdjęciu, a nazwę ujęcia i tak widać po samym kadrze.
+      */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="glass-dim flex w-full max-w-6xl items-center justify-between gap-4 rounded-2xl px-4 py-2.5 text-[13px]"
+        className="glass-dim hidden w-full max-w-6xl items-center justify-between gap-4 rounded-2xl px-4 py-2.5 text-[13px] sm:flex"
       >
         <span className="truncate text-muted">{current.caption}</span>
         <span className="shrink-0 tabular-nums text-faint">
           {index + 1} / {items.length}
         </span>
-        {/* na telefonie zamyka „X" na zdjęciu - tu zostaje tylko podpowiedź klawisza */}
         <button
           onClick={onClose}
-          className="hidden shrink-0 text-[12px] uppercase tracking-[0.14em] text-muted transition hover:text-ink sm:inline"
+          className="shrink-0 text-[12px] uppercase tracking-[0.14em] text-muted transition hover:text-ink"
         >
           zamknij (esc)
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

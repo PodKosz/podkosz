@@ -8,6 +8,7 @@ import { MapCourt } from "@/lib/types";
 import { CITIES_GEOJSON } from "@/lib/cities";
 import type { LeadPoint } from "@/lib/leads";
 import { HoverCard } from "./HoverCard";
+import { rozgrzejBoisko } from "@/lib/galeria";
 import { kafelkiPodkladu, podkladMapy } from "@/lib/podklad";
 import { ZarWojewodztwa, bboxWojewodztwa, stworzZarWojewodztwa } from "@/lib/zarWojewodztwa";
 import { useMotyw } from "@/lib/motyw";
@@ -1090,6 +1091,8 @@ export function MapView({
           schowajKarte();
         });
       }
+      // zdjęcia wizytówki zaczynają lecieć przy przyłożeniu palca, nie dopiero po kliknięciu
+      if (coarse) el.addEventListener("pointerdown", () => rozgrzejBoisko(court.id));
       el.addEventListener("click", (e) => {
         e.stopPropagation();
         if (coarse) {

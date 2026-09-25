@@ -35,14 +35,17 @@ function gestoscEkranu() {
 /**
  * Szerokość miniatury dla danego kadru w wizytówce (0 = duży kadr).
  *
- * Tylko duży kadr dostaje szerszy plik na gęstych ekranach - dwa małe mają po ~105 px,
- * więc 200 px wystarcza im nawet przy podwójnej gęstości, a rozgrzewamy ich dwa razy
- * więcej niż dużych.
+ * Duży kadr idzie przez całą szerokość wizytówki (320 px), więc na gęstym ekranie dostaje
+ * plik dwa razy szerszy. Trzy małe pod nim mają po ~105 px - 200 px wystarcza im nawet przy
+ * podwójnej gęstości, a jest ich trzy razy więcej niż dużych.
  */
 export const thumbWidth = (index: number) => {
-  if (index === 0) return gestoscEkranu() === 2 ? 480 : 320;
+  if (index === 0) return gestoscEkranu() === 2 ? 640 : 320;
   return 200;
 };
+
+/** Ile kadrów pokazuje wizytówka nad pinezką: duży i trzy małe pod nim. */
+export const KADROW_WIZYTOWKI = 4;
 
 /**
  * Adres miniatury.
@@ -102,7 +105,12 @@ const ROZGRZEWANYCH = 24;
  * Pobiera miniatury dla wielu boisk i rozgrzewa obrazki tych pierwszych na liście.
  * Wołane po wczytaniu mapy, w bezczynnym momencie.
  */
-export async function prefetchCourtPhotos(courtIds: string[], howMany = 3) {
+export async function prefetchCourtPhotos(
+  courtIds: string[],
+  howMany = KADROW_WIZYTOWKI,
+  /** ilu boiskom z czoła listy rozgrzać same pliki - telefon dostaje mniej, patrz Explorer */
+  ileRozgrzac = ROZGRZEWANYCH
+) {
   const brakujace = courtIds.filter((id) => !cache.has(id));
   if (!brakujace.length) return;
 
@@ -156,11 +164,29 @@ export async function prefetchCourtPhotos(courtIds: string[], howMany = 3) {
     cache.set(id, photos);
 
     /* pliki rozgrzewamy tylko czołówce listy - patrz `ROZGRZEWANYCH` */
-    if (miejsce >= ROZGRZEWANYCH) return;
+    if (miejsce >= ileRozgrzac) return;
     photos.slice(0, howMany).forEach((p, i) => {
       if (p.url) rozgrzej(thumbUrl(p.url, thumbWidth(i)));
     });
   });
+}
+
+/**
+ * Rozgrzewa kadry wizytówki jednego boiska - wołane w chwili przyłożenia palca do pinezki.
+ *
+ * Na dotyku wizytówka pojawia się po kliknięciu, a kliknięcie przychodzi dopiero po
+ * puszczeniu palca. Pobieranie ruszające już przy `pointerdown` zyskuje ten czas, a przy
+ * adresach pobranych wcześniej (`prefetchCourtPhotos`) plik zaczyna lecieć od razu, bez
+ * czekania na zapytanie do bazy.
+ */
+export function rozgrzejBoisko(courtId: string) {
+  const warm = (photos: CourtPhotoRef[]) =>
+    photos.slice(0, KADROW_WIZYTOWKI).forEach((p, i) => {
+      if (p.url) rozgrzej(thumbUrl(p.url, thumbWidth(i)));
+    });
+  const gotowe = cache.get(courtId);
+  if (gotowe) warm(gotowe);
+  else void fetchCourtPhotos(courtId).then(warm).catch(() => undefined);
 }
 
 export async function fetchCourtPhotos(courtId: string): Promise<CourtPhotoRef[]> {
