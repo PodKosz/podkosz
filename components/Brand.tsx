@@ -2,15 +2,19 @@
 
 import { useId } from "react";
 import Link from "next/link";
-import { szwyPilki } from "@/lib/pilka";
+import { ZNAK } from "@/lib/znak";
 
 /**
- * Logo: boisko widziane z góry, z piłką w kole środkowym.
- * Gradient ma identyfikator z useId - dwa loga na stronie (nawigacja + panel) miały
+ * Logo: znak (tablica z obręczą i plecionką) i napis PODKOSZ.
+ * Znak ma kolor tekstu, jak „POD" - w motywie ciemnym jest biały, w jasnych ciemny.
+ * Maska przerw ma identyfikator z useId - dwa loga na stronie (nawigacja + panel) miały
  * wcześniej ten sam `id`, a `url(#…)` trafiał do tego ukrytego i ikona znikała.
  */
 export function Brand({ compact = false }: { compact?: boolean }) {
-  const gradientId = `brand-court-${useId()}`;
+  const maskaId = `brand-znak-${useId()}`;
+  const wysokosc = compact ? 36 : 52;
+  const [x, y, w, h] = ZNAK.viewBox.split(" ").map(Number);
+  const g = ZNAK.grubosc;
 
   return (
     <Link
@@ -20,36 +24,35 @@ export function Brand({ compact = false }: { compact?: boolean }) {
     >
       <span
         className="grid place-items-center"
-        style={{ filter: "drop-shadow(0 6px 18px rgb(var(--rgb-ember) / .45))" }}
+        style={{ filter: "drop-shadow(0 4px 14px rgb(var(--rgb-ember) / .35))" }}
       >
-        <svg viewBox="0 0 64 64" className={compact ? "h-9 w-9" : "h-13 w-13"}
-             style={compact ? undefined : { width: 52, height: 52 }} fill="none">
+        <svg
+          viewBox={ZNAK.viewBox}
+          style={{ height: wysokosc, width: Math.round(wysokosc * ZNAK.proporcja) }}
+          fill="none"
+          aria-hidden="true"
+        >
           <defs>
-            <linearGradient id={gradientId} x1="0" y1="0" x2="0.8" y2="1">
-              <stop offset="0" stopColor="var(--color-glow-soft)" />
-              <stop offset="0.5" stopColor="var(--color-flame)" />
-              <stop offset="1" stopColor="var(--color-ember-deep)" />
-            </linearGradient>
+            {/* obręcz i siatka wycinają przerwy w liniach tablicy tam, gdzie przechodzą przed nią */}
+            <mask id={maskaId} maskUnits="userSpaceOnUse" x={x - 20} y={y - 20} width={w + 40} height={h + 40}>
+              <rect x={x - 20} y={y - 20} width={w + 40} height={h + 40} fill="#fff" />
+              <path d={ZNAK.siatka} fill="none" stroke="#000" strokeWidth={g.siatka + 2 * ZNAK.przerwa}
+                    strokeLinecap="round" strokeLinejoin="round" />
+              <path d={ZNAK.obrecz} fill="#000" stroke="#000" strokeWidth={g.obrecz + 2 * ZNAK.przerwa} />
+            </mask>
           </defs>
-
-          <g stroke={`url(#${gradientId})`} fill="none" strokeLinecap="round" strokeLinejoin="round">
-            {/* płyta boiska */}
-            <rect x="4.5" y="12.5" width="55" height="39" rx="4.5" strokeWidth="2.4" />
-            {/* linia środkowa */}
-            <path d="M32 12.5v39" strokeWidth="1.8" opacity=".9" />
-            {/* pola podkoszowe */}
-            <path d="M4.5 23.5h10v17h-10" strokeWidth="1.8" />
-            <path d="M59.5 23.5h-10v17h10" strokeWidth="1.8" />
-            <path d="M14.5 27a7 7 0 0 1 0 10" strokeWidth="1.6" opacity=".85" />
-            <path d="M49.5 27a7 7 0 0 0 0 10" strokeWidth="1.6" opacity=".85" />
-            {/* piłka w kole środkowym */}
-            <circle cx="32" cy="32" r="7.5" strokeWidth="2.2" />
-            <path d={szwyPilki(32, 32, 7.5)} strokeWidth="1.3" opacity=".95" />
+          <g stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+            <g mask={`url(#${maskaId})`}>
+              <path d={ZNAK.tablica} strokeWidth={g.tablica} />
+              <path d={ZNAK.kwadrat} strokeWidth={g.kwadrat} />
+            </g>
+            <path d={ZNAK.siatka} strokeWidth={g.siatka} />
+            <path d={ZNAK.obrecz} strokeWidth={g.obrecz} />
           </g>
         </svg>
       </span>
 
-      {/* na wąskich ekranach zostaje sama ikona - inaczej pasek nawigacji nie mieści się w szerokości */}
+      {/* na wąskich ekranach zostaje sam znak - inaczej pasek nawigacji nie mieści się w szerokości */}
       <span
         className={`font-bold leading-none tracking-tight ${
           compact ? "hidden text-[19px] sm:inline" : "text-[28px]"
