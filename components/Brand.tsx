@@ -6,12 +6,14 @@ import { ZNAK } from "@/lib/znak";
 
 /**
  * Logo: znak (tablica z obręczą i plecionką) i napis PODKOSZ.
- * Znak ma kolor tekstu, jak „POD" - w motywie ciemnym jest biały, w jasnych ciemny.
- * Maska przerw ma identyfikator z useId - dwa loga na stronie (nawigacja + panel) miały
+ * Znak jest w gradiencie marki ze zmiennych motywu, więc w każdym motywie ma jego barwy.
+ * Gradient i maska przerw mają identyfikatory z useId - dwa loga na stronie (nawigacja + panel) miały
  * wcześniej ten sam `id`, a `url(#…)` trafiał do tego ukrytego i ikona znikała.
  */
 export function Brand({ compact = false }: { compact?: boolean }) {
-  const maskaId = `brand-znak-${useId()}`;
+  const id = useId();
+  const maskaId = `brand-znak-${id}`;
+  const gradientId = `brand-gradient-${id}`;
   const wysokosc = compact ? 36 : 52;
   const [x, y, w, h] = ZNAK.viewBox.split(" ").map(Number);
   const g = ZNAK.grubosc;
@@ -33,6 +35,12 @@ export function Brand({ compact = false }: { compact?: boolean }) {
           aria-hidden="true"
         >
           <defs>
+            {/* gradient marki po przekątnej całego znaku - jeden dla wszystkich kresek, więc płynie przez nie ciągle */}
+            <linearGradient id={gradientId} gradientUnits="userSpaceOnUse" x1={x} y1={y} x2={x + w} y2={y + h}>
+              <stop offset="0" stopColor="var(--color-glow-soft)" />
+              <stop offset="0.5" stopColor="var(--color-flame)" />
+              <stop offset="1" stopColor="var(--color-ember-deep)" />
+            </linearGradient>
             {/* obręcz i siatka wycinają przerwy w liniach tablicy tam, gdzie przechodzą przed nią */}
             <mask id={maskaId} maskUnits="userSpaceOnUse" x={x - 20} y={y - 20} width={w + 40} height={h + 40}>
               <rect x={x - 20} y={y - 20} width={w + 40} height={h + 40} fill="#fff" />
@@ -41,7 +49,7 @@ export function Brand({ compact = false }: { compact?: boolean }) {
               <path d={ZNAK.obrecz} fill="#000" stroke="#000" strokeWidth={g.obrecz + 2 * ZNAK.przerwa} />
             </mask>
           </defs>
-          <g stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+          <g stroke={`url(#${gradientId})`} strokeLinecap="round" strokeLinejoin="round">
             <g mask={`url(#${maskaId})`}>
               <path d={ZNAK.tablica} strokeWidth={g.tablica} />
               <path d={ZNAK.kwadrat} strokeWidth={g.kwadrat} />
