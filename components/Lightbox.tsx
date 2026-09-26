@@ -18,6 +18,11 @@ const PROG_PRZESUNIECIA = 56;
  * Powiększenie zdjęcia: cały kadr, nic nie obcięte (object-contain), strzałki, Escape
  * i - na telefonie - przesuwanie palcem. Używa tego galeria boiska i podgląd zdjęć
  * w kolejce zgłoszeń.
+ *
+ * Strzałki stoją POD zdjęciem, symetrycznie po obu stronach licznika - na każdym ekranie
+ * w tym samym miejscu. Wcześniej wisiały po bokach i zabierały zdjęciu szerokość na stałe,
+ * więc poziomy kadr był dużo mniejszy, niż pozwalał ekran. Podpisu kadru („Całe boisko
+ * z narożnika") już nie ma - nazwę ujęcia widać po samym zdjęciu.
  */
 export function Lightbox({
   items,
@@ -82,22 +87,22 @@ export function Lightbox({
   /*
     PORTAL DO <body>. Podgląd otwiera się z wnętrza strony, a cała treść strony leży w warstwie
     `relative z-10` z układu - pod paskiem nawigacji, który ma `z-40`. Własne `z-50` niczego
-    tu nie zmieniało: liczy się tylko wewnątrz tamtej warstwy. Skutek widać było na telefonie
-    przy pionowym zdjęciu: jego górny róg, a z nim „X", chował się pod paskiem i nie dało się
-    wyjść. Wyniesiony do <body> podgląd stoi nad wszystkim.
+    tu nie zmieniało: liczy się tylko wewnątrz tamtej warstwy. Wyniesiony do <body> podgląd
+    stoi nad wszystkim.
+
+    Kliknięcie w czerń wokół zdjęcia zamyka podgląd; zdjęcie i strzałki zatrzymują kliknięcie.
   */
   return createPortal(
     <div
       onClick={onClose}
-      className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-3 bg-black/90 p-4 backdrop-blur-xl sm:p-8"
+      className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-4 bg-black/90 p-3 backdrop-blur-xl sm:gap-5 sm:p-6"
     >
       <div
-        onClick={(e) => e.stopPropagation()}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
         onTouchCancel={onTouchEnd}
-        className="relative flex max-h-[74dvh] w-full max-w-6xl flex-1 touch-pan-y items-center justify-center sm:max-h-[82vh]"
+        className="flex min-h-0 w-full touch-pan-y items-center justify-center"
       >
         {current.url ? (
           /*
@@ -106,7 +111,8 @@ export function Lightbox({
             obok, w pustej czerni.
           */
           <div
-            className="relative max-h-full max-w-full"
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-full"
             style={{
               transform: przesuniecie ? `translateX(${przesuniecie}px)` : undefined,
               transition: przesuniecie ? "none" : "transform 260ms cubic-bezier(0.16, 1, 0.3, 1)",
@@ -118,20 +124,25 @@ export function Lightbox({
               src={current.url}
               alt={current.caption ?? ""}
               draggable={false}
-              /* na telefonie niżej niż pełny ekran - pionowy kadr zostawia wtedy margines
-                 na górze i na dole, a „X" w jego rogu jest zawsze w zasięgu kciuka */
-              className="block max-h-[74dvh] w-auto max-w-full select-none rounded-[20px] object-contain sm:max-h-[82vh]"
+              /*
+                Wysokość = ekran minus marginesy i rząd strzałek; szerokość = cała dostępna.
+                Na telefonie trochę niżej niż pełny ekran - pionowy kadr zostawia wtedy
+                margines, a „X" w jego rogu jest zawsze w zasięgu kciuka.
+              */
+              className={`block w-auto max-w-full select-none rounded-[20px] object-contain ${
+                wielo
+                  ? "max-h-[min(74dvh,calc(100dvh-8rem))] sm:max-h-[calc(100dvh-8.5rem)]"
+                  : "max-h-[min(80dvh,calc(100dvh-3rem))] sm:max-h-[calc(100dvh-3rem)]"
+              }`}
             />
-            {/* licznik na zdjęciu tylko na telefonie - tam dolny pasek z podpisem jest schowany */}
-            {wielo && (
-              <span className="glass absolute left-2.5 top-2.5 rounded-full px-2.5 py-1 text-[11px] font-semibold tabular-nums text-ink/85 sm:hidden">
-                {index + 1} / {items.length}
-              </span>
-            )}
+            {/*
+              Przyciemnione kółko, nie szkło: jasne szkło z białym „X" znikało na niebie
+              i na białych ścianach, a to jedyny widoczny sposób wyjścia poza Escape.
+            */}
             <button
               onClick={onClose}
               aria-label="Zamknij zdjęcie"
-              className="glass absolute right-2.5 top-2.5 grid h-9 w-9 place-items-center rounded-full text-ink/85 transition hover:text-ink active:scale-90"
+              className="absolute right-2.5 top-2.5 grid h-9 w-9 place-items-center rounded-full bg-black/50 text-[#fff] ring-1 ring-white/20 backdrop-blur-md transition hover:bg-black/70 active:scale-90"
             >
               <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
                 <path d="M6 6l12 12M18 6L6 18" />
@@ -141,47 +152,39 @@ export function Lightbox({
         ) : (
           <p className="text-[14px] text-muted">Brak zdjęcia.</p>
         )}
-
-        {wielo && (
-          <>
-            <button
-              onClick={() => step(-1)}
-              aria-label="Poprzednie zdjęcie"
-              className="glass absolute left-2 grid h-11 w-11 place-items-center rounded-full text-[18px] text-ink/80 transition hover:text-ink sm:-left-14"
-            >
-              ‹
-            </button>
-            <button
-              onClick={() => step(1)}
-              aria-label="Następne zdjęcie"
-              className="glass absolute right-2 grid h-11 w-11 place-items-center rounded-full text-[18px] text-ink/80 transition hover:text-ink sm:-right-14"
-            >
-              ›
-            </button>
-          </>
-        )}
       </div>
 
-      {/*
-        Podpis kadru („Całe boisko z narożnika", „Kosz A na wprost") tylko od tabletu w górę.
-        Na telefonie zabierał wysokość zdjęciu, a nazwę ujęcia i tak widać po samym kadrze.
-      */}
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="glass-dim hidden w-full max-w-6xl items-center justify-between gap-4 rounded-2xl px-4 py-2.5 text-[13px] sm:flex"
-      >
-        <span className="truncate text-muted">{current.caption}</span>
-        <span className="shrink-0 tabular-nums text-faint">
-          {index + 1} / {items.length}
-        </span>
-        <button
-          onClick={onClose}
-          className="shrink-0 text-[12px] uppercase tracking-[0.14em] text-muted transition hover:text-ink"
-        >
-          zamknij (esc)
-        </button>
-      </div>
+      {wielo && (
+        <div onClick={(e) => e.stopPropagation()} className="flex shrink-0 items-center gap-5">
+          <StrzalkaPodgladu kierunek={-1} onClick={() => step(-1)} />
+          <span className="min-w-[3.5rem] text-center text-[13px] font-semibold tabular-nums text-ink/70">
+            {index + 1} / {items.length}
+          </span>
+          <StrzalkaPodgladu kierunek={1} onClick={() => step(1)} />
+        </div>
+      )}
     </div>,
     document.body
+  );
+}
+
+/**
+ * Strzałka podglądu: biały szewron w kółku z gradientem marki. Po najechaniu lekko rośnie
+ * i jaśnieje, a poświata pod nią się rozlewa; po wciśnięciu przysiada. Szewron jest
+ * narysowany, nie wpisany znakiem „‹" - znak z kroju pisma siedzi krzywo względem środka
+ * kółka i ma grubość zależną od fontu.
+ */
+function StrzalkaPodgladu({ kierunek, onClick }: { kierunek: 1 | -1; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label={kierunek < 0 ? "Poprzednie zdjęcie" : "Następne zdjęcie"}
+      className="strzalka-podgladu flame-gradient grid h-12 w-12 place-items-center rounded-full"
+    >
+      {/* biel na sztywno: `text-white` w jasnych motywach jest ciemne, a tu leży na kolorze */}
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d={kierunek < 0 ? "M14.5 5.5L8 12l6.5 6.5" : "M9.5 5.5L16 12l-6.5 6.5"} />
+      </svg>
+    </button>
   );
 }

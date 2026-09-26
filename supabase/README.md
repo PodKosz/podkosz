@@ -53,6 +53,7 @@ część nazwy pliku.
 | 34 | `migration-wydarzenia-proporcje.sql` | proporcja plakatu wydarzenia (`zdjecie_proporcje`) - od niej zależy układ boxa na karcie boiska: pion daje wysoką kartę w prawej kolumnie, poziom szeroki pas nad kafelkami |
 | 35 | `migration-jedna-godzina-jedno-boisko.sql` | nie da się zadeklarować gry na dwóch boiskach w tej samej godzinie: indeks unikatowy `(user_id, day, hour)`, komunikat po polsku w wyzwalaczu i lista zajętych godzin w `checkin_panel`. **Wymaga `migration-checkin-panel.sql`** (tego w tej tabeli brakuje - patrz niżej). Jeśli w danych są już kolizje, indeks nie powstanie, dopóki nie uruchomisz bloku porządkującego z punktu 2 w pliku |
 | 36 | `migration-statystyki-zbiorczo.sql` | `statystyki_graczy(text[])` - statystyki wielu graczy jednym zapytaniem, dla piłek odznaczeń w rankingu. Woła istniejącą `statystyki_gracza` przez `cross join lateral`, więc reguły odznaczeń zostają w jednym miejscu. Kod działa też bez niej (cofa się do pytania o każdego osobno), więc kolejność wdrożenia jest dowolna |
+| 37 | `migration-deklaracje-tydzien.sql` | deklaracje „kto gra" na dziś i sześć kolejnych dni: `checkin_panel(uuid, date)` z podglądem tygodnia (`tydzien`, `moje_dni`) i `checkin_blokada(uuid, date)`; komunikaty wyzwalacza bez „na dziś". **Wymaga nr 35.** Kod działa też bez niej - pokazuje wtedy sam dzisiejszy dzień, jak dawniej |
 
 ## Brakujące w tabeli
 

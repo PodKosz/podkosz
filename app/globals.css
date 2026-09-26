@@ -465,6 +465,44 @@ body {
   background: linear-gradient(135deg, var(--grad-1) 0%, var(--grad-2) 45%, var(--grad-3) 100%);
 }
 
+/*
+  Strzałka podglądu zdjęć: kółko w gradiencie marki z białym szewronem. Połysk u góry
+  (wewnętrzny cień od białego do zera) daje wrażenie wypukłej szklanej kulki, jak przyciski
+  w systemach Apple. Po najechaniu rośnie o kilka procent, jaśnieje, a poświata pod nią
+  rozlewa się szerzej - wszystko na sprężystej krzywej, żeby ruch nie był mechaniczny.
+*/
+.strzalka-podgladu {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.45),
+    inset 0 -8px 16px -8px rgb(0 0 0 / 0.25),
+    0 8px 22px -8px rgb(var(--rgb-ember) / 0.75);
+  transition:
+    scale 320ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    filter 220ms ease,
+    box-shadow 260ms ease;
+}
+.strzalka-podgladu:hover,
+.strzalka-podgladu:focus-visible {
+  scale: 1.09;
+  filter: brightness(1.12);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.55),
+    inset 0 -8px 16px -8px rgb(0 0 0 / 0.2),
+    0 0 0 6px rgb(var(--rgb-flame) / 0.14),
+    0 12px 34px -6px rgb(var(--rgb-ember) / 0.95);
+}
+.strzalka-podgladu:active {
+  scale: 0.94;
+  transition-duration: 90ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  .strzalka-podgladu:hover,
+  .strzalka-podgladu:focus-visible,
+  .strzalka-podgladu:active {
+    scale: none;
+  }
+}
+
 /* Przygaszony pomarańcz do akcji drugorzędnych (np. „zgłoś zmianę" w stopce wpisu):
    ten sam kierunek gradientu, ale ciemniejszy, więc nie konkuruje z głównym przyciskiem.
    Napis jest jasny, bo na tak ciemnym tle czarny tekst gubi kontrast. */
