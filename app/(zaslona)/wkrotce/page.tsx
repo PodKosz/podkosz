@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { WejscieBeta } from "@/components/WejscieBeta";
 import { ZapisNaOtwarcie } from "@/components/ZapisNaOtwarcie";
 import { CourtOutline } from "@/components/CourtOutline";
-import { szwyPilki } from "@/lib/pilka";
+import { Znak } from "@/components/Znak";
 
 export const metadata: Metadata = {
   title: "PodKosz - już niedługo",
@@ -69,37 +69,13 @@ export default function Wkrotce() {
       />
 
       <div className="relative z-10 flex flex-col items-center">
-        {/* znak marki - boisko z góry z piłką w kole środkowym */}
-        <svg
-          viewBox="0 0 64 64"
-          className="h-[96px] w-[96px] sm:h-[136px] sm:w-[136px]"
-          fill="none"
-          aria-hidden
+        {/* znak marki - pinezka z planem boiska, ta sama co w nawigacji (lib/znak.ts) */}
+        <Znak
+          uid="zaslona"
+          rozmiar="duzy"
+          className="h-[104px] w-auto sm:h-[146px]"
           style={{ filter: "drop-shadow(0 10px 34px rgb(var(--rgb-ember) / .5))" }}
-        >
-          <defs>
-            <linearGradient id="zaslona-logo" x1="0" y1="0" x2="0.8" y2="1">
-              <stop offset="0" stopColor="var(--color-glow-soft)" />
-              <stop offset="0.5" stopColor="var(--color-flame)" />
-              <stop offset="1" stopColor="var(--color-ember-deep)" />
-            </linearGradient>
-          </defs>
-          <g
-            stroke="url(#zaslona-logo)"
-            fill="none"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <rect x="4.5" y="12.5" width="55" height="39" rx="4.5" strokeWidth="2.4" />
-            <path d="M32 12.5v39" strokeWidth="1.8" opacity=".9" />
-            <path d="M4.5 23.5h10v17h-10" strokeWidth="1.8" />
-            <path d="M59.5 23.5h-10v17h10" strokeWidth="1.8" />
-            <path d="M14.5 27a7 7 0 0 1 0 10" strokeWidth="1.6" opacity=".85" />
-            <path d="M49.5 27a7 7 0 0 0 0 10" strokeWidth="1.6" opacity=".85" />
-            <circle cx="32" cy="32" r="7.5" strokeWidth="2.2" />
-            <path d={szwyPilki(32, 32, 7.5)} strokeWidth="1.3" opacity=".95" />
-          </g>
-        </svg>
+        />
 
         <p className="mt-6 text-[28px] font-bold leading-none tracking-tight sm:text-[40px]">
           POD<span className="flame-text pr-[0.04em]">KOSZ</span>

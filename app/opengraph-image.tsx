@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 import { SITE_URL } from "@/lib/site";
-import { szwyPilki } from "@/lib/pilka";
+import { ZNAK, znakSvg } from "@/lib/znak";
 
 /**
  * Obrazek podglądu linków (Facebook, Messenger, WhatsApp, X, Discord).
@@ -17,26 +17,10 @@ export const alt = "PodKosz - największa mapa boisk do koszykówki w Polsce";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-/** Znak marki: boisko z góry z piłką w kole środkowym - ten sam rysunek co w nawigacji. */
-const LOGO = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="150" height="150" fill="none">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="0.8" y2="1">
-      <stop offset="0" stop-color="#ffc47d"/>
-      <stop offset="0.5" stop-color="#ff7a18"/>
-      <stop offset="1" stop-color="#ff3d00"/>
-    </linearGradient>
-  </defs>
-  <g stroke="url(#g)" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="4.5" y="12.5" width="55" height="39" rx="4.5" stroke-width="2.4"/>
-    <path d="M32 12.5v39" stroke-width="1.8" opacity=".9"/>
-    <path d="M4.5 23.5h10v17h-10" stroke-width="1.8"/>
-    <path d="M59.5 23.5h-10v17h10" stroke-width="1.8"/>
-    <path d="M14.5 27a7 7 0 0 1 0 10" stroke-width="1.6" opacity=".85"/>
-    <path d="M49.5 27a7 7 0 0 0 0 10" stroke-width="1.6" opacity=".85"/>
-    <circle cx="32" cy="32" r="7.5" stroke-width="2.2"/>
-    <path d="${szwyPilki(32, 32, 7.5)}" stroke-width="1.3" opacity=".95"/>
-  </g>
-</svg>`;
+/** Znak marki: pinezka z planem boiska - te same ścieżki co w nawigacji (lib/znak.ts). */
+const LOGO_W = 140;
+const LOGO_H = Math.round(LOGO_W / ZNAK.proporcja);
+const LOGO = znakSvg("og", { rozmiar: "duzy", szerokosc: LOGO_W });
 
 export default function OgImage() {
   return new ImageResponse(
@@ -60,8 +44,8 @@ export default function OgImage() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={`data:image/svg+xml;utf8,${encodeURIComponent(LOGO)}`}
-          width={150}
-          height={150}
+          width={LOGO_W}
+          height={LOGO_H}
           alt=""
         />
 
