@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { boiskaPoId, getAuthor, listContributors } from "@/lib/repo";
 import { historiaGracza, nickZeSlugu, statystykiGracza, ulubioneGracza } from "@/lib/profil";
 import { CourtCard } from "@/components/CourtCard";
+import { KartaBoiska } from "@/components/ranking/RankingBoisk";
 import { PilkaOdznaczen } from "@/components/PilkaOdznaczen";
 import { TloPilki } from "@/components/TloPilki";
 import { NaglowekSekcji } from "@/components/NaglowekSekcji";
@@ -211,15 +212,18 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
         </div>
 
         {boiska.length ? (
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {/*
               `min-w-0` na opakowaniu: karta ma `overflow-hidden`, więc sama jako komórka
               siatki mogła się zwężać, a opakowanie bez tego rozpychało kolumnę do szerokości
               zdjęcia - na telefonie karty wychodziły daleko poza ekran.
+
+              Karty jak w rankingu - nazwa na zdjęciu, nie w panelu pod nim - żeby boiska
+              gracza wyglądały tak samo jak te same boiska w rankingu.
             */}
             {boiska.map((court) => (
               <div key={court.id} data-wjazd="rozkwit-boisko" className="min-w-0">
-                <CourtCard court={court} />
+                <KartaBoiska court={court} />
               </div>
             ))}
           </div>

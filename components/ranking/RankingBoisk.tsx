@@ -128,14 +128,17 @@ function Naglowek({ tytul, opis }: { tytul: string; opis: string }) {
  * Trzy warianty różnią się wysokością kadru i skalą pisma. Wszystko poza tym jest wspólne:
  * ten sam gradient u dołu, ten sam wydrążony numer, ta sama listwa faktów. Wariant nie
  * zmienia więc KOMPOZYCJI, tylko jej głośność.
+ *
+ * Tej samej karty używa profil gracza dla boisk, które dodał - bez numeru miejsca, bo tam
+ * nie ma kolejności, tylko lista.
  */
-function KartaBoiska({
+export function KartaBoiska({
   court,
   miejsce,
   wariant = "siatka",
 }: {
   court: Court;
-  miejsce: number;
+  miejsce?: number;
   wariant?: "zwyciezca" | "trojka" | "siatka";
 }) {
   const zwyciezca = wariant === "zwyciezca";
@@ -167,7 +170,7 @@ function KartaBoiska({
             ? "(min-width: 1600px) 1600px, 100vw"
             : "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
         }
-        priority={miejsce <= 3}
+        priority={miejsce !== undefined && miejsce <= 3}
       />
 
       <span className="karta-rankingu-zaslona pointer-events-none absolute inset-0" />
@@ -188,18 +191,20 @@ function KartaBoiska({
       )}
 
       {/* numer w prawym górnym rogu - czyta się jak paginacja, nie jak nalepka */}
-      <span
-        aria-hidden
-        className={`numer-rankingu pointer-events-none absolute right-5 top-2 z-[2] font-bold leading-none tabular-nums ${
-          zwyciezca
-            ? "text-[clamp(76px,9vw,150px)]"
-            : trojka
-              ? "text-[clamp(54px,5.5vw,92px)]"
-              : "numer-rankingu-maly text-[clamp(40px,4vw,64px)]"
-        }`}
-      >
-        {String(miejsce).padStart(2, "0")}
-      </span>
+      {miejsce !== undefined && (
+        <span
+          aria-hidden
+          className={`numer-rankingu pointer-events-none absolute right-5 top-2 z-[2] font-bold leading-none tabular-nums ${
+            zwyciezca
+              ? "text-[clamp(76px,9vw,150px)]"
+              : trojka
+                ? "text-[clamp(54px,5.5vw,92px)]"
+                : "numer-rankingu-maly text-[clamp(40px,4vw,64px)]"
+          }`}
+        >
+          {String(miejsce).padStart(2, "0")}
+        </span>
+      )}
 
       <span
         className={`relative z-[2] mt-auto flex w-full flex-col gap-3 ${
