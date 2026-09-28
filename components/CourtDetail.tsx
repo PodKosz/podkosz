@@ -515,7 +515,7 @@ function Spec({
   value: string;
 }) {
   return (
-    <div className="glass kafel-zywy relative flex aspect-square h-full flex-col items-center justify-center overflow-hidden rounded-[20px] p-4 [container-type:inline-size] @min-[1580px]:p-5">
+    <div className="glass kafel-zywy relative flex aspect-square min-h-full w-full flex-col items-center justify-center overflow-hidden rounded-[20px] p-4 [container-type:inline-size] @min-[1580px]:p-5">
       {/*
         Rysunek wypełnia CAŁY kafelek, bez wcięcia. To zamierzone: ma być fragmentem
         czegoś większego, wychodzącym za krawędzie, a nie ikonką położoną na środku
