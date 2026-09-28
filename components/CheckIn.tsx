@@ -257,8 +257,10 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
   return (
     /*
       Panel stoi w jednym rzędzie z kafelkami parametrów boiska, więc jest wąski i wysoki:
-      nagłówek, pasek dni, stan wybranego dnia, a przycisk przyklejony do dolnej krawędzi
-      (mt-auto), żeby równał się z dołem kafelków niezależnie od długości tekstu.
+      nagłówek, pasek dni, stan wybranego dnia, a przycisk przyklejony do dolnej krawędzi,
+      żeby równał się z dołem kafelków niezależnie od długości tekstu. Pasek dni (razem
+      z tym, co pod nim) stoi na `my-auto`, czyli dokładnie w połowie między nagłówkiem
+      a przyciskiem - wolne miejsce z wyższego rzędu dzieli się po równo nad i pod nim.
       Gdy ktoś się zapisał na wybrany dzień, panel się rozpala: ciepły gradient i płomień
       przy liczbie. Póki nikt nie idzie, zostaje zwykłym szkłem - inaczej ogień nic by nie
       znaczył.
@@ -278,173 +280,176 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
         kafelki liczą go od szerokości i najdłuższej wartości (patrz `Spec` w CourtDetail),
         więc zamiast zgadywać, przepisujemy wyliczony stopień z sąsiada.
       */}
-      <h2 ref={naglowek} className="wartosc-plomien relative self-start text-[40px]">
+      {/* dolny zapas pod ogonek „Ę" (gradient maluje się tylko w pudełku wiersza), ujemny margines oddaje część z powrotem, żeby pasek dni stał optycznie w połowie od podstawy liter do przycisku */}
+      <h2 ref={naglowek} className="wartosc-plomien relative self-start text-[40px]" style={{ paddingBottom: "0.16em", marginBottom: "-0.08em" }}>
         Zapisz się
       </h2>
 
-      {tydzien && (
-        /*
-          Pasek siedmiu dni. Liczba w rogu dnia to ilu ludzi się wtedy wybiera - widać od razu,
-          na który dzień się umawiają, bez przeklikiwania wszystkich. Kropka pod datą znaczy
-          „tu jesteś zapisany".
-        */
-        <div className="relative mt-2.5 grid grid-cols-7 gap-1" role="tablist" aria-label="Dzień gry">
-          {tydzien.map((t) => {
-            const o = opisDnia(t.day, dzis);
-            const wybrany = t.day === dzien;
-            const moj = mojeDni.some((m) => m.day === t.day);
-            return (
-              <button
-                key={t.day}
-                role="tab"
-                aria-selected={wybrany}
-                aria-label={`${o.pelna}${t.osoby ? `, ${t.osoby} ${plural(t.osoby, ["osoba", "osoby", "osób"])}` : ""}${moj ? ", jesteś zapisany" : ""}`}
-                onClick={() => wybierzDzien(t.day)}
-                className={`relative flex min-w-0 flex-col items-center rounded-[13px] border pb-2 pt-1.5 transition ${
-                  wybrany
-                    ? "kafel-wybrany"
-                    : "border-hairline bg-white/6 hover:border-flame/50"
-                }`}
-              >
-                <span
-                  className={`text-[8.5px] font-bold uppercase tracking-[0.06em] ${
-                    wybrany ? "text-[#150800]/70" : "text-faint"
-                  }`}
-                >
-                  {o.dzis ? "Dziś" : o.krotko}
-                </span>
-                <span className="text-[17px] font-extrabold leading-[1.05] tabular-nums">{o.numer}</span>
-                {moj && (
-                  <span
-                    aria-hidden
-                    className={`absolute bottom-[5px] h-1 w-1 rounded-full ${wybrany ? "bg-black/70" : "bg-glow"}`}
-                  />
-                )}
-                {t.osoby > 0 && (
-                  <span
-                    aria-hidden
-                    className={`absolute -right-1.5 -top-2 grid h-[18px] min-w-[18px] place-items-center rounded-full px-1 text-[10px] font-extrabold tabular-nums ${
-                      wybrany ? "bg-[#0c0908] text-glow ring-1 ring-black/40" : "kafel-wybrany"
-                    }`}
-                  >
-                    {t.osoby}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/*
-        Liczba osób i godziny pojawiają się dopiero, gdy ktoś się zapisał. Pusty stan nie
-        potrzebuje zdania - nagłówek „Zapisz się" i przycisk mówią to samo krócej, a panel
-        jest dzięki temu niski i kafelki obok zostają prawie kwadratowe.
-      */}
-      {osoby > 0 && (
-        <>
-          <p className="relative mt-3 flex items-start gap-2 text-[15px] font-extrabold leading-snug tracking-[-0.01em] 2xl:text-[16px]">
-            <PlomykZapisow />
-            <span>
-              {`${osoby} ${plural(osoby, ["osoba idzie", "osoby idą", "osób idzie"])} ${opis.kiedy}`}
-            </span>
-          </p>
-          {slots.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {slots.map((s) => (
-                <span
-                  key={s.hour}
-                  className="rounded-full border border-flame/40 bg-flame/12 px-2.5 py-0.5 text-[12px] font-semibold text-glow"
-                >
-                  {g2(s.hour)}:00 · {s.people}
-                </span>
-              ))}
-            </div>
-          )}
-        </>
-      )}
-
-      {picking && mine.length === 0 && !blokada && (
-        /*
-          Siatka godzin jako nakładka nad treścią pod spodem, a nie element w środku panelu:
-          wszystkie godziny widać naraz, a rząd z parametrami boiska nie zmienia wysokości.
-          Pasek dni zostaje nad nią widoczny, więc dzień da się zmienić w trakcie wyboru.
-          Tło nieprzezroczyste, nie „glass": na jasnym zdjęciu półprzejrzysta szyba gubiła
-          kontrast i dolne godziny stawały się nieczytelne.
-        */
-        <div
-          className="absolute left-0 right-0 top-full z-30 mt-2 rounded-[24px] border border-hairline bg-deep p-3.5 rise"
-          style={{ boxShadow: "0 24px 60px -12px rgba(0,0,0,.85)" }}
-        >
-          <p className="text-[12px] font-semibold capitalize text-ink">{opis.pelna}</p>
-          <p className="mb-2 mt-0.5 text-[11px] leading-snug text-muted">
-            {zaPozno
-              ? "Na dziś już za późno - wybierz inny dzień na pasku wyżej."
-              : od === null
-                ? zajete.length
-                  ? "Kliknij godzinę, od której grasz. Przekreślone masz już zajęte na innym boisku."
-                  : "Kliknij godzinę, od której grasz."
-                : "Dokładaj kolejne godziny albo kliknij ostatnią - i zapisz."}
-          </p>
-
-          {/*
-            Zaznaczony zakres świeci od początku do końca. Na komputerze kursor za końcem
-            pokazuje jeszcze podgląd, dokąd zakres by sięgnął po kliknięciu. Godziny przed
-            początkiem są wygaszone - kliknięta przestawia początek.
-          */}
-          <div className="grid grid-cols-4 gap-2" onPointerLeave={() => setPodKursorem(null)}>
-            {HOURS.map((h) => {
-              const wybrana = od === h;
-              const powod = niedostepna(h);
-              const wczesniej = przedPoczatkiem(h);
-              const koniec = doGodz ?? od;
-              const wZakresie =
-                od !== null &&
-                h > od &&
-                (h <= (koniec ?? od) || (podKursorem !== null && podKursorem > (koniec ?? od) && h <= podKursorem));
+      <div className="my-auto py-2">
+        {tydzien && (
+          /*
+            Pasek siedmiu dni. Liczba w rogu dnia to ilu ludzi się wtedy wybiera - widać od razu,
+            na który dzień się umawiają, bez przeklikiwania wszystkich. Kropka pod datą znaczy
+            „tu jesteś zapisany".
+          */
+          <div className="relative grid grid-cols-7 gap-1" role="tablist" aria-label="Dzień gry">
+            {tydzien.map((t) => {
+              const o = opisDnia(t.day, dzis);
+              const wybrany = t.day === dzien;
+              const moj = mojeDni.some((m) => m.day === t.day);
               return (
                 <button
-                  key={h}
-                  onClick={() => klik(h)}
-                  onPointerEnter={() => setPodKursorem(powod || wczesniej ? null : h)}
-                  onFocus={() => setPodKursorem(powod || wczesniej ? null : h)}
-                  disabled={busy || powod !== null}
-                  title={powod ?? (wczesniej ? "Zacznij od tej godziny" : undefined)}
-                  className={`rounded-[13px] border py-2.5 text-[13px] font-bold tabular-nums transition ${
-                    powod
-                      ? `cursor-not-allowed border-hairline bg-white/[0.02] text-faint ${
-                          h < teraz && opis.dzis ? "opacity-40" : "line-through"
-                        }`
-                      : wybrana
-                        ? "kafel-wybrany"
-                        : wczesniej
-                          ? "border-hairline/50 bg-white/[0.02] text-faint opacity-45 hover:opacity-80"
-                          : wZakresie
-                            ? "border-flame/80 bg-flame/18 text-glow"
-                            : "border-hairline bg-white/5 text-muted hover:border-flame/50 hover:text-glow"
+                  key={t.day}
+                  role="tab"
+                  aria-selected={wybrany}
+                  aria-label={`${o.pelna}${t.osoby ? `, ${t.osoby} ${plural(t.osoby, ["osoba", "osoby", "osób"])}` : ""}${moj ? ", jesteś zapisany" : ""}`}
+                  onClick={() => wybierzDzien(t.day)}
+                  className={`relative flex min-w-0 flex-col items-center rounded-[13px] border pb-2 pt-1.5 transition ${
+                    wybrany
+                      ? "kafel-wybrany"
+                      : "border-hairline bg-white/6 hover:border-flame/50"
                   }`}
                 >
-                  {h}:00
+                  <span
+                    className={`text-[8.5px] font-bold uppercase tracking-[0.06em] ${
+                      wybrany ? "text-[#150800]/70" : "text-faint"
+                    }`}
+                  >
+                    {o.dzis ? "Dziś" : o.krotko}
+                  </span>
+                  <span className="text-[17px] font-extrabold leading-[1.05] tabular-nums">{o.numer}</span>
+                  {moj && (
+                    <span
+                      aria-hidden
+                      className={`absolute bottom-[5px] h-1 w-1 rounded-full ${wybrany ? "bg-black/70" : "bg-glow"}`}
+                    />
+                  )}
+                  {t.osoby > 0 && (
+                    <span
+                      aria-hidden
+                      className={`absolute -right-1.5 -top-2 grid h-[18px] min-w-[18px] place-items-center rounded-full px-1 text-[10px] font-extrabold tabular-nums ${
+                        wybrany ? "bg-[#0c0908] text-glow ring-1 ring-black/40" : "kafel-wybrany"
+                      }`}
+                    >
+                      {t.osoby}
+                    </span>
+                  )}
                 </button>
               );
             })}
           </div>
+        )}
 
-          {od !== null && (
-            <button
-              onClick={() => void zapisz(od, doGodz ?? od)}
-              disabled={busy}
-              className="przycisk-plomien mt-3 w-full rounded-full py-3 text-[13px] font-extrabold disabled:opacity-60"
-            >
-              Zapisz {opisGodzin(Array.from({ length: (doGodz ?? od) - od + 1 }, (_, i) => od + i))}
-            </button>
-          )}
-        </div>
-      )}
+        {/*
+          Liczba osób i godziny pojawiają się dopiero, gdy ktoś się zapisał. Pusty stan nie
+          potrzebuje zdania - nagłówek „Zapisz się" i przycisk mówią to samo krócej, a panel
+          jest dzięki temu niski i kafelki obok zostają prawie kwadratowe.
+        */}
+        {osoby > 0 && (
+          <>
+            <p className="relative mt-3 flex items-start gap-2 text-[15px] font-extrabold leading-snug tracking-[-0.01em] 2xl:text-[16px]">
+              <PlomykZapisow />
+              <span>
+                {`${osoby} ${plural(osoby, ["osoba idzie", "osoby idą", "osób idzie"])} ${opis.kiedy}`}
+              </span>
+            </p>
+            {slots.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {slots.map((s) => (
+                  <span
+                    key={s.hour}
+                    className="rounded-full border border-flame/40 bg-flame/12 px-2.5 py-0.5 text-[12px] font-semibold text-glow"
+                  >
+                    {g2(s.hour)}:00 · {s.people}
+                  </span>
+                ))}
+              </div>
+            )}
+          </>
+        )}
 
-      {hint && <p className="mt-2 text-[12px] leading-snug text-muted">{hint}</p>}
+        {picking && mine.length === 0 && !blokada && (
+          /*
+            Siatka godzin jako nakładka nad treścią pod spodem, a nie element w środku panelu:
+            wszystkie godziny widać naraz, a rząd z parametrami boiska nie zmienia wysokości.
+            Pasek dni zostaje nad nią widoczny, więc dzień da się zmienić w trakcie wyboru.
+            Tło nieprzezroczyste, nie „glass": na jasnym zdjęciu półprzejrzysta szyba gubiła
+            kontrast i dolne godziny stawały się nieczytelne.
+          */
+          <div
+            className="absolute left-0 right-0 top-full z-30 mt-2 rounded-[24px] border border-hairline bg-deep p-3.5 rise"
+            style={{ boxShadow: "0 24px 60px -12px rgba(0,0,0,.85)" }}
+          >
+            <p className="text-[12px] font-semibold capitalize text-ink">{opis.pelna}</p>
+            <p className="mb-2 mt-0.5 text-[11px] leading-snug text-muted">
+              {zaPozno
+                ? "Na dziś już za późno - wybierz inny dzień na pasku wyżej."
+                : od === null
+                  ? zajete.length
+                    ? "Kliknij godzinę, od której grasz. Przekreślone masz już zajęte na innym boisku."
+                    : "Kliknij godzinę, od której grasz."
+                  : "Dokładaj kolejne godziny albo kliknij ostatnią - i zapisz."}
+            </p>
 
-      <div className="mt-auto pt-4">
+            {/*
+              Zaznaczony zakres świeci od początku do końca. Na komputerze kursor za końcem
+              pokazuje jeszcze podgląd, dokąd zakres by sięgnął po kliknięciu. Godziny przed
+              początkiem są wygaszone - kliknięta przestawia początek.
+            */}
+            <div className="grid grid-cols-4 gap-2" onPointerLeave={() => setPodKursorem(null)}>
+              {HOURS.map((h) => {
+                const wybrana = od === h;
+                const powod = niedostepna(h);
+                const wczesniej = przedPoczatkiem(h);
+                const koniec = doGodz ?? od;
+                const wZakresie =
+                  od !== null &&
+                  h > od &&
+                  (h <= (koniec ?? od) || (podKursorem !== null && podKursorem > (koniec ?? od) && h <= podKursorem));
+                return (
+                  <button
+                    key={h}
+                    onClick={() => klik(h)}
+                    onPointerEnter={() => setPodKursorem(powod || wczesniej ? null : h)}
+                    onFocus={() => setPodKursorem(powod || wczesniej ? null : h)}
+                    disabled={busy || powod !== null}
+                    title={powod ?? (wczesniej ? "Zacznij od tej godziny" : undefined)}
+                    className={`rounded-[13px] border py-2.5 text-[13px] font-bold tabular-nums transition ${
+                      powod
+                        ? `cursor-not-allowed border-hairline bg-white/[0.02] text-faint ${
+                            h < teraz && opis.dzis ? "opacity-40" : "line-through"
+                          }`
+                        : wybrana
+                          ? "kafel-wybrany"
+                          : wczesniej
+                            ? "border-hairline/50 bg-white/[0.02] text-faint opacity-45 hover:opacity-80"
+                            : wZakresie
+                              ? "border-flame/80 bg-flame/18 text-glow"
+                              : "border-hairline bg-white/5 text-muted hover:border-flame/50 hover:text-glow"
+                    }`}
+                  >
+                    {h}:00
+                  </button>
+                );
+              })}
+            </div>
+
+            {od !== null && (
+              <button
+                onClick={() => void zapisz(od, doGodz ?? od)}
+                disabled={busy}
+                className="przycisk-plomien mt-3 w-full rounded-full py-3 text-[13px] font-extrabold disabled:opacity-60"
+              >
+                Zapisz {opisGodzin(Array.from({ length: (doGodz ?? od) - od + 1 }, (_, i) => od + i))}
+              </button>
+            )}
+          </div>
+        )}
+
+        {hint && <p className="mt-2 text-[12px] leading-snug text-muted">{hint}</p>}
+      </div>
+
+      <div>
         {mine.length > 0 ? (
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-[14px] font-extrabold text-glow">
