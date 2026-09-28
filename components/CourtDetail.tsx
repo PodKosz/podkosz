@@ -523,10 +523,19 @@ function Spec({
         {/* `break-words` to bezpiecznik: gdyby kiedyś trafiła tu wartość dłuższa niż
             „Ograniczony" (na podstawie którego dobrane są progi kolumn wyżej), złamie
             się w środku słowa zamiast wyjść na sąsiedni kafelek */}
-        <p className="text-[22px] font-semibold leading-[1.15] break-words @min-[1580px]:text-[28px]">
+        {/* wartość jak na rolkach - Anton w gradiencie; długie („Całodobowo") dostają mniejszy stopień */}
+        <p
+          className={`wartosc-plomien break-words ${
+            value.length > 9
+              ? "text-[24px] @min-[1580px]:text-[30px]"
+              : value.length > 5
+                ? "text-[30px] @min-[1580px]:text-[38px]"
+                : "text-[40px] @min-[1580px]:text-[50px]"
+          }`}
+        >
           {value}
         </p>
-        <p className="mt-1.5 text-[10px] uppercase tracking-[0.14em] text-faint @min-[1580px]:text-[11px]">
+        <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted @min-[1580px]:text-[11px]">
           {label}
         </p>
       </span>

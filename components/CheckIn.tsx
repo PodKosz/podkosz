@@ -241,20 +241,20 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
                 aria-selected={wybrany}
                 aria-label={`${o.pelna}${t.osoby ? `, ${t.osoby} ${plural(t.osoby, ["osoba", "osoby", "osób"])}` : ""}${moj ? ", jesteś zapisany" : ""}`}
                 onClick={() => wybierzDzien(t.day)}
-                className={`relative flex min-w-0 flex-col items-center rounded-xl border pb-2 pt-1.5 transition ${
+                className={`relative flex min-w-0 flex-col items-center rounded-[13px] border pb-2 pt-1.5 transition ${
                   wybrany
-                    ? "border-transparent flame-gradient text-black"
-                    : "border-hairline bg-white/5 hover:border-flame/50"
+                    ? "kafel-wybrany"
+                    : "border-hairline bg-white/6 hover:border-flame/50"
                 }`}
               >
                 <span
-                  className={`text-[9px] font-semibold uppercase tracking-[0.04em] ${
-                    wybrany ? "text-black/70" : "text-faint"
+                  className={`text-[8.5px] font-bold uppercase tracking-[0.06em] ${
+                    wybrany ? "text-[#150800]/70" : "text-faint"
                   }`}
                 >
                   {o.dzis ? "Dziś" : o.krotko}
                 </span>
-                <span className="text-[14px] font-bold leading-tight tabular-nums">{o.numer}</span>
+                <span className="text-[17px] font-extrabold leading-[1.05] tabular-nums">{o.numer}</span>
                 {moj && (
                   <span
                     aria-hidden
@@ -264,8 +264,8 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
                 {t.osoby > 0 && (
                   <span
                     aria-hidden
-                    className={`absolute -right-1 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full px-1 text-[9px] font-bold tabular-nums ${
-                      wybrany ? "bg-black text-glow" : "flame-gradient text-black"
+                    className={`absolute -right-1.5 -top-2 grid h-[18px] min-w-[18px] place-items-center rounded-full px-1 text-[10px] font-extrabold tabular-nums ${
+                      wybrany ? "bg-[#0c0908] text-glow ring-1 ring-black/40" : "kafel-wybrany"
                     }`}
                   >
                     {t.osoby}
@@ -277,7 +277,7 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
         </div>
       )}
 
-      <p className="relative mt-3 flex items-start gap-2 text-[15px] font-semibold leading-snug 2xl:text-[16px]">
+      <p className="relative mt-3 flex items-start gap-2 text-[15px] font-extrabold leading-snug tracking-[-0.01em] 2xl:text-[16px]">
         {osoby > 0 && <PlomykZapisow />}
         <span>
           {osoby === 0
@@ -312,7 +312,7 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
           kontrast i dolne godziny stawały się nieczytelne.
         */
         <div
-          className="absolute left-0 right-0 top-full z-30 mt-2 rounded-[20px] border border-hairline bg-deep p-3 rise"
+          className="absolute left-0 right-0 top-full z-30 mt-2 rounded-[24px] border border-hairline bg-deep p-3.5 rise"
           style={{ boxShadow: "0 24px 60px -12px rgba(0,0,0,.85)" }}
         >
           <p className="text-[12px] font-semibold capitalize text-ink">{opis.pelna}</p>
@@ -332,7 +332,7 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
             Zakres podświetlamy tylko do godziny pod kursorem, żeby było widać, co się zapisze.
             Godziny przed początkiem są wygaszone: koniec wybiera się tylko spośród późniejszych.
           */}
-          <div className="grid grid-cols-4 gap-1.5" onPointerLeave={() => setPodKursorem(null)}>
+          <div className="grid grid-cols-4 gap-2" onPointerLeave={() => setPodKursorem(null)}>
             {HOURS.map((h) => {
               const wybrana = od === h;
               const powod = niedostepna(h);
@@ -346,18 +346,18 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
                   onFocus={() => setPodKursorem(powod || wczesniej ? null : h)}
                   disabled={busy || powod !== null}
                   title={powod ?? (wczesniej ? "Zacznij od tej godziny" : undefined)}
-                  className={`rounded-xl border py-2 text-[12px] font-semibold tabular-nums transition ${
+                  className={`rounded-[13px] border py-2.5 text-[13px] font-bold tabular-nums transition ${
                     powod
                       ? `cursor-not-allowed border-hairline bg-white/[0.02] text-faint ${
                           h < teraz && opis.dzis ? "opacity-40" : "line-through"
                         }`
                       : wybrana
-                        ? "border-transparent flame-gradient text-black"
+                        ? "kafel-wybrany"
                         : wczesniej
                           ? "border-hairline/50 bg-white/[0.02] text-faint opacity-45 hover:opacity-80"
                           : wZakresie
-                            ? "border-flame/40 bg-flame/12 text-glow hover:border-flame/70"
-                            : "border-hairline bg-white/6 hover:border-flame/50 hover:text-glow"
+                            ? "border-flame/80 bg-flame/18 text-glow"
+                            : "border-hairline bg-white/5 text-muted hover:border-flame/50 hover:text-glow"
                   }`}
                 >
                   {h}:00
@@ -370,7 +370,7 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
             <button
               onClick={() => void zapisz(od)}
               disabled={busy}
-              className="mt-2 w-full rounded-xl border border-hairline bg-white/6 py-2 text-[12px] font-medium text-muted transition hover:text-ink"
+              className="mt-2.5 w-full rounded-full border border-hairline bg-white/6 py-2 text-[12px] font-semibold text-muted transition hover:text-ink"
             >
               tylko ta jedna godzina
             </button>
@@ -383,13 +383,13 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
       <div className="mt-auto pt-4">
         {mine.length > 0 ? (
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-[14px] font-semibold text-glow">
+            <p className="text-[14px] font-extrabold text-glow">
               Idziesz {opis.kiedy} {opisGodzin(mine)}
             </p>
             <button
               onClick={() => void odwolaj()}
               disabled={busy}
-              className="rounded-2xl flame-gradient px-5 py-2.5 text-[13px] font-bold text-black transition hover:brightness-110 disabled:opacity-60"
+              className="przycisk-plomien rounded-full px-5 py-2.5 text-[13px] font-extrabold disabled:opacity-60"
             >
               Odwołaj
             </button>
@@ -415,7 +415,7 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
               setOd(null);
               setPodKursorem(null);
             }}
-            className="w-full rounded-2xl flame-gradient px-4 py-3 text-[13px] font-bold text-black transition hover:brightness-110"
+            className="przycisk-plomien w-full rounded-full px-4 py-3.5 text-[14px] font-extrabold"
           >
             {picking ? "wybierz godziny" : `Idę zagrać ${opis.kiedy}`}
           </button>
