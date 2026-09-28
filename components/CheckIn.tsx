@@ -52,8 +52,9 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
   const [dzien, setDzien] = useState(dzisiaj);
   const [panel, setPanel] = useState<PanelDeklaracji>(() => ({ ...PUSTY, dzien: dzisiaj(), dzis: dzisiaj() }));
   const [picking, setPicking] = useState(false);
-  /** pierwsza kliknięta godzina - czekamy na drugą, żeby zamknąć zakres */
+  /** początek i koniec wybranego zakresu (włącznie); zapis dopiero przyciskiem */
   const [od, setOd] = useState<number | null>(null);
+  const [doGodz, setDoGodz] = useState<number | null>(null);
   /** godzina pod kursorem - z niej rysujemy zakres, zanim ktoś go zatwierdzi */
   const [podKursorem, setPodKursorem] = useState<number | null>(null);
   /** bieżąca godzina, łapana przy otwarciu wyboru - dzisiejsze godziny sprzed niej gasną */
@@ -117,11 +118,24 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
     };
   }, [pobierz, przypisz]);
 
-  /* zmiana dnia zaczyna wybór godzin od nowa - zakres z soboty nie ma sensu w niedzielę */
+  /*
+    Zmiana dnia zaczyna wybór godzin od nowa - zakres z soboty nie ma sensu w niedzielę.
+    Kliknięcie dnia, który już jest wybrany, przy otwartych godzinach zamyka okienko:
+    tak da się z wyboru wycofać tym samym gestem, którym się do niego weszło.
+  */
   const wybierzDzien = (d: string) => {
-    if (d === dzien) return;
+    if (d === dzien) {
+      if (picking) {
+        setPicking(false);
+        setOd(null);
+        setDoGodz(null);
+        setPodKursorem(null);
+      }
+      return;
+    }
     setDzien(d);
     setOd(null);
+    setDoGodz(null);
     setPodKursorem(null);
     setHint(null);
   };
@@ -138,6 +152,7 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
       await zapiszDeklaracje(courtId, dzien, start, koniec, zajete);
       setPicking(false);
       setOd(null);
+      setDoGodz(null);
       setPodKursorem(null);
       reload();
     } catch (e) {
@@ -175,16 +190,34 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
   const przedPoczatkiem = (h: number) => od !== null && h < od;
 
   /*
-    Pierwsze kliknięcie zaznacza początek, drugie zamyka zakres i zapisuje. Kliknięcie
-    godziny wcześniejszej niż początek nie zapisuje niczego - przestawia początek.
+    Wybór bez niespodzianek: pierwsze kliknięcie to początek, każde następne przesuwa koniec
+    - można dokładać godziny po jednej (16, 17, 18, 19) albo od razu kliknąć ostatnią (16,
+    potem 19), a środek zaznaczy się sam. Zapis dopiero przyciskiem pod siatką. Wcześniej
+    drugie kliknięcie zapisywało od razu, więc na telefonie nie dało się iść godzina po
+    godzinie - klik w 17 zamykał zakres na 16-17.
+
+    Godzina wcześniejsza niż początek przestawia początek. Kliknięcie samego początku, gdy
+    wybrana jest tylko ta jedna godzina, zdejmuje wybór; kliknięcie końca skraca zakres
+    o jedną godzinę - tak da się cofnąć ostatnie dołożenie.
   */
   const klik = (h: number) => {
+    setPodKursorem(null);
     if (od === null || h < od) {
       setOd(h);
-      setPodKursorem(null);
+      setDoGodz((d) => (d !== null && d >= h && wolnyZakres(h, d) ? d : h));
       return;
     }
-    void zapisz(od, h);
+    const koniec = doGodz ?? od;
+    if (h === od && koniec === od) {
+      setOd(null);
+      setDoGodz(null);
+      return;
+    }
+    if (h === koniec) {
+      setDoGodz(Math.max(od, koniec - 1));
+      return;
+    }
+    setDoGodz(h);
   };
 
   const odwolaj = async () => {
@@ -323,21 +356,24 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
                 ? zajete.length
                   ? "Kliknij godzinę, od której grasz. Przekreślone masz już zajęte na innym boisku."
                   : "Kliknij godzinę, od której grasz."
-                : podKursorem !== null && podKursorem > od
-                  ? `${g2(od)}:00-${g2(podKursorem + 1)}:00 - kliknij, żeby zapisać.`
-                  : `Od ${g2(od)}:00 - kliknij godzinę końca.`}
+                : "Dokładaj kolejne godziny albo kliknij ostatnią - i zapisz."}
           </p>
 
           {/*
-            Zakres podświetlamy tylko do godziny pod kursorem, żeby było widać, co się zapisze.
-            Godziny przed początkiem są wygaszone: koniec wybiera się tylko spośród późniejszych.
+            Zaznaczony zakres świeci od początku do końca. Na komputerze kursor za końcem
+            pokazuje jeszcze podgląd, dokąd zakres by sięgnął po kliknięciu. Godziny przed
+            początkiem są wygaszone - kliknięta przestawia początek.
           */}
           <div className="grid grid-cols-4 gap-2" onPointerLeave={() => setPodKursorem(null)}>
             {HOURS.map((h) => {
               const wybrana = od === h;
               const powod = niedostepna(h);
               const wczesniej = przedPoczatkiem(h);
-              const wZakresie = od !== null && podKursorem !== null && h > od && h <= podKursorem;
+              const koniec = doGodz ?? od;
+              const wZakresie =
+                od !== null &&
+                h > od &&
+                (h <= (koniec ?? od) || (podKursorem !== null && podKursorem > (koniec ?? od) && h <= podKursorem));
               return (
                 <button
                   key={h}
@@ -368,11 +404,11 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
 
           {od !== null && (
             <button
-              onClick={() => void zapisz(od)}
+              onClick={() => void zapisz(od, doGodz ?? od)}
               disabled={busy}
-              className="mt-2.5 w-full rounded-full border border-hairline bg-white/6 py-2 text-[12px] font-semibold text-muted transition hover:text-ink"
+              className="przycisk-plomien mt-3 w-full rounded-full py-3 text-[13px] font-extrabold disabled:opacity-60"
             >
-              tylko ta jedna godzina
+              Zapisz {opisGodzin(Array.from({ length: (doGodz ?? od) - od + 1 }, (_, i) => od + i))}
             </button>
           )}
         </div>
@@ -413,6 +449,7 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
               setTeraz(new Date().getHours());
               setPicking((v) => !v);
               setOd(null);
+              setDoGodz(null);
               setPodKursorem(null);
             }}
             className="przycisk-plomien w-full rounded-full px-4 py-3.5 text-[14px] font-extrabold"

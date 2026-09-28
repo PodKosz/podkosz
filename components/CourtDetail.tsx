@@ -71,13 +71,14 @@ export function CourtDetail({
   /*
     Kafelki parametrów. „Dostęp" pokazuje godziny w skrócie („24/7", „8:00-21:00") zamiast
     słów w rodzaju „całą dobę" - to one mówią, czy wejdziesz o 21:30. „Siatka" mówi, co
-    wisi na obręczach; boiska sprzed tego pola dostają kreskę zamiast zgadywania.
+    wisi na obręczach; boiska sprzed tego pola pokazują „Brak", tak jak brak siatki.
   */
   const parametry: { rodzaj: RodzajSzkicu; label: string; value: string }[] = [
     { rodzaj: "kosze", label: "Kosze", value: String(court.hoops) },
     { rodzaj: "nawierzchnia", label: "Nawierzchnia", value: surfaceLabel(court.surface) },
     { rodzaj: "godziny", label: "Dostęp", value: godzinyNaKafel(court.hours, court.access) },
-    { rodzaj: "dostep", label: "Siatka", value: court.siatka ? SIATKA_LABEL[court.siatka] : "—" },
+    /* „Brak" także gdy nikt tego nie podał - kreska czytała się jak błąd strony */
+    { rodzaj: "dostep", label: "Siatka", value: court.siatka && court.siatka !== "brak" ? SIATKA_LABEL[court.siatka] : "Brak" },
     { rodzaj: "oswietlenie", label: "Oświetlenie", value: court.lit ? "Tak" : "Brak" },
     { rodzaj: "ogrodzenie", label: "Ogrodzenie", value: court.fenced ? "Tak" : "Brak" },
   ];
