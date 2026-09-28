@@ -224,6 +224,34 @@ const ZAKRES_GASNIECIA = 1;
 // Worker MapLibre serwujemy z /public - patrz scripts/copy-maplibre-worker.mjs.
 setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
+/*
+  Ulice po przybliżeniu. Ciemny styl CARTO rysuje tło #0e0e0e, a drobne ulice #1a1a1a -
+  po naszym przyciemnieniu obie wartości lądowały tuż przy czerni i miasto wyglądało jak
+  pusta plama.
+
+  Sam `raster-contrast` tu nie pomoże: w shaderze MapLibre kontrast rozciąga kolory wokół
+  połowy jasności, więc wszystko ciemniejsze od 50% - czyli cała ta mapa - robi się jeszcze
+  ciemniejsze. Ale shader liczy kontrast i zaraz po nim `brightness-min/max` bez obcinania
+  po drodze, więc razem dają zwykłe przekształcenie liniowe jasność·k + b. Przystanki niżej
+  są policzone tak, żeby tło zostało na ~4/255, a nachylenie k rosło z przybliżeniem:
+  1 do poziomu 9 (dawny wygląd całego kraju), 1,75 od poziomu 13. Drobne ulice wychodzą
+  z 15 na 25, główne z 58 na ~105. Przystanki są co jeden poziom, bo te dwa parametry
+  nie są względem siebie liniowe - przy rzadszych tło między nimi szarzałoby.
+
+  Tylko dla CARTO - zapasowe Esri ma jaśniejsze tło i to samo przekształcenie zrobiłoby
+  z niego brązową szarzyznę, więc zostaje przy dawnych wartościach.
+*/
+type FarbaRastra = NonNullable<Extract<StyleSpecification["layers"][number], { type: "raster" }>["paint"]>;
+type Wyostrzenie = Required<Pick<FarbaRastra, "raster-contrast" | "raster-brightness-min" | "raster-brightness-max">>;
+
+const WYOSTRZENIE_ULIC: Wyostrzenie = process.env.NEXT_PUBLIC_CARTO_KEY
+  ? {
+      "raster-contrast": ["interpolate", ["linear"], ["zoom"], 9, 0.08, 10, 0.181, 11, 0.434, 12, 0.622, 13, 0.767],
+      "raster-brightness-min": ["interpolate", ["linear"], ["zoom"], 9, 0, 10, 0.058, 11, 0.236, 12, 0.414, 13, 0.592],
+      "raster-brightness-max": ["interpolate", ["linear"], ["zoom"], 9, 0.94, 10, 1],
+    }
+  : { "raster-contrast": 0.08, "raster-brightness-min": 0, "raster-brightness-max": 0.94 };
+
 const STYLE: StyleSpecification = {
   version: 8,
   // fonts.openmaptiles.org oddaje HTML zamiast pliku .pbf - Protomaps serwuje poprawne glify
@@ -251,11 +279,10 @@ const STYLE: StyleSpecification = {
       source: "carto",
       // ocieplenie i wyciszenie kafelków - bez dotykania warstw własnych
       paint: {
-        "raster-opacity": 0.92,
+        "raster-opacity": ["interpolate", ["linear"], ["zoom"], 9, 0.92, 12, 1],
         "raster-saturation": -0.35,
         "raster-hue-rotate": -12,
-        "raster-contrast": 0.08,
-        "raster-brightness-max": 0.94,
+        ...WYOSTRZENIE_ULIC,
       },
     },
     {
@@ -363,7 +390,13 @@ function pomalujWgMotywu(map: MlMap) {
   /* ocieplenie kafelków było dobrane pod ciemny podkład - na jasnym gasi mapę do szarości */
   if (map.getLayer("carto")) {
     map.setPaintProperty("carto", "raster-saturation", jasny ? -0.12 : -0.35);
-    map.setPaintProperty("carto", "raster-brightness-max", jasny ? 1 : 0.94);
+    /* jasny podkład ma ulice wyraźne sam z siebie - wyostrzenie zostaje tylko dla ciemnego */
+    const farba: Wyostrzenie = jasny
+      ? { "raster-contrast": 0.08, "raster-brightness-min": 0, "raster-brightness-max": 1 }
+      : WYOSTRZENIE_ULIC;
+    for (const wlasciwosc of Object.keys(farba) as (keyof Wyostrzenie)[]) {
+      map.setPaintProperty("carto", wlasciwosc, farba[wlasciwosc]);
+    }
     map.setPaintProperty("carto", "raster-hue-rotate", jasny ? 0 : -12);
   }
 }

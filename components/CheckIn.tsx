@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   CheckinSlot,
   PanelDeklaracji,
@@ -19,7 +19,6 @@ import {
 import { supabaseEnabled } from "@/lib/supabase/config";
 import { useBramka } from "./BramkaLogowania";
 import { plural } from "@/lib/site";
-import { ClockIcon } from "./icons";
 
 /** Godziny, w których realnie się gra - od rana do zamknięcia parków. */
 const HOURS = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
@@ -62,6 +61,28 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
   const [busy, setBusy] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
   const { wymagaj } = useBramka();
+
+  /*
+    Stopień nagłówka „Zapisz się" = stopień wartości w sąsiednim kafelku. Kafelki wyliczają
+    go w CSS z własnej szerokości, której ten panel nie zna, więc odczytujemy gotowy wynik
+    i pilnujemy go przy zmianie rozmiaru okna. Styl ustawiamy wprost na elemencie - to
+    czysta prezentacja, stan komponentu nie ma tu nic do rzeczy. Bez sąsiada (panel
+    w innym miejscu) zostaje domyślne 40 px z klasy.
+  */
+  const naglowek = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    const h = naglowek.current;
+    // siatka kafelków to przodek z `--dl` w stylu; pierwsza wartość w niej to kafelek „Kosze"
+    const wzor = h?.closest<HTMLElement>("[style*='--dl']")?.querySelector<HTMLElement>(".wartosc-plomien");
+    if (!h || !wzor || wzor === h) return;
+    const przepisz = () => {
+      h.style.fontSize = getComputedStyle(wzor).fontSize;
+    };
+    przepisz();
+    const obs = new ResizeObserver(przepisz);
+    obs.observe(wzor.closest(".glass") ?? wzor);
+    return () => obs.disconnect();
+  }, []);
 
   const { slots, osoby, moje: mine, zajete, blokada, tydzien, mojeDni, dzis } = panel;
   const opis = opisDnia(dzien, dzis);
@@ -252,8 +273,13 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
       }`}
       style={osoby > 0 ? { ["--zar" as string]: Math.min(osoby, 6) } : undefined}
     >
-      <h2 className="relative flex items-center gap-2 text-[10px] uppercase tracking-[0.12em] text-faint 2xl:text-[11px]">
-        <ClockIcon className="h-4 w-4 text-flame" /> Kto gra
+      {/*
+        Nagłówek jak wartości w kafelkach obok - Anton w gradiencie i DOKŁADNIE ich rozmiar:
+        kafelki liczą go od szerokości i najdłuższej wartości (patrz `Spec` w CourtDetail),
+        więc zamiast zgadywać, przepisujemy wyliczony stopień z sąsiada.
+      */}
+      <h2 ref={naglowek} className="wartosc-plomien relative self-start text-[40px]">
+        Zapisz się
       </h2>
 
       {tydzien && (
@@ -262,7 +288,7 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
           na który dzień się umawiają, bez przeklikiwania wszystkich. Kropka pod datą znaczy
           „tu jesteś zapisany".
         */
-        <div className="relative mt-3 grid grid-cols-7 gap-1" role="tablist" aria-label="Dzień gry">
+        <div className="relative mt-2.5 grid grid-cols-7 gap-1" role="tablist" aria-label="Dzień gry">
           {tydzien.map((t) => {
             const o = opisDnia(t.day, dzis);
             const wybrany = t.day === dzien;
@@ -310,30 +336,32 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
         </div>
       )}
 
-      <p className="relative mt-3 flex items-start gap-2 text-[15px] font-extrabold leading-snug tracking-[-0.01em] 2xl:text-[16px]">
-        {osoby > 0 && <PlomykZapisow />}
-        <span>
-          {osoby === 0
-            ? `Nikt się jeszcze nie zapisał ${opis.naKiedy}`
-            : `${osoby} ${plural(osoby, ["osoba idzie", "osoby idą", "osób idzie"])} ${opis.kiedy} na to boisko`}
-        </span>
-      </p>
-
-      {slots.length > 0 ? (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {slots.map((s) => (
-            <span
-              key={s.hour}
-              className="rounded-full border border-flame/40 bg-flame/12 px-2.5 py-0.5 text-[12px] font-semibold text-glow"
-            >
-              {g2(s.hour)}:00 · {s.people}
+      {/*
+        Liczba osób i godziny pojawiają się dopiero, gdy ktoś się zapisał. Pusty stan nie
+        potrzebuje zdania - nagłówek „Zapisz się" i przycisk mówią to samo krócej, a panel
+        jest dzięki temu niski i kafelki obok zostają prawie kwadratowe.
+      */}
+      {osoby > 0 && (
+        <>
+          <p className="relative mt-3 flex items-start gap-2 text-[15px] font-extrabold leading-snug tracking-[-0.01em] 2xl:text-[16px]">
+            <PlomykZapisow />
+            <span>
+              {`${osoby} ${plural(osoby, ["osoba idzie", "osoby idą", "osób idzie"])} ${opis.kiedy}`}
             </span>
-          ))}
-        </div>
-      ) : (
-        <p className="mt-1 text-[12px] leading-snug text-muted">
-          Bądź pierwszy - napisz, kiedy grasz, i daj innym szansę dołączyć.
-        </p>
+          </p>
+          {slots.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {slots.map((s) => (
+                <span
+                  key={s.hour}
+                  className="rounded-full border border-flame/40 bg-flame/12 px-2.5 py-0.5 text-[12px] font-semibold text-glow"
+                >
+                  {g2(s.hour)}:00 · {s.people}
+                </span>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       {picking && mine.length === 0 && !blokada && (
