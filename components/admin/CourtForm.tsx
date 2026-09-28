@@ -9,6 +9,8 @@ import {
   PHOTO_KIND_LABEL,
   PhotoKind,
   SURFACE_LABEL,
+  SIATKA_LABEL,
+  Siatka,
   Surface,
   TYPE_LABEL,
   VOIVODESHIPS,
@@ -57,6 +59,7 @@ function emptyValues(): CourtValues {
     hoops: 2,
     lit: false,
     fenced: false,
+    siatka: null,
     access: "24h",
     hours: "całą dobę",
     description: "",
@@ -497,6 +500,20 @@ export function CourtForm({
           </Field>
           <Toggle label="Oświetlenie" on={v.lit} onClick={() => set({ lit: !v.lit })} />
           <Toggle label="Ogrodzenie" on={v.fenced} onClick={() => set({ fenced: !v.fenced })} />
+          <Field label="Siatka na koszach">
+            <select
+              value={v.siatka ?? ""}
+              onChange={(e) => set({ siatka: (e.target.value || null) as Siatka | null })}
+              className="w-full bg-transparent outline-none"
+            >
+              <option value="">nie wiadomo</option>
+              {(Object.keys(SIATKA_LABEL) as Siatka[]).map((s) => (
+                <option key={s} value={s}>
+                  {SIATKA_LABEL[s]}
+                </option>
+              ))}
+            </select>
+          </Field>
         </div>
 
         <Field label="Opis">

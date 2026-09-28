@@ -44,6 +44,7 @@ export function rowToCourt(row: CourtRow): Court {
     hoops: row.hoops,
     lit: row.lit,
     fenced: row.fenced,
+    siatka: row.siatka ?? null,
     access: row.access,
     hours: row.hours,
     likes: row.likes_count,

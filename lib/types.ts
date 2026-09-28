@@ -60,6 +60,8 @@ export interface Court {
   hoops: number;
   lit: boolean;
   fenced: boolean;
+  /** co wisi na obręczach; brak wartości = nikt jeszcze nie podał (starsze boiska) */
+  siatka?: Siatka | null;
   access: Access;
   /** np. "06:00 - 22:00" albo "całą dobę" */
   hours: string;
@@ -197,6 +199,33 @@ export const TYPE_LABEL: Record<CourtType, string> = {
   kryty: "Kryty",
   streetball: "Streetball",
 };
+
+/** Co wisi na obręczach - dla wielu graczy decyduje, czy boisko w ogóle warto odwiedzić. */
+export type Siatka = "lancuch" | "siatka" | "brak";
+
+export const SIATKA_LABEL: Record<Siatka, string> = {
+  lancuch: "Łańcuch",
+  siatka: "Siatka",
+  brak: "Brak siatki",
+};
+
+/**
+ * Godziny na kafelek „Dostęp": „24/7" albo sam zakres „8:00-21:00".
+ *
+ * W bazie godziny są tekstem wpisanym przez ludzi („całą dobę", „06:00 - 22:00",
+ * „pn-pt 8-20"), więc zakres wyciągamy wzorcem, a gdy się nie da - zostaje oryginał.
+ * Wiodące zero znika („08:00" → „8:00"), bo na kafelku każdy znak kosztuje miejsce.
+ */
+export function godzinyNaKafel(hours: string, access?: Access): string {
+  const h = (hours ?? "").trim();
+  if (access === "24h" || /ca[łl][ąa]\s*dob|24\s*\/\s*7|całodob|0?0[:.]00\s*-\s*24/i.test(h)) return "24/7";
+  const m = h.match(/(\d{1,2})(?:[:.](\d{2}))?\s*[-–—]\s*(\d{1,2})(?:[:.](\d{2}))?/);
+  if (m) {
+    const g = (hh: string, mm?: string) => `${Number(hh)}:${mm ?? "00"}`;
+    return `${g(m[1], m[2])}-${g(m[3], m[4])}`;
+  }
+  return h || "—";
+}
 
 export const ACCESS_LABEL: Record<Access, string> = {
   "24h": "Całodobowo",

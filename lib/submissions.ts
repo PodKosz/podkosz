@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { Access, Court, CourtType, PHOTO_KIND_LABEL, PhotoKind, Surface } from "./types";
+import { Access, Court, CourtType, PHOTO_KIND_LABEL, PhotoKind, Siatka, Surface } from "./types";
 import { slugify } from "./slug";
 import { orderPhotos } from "./photos";
 
@@ -41,6 +41,7 @@ export interface Submission {
   hoops: number;
   lit: boolean;
   fenced: boolean;
+  siatka?: Siatka | null;
   access: Access;
   hours: string;
   notes: string;
@@ -143,6 +144,7 @@ export function submissionToCourt(s: Submission): Court {
     hoops: s.hoops,
     lit: s.lit,
     fenced: s.fenced,
+    siatka: s.siatka ?? null,
     access: s.access,
     hours: s.hours,
     likes: 0,

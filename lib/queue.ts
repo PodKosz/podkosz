@@ -39,6 +39,7 @@ export interface NewSubmission {
   hoops: number;
   lit: boolean;
   fenced: boolean;
+  siatka: Submission["siatka"];
   access: Submission["access"];
   hours: string;
   notes: string;
@@ -87,6 +88,7 @@ export async function submitCourt(input: NewSubmission): Promise<WynikZgloszenia
       hoops: input.hoops,
       lit: input.lit,
       fenced: input.fenced,
+      siatka: input.siatka,
       access: input.access,
       hours: input.hours,
       notes: input.notes,
@@ -119,6 +121,7 @@ export async function submitCourt(input: NewSubmission): Promise<WynikZgloszenia
     hoops: input.hoops,
     lit: input.lit,
     fenced: input.fenced,
+    siatka: input.siatka ?? null,
     access: input.access,
     hours: input.hours,
     notes: input.notes,
@@ -140,6 +143,14 @@ export async function submitCourt(input: NewSubmission): Promise<WynikZgloszenia
     const bezSladu = { ...wiersz, gps_odleglosc_m: undefined };
     delete bezSladu.gps_odleglosc_m;
     ({ error } = await supabase.from("submissions").insert(bezSladu));
+  }
+
+  /* to samo dla kolumny `siatka` (`migration-siatka.sql`) - jej brak nie może zabić zgłoszenia */
+  if (error && /siatka/i.test(error.message)) {
+    const bezSiatki: Partial<typeof wiersz> = { ...wiersz };
+    delete bezSiatki.siatka;
+    delete bezSiatki.gps_odleglosc_m;
+    ({ error } = await supabase.from("submissions").insert(bezSiatki));
   }
 
   if (error) {
@@ -264,6 +275,7 @@ function rowToSubmission(row: SubmissionRow): Submission {
     hoops: row.hoops,
     lit: row.lit,
     fenced: row.fenced,
+    siatka: row.siatka ?? null,
     access: row.access,
     hours: row.hours,
     notes: row.notes,
@@ -282,6 +294,7 @@ const FIELD_MAP: Record<string, string> = {
   hoops: "hoops",
   lit: "lit",
   fenced: "fenced",
+  siatka: "siatka",
   access: "access",
   hours: "hours",
   notes: "notes",

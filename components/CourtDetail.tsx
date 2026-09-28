@@ -1,6 +1,6 @@
 import { SzkicKafla, type RodzajSzkicu } from "./SzkicKafla";
 import Link from "next/link";
-import { ACCESS_LABEL, Court, TYPE_LABEL, surfaceLabel } from "@/lib/types";
+import { Court, SIATKA_LABEL, TYPE_LABEL, godzinyNaKafel, surfaceLabel } from "@/lib/types";
 import { czyAutorAnonimowy, formatDistance, slugifyPlace } from "@/lib/site";
 import { JAKOSC_ZDJECIA, adresMiniatury } from "@/lib/obrazy";
 import { opisBoiska } from "@/lib/opis-boiska";
@@ -67,6 +67,20 @@ export function CourtDetail({
     a nie tylko wnętrze samego boxa.
   */
   const wydarzenieObok = wydarzenie !== null && wysokiPlakat(wydarzenie);
+
+  /*
+    Kafelki parametrów. „Dostęp" pokazuje godziny w skrócie („24/7", „8:00-21:00") zamiast
+    słów w rodzaju „całą dobę" - to one mówią, czy wejdziesz o 21:30. „Siatka" mówi, co
+    wisi na obręczach; boiska sprzed tego pola dostają kreskę zamiast zgadywania.
+  */
+  const parametry: { rodzaj: RodzajSzkicu; label: string; value: string }[] = [
+    { rodzaj: "kosze", label: "Kosze", value: String(court.hoops) },
+    { rodzaj: "nawierzchnia", label: "Nawierzchnia", value: surfaceLabel(court.surface) },
+    { rodzaj: "godziny", label: "Dostęp", value: godzinyNaKafel(court.hours, court.access) },
+    { rodzaj: "dostep", label: "Siatka", value: court.siatka ? SIATKA_LABEL[court.siatka] : "—" },
+    { rodzaj: "oswietlenie", label: "Oświetlenie", value: court.lit ? "Tak" : "Brak" },
+    { rodzaj: "ogrodzenie", label: "Ogrodzenie", value: court.fenced ? "Tak" : "Brak" },
+  ];
 
   return (
     <main className="min-h-dvh pb-24">
@@ -266,14 +280,22 @@ export function CourtDetail({
             niżej bierze cały rząd, bo w węższej kolumnie jego przycisk nie ma się gdzie
             zmieścić.
           */
-          className="relative z-10 grid grid-cols-2 gap-3 sm:grid-cols-3 @min-[1020px]:grid-cols-6 @min-[1580px]:grid-cols-[repeat(6,minmax(0,1fr))_minmax(300px,1.2fr)]"
+          className="relative z-10 grid grid-cols-2 gap-3 [--max-wartosc:40px] sm:grid-cols-3 @min-[1020px]:grid-cols-6 @min-[1580px]:grid-cols-[repeat(6,minmax(0,1fr))_minmax(300px,1.2fr)] @min-[1580px]:[--max-wartosc:50px]"
+          /*
+            Jeden stopień pisma dla wszystkich kafelków boiska: liczony od najdłuższej wartości
+            w rzędzie (`--dl`, patrz `Spec`), żeby „8:00-21:00" i „Beton" stały tym samym
+            rozmiarem, a nie każdy własnym.
+          */
+          style={{
+            ["--dl" as string]: Math.max(
+              ...parametry.flatMap((p) => p.value.split(/\s+/).map((slowo) => slowo.length)),
+              4
+            ),
+          }}
         >
-          <Spec rodzaj="kosze" label="Kosze" value={String(court.hoops)} />
-          <Spec rodzaj="nawierzchnia" label="Nawierzchnia" value={surfaceLabel(court.surface)} />
-          <Spec rodzaj="godziny" label="Godziny" value={court.hours} />
-          <Spec rodzaj="dostep" label="Dostęp" value={ACCESS_LABEL[court.access]} />
-          <Spec rodzaj="oswietlenie" label="Oświetlenie" value={court.lit ? "Tak" : "Brak"} />
-          <Spec rodzaj="ogrodzenie" label="Ogrodzenie" value={court.fenced ? "Tak" : "Brak"} />
+          {parametry.map((p) => (
+            <Spec key={p.label} rodzaj={p.rodzaj} label={p.label} value={p.value} />
+          ))}
 
           {/*
             Panel „kto dziś gra" zajmuje cały rząd, dopóki kafelki nie ustawią się w siedem
@@ -492,7 +514,7 @@ function Spec({
   value: string;
 }) {
   return (
-    <div className="glass kafel-zywy relative flex h-full min-h-[150px] flex-col items-center justify-center overflow-hidden rounded-[20px] p-4 @min-[1580px]:p-5">
+    <div className="glass kafel-zywy relative flex h-full min-h-[150px] flex-col items-center justify-center overflow-hidden rounded-[20px] p-4 [container-type:inline-size] @min-[1580px]:p-5">
       {/*
         Rysunek wypełnia CAŁY kafelek, bez wcięcia. To zamierzone: ma być fragmentem
         czegoś większego, wychodzącym za krawędzie, a nie ikonką położoną na środku
@@ -519,19 +541,18 @@ function Spec({
         }}
       />
 
-      <span className="relative flex flex-col items-center text-center">
-        {/* `break-words` to bezpiecznik: gdyby kiedyś trafiła tu wartość dłuższa niż
-            „Ograniczony" (na podstawie którego dobrane są progi kolumn wyżej), złamie
-            się w środku słowa zamiast wyjść na sąsiedni kafelek */}
-        {/* wartość jak na rolkach - Anton w gradiencie; długie („Całodobowo") dostają mniejszy stopień */}
+      <span className="relative flex w-full flex-col items-center text-center">
+        {/*
+          Wartość jak na rolkach - Anton w gradiencie. Rozmiar jest JEDEN dla całego rzędu:
+          tyle, ile zmieści najdłuższe SŁOWO boiska (`--dl` znaków, z siatki kafelków) w
+          szerokości kafelka (`100cqi`), ale nie więcej niż `--max-wartosc`. Wartości
+          kilkuwyrazowe („Płytki modułowe") łamią się w dwie linie, zamiast ściągać w dół
+          cały rząd. Anton zmierzony w przeglądarce ma ok. 0,41 em na znak - dzielnik 0,44
+          zostawia zapas na szersze litery (M, W).
+        */}
         <p
-          className={`wartosc-plomien break-words ${
-            value.length > 9
-              ? "text-[24px] @min-[1580px]:text-[30px]"
-              : value.length > 5
-                ? "text-[30px] @min-[1580px]:text-[38px]"
-                : "text-[40px] @min-[1580px]:text-[50px]"
-          }`}
+          className="wartosc-plomien max-w-full [text-wrap:balance]"
+          style={{ fontSize: "min(var(--max-wartosc, 40px), calc((100cqi - 8px) / (var(--dl, 6) * 0.44)))" }}
         >
           {value}
         </p>

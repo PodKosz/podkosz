@@ -12,6 +12,8 @@ import {
   PhotoStep,
   REQUIRED_PHOTO_STEPS,
   SURFACE_LABEL,
+  SIATKA_LABEL,
+  Siatka,
   Surface,
   TYPE_LABEL,
   VOIVODESHIPS,
@@ -83,6 +85,7 @@ export function AddFlow({ user, admin = false }: { user: AddFlowUser; admin?: bo
     hoops: 2,
     lit: false,
     fenced: false,
+    siatka: "siatka" as Siatka,
     access: "24h" as Access,
     from: "06:00",
     to: "22:00",
@@ -262,6 +265,7 @@ export function AddFlow({ user, admin = false }: { user: AddFlowUser; admin?: bo
         hoops: form.hoops,
         lit: form.lit,
         fenced: form.fenced,
+        siatka: form.siatka,
         access: form.access,
         hours: form.access === "24h" ? "całą dobę" : `${form.from} - ${form.to}`,
         notes: form.notes,
@@ -793,6 +797,14 @@ export function AddFlow({ user, admin = false }: { user: AddFlowUser; admin?: bo
               />
             </div>
 
+            {/* co wisi na obręczach - pokazuje się na karcie boiska w kafelku „Siatka" */}
+            <Segmented
+              label="Siatka na koszach"
+              value={form.siatka}
+              options={Object.entries(SIATKA_LABEL) as [Siatka, string][]}
+              onChange={(v) => patch({ siatka: v })}
+            />
+
             <Segmented
               label="Dostępność"
               value={form.access}
@@ -826,7 +838,7 @@ export function AddFlow({ user, admin = false }: { user: AddFlowUser; admin?: bo
                 value={form.notes}
                 onChange={(e) => patch({ notes: e.target.value })}
                 rows={3}
-                placeholder="np. wieczorami komplet, obręcz bez siatki, wejście od strony parkingu"
+                placeholder="np. wieczorami komplet, wejście od strony parkingu"
                 className="w-full resize-none bg-transparent text-[14px] outline-none placeholder:text-faint"
               />
             </Field>

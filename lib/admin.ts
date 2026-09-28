@@ -1,6 +1,6 @@
 "use client";
 
-import { Access, CourtType, PhotoKind, Surface } from "./types";
+import { Access, CourtType, PhotoKind, Siatka, Surface } from "./types";
 import { slugify } from "./slug";
 import { fileToJpeg } from "./images";
 import { orderPhotos } from "./photos";
@@ -20,6 +20,7 @@ export interface CourtValues {
   hoops: number;
   lit: boolean;
   fenced: boolean;
+  siatka: Siatka | null;
   access: Access;
   hours: string;
   description: string;
@@ -129,6 +130,7 @@ export async function saveCourt(
     hoops: values.hoops,
     lit: values.lit,
     fenced: values.fenced,
+    siatka: values.siatka ?? null,
     access: values.access,
     hours: values.hours,
     description: values.description,
@@ -243,6 +245,7 @@ export async function listCourtsForAdmin(): Promise<AdminCourt[]> {
     hoops: row.hoops,
     lit: row.lit,
     fenced: row.fenced,
+    siatka: row.siatka ?? null,
     access: row.access,
     hours: row.hours,
     description: row.description,

@@ -1,4 +1,4 @@
-import { Access, CourtType, PhotoKind, Surface } from "../types";
+import { Access, CourtType, PhotoKind, Siatka, Surface } from "../types";
 
 export type SubmissionStatus = "pending" | "approved" | "rejected";
 
@@ -15,6 +15,8 @@ export interface CourtRow {
   hoops: number;
   lit: boolean;
   fenced: boolean;
+  /** null dla boisk sprzed migracji `migration-siatka.sql`; kolumny może też jeszcze nie być */
+  siatka?: Siatka | null;
   access: Access;
   hours: string;
   description: string;
@@ -58,6 +60,7 @@ export interface SubmissionRow {
   hoops: number;
   lit: boolean;
   fenced: boolean;
+  siatka?: Siatka | null;
   access: Access;
   hours: string;
   notes: string;
