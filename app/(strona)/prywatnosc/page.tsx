@@ -25,8 +25,8 @@ export default function PrivacyPage() {
       <div className="mt-10 space-y-10">
         <Sekcja title="Kto odpowiada za dane">
           <p>
-            Administratorem danych jest twórca serwisu {SITE_NAME} ({SITE_URL}) - osoba prywatna,
-            występująca w serwisie jako Basket. We wszystkich sprawach dotyczących danych pisz na{" "}
+            Administratorem danych jest Szymon Tyszkowski, twórca serwisu {SITE_NAME} ({SITE_URL}),
+            występujący w serwisie jako Basket. We wszystkich sprawach dotyczących danych pisz na{" "}
             <a className="text-flame" href={`mailto:${KONTAKT}`}>
               {KONTAKT}
             </a>
