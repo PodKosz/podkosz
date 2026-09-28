@@ -17,6 +17,7 @@ import { REJECT_REASONS, Submission, SubmissionStatus } from "@/lib/submissions"
 import { useQueue } from "@/lib/queue";
 import { ocenSlad } from "@/lib/obecnosc";
 import { supabaseEnabled } from "@/lib/supabase/config";
+import { sprzatajOdrzucone } from "@/lib/sprzatanie";
 import { signInWithGoogle } from "@/lib/auth";
 import { BasketApprovedBadge, PinIcon } from "../icons";
 import { GoogleMark } from "../GoogleMark";
@@ -240,6 +241,11 @@ export function AdminPanel({ isAdmin, signedIn }: { isAdmin: boolean; signedIn: 
   };
 
 
+
+  /* terminy z polityki prywatności - patrz `lib/sprzatanie.ts` */
+  useEffect(() => {
+    if (supabaseEnabled && isAdmin) void sprzatajOdrzucone();
+  }, [isAdmin]);
 
   /* Z podpiętą bazą kolejkę widzi wyłącznie administrator (pilnuje tego też RLS). */
   if (supabaseEnabled && !isAdmin) {

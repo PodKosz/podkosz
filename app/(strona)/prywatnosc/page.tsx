@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 /** Ostatnia zmiana treści - pokazywana na stronie i przydatna przy weryfikacji Google OAuth. */
-const AKTUALIZACJA = "19 sierpnia 2026";
+const AKTUALIZACJA = "28 września 2026";
 const KONTAKT = "podkoszpl@gmail.com";
 
 export default function PrivacyPage() {
@@ -25,8 +25,8 @@ export default function PrivacyPage() {
       <div className="mt-10 space-y-10">
         <Sekcja title="Kto odpowiada za dane">
           <p>
-            Serwis {SITE_NAME} ({SITE_URL}) prowadzi osoba prywatna, twórca projektu, występujący w
-            serwisie jako Basket. Kontakt we wszystkich sprawach dotyczących danych:{" "}
+            Administratorem danych jest twórca serwisu {SITE_NAME} ({SITE_URL}) - osoba prywatna,
+            występująca w serwisie jako Basket. We wszystkich sprawach dotyczących danych pisz na{" "}
             <a className="text-flame" href={`mailto:${KONTAKT}`}>
               {KONTAKT}
             </a>
@@ -34,107 +34,137 @@ export default function PrivacyPage() {
           </p>
         </Sekcja>
 
-        <Sekcja title="Co zbieramy i po co">
+        <Sekcja title="Co zbieramy, po co i na jakiej podstawie">
           <Lista
             items={[
               [
-                "Konto Google (opcjonalnie)",
-                "jeśli logujesz się przez Google, zapisujemy adres e-mail, nazwę i adres zdjęcia profilowego. Służą do rozpoznania Cię przy podpalaniu boisk, ulubionych i przy Twoich zgłoszeniach. Nie pobieramy z Google nic więcej i nie mamy dostępu do Twojej skrzynki ani kontaktów.",
+                "Konto Google",
+                "przy logowaniu przez Google dostajemy adres e-mail, nazwę i adres zdjęcia profilowego. Konto służy do podpalania boisk, ulubionych, deklaracji gry, zgłoszeń i odznaczeń. Nie mamy dostępu do Twojej skrzynki ani kontaktów. Podstawa: świadczenie usługi, o którą prosisz, zakładając konto (art. 6 ust. 1 lit. b RODO).",
               ],
               [
-                "Zgłoszenia boisk",
-                "zdjęcia, współrzędne, opis oraz - jeśli je podasz - nazwa i adres e-mail autora. E-mail używamy wyłącznie po to, żeby napisać Ci, czy boisko zostało opublikowane.",
+                "Profil publiczny",
+                "Twój nick, zdjęcie profilowe, dodane boiska, odznaczenia i miejsce w rankingu widzą wszyscy odwiedzający (strona gracza, ranking, wyniki mini-gry). Adresu e-mail nie pokazujemy nikomu. Nick zmienisz w ustawieniach konta. Podstawa: świadczenie usługi (lit. b).",
+              ],
+              [
+                "Deklaracje gry",
+                "dzień, godziny i boisko, na którym deklarujesz grę. Inni widzą tylko liczbę osób na daną godzinę, nie to, kto się zapisał. Historia deklaracji liczy Twoje odznaczenia. Podstawa: świadczenie usługi (lit. b).",
+              ],
+              [
+                "Zgłoszenia boisk i poprawki zdjęć",
+                "zdjęcia, współrzędne boiska, opis oraz Twój adres, żeby napisać, czy boisko zostało opublikowane. Przy zdjęciu z aparatu zapisujemy tylko odległość pinezki od miejsca zrobienia zdjęcia (w metrach), żeby wyłapać pomyłki - samego położenia nie. Zdjęcia są przekodowywane w przeglądarce, więc metadane z telefonu (w tym GPS) nie trafiają na serwer. Podstawa: świadczenie usługi (lit. b).",
+              ],
+              [
+                "Lista na otwarcie",
+                "adres e-mail podany w formularzu „Zapisz się na otwarcie” - wyłącznie do jednej wiadomości w dniu otwarcia serwisu. Podstawa: Twoja zgoda (lit. a), którą możesz wycofać w każdej chwili, pisząc do nas.",
+              ],
+              [
+                "Wiadomości e-mail z serwisu",
+                "wysyłamy jednorazowe powitanie po założeniu konta, wiadomość o decyzji w sprawie zgłoszonego boiska i powiadomienia o wydarzeniach na boiskach, które podpaliłeś albo na których deklarowałeś grę, lub w ich okolicy. Nie wysyłamy newslettera ani reklam. Podstawa powitania i wiadomości o zgłoszeniu: świadczenie usługi (lit. b). Podstawa powiadomień o wydarzeniach: nasz prawnie uzasadniony interes, jakim jest informowanie graczy o tym, co dzieje się na ich boiskach (lit. f) - każdy taki mail ma link do wypisania się jednym kliknięciem, a powiadomienia wyłączysz też w ustawieniach konta.",
               ],
               [
                 "Opinie i zgłoszenia błędów",
-                "treść wiadomości oraz opcjonalny kontakt, który sam podasz.",
+                "treść wiadomości i kontakt, jeśli go podasz. Podstawa: nasz prawnie uzasadniony interes, jakim jest odpowiadanie na wiadomości i poprawianie danych o boiskach (lit. f).",
               ],
               [
-                "Skrót adresu IP",
-                "przy zgłoszeniach i opiniach zapisujemy nieodwracalny skrót (hash) adresu IP, żeby ograniczyć liczbę wysyłek z jednego urządzenia. Nie przechowujemy adresów IP w czytelnej postaci.",
+                "Ochrona przed nadużyciami",
+                "przy zgłoszeniach, opiniach i raportach zapisujemy skrót (hash) adresu IP, żeby ograniczyć liczbę wysyłek z jednego urządzenia. To pseudonim, a nie anonim - dlatego kasujemy go po 30 dniach. Przy rażących nadużyciach administrator może zablokować adres IP; wtedy adres jest przechowywany w czytelnej postaci przez czas blokady. Podstawa: prawnie uzasadniony interes, jakim jest bezpieczeństwo serwisu (lit. f).",
               ],
               [
                 "Statystyka odwiedzin",
-                "liczba wizyt w podziale na dni, bez profilowania i bez reklamowych plików cookie.",
+                "dla każdego dnia: skrót adresu IP i liczba odsłon, żeby policzyć, ilu gości było na stronie - bez profilowania, bez reklamowych plików cookie i bez śledzenia między stronami. Licznik „ilu teraz na stronie” trzyma skrót przez dobę. Podstawa: prawnie uzasadniony interes, jakim jest wiedza o tym, czy serwis jest używany (lit. f).",
               ],
               [
                 "Lokalizacja",
-                "kreator dodawania boiska prosi o dostęp do lokalizacji, żeby postawić pinezkę tam, gdzie stoisz. Współrzędne trafiają do zgłoszenia boiska - nie zapisujemy historii Twoich położeń.",
+                "kreator dodawania boiska prosi przeglądarkę o dostęp do lokalizacji, żeby postawić pinezkę tam, gdzie stoisz, a mapa - żeby pokazać boiska w pobliżu. Twoje położenie nie jest nigdzie zapisywane; do zgłoszenia trafiają współrzędne boiska.",
               ],
             ]}
           />
-        </Sekcja>
-
-        <Sekcja title="Podstawa prawna">
-          <p>
-            Dane konta, zgłoszenia i opinie przetwarzamy na podstawie Twojej zgody oraz w celu
-            świadczenia usługi (art. 6 ust. 1 lit. a i b RODO). Skróty adresów IP i statystykę
-            odwiedzin - na podstawie prawnie uzasadnionego interesu, jakim jest ochrona serwisu
-            przed nadużyciami (art. 6 ust. 1 lit. f RODO).
+          <p className="mt-4">
+            Podanie danych jest dobrowolne. Bez konta możesz przeglądać mapę i boiska; konto jest
+            potrzebne tylko do tego, co zmienia mapę. Nie podejmujemy wobec nikogo decyzji
+            w sposób zautomatyzowany i nie profilujemy użytkowników.
           </p>
         </Sekcja>
 
         <Sekcja title="Komu powierzamy dane">
           <Lista
             items={[
-              ["Supabase", "baza danych i pliki zdjęć, serwery w Unii Europejskiej (Frankfurt)."],
+              ["Supabase", "baza danych i logowanie, serwery w Unii Europejskiej (Frankfurt)."],
+              ["Cloudflare", "przechowywanie zdjęć (R2) oraz ochrona i przyspieszenie ruchu do serwisu."],
               ["Vercel", "hosting aplikacji."],
-              ["Cloudflare", "ochrona i przyspieszenie ruchu do serwisu."],
-              ["Google", "logowanie przez konto Google, jeśli z niego korzystasz."],
-              ["Resend", "wysyłka wiadomości e-mail o zgłoszeniach i opiniach."],
+              ["Google", "logowanie przez konto Google."],
+              ["Resend", "wysyłka wiadomości e-mail."],
               [
-                "OpenStreetMap, CARTO",
-                "podkład mapy i dane o miejscach. Do tych usług nie wysyłamy Twoich danych osobowych.",
+                "OpenStreetMap, CARTO, Esri",
+                "podkład mapy. Twoja przeglądarka pobiera od nich kafelki mapy, więc widzą Twój adres IP - tak jak przy każdej stronie z mapą. Danych konta im nie przekazujemy.",
               ],
             ]}
           />
           <p className="mt-4">
-            Nie sprzedajemy danych, nie przekazujemy ich do celów reklamowych i nie profilujemy
-            użytkowników.
+            Cloudflare, Vercel, Google i Resend to firmy z siedzibą w USA, więc dane mogą trafić
+            poza Europejski Obszar Gospodarczy. Odbywa się to na podstawie decyzji Komisji
+            Europejskiej stwierdzającej odpowiedni poziom ochrony (EU-US Data Privacy Framework)
+            albo standardowych klauzul umownych zatwierdzonych przez Komisję.
+          </p>
+          <p className="mt-4">
+            Nie sprzedajemy danych, nie przekazujemy ich do celów reklamowych i nie udostępniamy
+            ich innym firmom na ich własne potrzeby.
           </p>
         </Sekcja>
 
         <Sekcja title="Jak długo trzymamy dane">
           <Lista
             items={[
-              ["Konto", "do momentu, w którym poprosisz o jego usunięcie."],
+              ["Konto, deklaracje gry, ulubione", "dopóki masz konto."],
+              [
+                "Usunięte konto",
+                "po usunięciu konta adres e-mail, nazwa i zdjęcie profilowe zostają w archiwum przez 180 dni - tylko po to, żeby dało się przywrócić konto usunięte przez pomyłkę. Po tym czasie znikają bezpowrotnie. Jeśli chcesz, żeby zniknęły od razu, napisz do nas.",
+              ],
               [
                 "Opublikowane boiska",
                 "bezterminowo, bo tworzą bazę serwisu. Na życzenie usuwamy z wpisu nazwę autora.",
               ],
               [
-                "Odrzucone zgłoszenia",
-                "do 12 miesięcy, jako ślad moderacyjny; potem znikają razem ze zdjęciami.",
+                "Odrzucone zgłoszenia i poprawki zdjęć",
+                "12 miesięcy od decyzji, jako ślad moderacyjny; potem znikają razem ze zdjęciami.",
               ],
-              ["Opinie i zgłoszenia błędów", "do 24 miesięcy."],
-              ["Skróty adresów IP", "do 30 dni."],
+              ["Lista na otwarcie", "do 30 dni po wysłaniu wiadomości o otwarciu."],
+              ["Opinie i zgłoszenia błędów", "24 miesiące."],
+              ["Skróty adresów IP przy zgłoszeniach", "30 dni."],
+              ["Statystyka odwiedzin", "12 miesięcy; licznik osób na stronie - doba."],
+              ["Blokady adresów IP", "przez czas blokady i 30 dni po jej końcu."],
             ]}
           />
+          <p className="mt-4">Terminy pilnuje automat, który co noc usuwa to, co się przeterminowało.</p>
         </Sekcja>
 
         <Sekcja title="Twoje prawa">
           <p>
             Masz prawo dostępu do swoich danych, ich sprostowania, usunięcia, ograniczenia
-            przetwarzania, przeniesienia oraz wniesienia sprzeciwu. Wystarczy wiadomość na{" "}
+            przetwarzania i przeniesienia. Zgodę możesz wycofać w każdej chwili - nie wpływa to na
+            to, co zrobiliśmy przed jej wycofaniem. Możesz też w każdej chwili sprzeciwić się
+            przetwarzaniu opartemu na naszym prawnie uzasadnionym interesie, w tym powiadomieniom
+            o wydarzeniach. Wystarczy wiadomość na{" "}
             <a className="text-flame" href={`mailto:${KONTAKT}`}>
               {KONTAKT}
             </a>{" "}
-            - odpowiadamy w ciągu 30 dni. Możesz też złożyć skargę do Prezesa Urzędu Ochrony Danych
-            Osobowych.
+            - odpowiadamy w ciągu 30 dni. Masz też prawo złożyć skargę do Prezesa Urzędu Ochrony
+            Danych Osobowych (ul. Stawki 2, 00-193 Warszawa, uodo.gov.pl).
           </p>
           <p className="mt-4">
-            Usunięcie konta usuwa Twoje polubienia i ulubione oraz nazwę autora przy dodanych
-            boiskach. Same wpisy boisk zostają, bo są treścią serwisu i nie zawierają danych
-            osobowych.
+            Konto usuniesz sam w ustawieniach konta. Usunięcie konta kasuje Twoje podpalenia,
+            ulubione i deklaracje gry oraz nazwę autora przy dodanych boiskach. Same wpisy boisk
+            zostają, bo są treścią serwisu i nie zawierają danych osobowych.
           </p>
         </Sekcja>
 
-        <Sekcja title="Pliki cookie">
+        <Sekcja title="Pliki cookie i pamięć przeglądarki">
           <p>
-            Używamy wyłącznie plików niezbędnych do działania serwisu: ciasteczka sesji logowania
-            (jeśli się logujesz) oraz jednorazowego znacznika wizyty w pamięci przeglądarki, żeby
-            nie liczyć tej samej sesji dwa razy. Nie stosujemy cookie reklamowych ani
-            analitycznych, które śledziłyby Cię między stronami.
+            Używamy wyłącznie tego, co jest niezbędne do działania serwisu: ciasteczek sesji
+            logowania (jeśli się logujesz), zapamiętanego motywu jasny/ciemny oraz jednorazowego
+            znacznika wizyty w pamięci karty przeglądarki, żeby nie liczyć tej samej wizyty dwa
+            razy. Nie stosujemy cookie reklamowych ani analitycznych, które śledziłyby Cię między
+            stronami, dlatego nie pytamy o zgodę na cookie.
           </p>
         </Sekcja>
 
@@ -144,6 +174,13 @@ export default function PrivacyPage() {
             fotografować ludzi w zbliżeniu - zgłoszenia z rozpoznawalnymi twarzami odrzucamy. Jeśli
             znajdziesz na zdjęciu siebie i chcesz, żeby zniknęło, napisz na adres powyżej; usuwamy
             takie zdjęcia bez pytania o powód.
+          </p>
+        </Sekcja>
+
+        <Sekcja title="Zmiany polityki">
+          <p>
+            Gdy zmienimy zasady, zaktualizujemy datę na górze tej strony. Jeśli zmiana będzie
+            dotyczyć nowego celu, w jakim używamy Twoich danych, zapytamy o to wcześniej.
           </p>
         </Sekcja>
       </div>

@@ -9,8 +9,9 @@ import { CZCIONKA, KREDA, SLABY, akapit, esc, naglowek, nadtytul, przycisk, szki
  *
  *   - powód dostania listu stoi w treści, nie w stopce drobnym drukiem („dostajesz to,
  *     bo podpaliłeś to boisko" albo „...boisko w okolicy"),
- *   - w stopce jest droga do wyłączenia takich wiadomości jednym kliknięciem
- *     (`profiles.powiadomienia`, przełącznik na stronie konta),
+ *   - w stopce jest link, który wyłącza takie wiadomości jednym kliknięciem, bez
+ *     logowania (token z `wypis_tokeny`, strona `/wypisz`), a ten sam adres idzie
+ *     w nagłówku `List-Unsubscribe` - Gmail pokazuje wtedy własny przycisk „Wypisz",
  *   - jeden list na wydarzenie, pilnowany kolumną `powiadomiono_at` w bazie.
  *
  * Barwy wydarzenia (biało-czerwone) NIE wchodzą do listu. W skrzynce nie ma kontekstu
@@ -30,6 +31,28 @@ export interface DaneWydarzenia {
   powod: "to-boisko" | "okolica";
   /** imię albo nick - list jest do człowieka, nie do listy adresowej */
   nick?: string;
+  /** token wypisu; bez niego (baza sprzed migracji RODO) stopka odsyła na stronę konta */
+  wypis?: string;
+}
+
+/** Strona wypisu - otwarta z linku w stopce pokazuje przycisk, nie wypisuje sama. */
+export function adresWypisu(token: string) {
+  return `${SITE_URL}/wypisz?t=${encodeURIComponent(token)}`;
+}
+
+/**
+ * Adres dla nagłówka `List-Unsubscribe-Post` (RFC 8058): klient pocztowy wysyła na niego
+ * POST i wypis dzieje się od razu. Osobny od strony, bo zwykłe GET-y do linków w listach
+ * robią też skanery antywirusowe - gdyby samo wejście wypisywało, wypisywałyby ludzi same.
+ */
+export function adresWypisuJednymKlikiem(token: string) {
+  return `${SITE_URL}/api/wypisz?t=${encodeURIComponent(token)}`;
+}
+
+function jakWypisac(d: DaneWydarzenia) {
+  return d.wypis
+    ? `Nie chcesz wiadomości o wydarzeniach? Wypisz się jednym kliknięciem: ${adresWypisu(d.wypis)}`
+    : `Nie chcesz wiadomości o wydarzeniach? Wyłącz je na stronie swojego konta: ${SITE_URL}/konto`;
 }
 
 function adresBoiska(slug: string) {
@@ -38,7 +61,8 @@ function adresBoiska(slug: string) {
 
 function dlaczego(powod: DaneWydarzenia["powod"], boisko: string) {
   return powod === "to-boisko"
-    ? `Dostajesz tę wiadomość, bo podpaliłeś „${boisko}" na PodKoszu.`
+    /* „to-boisko" to ogień na tym boisku ALBO deklaracja gry na nim - zdanie mówi oba */
+    ? `Dostajesz tę wiadomość, bo podpaliłeś „${boisko}" na PodKoszu albo zapisałeś się tam na grę.`
     : "Dostajesz tę wiadomość, bo podpaliłeś boisko w okolicy tego wydarzenia.";
 }
 
@@ -80,8 +104,7 @@ export function htmlWydarzenia(d: DaneWydarzenia) {
     podglad: `${d.nazwa} - ${d.kiedy}`,
     tresc,
     stopka:
-      `${dlaczego(d.powod, d.boisko)} ` +
-      `Nie chcesz wiadomości o wydarzeniach? Wyłącz je na stronie swojego konta: ${SITE_URL}/konto`,
+      `${dlaczego(d.powod, d.boisko)} ${jakWypisac(d)}`,
   });
 }
 
@@ -96,7 +119,7 @@ export function tekstWydarzenia(d: DaneWydarzenia) {
     `Szczegóły: ${adresBoiska(d.slug)}`,
     "",
     dlaczego(d.powod, d.boisko),
-    `Nie chcesz takich wiadomości? Wyłącz je na ${SITE_URL}/konto`,
+    jakWypisac(d),
   ];
 
   return wiersze.join("\n");

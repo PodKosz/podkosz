@@ -1,7 +1,12 @@
 import { getSessionUser, supabaseServer } from "@/lib/supabase/server";
 import { POWOD_BRAK_NADAWCY, nadawca } from "@/lib/mail/nadawca";
 import { wyslijPrzezResend } from "@/lib/mail/sufit";
-import { htmlWydarzenia, tekstWydarzenia, tematWydarzenia } from "@/lib/mail/wydarzenie";
+import {
+  adresWypisuJednymKlikiem,
+  htmlWydarzenia,
+  tekstWydarzenia,
+  tematWydarzenia,
+} from "@/lib/mail/wydarzenie";
 import { kiedy, type Wydarzenie } from "@/lib/wydarzenia";
 
 /**
@@ -33,6 +38,8 @@ interface Odbiorca {
   email: string;
   nick: string;
   powod: "to-boisko" | "okolica";
+  /** token wypisu - dochodzi z `migration-rodo.sql`, przed nią go nie ma */
+  wypis?: string | null;
 }
 
 export async function POST(request: Request) {
@@ -146,13 +153,22 @@ export async function POST(request: Request) {
       supabase,
       key,
       paczka.map((o) => {
-        const dane = { ...wspolne, powod: o.powod, nick: o.nick };
+        const dane = { ...wspolne, powod: o.powod, nick: o.nick, wypis: o.wypis ?? undefined };
         return {
           from,
           to: [o.email],
           subject,
           html: htmlWydarzenia(dane),
           text: tekstWydarzenia(dane),
+          ...(o.wypis
+            ? {
+                headers: {
+                  /* jeden adres HTTPS, jak chce RFC 8058 - GET na nim przekierowuje na stronę wypisu */
+                  "List-Unsubscribe": `<${adresWypisuJednymKlikiem(o.wypis)}>`,
+                  "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+                },
+              }
+            : {}),
         };
       })
     );

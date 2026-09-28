@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signInWithGoogle } from "@/lib/auth";
 import { pobierzSesje } from "@/lib/sesja";
@@ -137,6 +138,17 @@ function Okno({ czynnosc, onZamknij }: { czynnosc: string; onZamknij: () => void
           <GoogleMark className="h-5 w-5" />
           {idzie ? "Przenoszę do Google..." : "Zaloguj się przez Google"}
         </button>
+
+        <p className="mt-4 text-[11px] leading-snug text-faint">
+          Z Google bierzemy tylko adres e-mail, nazwę i zdjęcie profilowe.{" "}
+          <Link href="/prywatnosc" onClick={onZamknij} className="underline decoration-hairline underline-offset-2 transition hover:text-flame">
+            Polityka prywatności
+          </Link>{" "}
+          ·{" "}
+          <Link href="/regulamin" onClick={onZamknij} className="underline decoration-hairline underline-offset-2 transition hover:text-flame">
+            Regulamin
+          </Link>
+        </p>
 
         <button
           onClick={onZamknij}

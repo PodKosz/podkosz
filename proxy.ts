@@ -63,6 +63,13 @@ const ZAWSZE_DOSTEPNE = [
   */
   "/prywatnosc",
   "/regulamin",
+  /*
+    Wypis z powiadomień. Link przychodzi w liście, a list może dojść także wtedy, gdy
+    zasłona stoi - wypisanie się nie może zależeć od tego, czy serwis jest otwarty.
+    Strona i trasa znają tylko token, nie pokazują żadnych danych.
+  */
+  "/wypisz",
+  "/api/wypisz",
 ];
 
 /** Wynik sprawdzenia adresu IP - żeby nie pytać bazy przy każdym żądaniu. */

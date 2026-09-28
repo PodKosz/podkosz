@@ -55,6 +55,7 @@ część nazwy pliku.
 | 36 | `migration-statystyki-zbiorczo.sql` | `statystyki_graczy(text[])` - statystyki wielu graczy jednym zapytaniem, dla piłek odznaczeń w rankingu. Woła istniejącą `statystyki_gracza` przez `cross join lateral`, więc reguły odznaczeń zostają w jednym miejscu. Kod działa też bez niej (cofa się do pytania o każdego osobno), więc kolejność wdrożenia jest dowolna |
 | 37 | `migration-deklaracje-tydzien.sql` | deklaracje „kto gra" na dziś i sześć kolejnych dni: `checkin_panel(uuid, date)` z podglądem tygodnia (`tydzien`, `moje_dni`) i `checkin_blokada(uuid, date)`; komunikaty wyzwalacza bez „na dziś". **Wymaga nr 35.** Kod działa też bez niej - pokazuje wtedy sam dzisiejszy dzień, jak dawniej |
 | 38 | `migration-siatka.sql` | siatka na koszach (`łańcuch / siatka / brak`) w `courts` i `submissions`; wyzwalacz przenosi ją ze zgłoszenia na boisko po akceptacji, bez ruszania `approve_submission()` |
+| 39 | `migration-rodo.sql` | terminy z polityki prywatności jako mechanizm: nocne `sprzataj_dane_osobowe()` pod pg_cron (skróty IP po 30 dniach, opinie i raporty po 24 miesiącach, wizyty po 12, bany 30 dni po końcu, lista na otwarcie 30 dni po liście), tokeny wypisu (`wypis_tokeny`, `wypisz_z_powiadomien`) i token w `wydarzenie_odbiorcy`; odrzucone zgłoszenia i poprawki po 12 miesiącach kasuje panel razem ze zdjęciami (`odrzucone_do_usuniecia`, `usun_odrzucone`). **Wymaga nr 33.** Kod działa też bez niej - listy mają wtedy w stopce odesłanie do ustawień konta |
 
 ## Brakujące w tabeli
 
@@ -71,7 +72,7 @@ uzupełnienia przy okazji, po sprawdzeniu zależności każdego z nich:
 
 | Plik | Dlaczego leży |
 |------|---------------|
-| `migration-profil-publiczny.sql` | udostępnia publicznie ulubione i historię gry — decyzja produktowa, nie techniczna |
+| `migration-profil-publiczny.sql` | udostępnia publicznie ulubione i historię gry — decyzja produktowa, nie techniczna. **Przed uruchomieniem trzeba zmienić politykę prywatności** - dziś mówi, że deklaracje gry nie są publiczne |
 | `migration-heat.sql` | rozdzieliłby Heat od Basket Approved; dziś to jedna flaga i to wystarcza |
 | `seed-demo.sql` | dane przykładowe, tylko do pustej bazy na testy |
 

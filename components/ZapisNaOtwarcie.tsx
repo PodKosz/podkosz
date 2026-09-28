@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { supabaseEnabled } from "@/lib/supabase/config";
 import { plural } from "@/lib/site";
@@ -221,6 +222,18 @@ export function ZapisNaOtwarcie() {
             : "Napiszę raz - w dniu, w którym strona ruszy."}
         </p>
       )}
+
+      {/*
+        Obowiązek informacyjny przy zbieraniu adresu (art. 13 RODO) - w miejscu, w którym
+        adres się podaje, a nie tylko w stopce. Zasłona przepuszcza `/prywatnosc`, więc
+        link działa także przed otwarciem.
+      */}
+      <p className="max-w-[360px] text-center text-[11px] leading-snug text-faint">
+        Adres posłuży tylko do tego jednego maila, a miesiąc po otwarciu go usuwam.{" "}
+        <Link href="/prywatnosc" className="underline decoration-hairline underline-offset-2 transition hover:text-flame">
+          Polityka prywatności
+        </Link>
+      </p>
     </div>
   );
 }
