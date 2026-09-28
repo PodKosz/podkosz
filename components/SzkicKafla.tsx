@@ -60,7 +60,7 @@ export type RodzajSzkicu =
   | "kosze"
   | "nawierzchnia"
   | "godziny"
-  | "dostep"
+  | "siatka"
   | "oswietlenie"
   | "ogrodzenie";
 
@@ -89,6 +89,42 @@ function oczka(kierunek: 1 | -1) {
     linie.push(kierunek === 1 ? `M${x} -30L${x + 150} 150` : `M${x} 150L${x + 150} -30`);
   }
   return linie.join("");
+}
+
+/*
+  Plecionka siatki na koszu - ta sama, co w logo: sploty idą skosem w obie strony i krzyżują
+  się w romby. Siatka to stożek widziany z przodu, więc splot nie jest prostą kreską:
+  biegnie po walcu, którego promień maleje w dół (obręcz 64, dół 34), a przednią połowę
+  rzutujemy na płasko - `x = środek + promień·cos(kąt)`, `y = wysokość + spłaszczenie·sin(kąt)`.
+  Rysujemy tylko przód (kąt 0-180°); tył zasłoniłby romby i zrobiłby z siatki kratkę.
+*/
+function plecionka() {
+  const SPLOTY = 8;
+  const SKRET = Math.PI * 0.9; // o ile kąta splot przesuwa się od obręczy do dołu
+  const punkt = (kat: number, v: number) => {
+    const promien = 64 - 30 * v;
+    const splaszczenie = 13 - 6 * v;
+    return [60 + promien * Math.cos(kat), 4 + v * 146 + splaszczenie * Math.sin(kat)];
+  };
+  const linie: string[] = [];
+  for (const kierunek of [1, -1]) {
+    for (let i = -SPLOTY; i <= 2 * SPLOTY; i++) {
+      const start = (i / SPLOTY) * Math.PI;
+      let sciezka = "";
+      for (let k = 0; k <= 24; k++) {
+        const v = k / 24;
+        const kat = start + kierunek * SKRET * v;
+        if (kat < 0 || kat > Math.PI) {
+          sciezka += " ";
+          continue;
+        }
+        const [x, y] = punkt(kat, v);
+        sciezka += `${sciezka.endsWith(" ") || !sciezka ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`;
+      }
+      linie.push(sciezka.trim());
+    }
+  }
+  return linie.filter(Boolean).join("");
 }
 
 /*
@@ -156,19 +192,14 @@ const RYSUNKI: Record<RodzajSzkicu, { obrot: number; kreski: React.ReactNode }> 
     ),
   },
 
-  /* Otwarta brama: słupki wychodzą górą i dołem, skrzydło odchylone do środka. */
-  dostep: {
-    obrot: -6,
+  /* Obręcz wchodzi górną krawędzią, plecionka zwęża się w dół i wychodzi dołem. */
+  siatka: {
+    obrot: 7,
     kreski: (
       <>
-        <path d="M4 -40v200" strokeWidth="2.11" />
-        <path d="M116 -40v200" strokeWidth="2.11" />
-        <path d="M4 118h112" strokeWidth="1.24" />
-        {/* skrzydło pod kątem - to ono mówi „otwarte" */}
-        <path d="M116 -4 50 26v96l66-30V-4" strokeWidth="1.67" />
-        <path d="M50 58 116 28M50 90 116 60" strokeWidth="0.99" />
-        {/* zawiasy */}
-        <path d="M112 8h12M112 76h12" strokeWidth="1.36" />
+        <path d={plecionka()} strokeWidth="0.93" />
+        <ellipse cx="60" cy="4" rx="64" ry="13" strokeWidth="2.11" />
+        <ellipse cx="60" cy="1" rx="64" ry="13" strokeWidth="0.99" />
       </>
     ),
   },

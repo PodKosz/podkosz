@@ -78,7 +78,7 @@ export function CourtDetail({
     { rodzaj: "nawierzchnia", label: "Nawierzchnia", value: surfaceLabel(court.surface) },
     { rodzaj: "godziny", label: "Dostęp", value: godzinyNaKafel(court.hours, court.access) },
     /* „Brak" także gdy nikt tego nie podał - kreska czytała się jak błąd strony */
-    { rodzaj: "dostep", label: "Siatka", value: court.siatka && court.siatka !== "brak" ? SIATKA_LABEL[court.siatka] : "Brak" },
+    { rodzaj: "siatka", label: "Siatka", value: court.siatka && court.siatka !== "brak" ? SIATKA_LABEL[court.siatka] : "Brak" },
     { rodzaj: "oswietlenie", label: "Oświetlenie", value: court.lit ? "Tak" : "Brak" },
     { rodzaj: "ogrodzenie", label: "Ogrodzenie", value: court.fenced ? "Tak" : "Brak" },
   ];
