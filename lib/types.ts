@@ -194,6 +194,14 @@ export const SURFACE_LABEL: Record<Surface, string> = {
 export const surfaceLabel = (surface: string) =>
   SURFACE_LABEL[surface as Surface] ?? surface.charAt(0).toUpperCase() + surface.slice(1);
 
+/**
+ * Nawierzchnia w kafelku na karcie boiska. Kafelek jest kwadratowy, a wartość idzie dużym
+ * Antonem, więc „Płytki modułowe" nie mieściło się w szerokości. W formularzach i filtrach
+ * zostaje pełna nazwa - tu wystarczy pierwsze słowo.
+ */
+export const nawierzchniaNaKafel = (surface: string) =>
+  surface === "plytki" ? "Płytki" : surfaceLabel(surface);
+
 export const TYPE_LABEL: Record<CourtType, string> = {
   otwarty: "Otwarty",
   kryty: "Kryty",

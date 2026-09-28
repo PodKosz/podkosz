@@ -1,6 +1,6 @@
 import { SzkicKafla, type RodzajSzkicu } from "./SzkicKafla";
 import Link from "next/link";
-import { Court, SIATKA_LABEL, TYPE_LABEL, godzinyNaKafel, surfaceLabel } from "@/lib/types";
+import { Court, SIATKA_LABEL, TYPE_LABEL, godzinyNaKafel, nawierzchniaNaKafel } from "@/lib/types";
 import { czyAutorAnonimowy, formatDistance, slugifyPlace } from "@/lib/site";
 import { JAKOSC_ZDJECIA, adresMiniatury } from "@/lib/obrazy";
 import { opisBoiska } from "@/lib/opis-boiska";
@@ -75,7 +75,7 @@ export function CourtDetail({
   */
   const parametry: { rodzaj: RodzajSzkicu; label: string; value: string }[] = [
     { rodzaj: "kosze", label: "Kosze", value: String(court.hoops) },
-    { rodzaj: "nawierzchnia", label: "Nawierzchnia", value: surfaceLabel(court.surface) },
+    { rodzaj: "nawierzchnia", label: "Nawierzchnia", value: nawierzchniaNaKafel(court.surface) },
     { rodzaj: "godziny", label: "Dostęp", value: godzinyNaKafel(court.hours, court.access) },
     /* „Brak" także gdy nikt tego nie podał - kreska czytała się jak błąd strony */
     { rodzaj: "siatka", label: "Siatka", value: court.siatka && court.siatka !== "brak" ? SIATKA_LABEL[court.siatka] : "Brak" },
