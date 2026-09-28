@@ -45,7 +45,7 @@ export async function generateMetadata({
       title,
       description: court.description,
       url: path,
-      images: [{ url: photo ?? "/icon.svg", alt: `${court.name}, ${court.city}` }],
+      images: [{ url: photo ?? "/icon.png", alt: `${court.name}, ${court.city}` }],
     },
     twitter: {
       card: "summary_large_image",
