@@ -280,12 +280,12 @@ export function CheckIn({ courtId, signedIn }: { courtId: string; signedIn: bool
         kafelki liczą go od szerokości i najdłuższej wartości (patrz `Spec` w CourtDetail),
         więc zamiast zgadywać, przepisujemy wyliczony stopień z sąsiada.
       */}
-      {/* dolny zapas pod ogonek „Ę" (gradient maluje się tylko w pudełku wiersza), ujemny margines oddaje część z powrotem, żeby pasek dni stał optycznie w połowie od podstawy liter do przycisku */}
-      <h2 ref={naglowek} className="wartosc-plomien relative self-start text-[40px]" style={{ paddingBottom: "0.16em", marginBottom: "-0.08em" }}>
+      {/* dolny zapas pod ogonek „Ę" (gradient maluje się tylko w pudełku wiersza), ujemny margines oddaje go w całości, żeby pasek dni nie odjeżdżał od liter */}
+      <h2 ref={naglowek} className="wartosc-plomien relative self-start text-[40px]" style={{ paddingBottom: "0.32em", marginBottom: "-0.32em" }}>
         Zapisz się
       </h2>
 
-      <div className="my-auto py-2">
+      <div className="my-auto pb-2 pt-3.5 @min-[1580px]:pt-2">
         {tydzien && (
           /*
             Pasek siedmiu dni. Liczba w rogu dnia to ilu ludzi się wtedy wybiera - widać od razu,
