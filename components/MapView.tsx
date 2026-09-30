@@ -70,6 +70,23 @@ function zeStylu(nazwa: string, awaryjna: string) {
 const POLAND_BOUNDS: [number, number, number, number] = [13.9, 48.9, 24.3, 55.0];
 
 /**
+ * Jak daleko wolno oddalić mapę.
+ *
+ * Na komputerze 4,2 - mniej więcej Europa, dalej nie ma po co, a w szerokim oknie do pinezek
+ * minigier w USA dojeżdża się kilkoma pociągnięciami. Na telefonie i tablecie ten sam próg
+ * pokazywał ledwie pas szerokości Polski, więc droga do Las Vegas to było kilkanaście
+ * przeciągnięć palcem. Tam pozwalamy oddalić aż do całego świata (1,2 na wąskim ekranie
+ * mieści mniej więcej półkulę) - Europa i USA naraz, jedno przesunięcie.
+ *
+ * Dotyk liczy się tak samo jak wąskie okno: iPad w poziomie ma ponad 1024 px, a dalej
+ * przewija się go palcem.
+ */
+function minZoomDla(szerokosc: number) {
+  const dotyk = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
+  return dotyk || szerokosc < 1024 ? 1.2 : 4.2;
+}
+
+/**
  * Zapas na panel: po lewej, gdy panel stoi z boku; od dołu, gdy wysuwa się jako arkusz.
  *
  * PRÓG MUSI BYĆ TEN SAM, CO W `Sidebar` (`lg:`, czyli 1024) - inaczej mapa omija panel,
@@ -659,8 +676,7 @@ export function MapView({
                 padding: fitPadding(containerRef.current.clientWidth || 1024),
               },
             }),
-        /* 4,2, nie 4,5: na wąskim telefonie cała Polska z marginesami potrzebuje ok. 4,3 */
-        minZoom: 4.2,
+        minZoom: minZoomDla(containerRef.current.clientWidth || window.innerWidth),
         maxZoom: 18,
         attributionControl: { compact: true },
         dragRotate: false,
@@ -792,6 +808,8 @@ export function MapView({
       const { width, height } = entry.contentRect;
       if (!width || !height) return;
       map.resize();
+      /* obrót tabletu albo zmiana okna przestawia próg oddalenia razem z szerokością */
+      map.setMinZoom(minZoomDla(width));
       if (!framed) {
         framed = true;
         // z województwem w adresie kadr ustawia dolot do regionu - nie odbieramy mu go

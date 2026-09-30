@@ -2690,8 +2690,18 @@ select option {
   Tylko przy prawdziwym kursorze. Na dotyku `:hover` zapala się po stuknięciu i zostaje,
   a stuknięcie w tę pinezkę ma otworzyć grę, nie zostawić wiszącą chmurkę.
 */
+/*
+  Bez kursora wizytówki nie ma wcale. Style karty stoją tylko w `@media (hover: hover)`,
+  więc na telefonie i tablecie jej tekst leżał luzem przy pinezce - widać to było, odkąd
+  mapę na dotyku da się oddalić do USA.
+*/
+.wizytowka-gry {
+  display: none;
+}
+
 @media (hover: hover) {
   .wizytowka-gry {
+    display: block;
     position: absolute;
     left: 50%;
     /* nad CAŁĄ pinezką, nie nad jej środkiem - inaczej stopka karty wchodzi pod kulę */
