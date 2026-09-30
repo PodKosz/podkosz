@@ -95,8 +95,8 @@ export default function PrivacyPage() {
               ["Google", "logowanie przez konto Google."],
               ["Resend", "wysyłka wiadomości e-mail."],
               [
-                "OpenStreetMap, CARTO, Esri",
-                "podkład mapy. Twoja przeglądarka pobiera od nich kafelki mapy, więc widzą Twój adres IP - tak jak przy każdej stronie z mapą. Danych konta im nie przekazujemy.",
+                "OpenStreetMap, CARTO, Esri, OpenFreeMap",
+                "podkład mapy (OpenFreeMap w minigrze Trop). Twoja przeglądarka pobiera od nich kafelki mapy, więc widzą Twój adres IP - tak jak przy każdej stronie z mapą. Danych konta im nie przekazujemy.",
               ],
             ]}
           />

@@ -7,7 +7,6 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { TROP, type MiejsceGry } from "@/lib/minigra";
 import { photoUrl } from "@/lib/supabase/config";
 import { adresMiniatury } from "@/lib/obrazy";
-import { podkladMapy, podpisyMapy } from "@/lib/podklad";
 import { useSesja } from "@/lib/sesja";
 import { slugifyPlace } from "@/lib/site";
 import {
@@ -36,7 +35,7 @@ setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
  * który ten bonus zabiera. Punkty, czas i bonus liczy baza (patrz `lib/gra/trop.ts`), tu jest
  * tylko to, co się widzi.
  *
- * Mapa jest JEDNA na całą grę. W rundzie siedzi w rogu w jednym z trzech rozmiarów, po strzale
+ * Mapa jest JEDNA na całą grę. W rundzie siedzi w rogu (średnia albo duża), po strzale
  * rozkłada się na cały ekran i pokazuje strzał, boisko i linię między nimi. Jedna instancja,
  * bo przełączanie dwóch map to dwa razy ładowane kafelki i skok kadru przy każdej rundzie.
  */
@@ -45,31 +44,123 @@ const BLEKIT = "#56acff";
 const ZLOTO = { jasne: "#ffe9a8", srodek: "#f0b53c", ciemne: "#8a6410" };
 const POLSKA: [number, number, number, number] = [13.9, 48.9, 24.3, 55.0];
 
-const PODPISY = podpisyMapy();
-const STYL: StyleSpecification = {
+/*
+  Podkład WEKTOROWY, nie z gotowych obrazków jak na mapie głównej. W ciemnym stylu CARTO ulice
+  są ledwie jaśniejsze od tła, a rozjaśnienie obrazka rozjaśniało razem z nimi wodę i tło - do
+  zgadywania trzeba widzieć drogi i nazwy, więc tu rysujemy je sami: ulice białą kreską
+  z grubością według rangi drogi, miasta tłustym pismem z obwódką, nazwy po polsku.
+  Kafelki OpenFreeMap (OpenMapTiles, bez klucza), pismo z naszych glifów (`public/mapa/fonts`).
+*/
+const NAZWA = ["coalesce", ["get", "name:pl"], ["get", "name:latin"], ["get", "name"]];
+const klasa = (lista: string[]) => ["match", ["get", "class"], lista, true, false];
+const STYL = {
   version: 8,
+  glyphs: "/mapa/fonts/{fontstack}/{range}.pbf",
   sources: {
-    podklad: podkladMapy("dark_all"),
-    ...(PODPISY ? { podpisy: PODPISY } : {}),
+    omt: {
+      type: "vector",
+      url: "https://tiles.openfreemap.org/planet",
+      attribution:
+        '<a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/" target="_blank">OpenMapTiles</a> © <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>',
+    },
     linia: { type: "geojson", data: { type: "FeatureCollection", features: [] } },
   },
   layers: [
-    { id: "tlo", type: "background", paint: { "background-color": "#07070a" } },
-    { id: "podklad", type: "raster", source: "podklad", paint: { "raster-saturation": -0.25, "raster-hue-rotate": -10 } },
-    ...(PODPISY ? [{ id: "podpisy", type: "raster" as const, source: "podpisy", paint: { "raster-opacity": 0.85 } }] : []),
+    { id: "tlo", type: "background", paint: { "background-color": "#0d0c0f" } },
+    { id: "zabudowa", type: "fill", source: "omt", "source-layer": "landuse", filter: klasa(["residential", "suburb", "neighbourhood"]), paint: { "fill-color": "#16151a" } },
+    { id: "zielen", type: "fill", source: "omt", "source-layer": "landcover", filter: klasa(["wood", "grass", "forest"]), paint: { "fill-color": "#0f1511", "fill-opacity": 0.8 } },
+    { id: "woda", type: "fill", source: "omt", "source-layer": "water", paint: { "fill-color": "#0c1a28" } },
+    { id: "rzeki", type: "line", source: "omt", "source-layer": "waterway", minzoom: 8, paint: { "line-color": "#15314d", "line-width": ["interpolate", ["linear"], ["zoom"], 8, 0.6, 14, 2.5] } },
+    { id: "budynki", type: "fill", source: "omt", "source-layer": "building", minzoom: 14, paint: { "fill-color": "#1f1e24" } },
     {
-      id: "linia",
-      type: "line",
-      source: "linia",
-      layout: { "line-cap": "round" },
-      paint: { "line-color": "#ffffff", "line-width": 2.5, "line-dasharray": [1.2, 1.6], "line-opacity": 0.85 },
+      id: "granice-wojewodztw", type: "line", source: "omt", "source-layer": "boundary",
+      filter: ["==", ["get", "admin_level"], 4],
+      paint: { "line-color": "#6c6576", "line-width": 0.9, "line-dasharray": [3, 2] },
+    },
+    {
+      id: "granice-panstw", type: "line", source: "omt", "source-layer": "boundary",
+      filter: ["all", ["==", ["get", "admin_level"], 2], ["!=", ["get", "maritime"], 1]],
+      paint: { "line-color": "#b9b4c2", "line-width": ["interpolate", ["linear"], ["zoom"], 4, 1, 10, 2] },
+    },
+    {
+      id: "kolej", type: "line", source: "omt", "source-layer": "transportation", minzoom: 10,
+      filter: klasa(["rail"]),
+      paint: { "line-color": "#8d8a96", "line-width": 1, "line-dasharray": [2, 2] },
+    },
+    {
+      id: "drogi-drobne", type: "line", source: "omt", "source-layer": "transportation", minzoom: 11,
+      filter: klasa(["minor", "service", "track"]),
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: {
+        "line-color": "#ffffff",
+        "line-opacity": ["interpolate", ["linear"], ["zoom"], 11, 0.35, 14, 0.8],
+        "line-width": ["interpolate", ["exponential", 1.5], ["zoom"], 11, 0.5, 14, 1.6, 17, 6, 19, 14],
+      },
+    },
+    {
+      id: "drogi-srednie", type: "line", source: "omt", "source-layer": "transportation", minzoom: 7,
+      filter: klasa(["secondary", "tertiary"]),
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: {
+        "line-color": "#ffffff",
+        "line-opacity": ["interpolate", ["linear"], ["zoom"], 7, 0.45, 11, 0.95],
+        "line-width": ["interpolate", ["exponential", 1.5], ["zoom"], 7, 0.5, 11, 1.4, 14, 3, 17, 9, 19, 18],
+      },
+    },
+    {
+      id: "drogi-glowne", type: "line", source: "omt", "source-layer": "transportation", minzoom: 4,
+      filter: klasa(["motorway", "trunk", "primary"]),
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: {
+        "line-color": "#ffffff",
+        "line-opacity": ["interpolate", ["linear"], ["zoom"], 4, 0.55, 8, 1],
+        "line-width": ["interpolate", ["exponential", 1.5], ["zoom"], 4, 0.5, 8, 1.2, 12, 2.6, 15, 6, 18, 16],
+      },
+    },
+    {
+      id: "nazwy-ulic", type: "symbol", source: "omt", "source-layer": "transportation_name", minzoom: 14,
+      layout: { "symbol-placement": "line", "text-field": NAZWA, "text-font": ["Noto Sans Regular"], "text-size": 11.5 },
+      paint: { "text-color": "#f1eff4", "text-halo-color": "#0d0c0f", "text-halo-width": 1.6 },
+    },
+    {
+      id: "wsie", type: "symbol", source: "omt", "source-layer": "place", minzoom: 10,
+      filter: klasa(["village", "hamlet", "suburb", "neighbourhood", "quarter"]),
+      layout: { "text-field": NAZWA, "text-font": ["Noto Sans Regular"], "text-size": ["interpolate", ["linear"], ["zoom"], 10, 11, 14, 14] },
+      paint: { "text-color": "#e6e3ea", "text-halo-color": "#0d0c0f", "text-halo-width": 1.8 },
+    },
+    {
+      id: "miasteczka", type: "symbol", source: "omt", "source-layer": "place", minzoom: 7,
+      filter: klasa(["town"]),
+      layout: { "text-field": NAZWA, "text-font": ["Noto Sans Medium"], "text-size": ["interpolate", ["linear"], ["zoom"], 7, 11.5, 11, 15, 14, 18] },
+      paint: { "text-color": "#f6f4f8", "text-halo-color": "#0d0c0f", "text-halo-width": 2 },
+    },
+    {
+      id: "miasta", type: "symbol", source: "omt", "source-layer": "place", minzoom: 4,
+      filter: klasa(["city"]),
+      layout: {
+        "text-field": NAZWA, "text-font": ["Noto Sans Medium"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 4, 12, 7, 15, 11, 21, 14, 24],
+        "symbol-sort-key": ["get", "rank"],
+      },
+      paint: { "text-color": "#ffffff", "text-halo-color": "#0d0c0f", "text-halo-width": 2.4 },
+    },
+    {
+      id: "kraje", type: "symbol", source: "omt", "source-layer": "place", maxzoom: 7,
+      /* bez napisu „Polska" - gra i tak dzieje się w Polsce, a napis wypierał z mapy Warszawę */
+      filter: ["all", klasa(["country"]), ["!=", ["get", "name"], "Polska"]],
+      layout: { "text-field": NAZWA, "text-font": ["Noto Sans Medium"], "text-size": 13, "text-transform": "uppercase", "text-letter-spacing": 0.25 },
+      paint: { "text-color": "#a9a4b3", "text-halo-color": "#0d0c0f", "text-halo-width": 1.5 },
+    },
+    {
+      id: "linia", type: "line", source: "linia", layout: { "line-cap": "round" },
+      paint: { "line-color": "#ffb25c", "line-width": 3, "line-dasharray": [1.2, 1.6] },
     },
   ],
-};
+} as unknown as StyleSpecification;
 
 type Faza = "tytul" | "ladowanie" | "runda" | "wynik" | "koniec";
-/** minimapa: 0 - mała w rogu, 1 - większa, 2 - prawie cały ekran */
-type Rozmiar = 0 | 1 | 2;
+/** minimapa: 0 - średnia w rogu, 1 - duża, prawie na cały ekran */
+type Rozmiar = 0 | 1;
 
 interface Zapis extends WynikRundy {
   strzal: { lat: number; lng: number } | null;
@@ -122,6 +213,9 @@ export function EkranTrop({ miejsce, ranking }: { miejsce: MiejsceGry; ranking: 
   const [odkryte, setOdkryte] = useState(false);
   const [punkt, setPunkt] = useState<{ lat: number; lng: number } | null>(null);
   const [rozmiar, setRozmiar] = useState<Rozmiar>(0);
+  /* duża mapa przypięta przyciskiem - nie zwija się po zjechaniu kursorem */
+  const [przypieta, setPrzypieta] = useState(false);
+  const zwin = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [zostalo, setZostalo] = useState<number>(TROP.sekund);
   const [wysylam, setWysylam] = useState(false);
   const [historia, setHistoria] = useState<Zapis[]>([]);
@@ -195,8 +289,19 @@ export function EkranTrop({ miejsce, ranking }: { miejsce: MiejsceGry; ranking: 
     setKtore(0);
     setOdkryte(false);
     setPunkt(null);
+    /* każda runda zaczyna się od średniej mapy - duża zasłaniałaby nowe zdjęcie */
+    setRozmiar(0);
+    setPrzypieta(false);
     setZostalo(TROP.sekund);
     koniecRundy.current = performance.now() + TROP.sekund * 1000;
+    /* kadr całej Polski dopiero po zwinięciu mapy do średniej - ustawiony wcześniej, w dużym
+       kontenerze, zostawał po zmniejszeniu jako przybliżony środek kraju */
+    setTimeout(() => {
+      const m = mapa.current;
+      if (!m) return;
+      m.resize();
+      m.fitBounds(POLSKA, { padding: 12, duration: 0 });
+    }, 380);
     setFaza("runda");
   }, []);
 
@@ -331,18 +436,39 @@ export function EkranTrop({ miejsce, ranking }: { miejsce: MiejsceGry; ranking: 
         if ((k === "Enter" || k === " ") && punkt) { e.preventDefault(); void wyslij(punkt); }
         else if (k === "ArrowRight" && zdjecia.length > 1) setKtore((i) => (i + 1) % zdjecia.length);
         else if (k === "ArrowLeft" && zdjecia.length > 1) setKtore((i) => (i - 1 + zdjecia.length) % zdjecia.length);
-        else if (k === "+" || k === "=") setRozmiar((r) => (Math.min(2, r + 1) as Rozmiar));
-        else if (k === "-") setRozmiar((r) => (Math.max(0, r - 1) as Rozmiar));
+        else if (k === "+" || k === "=") { setRozmiar(1); setPrzypieta(true); }
+        else if (k === "-") { setRozmiar(0); setPrzypieta(false); }
+        else if (k === "m" || k === "M") { const duza = rozmiar === 0; setRozmiar(duza ? 1 : 0); setPrzypieta(duza); }
       } else if (faza === "wynik" && (k === "Enter" || k === " ")) { e.preventDefault(); void dalej(); }
     };
     window.addEventListener("keydown", naKlawisz);
     return () => window.removeEventListener("keydown", naKlawisz);
-  }, [faza, punkt, zdjecia.length, graj, wyslij, dalej]);
+  }, [faza, punkt, zdjecia.length, rozmiar, graj, wyslij, dalej]);
+
+  /*
+    Rozwijanie jak w GeoGuessr: na komputerze mapa rośnie, gdy najedzie się na nią kursorem,
+    i wraca, gdy się z niej zjedzie (z chwilą zwłoki, żeby nie skakała przy przejechaniu obok).
+    Przycisk „Powiększ" przypina ją w dużym rozmiarze - na telefonie to jedyna droga, bo
+    ekran dotykowy nie ma najechania.
+  */
+  const najazd = useCallback(() => {
+    if (fazaRef.current !== "runda" || !window.matchMedia("(hover: hover)").matches) return;
+    if (zwin.current) clearTimeout(zwin.current);
+    zwin.current = setTimeout(() => setRozmiar(1), 90);
+  }, []);
+  const zjazd = useCallback((e: React.PointerEvent) => {
+    if (!window.matchMedia("(hover: hover)").matches) return;
+    if (zwin.current) clearTimeout(zwin.current);
+    if (przypieta || e.buttons !== 0) return;
+    zwin.current = setTimeout(() => setRozmiar(0), 450);
+  }, [przypieta]);
+  useEffect(() => () => { if (zwin.current) clearTimeout(zwin.current); }, []);
+
 
   /* ------------------------------------------------ układ mapy */
   const naEkran = faza === "wynik" || faza === "koniec";
   const ukryta = faza === "tytul" || (faza === "ladowanie" && !runda);
-  const klasaMapy = naEkran ? "trop-mapa-pelna" : ["trop-mapa-0", "trop-mapa-1", "trop-mapa-2"][rozmiar];
+  const klasaMapy = naEkran ? "trop-mapa-pelna" : rozmiar === 1 ? "trop-mapa-1" : "trop-mapa-0";
 
   const zdjecie = zdjecia[ktore] ?? null;
   const adres = zdjecie ? photoUrl(zdjecie.sciezka) : "";
@@ -362,6 +488,8 @@ export function EkranTrop({ miejsce, ranking }: { miejsce: MiejsceGry; ranking: 
 
       {/* ---------------------------------------------------------- mapa (jedna na grę) */}
       <div
+        onPointerEnter={najazd}
+        onPointerLeave={zjazd}
         className={`trop-mapa absolute z-20 overflow-hidden ${klasaMapy} ${ukryta ? "pointer-events-none opacity-0" : "opacity-100"} ${
           faza === "runda" ? "cursor-crosshair" : ""
         }`}
@@ -369,26 +497,28 @@ export function EkranTrop({ miejsce, ranking }: { miejsce: MiejsceGry; ranking: 
         <div ref={mapaEl} className="h-full w-full" />
 
         {faza === "runda" && (
-          <div className="absolute left-2 top-2 z-10 flex gap-1.5">
-            <button
-              type="button"
-              onClick={() => setRozmiar((r) => (Math.max(0, r - 1) as Rozmiar))}
-              disabled={rozmiar === 0}
-              aria-label="Zmniejsz mapę"
-              className="trop-guzik-mapy"
-            >
-              <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 8l5-5M17 8h-5V3M8 12l-5 5M3 12h5v5" /></svg>
-            </button>
-            <button
-              type="button"
-              onClick={() => setRozmiar((r) => (Math.min(2, r + 1) as Rozmiar))}
-              disabled={rozmiar === 2}
-              aria-label="Powiększ mapę"
-              className="trop-guzik-mapy"
-            >
-              <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 3h5v5M17 3l-5 5M8 17H3v-5M3 17l5-5" /></svg>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              const duza = !(rozmiar === 1 && przypieta);
+              setRozmiar(duza ? 1 : 0);
+              setPrzypieta(duza);
+            }}
+            aria-pressed={rozmiar === 1 && przypieta}
+            className="trop-guzik-mapy absolute left-2.5 top-2.5 z-10"
+          >
+            {rozmiar === 1 && przypieta ? (
+              <>
+                <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 8l5-5M17 8h-5V3M8 12l-5 5M3 12h5v5" /></svg>
+                Zmniejsz
+              </>
+            ) : (
+              <>
+                <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 3h5v5M17 3l-5 5M8 17H3v-5M3 17l5-5" /></svg>
+                {rozmiar === 1 ? "Zostaw dużą" : "Powiększ"}
+              </>
+            )}
+          </button>
         )}
       </div>
 
@@ -398,7 +528,7 @@ export function EkranTrop({ miejsce, ranking }: { miejsce: MiejsceGry; ranking: 
           type="button"
           onClick={() => void wyslij(punkt)}
           disabled={!punkt || wysylam}
-          className={`trop-strzal absolute z-20 ${["trop-strzal-0", "trop-strzal-1", "trop-strzal-2"][rozmiar]}`}
+          className={`trop-strzal absolute z-20 ${rozmiar === 1 ? "trop-strzal-1" : "trop-strzal-0"}`}
         >
           {wysylam ? "Sprawdzam…" : punkt ? "Zgadnij" : (
             <>
@@ -452,9 +582,9 @@ export function EkranTrop({ miejsce, ranking }: { miejsce: MiejsceGry; ranking: 
               </div>
 
               {/* zdjęcia: przycisk odkrycia albo pasek miniatur */}
-              <div className={`absolute bottom-4 left-4 z-30 flex max-w-[calc(100vw-2rem)] flex-col items-start gap-2 transition-opacity sm:bottom-5 sm:left-5 ${rozmiar === 2 ? "pointer-events-none opacity-0" : ""}`}>
+              <div className={`trop-zdjecia-panel absolute left-4 z-30 flex max-w-[calc(100vw-2rem)] flex-col items-start gap-2 transition-opacity sm:left-5 ${rozmiar === 1 ? "pointer-events-none opacity-0" : ""}`}>
                 {!odkryte && runda.ile_zdjec > 1 && (
-                  <button type="button" onClick={() => void odkryj()} className="szklo-pro max-w-[calc(52vw-28px)] rounded-2xl px-4 py-3 text-left transition hover:bg-white/10 sm:max-w-none">
+                  <button type="button" onClick={() => void odkryj()} className="szklo-pro rounded-2xl px-4 py-3 text-left transition hover:bg-white/10">
                     <span className="block text-[13px] font-semibold">Pokaż wszystkie zdjęcia ({runda.ile_zdjec})</span>
                     <span className="block text-[11px] text-faint">tracisz bonus +10% w tej rundzie</span>
                   </button>
