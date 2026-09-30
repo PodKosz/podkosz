@@ -64,6 +64,7 @@ const STYL = {
         '<a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/" target="_blank">OpenMapTiles</a> © <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>',
     },
     linia: { type: "geojson", data: { type: "FeatureCollection", features: [] } },
+    polska: { type: "geojson", data: "/geo/polska-maska.geojson" },
   },
   layers: [
     { id: "tlo", type: "background", paint: { "background-color": "#0d0c0f" } },
@@ -150,6 +151,34 @@ const STYL = {
       filter: ["all", klasa(["country"]), ["!=", ["get", "name"], "Polska"]],
       layout: { "text-field": NAZWA, "text-font": ["Noto Sans Medium"], "text-size": 13, "text-transform": "uppercase", "text-letter-spacing": 0.25 },
       paint: { "text-color": "#a9a4b3", "text-halo-color": "#0d0c0f", "text-halo-width": 1.5 },
+    },
+    /*
+      Polska wybita z reszty Europy. Na wierzchu wszystkich warstw kraju leży ciemna maska
+      „świat minus Polska" (`public/geo/polska-maska.geojson`, suma województw) - białe drogi
+      i nazwy za granicą schodzą przez nią do szarości, a w Polsce zostają jasne. Nad maską
+      obrys granicy w pomarańczu marki z miękką poświatą.
+    */
+    {
+      id: "poza-polska", type: "fill", source: "polska",
+      filter: ["==", ["get", "rola"], "maska"],
+      paint: { "fill-color": "#0b0a0d", "fill-opacity": 0.76 },
+    },
+    {
+      id: "polska-poswiata", type: "line", source: "polska",
+      filter: ["==", ["get", "rola"], "obrys"],
+      layout: { "line-join": "round" },
+      paint: {
+        "line-color": "#ff7a18",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 4, 7, 8, 12, 12, 18],
+        "line-blur": ["interpolate", ["linear"], ["zoom"], 4, 6, 8, 10, 12, 14],
+        "line-opacity": 0.38,
+      },
+    },
+    {
+      id: "polska-obrys", type: "line", source: "polska",
+      filter: ["==", ["get", "rola"], "obrys"],
+      layout: { "line-join": "round" },
+      paint: { "line-color": "#ffb25c", "line-width": ["interpolate", ["linear"], ["zoom"], 4, 1.3, 8, 2, 12, 3] },
     },
     {
       id: "linia", type: "line", source: "linia", layout: { "line-cap": "round" },
