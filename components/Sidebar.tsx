@@ -269,7 +269,7 @@ export function Sidebar({
         <div ref={stripRef}>
         <button
           onClick={() => setSheetOpen(!sheetOpen)}
-          className="flex min-h-7 w-full flex-col items-center justify-center gap-1.5 pb-1.5 pt-3"
+          className="flex min-h-5 w-full flex-col items-center justify-center gap-1.5 pb-1 pt-2"
           aria-label={sheetOpen ? "Zwiń panel" : "Rozwiń panel"}
         >
           <span className="h-1 w-10 rounded-full bg-white/25" />
@@ -280,40 +280,39 @@ export function Sidebar({
           )}
         </button>
 
-        <div className="px-4 pt-1">
-          <div className="field flex items-center gap-2 py-1.5 pl-4 pr-1.5">
+        <div className="px-4 pt-0.5">
+          <div className="field flex items-center gap-2 py-1 pl-4 pr-1">
             <input
               value={filters.q}
               onChange={(e) => patch({ q: e.target.value })}
               placeholder="Szukaj boiska w Polsce…"
-              className="w-full bg-transparent py-2 text-[13px] uppercase tracking-wide outline-none placeholder:text-faint"
+              className="w-full bg-transparent py-1.5 text-[13px] uppercase tracking-wide outline-none placeholder:text-faint"
             />
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full flame-gradient text-black">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full flame-gradient text-black">
               <SearchIcon className="h-4 w-4" />
             </span>
           </div>
         </div>
 
+        {/*
+          Zwinięty pasek w jednym wierszu: licznik po lewej, „filtry" po prawej. Wcześniej były
+          to dwie linie jedna pod drugą plus przycisk losowania obok, a cały pasek zajmował
+          piątą część ekranu telefonu. Losowanie przeszło do rozwiniętego panelu, nad filtry.
+        */}
         {!sheetOpen && (
-          <div className="flex items-center justify-between gap-3 px-4 pb-4 pt-3">
-            <button onClick={() => setSheetOpen(true)} className="text-left">
-              <span className="text-[13px] font-semibold">
-                {results.length} {results.length === 1 ? "boisko" : "boisk"} na mapie
-              </span>
-              <span className="mt-0.5 flex items-center gap-1.5 text-[12px] uppercase tracking-[0.12em] text-flame">
-                filtry
-                <ChevronIcon className="h-4 w-4 rotate-180" />
-              </span>
-            </button>
-            {/* wersja na telefon - to samo losowanie z kostką co na dużym ekranie */}
-            <button
-              onClick={() => losuj("/losowe")}
-              className="flex shrink-0 items-center gap-2 rounded-full border border-hairline bg-white/5 px-3.5 py-2 text-[11px] uppercase tracking-[0.14em] text-muted"
-            >
-              <DiceIcon className="h-4 w-4" />
-              losowe
-            </button>
-          </div>
+          <button
+            onClick={() => setSheetOpen(true)}
+            className="flex w-full items-center justify-between gap-3 px-5 pt-2"
+            style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom, 0px))" }}
+          >
+            <span className="text-[13px] font-semibold">
+              {results.length} {results.length === 1 ? "boisko" : "boisk"} na mapie
+            </span>
+            <span className="flex items-center gap-1 text-[12px] uppercase tracking-[0.12em] text-flame">
+              filtry
+              <ChevronIcon className="h-4 w-4 rotate-180" />
+            </span>
+          </button>
         )}
         </div>
 
@@ -324,6 +323,14 @@ export function Sidebar({
             sheetOpen ? "block" : "hidden"
           }`}
         >
+          {/* losowanie z kostką - na telefonie i tablecie tutaj, na komputerze obok filtrów */}
+          <button
+            onClick={() => losuj("/losowe")}
+            className="glass-dim mt-1 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-[12px] uppercase tracking-[0.16em] text-muted transition active:text-flame"
+          >
+            <DiceIcon className="h-4 w-4" />
+            losowe boisko
+          </button>
           <Filtry
             filters={filters}
             patch={patch}
