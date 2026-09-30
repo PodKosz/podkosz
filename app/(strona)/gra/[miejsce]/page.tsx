@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { EkranGry, type WpisRankingu } from "@/components/gra/EkranGry";
+import { EkranTrop } from "@/components/gra/EkranTrop";
+import type { WpisTropu } from "@/lib/gra/trop";
 import { MIEJSCA_GRY, NAZWY_GIER, miejsceZeSlugu } from "@/lib/minigra";
 import { SITE_NAME } from "@/lib/site";
 import { supabasePublic } from "@/lib/supabase/publiczny";
@@ -50,6 +52,14 @@ async function pobierzRanking(id: string): Promise<WpisRankingu[]> {
   return Array.isArray(data) ? (data as WpisRankingu[]) : [];
 }
 
+/* Trop ma własną tablicę: najlepsza gra na pięć rund, nie najdłuższa seria */
+async function pobierzRankingTropu(): Promise<WpisTropu[]> {
+  const supabase = supabasePublic();
+  if (!supabase) return [];
+  const { data } = await supabase.rpc("trop_ranking", { p_ile: 20 });
+  return Array.isArray(data) ? (data as WpisTropu[]) : [];
+}
+
 export default async function GraPage({
   params,
 }: {
@@ -59,8 +69,10 @@ export default async function GraPage({
   const m = miejsceZeSlugu(miejsce);
   if (!m) notFound();
 
+  if (m.rodzaj === "trop") return <EkranTrop miejsce={m} ranking={await pobierzRankingTropu()} />;
+
   const ranking = await pobierzRanking(m.id);
-  const drugie = MIEJSCA_GRY.find((x) => x.id !== m.id) ?? null;
+  const drugie = MIEJSCA_GRY.find((x) => x.id !== m.id && x.rodzaj !== "trop") ?? null;
 
   return <EkranGry miejsce={m} ranking={ranking} drugie={drugie} />;
 }

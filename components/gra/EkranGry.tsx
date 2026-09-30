@@ -275,7 +275,7 @@ export function EkranGry({
             zaczeta ? "opacity-70" : "opacity-100"
           }`}
         >
-          <TloBoiska miejsce={miejsce.id} />
+          <TloBoiska miejsce={miejsce.id as IdMiejsca} />
         </div>
 
         {/*

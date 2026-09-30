@@ -9,7 +9,10 @@
  * gry potrzebuje nazw i opisów, a baza kluczy `miejsce`.
  */
 
+/** miejsca gier na serię (rzuty, kozły) - każde ma własne tło i własną tablicę w `minigra_wyniki` */
 export type IdMiejsca = "venice" | "manhattan" | "chicago";
+/** wszystkie pinezki gier, łącznie z Tropem, który ma własne tabele (`trop_*`) */
+export type IdMiejscaGry = IdMiejsca | "vegas";
 
 /**
  * Która gra stoi pod pinezką.
@@ -18,7 +21,7 @@ export type IdMiejsca = "venice" | "manhattan" | "chicago";
  * Rodzaj wybiera komponent planszy i tekst na ekranie tytułowym - poza tym reszta
  * (pełny ekran, tablica wyników, zapis rekordu) jest wspólna, bo to ta sama oprawa.
  */
-export type RodzajGry = "rzut" | "kozlowanie";
+export type RodzajGry = "rzut" | "kozlowanie" | "trop";
 
 /*
   Nazwa jest tym, co stoi na ekranie tytułowym, więc mówi wprost, w co się gra: „Minigra
@@ -34,10 +37,14 @@ export const NAZWY_GIER: Record<RodzajGry, { nazwa: string; jak: string }> = {
     nazwa: "Minigra Kozły",
     jak: "Klikaj albo stukaj w dowolnym miejscu ekranu - każde kliknięcie to jedno kozłowanie, a piłka idzie w rytm. Masz minutę.",
   },
+  trop: {
+    nazwa: "Minigra Trop",
+    jak: "Pięć boisk z mapy PodKosza, po jednym zdjęciu. Postaw pinezkę tam, gdzie Twoim zdaniem stoi boisko - im bliżej, tym więcej punktów.",
+  },
 };
 
 export interface MiejsceGry {
-  id: IdMiejsca;
+  id: IdMiejscaGry;
   rodzaj: RodzajGry;
   slug: string;
   nazwa: string;
@@ -74,7 +81,32 @@ export const MIEJSCA_GRY: MiejsceGry[] = [
     lat: 41.880706,
     lng: -87.674225,
   },
+  /*
+    Trop - zgadywanie, gdzie stoi boisko. Pinezka w Las Vegas (Sunset Park), bo to miasto,
+    w którym się zgaduje - a boiska do zgadywania są z Polski, z całej bazy PodKosza.
+  */
+  {
+    id: "vegas",
+    rodzaj: "trop",
+    slug: "las-vegas",
+    nazwa: "Las Vegas",
+    miasto: "Las Vegas",
+    lat: 36.064322,
+    lng: -115.123404,
+  },
 ];
+
+/* ---------------------------------------------------------------- Trop */
+
+/** Rundy w jednej grze, czas na rundę i bonus za zgadnięcie po jednym zdjęciu. */
+export const TROP = {
+  rund: 5,
+  sekund: 180,
+  bonus: 0.1,
+  /** najwięcej punktów w rundzie bez bonusu i w całej grze z bonusem */
+  maksRundy: 1000,
+  maksGry: 5500,
+} as const;
 
 /** Ile sekund trwa runda kozłowania. */
 export const CZAS_KOZLOWANIA = 60;

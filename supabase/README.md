@@ -56,6 +56,7 @@ część nazwy pliku.
 | 37 | `migration-deklaracje-tydzien.sql` | deklaracje „kto gra" na dziś i sześć kolejnych dni: `checkin_panel(uuid, date)` z podglądem tygodnia (`tydzien`, `moje_dni`) i `checkin_blokada(uuid, date)`; komunikaty wyzwalacza bez „na dziś". **Wymaga nr 35.** Kod działa też bez niej - pokazuje wtedy sam dzisiejszy dzień, jak dawniej |
 | 38 | `migration-siatka.sql` | siatka na koszach (`łańcuch / siatka / brak`) w `courts` i `submissions`; wyzwalacz przenosi ją ze zgłoszenia na boisko po akceptacji, bez ruszania `approve_submission()` |
 | 39 | `migration-rodo.sql` | terminy z polityki prywatności jako mechanizm: nocne `sprzataj_dane_osobowe()` pod pg_cron (skróty IP po 30 dniach, opinie i raporty po 24 miesiącach, wizyty po 12, bany 30 dni po końcu, lista na otwarcie 30 dni po liście), tokeny wypisu (`wypis_tokeny`, `wypisz_z_powiadomien`) i token w `wydarzenie_odbiorcy`; odrzucone zgłoszenia i poprawki po 12 miesiącach kasuje panel razem ze zdjęciami (`odrzucone_do_usuniecia`, `usun_odrzucone`). **Wymaga nr 33.** Kod działa też bez niej - listy mają wtedy w stopce odesłanie do ustawień konta |
+| 40 | `migration-minigra-trop.sql` | minigra Trop (pinezka w Las Vegas, zgadywanie, gdzie stoi boisko): `trop_gry` i `trop_wyniki`, punkty, czas rundy i bonus za jedno zdjęcie liczone w bazie (`trop_start`, `trop_zdjecia`, `trop_zgadnij`, `trop_nastepna`, `trop_ranking`). Pula to wszystkie boiska ze zdjęciami. **Wymaga `migration-odleglosc.sql` (#18) i `przepustka_wspolna`** |
 
 ## Brakujące w tabeli
 

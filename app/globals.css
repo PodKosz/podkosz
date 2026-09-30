@@ -5680,3 +5680,164 @@ input.suwak-podpalen {
     animation: none;
   }
 }
+
+/* =====================================================================
+   Minigra Trop - zgadywanie, gdzie stoi boisko
+   ===================================================================== */
+
+/*
+  Minimapa ma trzy rozmiary i przechodzi między nimi płynnie. Przycisk strzału stoi pod nią
+  i ma zawsze jej szerokość, więc oba biorą rozmiar z tych samych zmiennych.
+*/
+.trop-mapa {
+  right: var(--trop-m, 16px);
+  bottom: calc(var(--trop-m, 16px) + 58px);
+  width: var(--trop-w);
+  height: var(--trop-h);
+  border-radius: 22px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14), 0 24px 60px -18px rgba(0, 0, 0, 0.85);
+  transition: width 320ms cubic-bezier(0.16, 1, 0.3, 1), height 320ms cubic-bezier(0.16, 1, 0.3, 1),
+    right 320ms cubic-bezier(0.16, 1, 0.3, 1), bottom 320ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-radius 320ms, opacity 400ms;
+}
+.trop-mapa-0 { --trop-w: min(330px, 48vw); --trop-h: min(230px, 30vh); }
+.trop-mapa-1 { --trop-w: min(600px, calc(100vw - 32px)); --trop-h: min(430px, 52vh); }
+.trop-mapa-2 { --trop-w: calc(100vw - 32px); --trop-h: calc(100dvh - 240px); }
+.trop-mapa-pelna {
+  --trop-w: 100vw;
+  --trop-h: 100dvh;
+  right: 0 !important;
+  bottom: 0 !important;
+  border-radius: 0;
+  box-shadow: none;
+}
+@media (min-width: 640px) {
+  .trop-mapa, .trop-strzal { --trop-m: 20px; }
+}
+.trop-mapa .maplibregl-canvas { cursor: inherit; }
+
+.trop-guzik-mapy {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  color: #f4eee6;
+  background: rgba(12, 10, 10, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(8px);
+  transition: background 0.2s, opacity 0.2s;
+}
+.trop-guzik-mapy:hover:not(:disabled) { background: rgba(40, 30, 26, 0.9); }
+.trop-guzik-mapy:disabled { opacity: 0.35; cursor: default; }
+
+.trop-strzal {
+  right: var(--trop-m, 16px);
+  bottom: var(--trop-m, 16px);
+  height: 48px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #1a0b02;
+  background: linear-gradient(135deg, var(--color-glow-soft), var(--color-flame) 55%, var(--color-ember-deep));
+  box-shadow: 0 14px 34px -12px rgb(var(--rgb-ember) / 0.9);
+  transition: width 320ms cubic-bezier(0.16, 1, 0.3, 1), filter 0.2s, transform 0.15s, opacity 0.2s;
+}
+.trop-strzal:hover:not(:disabled) { filter: brightness(1.08); }
+.trop-strzal:active:not(:disabled) { transform: scale(0.985); }
+.trop-strzal:disabled {
+  color: #cfc6bd;
+  background: rgba(20, 16, 15, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  cursor: default;
+}
+.trop-strzal-0 { width: min(330px, 48vw); }
+.trop-strzal-1 { width: min(600px, calc(100vw - 32px)); }
+.trop-strzal-2 { width: calc(100vw - 32px); }
+
+/* duży zegar rundy: ten sam gradient i poświata co zegar kozłów, tylko większy i w minutach */
+.trop-zegar {
+  font-size: clamp(46px, 8vw, 128px);
+  filter: drop-shadow(0 6px 30px rgb(var(--rgb-ember) / 0.55)) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.7));
+}
+
+.trop-zdjecie { animation: trop-zdjecie 600ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+@keyframes trop-zdjecie {
+  from { opacity: 0; transform: scale(1.03); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.trop-wejscie { animation: rise 520ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+.trop-tytul {
+  font-size: clamp(76px, 15vw, 184px);
+  font-weight: 800;
+  line-height: 0.86;
+  letter-spacing: -0.05em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #fff3d1 0%, var(--color-glow-soft) 22%, var(--color-flame) 55%, var(--color-ember-deep) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  padding-bottom: 0.06em;
+  filter: drop-shadow(0 10px 40px rgb(var(--rgb-ember) / 0.35));
+}
+.trop-zasada {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #fff3d1, var(--color-flame) 70%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.trop-punkty, .trop-suma {
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  background: linear-gradient(135deg, #fff3d1 0%, var(--color-glow-soft) 25%, var(--color-flame) 60%, var(--color-ember-deep) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.trop-punkty { font-size: clamp(46px, 8vw, 72px); }
+.trop-suma { font-size: clamp(72px, 13vw, 132px); padding-bottom: 0.04em; }
+.trop-punkty-jedn { font-size: 0.34em; margin-left: 0.18em; letter-spacing: 0.02em; }
+
+.trop-pasek {
+  background: linear-gradient(90deg, var(--color-glow-soft), var(--color-flame) 60%, var(--color-ember-deep));
+  box-shadow: 0 0 18px rgb(var(--rgb-ember) / 0.6);
+  transition: width 900ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.trop-graj, .trop-dalej {
+  border-radius: 999px;
+  font-weight: 800;
+  color: #1a0b02;
+  background: linear-gradient(135deg, var(--color-glow-soft), var(--color-flame) 55%, var(--color-ember-deep));
+  box-shadow: 0 16px 40px -14px rgb(var(--rgb-ember) / 0.95);
+  transition: filter 0.2s, transform 0.15s;
+}
+.trop-graj { padding: 16px 34px; font-size: 16px; letter-spacing: 0.02em; }
+.trop-dalej { padding: 12px 20px; font-size: 13px; }
+.trop-graj:hover, .trop-dalej:hover { filter: brightness(1.08); }
+.trop-graj:active, .trop-dalej:active { transform: scale(0.985); }
+
+.trop-ladowanie {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 3px solid rgba(255, 255, 255, 0.14);
+  border-top-color: var(--color-flame);
+  animation: trop-krec 0.8s linear infinite;
+}
+@keyframes trop-krec { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .trop-mapa, .trop-strzal, .trop-pasek { transition: none; }
+  .trop-zdjecie, .trop-wejscie { animation: none; }
+}
