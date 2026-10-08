@@ -19,7 +19,7 @@ import { SITE_URL } from "@/lib/site";
   gwarantuje, że nowe listy dostają nową wersję.
 */
 export const TLO = `${SITE_URL}/mail/tlo.png?v=3`;
-export const LOGO = `${SITE_URL}/mail/logo.png?v=4`;
+export const LOGO = `${SITE_URL}/mail/logo.png?v=5`;
 /*
   Pas zejścia treści w czerń - kładziony na samym dole komórki z treścią. Od góry
   przezroczysty, na dole pełna czerń. Dlaczego obrazek, a nie gradient CSS: patrz nota

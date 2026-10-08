@@ -1,7 +1,7 @@
 import { ZNAK } from "@/lib/znak";
 
 /**
- * Znak PodKosza (pinezka z planem boiska) jako SVG w Reakcie - bez hooków, więc działa i na
+ * Znak PodKosza (pinezka z piłką do koszykówki) jako SVG w Reakcie - bez hooków, więc działa i na
  * serwerze (zasłona), i w komponentach klienta (`Brand` podaje `uid` z useId).
  *
  * Gradient bierze barwy z motywu (`--color-*`), jak dawne logo: w motywie klasycznym daje dokładnie
@@ -56,12 +56,11 @@ export function Znak({
         </clipPath>
       </defs>
       <g stroke={`url(#${gradient})`} strokeLinecap="round" strokeLinejoin="round">
-        {/* linie boiska przycięte do wnętrza pinezki - końce chowają się pod jej obrysem */}
+        {/* szwy piłki przycięte do wnętrza pinezki - końce chowają się pod jej obrysem */}
         <g clipPath={`url(#${klip})`}>
-          {ZNAK.linie.map((d) => (
-            <path key={d} d={d} strokeWidth={g.linie} />
+          {ZNAK.szwy.map((d) => (
+            <path key={d} d={d} strokeWidth={g.szwy} />
           ))}
-          <path d={ZNAK.koncowa} strokeWidth={g.koncowa} />
         </g>
         <path d={ZNAK.rama} strokeWidth={g.rama} />
       </g>
