@@ -1,14 +1,22 @@
 "use client";
 
-import { MapCourt, surfaceLabel, type CourtPhotoRef } from "@/lib/types";
+import { MapCourt, godzinyNaKafel, nawierzchniaNaKafel, type CourtPhotoRef, type CourtType } from "@/lib/types";
 import { KADROW_WIZYTOWKI, thumbUrl, thumbWidth, useCourtPhotos } from "@/lib/galeria";
 import { zapasowyAdres } from "@/lib/obrazy";
 import { PhotoPlaceholder } from "./CourtPhoto";
 import { photoUrl } from "@/lib/supabase/config";
 import { godziny, kiedy, plakietka, wysokiPlakat, type Wydarzenie } from "@/lib/wydarzenia";
-import { ClockIcon, FireBallIcon, HoopIcon, BasketApprovedBadge, SurfaceIcon } from "./icons";
+import { ClockIcon, FireBallIcon } from "./icons";
 import { ustalBarwe, zapamietanaBarwa } from "@/lib/barwa-zdjecia";
+import { plural } from "@/lib/site";
 import { useState } from "react";
+
+/** Rodzaj boiska w linijce pod nazwą - pełnym słowem, bo stoi obok nazwy miasta. */
+const RODZAJ_BOISKA: Record<CourtType, string> = {
+  otwarty: "boisko otwarte",
+  kryty: "boisko kryte",
+  streetball: "streetball",
+};
 
 /**
  * Miniatura kadru z zapasem.
@@ -50,9 +58,9 @@ function Miniatura({
 /**
  * Podgląd po najechaniu na pinezkę (na dotyku: po jej dotknięciu) - miniaturki i szybkie info.
  *
- * Karta jest z „płynnego szkła": rozmywa mapę pod spodem i zagina ją przy krawędziach
- * (patrz `.szklo-plynne` w globals.css oraz FiltrSzkla). Zwykłe `.glass` tylko rozmywało,
- * przez co wizytówka leżała na mapie jak naklejka zamiast jak szybka nad nią.
+ * Zwykłe boisko dostaje wizytówkę „barwa zdjęcia", boisko z Basket Approved ten sam układ
+ * w oprawie karty kolekcjonerskiej (opis niżej, przy `WizytowkaBoiska`). Wydarzenie ma
+ * własną kartę z „płynnego szkła" (`.szklo-plynne` w globals.css oraz FiltrSzkla).
  * `tapHint` dokłada stopkę z zaproszeniem do dotknięcia, bo wtedy cała karta jest linkiem.
  * Wersja dotykowa jest o ~30% mniejsza od tej na kursor: szerokość ogranicza wrapper na mapie,
  * a marginesy i kroje pisma schodzą tutaj, żeby karta nie zajmowała pół ekranu telefonu.
@@ -62,6 +70,7 @@ export function HoverCard({
   wydarzenie,
   tapHint = false,
   stan = "wchodzi",
+  osobyDzis = 0,
 }: {
   court: MapCourt;
   /** wydarzenie na tym boisku - wtedy wizytówka pokazuje je, a nie parametry boiska */
@@ -69,18 +78,21 @@ export function HoverCard({
   tapHint?: boolean;
   /** „wchodzi" - karta się pojawia, „znika" - gaśnie i zaraz zostanie zdjęta z drzewa */
   stan?: "wchodzi" | "znika";
+  /** ile osób zapisało się na dziś - ta sama liczba, która zapala ogień na pinezce */
+  osobyDzis?: number;
 }) {
   // zdjęcia nie przychodzą razem z listą boisk - dociągamy je dla tej jednej pinezki
   /*
     Cztery kadry, nie trzy: przy wydarzeniu z pionowym plakatem siatka ma inny kształt
     (wąski plakat po lewej, cztery zdjęcia boiska po prawej) i potrzebuje o jedno więcej.
     Nadmiarowy kadr nic nie kosztuje, bo zapytanie i tak idzie po całą galerię boiska -
-    ale zwykła wizytówka MUSI go odciąć, i robi to niżej, przy `kadry`.
+    a zwykła wizytówka bierze z nich tylko pierwszy, kadr tytułowy.
   */
   const thumbs = useCourtPhotos(court.id, KADROW_WIZYTOWKI);
 
   /*
-    Barwa refleksu na szkle, zdjęta z największego kadru (patrz `lib/barwa-zdjecia.ts`).
+    Barwa zdjęcia tytułowego (patrz `lib/barwa-zdjecia.ts`) - barwi cień, który wizytówka
+    boiska rzuca na mapę.
 
     Stoi TUTAJ, przy pozostałych zaczepach, a nie niżej przy samej karcie: wizytówka
     wydarzenia wychodzi wcześniejszym `return`, więc zaczep postawiony po nim wywoływałby
@@ -88,11 +100,11 @@ export function HoverCard({
 
     Stan zaczyna od tego, co już policzyliśmy dla tego boiska w tej sesji - dzięki temu
     przy powrocie na tę samą pinezkę karta ma właściwą barwę od pierwszej klatki, zamiast
-    mrugnąć błękitem i dopiero się przebarwić.
+    mrugnąć barwą domyślną i dopiero się przebarwić.
 
-    `null` znaczy „zostań przy domyślnym błękicie" i jest zwyczajną odpowiedzią: tak
-    kończy zdjęcie bez dominującej barwy (szary beton, pochmurne niebo) i tak kończy
-    obrazek, którego nie da się odczytać z płótna.
+    `null` znaczy „zostań przy pomarańczu marki" i jest zwyczajną odpowiedzią: tak kończy
+    zdjęcie bez dominującej barwy (szary beton, pochmurne niebo) i tak kończy obrazek,
+    którego nie da się odczytać z płótna.
   */
   const [akcent, setAkcent] = useState<string | null>(() => zapamietanaBarwa(court.id));
 
@@ -114,184 +126,156 @@ export function HoverCard({
     );
   }
 
-  /*
-    UKŁAD: DUŻY KADR NA CAŁĄ SZEROKOŚĆ I TRZY MAŁE POD NIM.
+  return (
+    <WizytowkaBoiska
+      court={court}
+      kadr={thumbs[0] ?? null}
+      tapHint={tapHint}
+      stan={stan}
+      osobyDzis={osobyDzis}
+      akcent={akcent}
+      poBarwie={setAkcent}
+    />
+  );
+}
 
-    Wcześniej duży kadr zajmował dwie trzecie szerokości, a dwa małe stały obok w kolumnie.
-    Teraz zdjęcie tytułowe - to, po którym poznaje się boisko - dostaje całą szerokość
-    wizytówki, a nazwa boiska leży wprost na nim, przy dolnej krawędzi, jak podpis na
-    okładce. Pod spodem rząd trzech kadrów: kosze i nawierzchnia, czyli to, o co pyta się
-    przed wyjazdem.
+/*
+  WIZYTÓWKA BOISKA - „BARWA ZDJĘCIA" (wybrana z dziesięciu propozycji, październik 2026).
 
-    Zawsze cztery miejsca - brakujące (i te, których zdjęcia jeszcze lecą z serwera)
-    dostają grafikę zastępczą, więc wizytówka nie zmienia wysokości w trakcie ładowania.
+  Tłem karty jest jej własne zdjęcie tytułowe, mocno rozmyte i nasycone: karta ma kolory
+  boiska, tak jak w Apple Music tło ma kolory okładki. Czerwony tartan daje ciepłą kartę,
+  szary beton i niebo - chłodną. Na tym tle ostry kadr, nazwa, miasto, trzy kafle i stopka
+  z ogniem i zapisami na dziś. Rozmyte tło to TEN SAM adres miniatury co kadr, więc nie
+  kosztuje drugiego pobrania.
 
-    Linijki „miasto · typ boiska" nie ma: miasto widać na mapie tuż pod pinezką, a typ
-    i tak niesie kafel z godzinami - dwa razy to samo tylko zabierało miejsce nazwie.
-  */
-  const kadry = Array.from({ length: KADROW_WIZYTOWKI }, (_, i) => thumbs[i] ?? null);
-  const [tytulowy, ...male] = kadry;
+  Karta przechyla się za kursorem nad pinezką, a odblask przesuwa się po tafli - zmienne
+  `--wiz-rx`, `--wiz-ry`, `--wiz-mx` i `--wiz-my` ustawia MapView na pojemniku karty.
+  Na dotyku nie ma kursora, więc światło przesuwa się samo, powoli (patrz `.wiz-dotyk`).
 
-  /* barwę liczymy tylko z kadru tytułowego - on niesie kolor boiska */
-  const poTytulowym = (img: HTMLImageElement) => {
-    void ustalBarwe(img, tytulowy?.url ?? "", court.id).then((b) => {
-      if (b) setAkcent(b);
+  Boisko z Basket Approved dostaje ten sam układ w oprawie karty kolekcjonerskiej:
+  holograficzna fioletowa folia na rancie, ciemny środek, nazwa Antonem i tęczowy połysk,
+  który jedzie razem z odblaskiem. To ta sama barwa co fioletowa pinezka na mapie.
+*/
+function WizytowkaBoiska({
+  court,
+  kadr,
+  tapHint,
+  stan,
+  osobyDzis,
+  akcent,
+  poBarwie,
+}: {
+  court: MapCourt;
+  /** kadr tytułowy - z narożnika, ten sam, który otwiera galerię boiska */
+  kadr: CourtPhotoRef | null;
+  tapHint: boolean;
+  stan: "wchodzi" | "znika";
+  osobyDzis: number;
+  /** barwa zdjęcia jako trójka RGB - zabarwia cień, który karta rzuca na mapę */
+  akcent: string | null;
+  poBarwie: (barwa: string) => void;
+}) {
+  const holo = court.basketApproved;
+  const adresKadru = kadr?.url ? thumbUrl(kadr.url, thumbWidth(0)) : null;
+
+  /* barwę liczymy z kadru tytułowego - on niesie kolor boiska */
+  const poKadrze = (img: HTMLImageElement) => {
+    void ustalBarwe(img, kadr?.url ?? "", court.id).then((b) => {
+      if (b) poBarwie(b);
     });
   };
 
   return (
     <div
-      className={`szklo-plynne overflow-hidden rounded-[22px] ${
+      className={`wiz ${holo ? "wiz-holo" : "wiz-barwa"} ${tapHint ? "wiz-dotyk w-full" : "w-[320px]"} ${
         stan === "znika" ? "karta-mapy-znika" : "karta-mapy"
-      } ${tapHint ? "w-full" : "w-[320px]"}`}
-      style={akcent ? ({ "--szklo-akcent": akcent } as React.CSSProperties) : undefined}
+      }`}
+      style={akcent ? ({ "--wiz-akcent": akcent } as React.CSSProperties) : undefined}
     >
-      {/* ---- kadr tytułowy z nazwą przy dolnej krawędzi ---- */}
-      <div className="relative aspect-[16/10] overflow-hidden">
-        {tytulowy?.url ? (
-          /*
-            Zwykły <img> ze stałym adresem miniatury, a nie next/image: ten sam adres
-            rozgrzewamy z góry (patrz prefetchCourtPhotos), więc obrazek jest już
-            w pamięci przeglądarki i wizytówka pojawia się bez migania.
-          */
-          <Miniatura
-            url={tytulowy.url}
-            opis={tytulowy.caption}
-            szerokosc={thumbWidth(0)}
-            poWczytaniu={poTytulowym}
-          />
-        ) : (
-          <PhotoPlaceholder kind="narożnik" seed={court.seed} />
-        )}
-
-        {/* przyciemnienie od dołu - nazwa leży na zdjęciu i musi być czytelna na każdym */}
+      {holo ? (
+        <span aria-hidden className="wiz-folia" />
+      ) : (
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-3/5"
-          style={{
-            background:
-              "linear-gradient(0deg, rgb(var(--rgb-zaslona) / .86) 0%, rgb(var(--rgb-zaslona) / .45) 45%, transparent 100%)",
-          }}
+          className="wiz-tlo"
+          style={adresKadru ? { backgroundImage: `url("${adresKadru}")` } : undefined}
         />
+      )}
 
-        {court.basketApproved && (
-          <BasketApprovedBadge className={`absolute left-2 ${tapHint ? "top-2" : "top-2.5"}`} />
+      <div className="wiz-srodek">
+        {holo && (
+          <div className="wiz-holo-gora">
+            <span>Basket Approved</span>
+            <FireBallIcon variant="basket" className="h-4 w-4" />
+          </div>
         )}
 
-        <div
-          className={`absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 ${
-            tapHint ? "px-2.5 pb-2" : "px-3.5 pb-2.5"
-          }`}
-        >
-          <h3
-            className={`min-w-0 truncate font-semibold leading-tight tracking-tight text-kadr ${
-              tapHint ? "text-[14px]" : "text-[16px]"
-            }`}
-            style={{ textShadow: "0 1px 10px rgb(0 0 0 / .55)" }}
-          >
-            {court.name}
-          </h3>
-          <span
-            className={`flex shrink-0 items-center gap-1 rounded-full bg-black/45 px-2 font-semibold text-kadr backdrop-blur-sm ${
-              tapHint ? "py-0.5 text-[11px]" : "py-1 text-[12px]"
-            }`}
-          >
-            <FireBallIcon className={tapHint ? "h-3 w-3" : "h-3.5 w-3.5"} />
-            {court.likes}
-          </span>
+        <div className="wiz-kadr">
+          {kadr?.url ? (
+            /*
+              Zwykły <img> ze stałym adresem miniatury, a nie next/image: ten sam adres
+              rozgrzewamy z góry (patrz prefetchCourtPhotos), więc obrazek jest już
+              w pamięci przeglądarki i wizytówka pojawia się bez migania.
+            */
+            <Miniatura url={kadr.url} opis={kadr.caption} szerokosc={thumbWidth(0)} poWczytaniu={poKadrze} />
+          ) : (
+            <PhotoPlaceholder kind="narożnik" seed={court.seed} />
+          )}
         </div>
-      </div>
 
-      {/* ---- trzy kadry pod spodem ---- */}
-      <div className="mt-[2px] grid grid-cols-3 gap-[2px]">
-        {male.map((p, i) => (
-          <div key={i} className="relative aspect-[4/3] overflow-hidden">
-            {p?.url ? (
-              /* `object-cover` ze środkiem kadru - kosz i obręcz zwykle siedzą pośrodku */
-              <Miniatura url={p.url} opis={p.caption} szerokosc={thumbWidth(i + 1)} />
-            ) : (
-              <PhotoPlaceholder kind={i === 2 ? "nawierzchnia" : "kosz-a"} seed={court.seed + i + 1} />
+        <h3 className="wiz-nazwa">{court.name}</h3>
+        <p className="wiz-miejsce">
+          {court.city} · {RODZAJ_BOISKA[court.type] ?? court.type}
+        </p>
+
+        <div className="wiz-kafle">
+          <div>
+            <b>{court.hoops}</b>
+            <span>{plural(court.hoops, ["kosz", "kosze", "koszy"])}</span>
+          </div>
+          <div>
+            <b>{godzinyNaKafel(court.hours, court.access)}</b>
+            <span>otwarte</span>
+          </div>
+          <div>
+            <b>{nawierzchniaNaKafel(court.surface)}</b>
+            <span>podłoże</span>
+          </div>
+        </div>
+
+        {/*
+          Ogień i zapisy pokazujemy tylko wtedy, gdy są. Pusty licznik („0 podpaleń",
+          „0 osób") to najgorsza możliwa informacja przy boisku - zniechęca, zamiast
+          zapraszać. Gdy nie ma ani jednego, ani drugiego, stopki nie ma wcale.
+        */}
+        {(court.likes > 0 || osobyDzis > 0) && (
+          <div className="wiz-stopka">
+            {court.likes > 0 && (
+              <span className="wiz-ogien">
+                <FireBallIcon className="h-[15px] w-[15px] shrink-0" />
+                <b>{court.likes}</b> {plural(court.likes, ["podpalenie", "podpalenia", "podpaleń"])}
+              </span>
+            )}
+            {osobyDzis > 0 && (
+              <span>
+                <b>
+                  {osobyDzis} {plural(osobyDzis, ["osoba", "osoby", "osób"])}
+                </b>{" "}
+                {plural(osobyDzis, ["idzie", "idą", "idzie"])} dziś
+              </span>
             )}
           </div>
-        ))}
-      </div>
-
-      <div className={tapHint ? "p-2.5" : "p-3"}>
-        <div className={`grid grid-cols-3 ${tapHint ? "gap-1.5" : "gap-2"}`}>
-          <Fact
-            compact={tapHint}
-            icon={<HoopIcon className={tapHint ? "h-3.5 w-3.5" : "h-4 w-4"} />}
-            label="kosze"
-            value={String(court.hoops)}
-          />
-          <Fact
-            compact={tapHint}
-            icon={<ClockIcon className={tapHint ? "h-3.5 w-3.5" : "h-4 w-4"} />}
-            label="otwarte"
-            value={court.hours}
-          />
-          <Fact
-            compact={tapHint}
-            icon={<SurfaceIcon className={tapHint ? "h-3.5 w-3.5" : "h-4 w-4"} />}
-            label="podłoże"
-            value={surfaceLabel(court.surface)}
-          />
-        </div>
+        )}
 
         {tapHint && (
-          <p className="mt-2 flex items-center justify-center gap-1.5 border-t border-hairline pt-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-flame">
-            dotknij, żeby otworzyć boisko
-            <span aria-hidden>→</span>
+          <p className="wiz-dotknij">
+            dotknij, żeby otworzyć boisko <span aria-hidden>→</span>
           </p>
         )}
       </div>
 
-      {/* poświata na krawędziach - ta sama tafla, co kafle rankingu i liczby na profilu */}
-      <span aria-hidden className="szklo-krawedzie" />
-    </div>
-  );
-}
-
-/**
- * Kafel z jednym parametrem boiska - z tego samego szkła co kafle liczb na profilu gracza
- * (`.kafel-szklo`: jasny rąbek u góry i u dołu, rozmycie, włosowa obwódka).
- *
- * Pismo jest wyraźnie większe niż wcześniej. Przy 10 px wartości i 9 px podpisu kafle były
- * nieczytelne na telefonie, a to przecież trzy rzeczy, dla których w ogóle zagląda się
- * w wizytówkę: ile koszy, kiedy otwarte, na czym się gra.
- */
-function Fact({
-  icon,
-  label,
-  value,
-  compact = false,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  compact?: boolean;
-}) {
-  return (
-    <div
-      className={`kafel-szklo relative overflow-hidden rounded-[14px] ${
-        compact ? "px-2 py-1.5" : "px-2.5 py-2"
-      }`}
-    >
-      <div className="text-flame">{icon}</div>
-      <div
-        className={`truncate font-semibold leading-tight ${
-          compact ? "mt-1 text-[12.5px]" : "mt-1.5 text-[14px]"
-        }`}
-      >
-        {value}
-      </div>
-      <div
-        className={`mt-0.5 uppercase tracking-[0.1em] text-faint ${
-          compact ? "text-[9.5px]" : "text-[10px]"
-        }`}
-      >
-        {label}
-      </div>
+      {holo && <span aria-hidden className="wiz-tecza" />}
+      <span aria-hidden className="wiz-blask" />
     </div>
   );
 }

@@ -451,7 +451,8 @@ export function MapView({
   const [ready, setReady] = useState(false);
   const [diag, setDiag] = useState<MapDiag | null>(null);
   const [showDiag, setShowDiag] = useState(false);
-  type Karta = { court: MapCourt; x: number; y: number };
+  /** pinezka z wizytówką: boisko, punkt zaczepienia na ekranie i ilu ludzi idzie tam dziś */
+  type Karta = { court: MapCourt; x: number; y: number; osoby: number };
   const [hover, setHover] = useState<Karta | null>(null);
   /**
    * Wizytówka, która właśnie gaśnie.
@@ -561,6 +562,43 @@ export function MapView({
 
   useEffect(() => () => window.clearTimeout(zegarZnikaniaRef.current), []);
 
+  /** pojemnik wizytówki na kursor - dostaje zmienne przechyłu i odblasku */
+  const kartaPozRef = useRef<HTMLDivElement | null>(null);
+
+  /*
+    Wizytówka przechyla się za kursorem, a odblask przesuwa się po tafli.
+
+    Karta na kursor nie łapie myszy (`pointer-events-none`) i gaśnie, gdy kursor zejdzie
+    z pinezki - więc ruch liczymy względem samej pinezki, nad którą kursor właśnie stoi.
+    Pinezka ma ~40 px szerokości, dlatego odchylenie jest mocno wzmocnione: przejechanie
+    kursorem od lewej do prawej krawędzi kuli to pełny zakres przechyłu.
+
+    Zmienne lądują prosto w stylu pojemnika, z pominięciem Reacta - ruch myszy przychodzi
+    kilkadziesiąt razy na sekundę i przerysowywanie drzewa przy każdym byłoby marnotrawstwem.
+    Płynność daje przejście zarejestrowanych zmiennych w arkuszu (`.wiz` w globals.css).
+  */
+  useEffect(() => {
+    const kontener = containerRef.current;
+    if (coarse || !hover || !kontener) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const { x, y } = hover;
+    /* środek kuli pinezki: punkt zaczepienia to jej ostry koniec, kula jest ~30 px wyżej */
+    const srodekY = y - 30;
+    const rusz = (e: MouseEvent) => {
+      const el = kartaPozRef.current;
+      if (!el) return;
+      const ramka = kontener.getBoundingClientRect();
+      const nx = Math.max(-1, Math.min(1, (e.clientX - ramka.left - x) / 22));
+      const ny = Math.max(-1, Math.min(1, (e.clientY - ramka.top - srodekY) / 22));
+      el.style.setProperty("--wiz-ry", `${(nx * 9).toFixed(2)}deg`);
+      el.style.setProperty("--wiz-rx", `${(-ny * 6).toFixed(2)}deg`);
+      el.style.setProperty("--wiz-mx", `${(50 + nx * 38).toFixed(1)}%`);
+      el.style.setProperty("--wiz-my", `${(42 + ny * 30).toFixed(1)}%`);
+    };
+    kontener.addEventListener("mousemove", rusz);
+    return () => kontener.removeEventListener("mousemove", rusz);
+  }, [hover, coarse]);
+
   const clearCard = useCallback(() => {
     hoverRef.current = null;
     schowajKarte();
@@ -610,7 +648,7 @@ export function MapView({
     const c = hoverRef.current;
     if (!map || !c) return;
     const p = map.project([c.lng, c.lat]);
-    pokazKarte({ court: c, x: p.x, y: p.y });
+    pokazKarte({ court: c, x: p.x, y: p.y, osoby: checkinyRef.current[c.id] ?? 0 });
   }, [pokazKarte]);
 
   /*
@@ -1644,7 +1682,7 @@ export function MapView({
       {(hover ?? znika) &&
         !sheetOpen &&
         (() => {
-          const karta = (hover ?? znika) as { court: MapCourt; x: number; y: number };
+          const karta = (hover ?? znika) as Karta;
           const stan = hover ? "wchodzi" : "znika";
           return coarse ? (
             // dotyk: wizytówka siedzi nad wysuwanym panelem, cała jest linkiem do boiska
@@ -1654,7 +1692,13 @@ export function MapView({
               className="pointer-events-auto fixed inset-x-3 bottom-[158px] z-[35] mx-auto max-w-[266px]"
             >
               <Link href={`/boisko/${karta.court.slug}`} className="block">
-                <HoverCard court={karta.court} wydarzenie={wydarzenia[karta.court.id]} tapHint stan={stan} />
+                <HoverCard
+                  court={karta.court}
+                  wydarzenie={wydarzenia[karta.court.id]}
+                  osobyDzis={karta.osoby}
+                  tapHint
+                  stan={stan}
+                />
               </Link>
               {/*
                 Zamknięcie wprost na karcie. Bez niego jedynym sposobem było dotknięcie mapy
@@ -1680,9 +1724,16 @@ export function MapView({
           ) : (
             <div
               className="pointer-events-none absolute z-20"
-              style={{ left: karta.x, top: karta.y - 58, transform: "translate(-50%,-100%)" }}
+              ref={kartaPozRef}
+              // perspektywa dla przechyłu wizytówki za kursorem (zmienne --wiz-* ustawia efekt wyżej)
+              style={{ left: karta.x, top: karta.y - 58, transform: "translate(-50%,-100%)", perspective: 900 }}
             >
-              <HoverCard court={karta.court} wydarzenie={wydarzenia[karta.court.id]} stan={stan} />
+              <HoverCard
+                court={karta.court}
+                wydarzenie={wydarzenia[karta.court.id]}
+                osobyDzis={karta.osoby}
+                stan={stan}
+              />
             </div>
           );
         })()}
