@@ -4675,14 +4675,17 @@ select option {
   }
 }
 
-/* ---------- wizytówka boiska nad pinezką: „barwa zdjęcia" i karta kolekcjonerska ----------
-  Wybrane z dziesięciu propozycji w październiku 2026. Opis układu jest w HoverCard
+/* ---------- wizytówka boiska nad pinezką: „szyba na kadrze" ----------
+  Wybrana z dziesięciu propozycji w październiku 2026. Opis układu jest w HoverCard
   (`WizytowkaBoiska`); tu tylko wygląd.
 
   Przechył i odblask idą za kursorem: MapView ustawia na pojemniku karty cztery zmienne,
   a karta je dziedziczy. Zmienne są zarejestrowane (`@property`), bo tylko wtedy da się je
   płynnie przejść i animować - inaczej karta skakałaby o każdy piksel ruchu myszy, a na
   dotyku światło nie mogłoby się samo przesuwać.
+
+  Napisy są białe w każdym motywie: leżą na zdjęciu i ciemnej szybie, tak jak napisy na
+  kadrach w reszcie serwisu (`--color-kadr`).
 */
 @property --wiz-rx {
   syntax: "<angle>";
@@ -4706,96 +4709,155 @@ select option {
 }
 
 .wiz {
-  /* jak mocno rozmyć i przyciemnić zdjęcie pod spodem oraz welon, na którym leży treść */
-  --wiz-tlo-filtr: blur(56px) saturate(2.3) brightness(0.74);
-  --wiz-welon: linear-gradient(
-    180deg,
-    rgb(255 255 255 / 0.1),
-    rgb(255 255 255 / 0.02) 40%,
-    rgb(0 0 0 / 0.26)
-  );
   position: relative;
-  overflow: hidden;
   isolation: isolate;
-  color: var(--color-ink);
+  color: var(--color-kadr);
+  border-radius: 32px;
   transform: rotateX(var(--wiz-rx)) rotateY(var(--wiz-ry));
   transition:
     --wiz-rx 0.2s ease-out,
     --wiz-ry 0.2s ease-out,
     --wiz-mx 0.25s ease-out,
     --wiz-my 0.25s ease-out;
+  /* cień w barwie zdjęcia - karta „świeci" na mapę kolorem swojego boiska */
   box-shadow:
-    0 2px 8px -2px rgb(0 0 0 / calc(0.5 * var(--moc-cienia))),
+    0 0 0 1px rgb(255 255 255 / 0.1),
+    0 12px 30px -12px rgb(0 0 0 / calc(0.7 * var(--moc-cienia))),
     0 40px 90px -30px rgb(0 0 0 / calc(0.95 * var(--moc-cienia))),
     0 26px 60px -34px rgb(var(--wiz-akcent, 255 122 24) / calc(0.6 * var(--moc-poswiaty, 1)));
 }
 
-/* w jasnych motywach zdjęcie pod spodem idzie w jasność, a welon bieli niesie ciemny napis */
-[data-motyw="polska"] .wiz,
-[data-motyw="coconaut"] .wiz {
-  --wiz-tlo-filtr: blur(56px) saturate(1.7) brightness(1.35);
-  --wiz-welon: linear-gradient(180deg, rgb(255 255 255 / 0.62), rgb(255 255 255 / 0.5));
+/* okno ze zdjęciem: cała karta, a przy Basket Approved - środek w holograficznej ramie */
+.wiz-okno {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  aspect-ratio: 300 / 380;
+  border-radius: inherit;
+  background: rgb(var(--rgb-plyta));
 }
 
-/* --- „barwa zdjęcia": tłem jest rozmyte zdjęcie tytułowe --- */
-.wiz-barwa {
-  border-radius: 26px;
-  padding: 10px 10px 13px;
-}
-
-.wiz-tlo {
+.wiz-foto {
   position: absolute;
-  inset: -55%;
-  z-index: -2;
-  background-color: rgb(var(--rgb-plyta));
-  background-size: cover;
-  background-position: center;
-  filter: var(--wiz-tlo-filtr);
+  inset: 0;
 }
 
-.wiz-barwa::before {
+.wiz-foto > * {
+  scale: 1.02;
+}
+
+/* rant: jasna linia u góry i włosowa obwódka - nad zdjęciem, jak krawędź szyby */
+.wiz-okno::after {
   content: "";
   position: absolute;
   inset: 0;
-  z-index: -1;
-  background: var(--wiz-welon);
-}
-
-/* rant tafli: jaśniejsza linia u góry i włosowa obwódka - nad treścią, jak krawędź szkła */
-.wiz-barwa::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 3;
+  z-index: 6;
   border-radius: inherit;
   pointer-events: none;
   box-shadow:
-    inset 0 1.5px 0 rgb(255 255 255 / 0.32),
-    inset 0 -1px 0 rgb(255 255 255 / 0.08),
-    inset 0 0 0 1px rgb(var(--rgb-szyba) / 0.1);
+    inset 0 1px 0 rgb(255 255 255 / 0.28),
+    inset 0 0 0 1px rgb(255 255 255 / 0.08);
 }
 
-.wiz-srodek {
-  position: relative;
-  z-index: 1;
+.wiz-gora {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.wiz-kadr {
-  position: relative;
-  aspect-ratio: 16 / 10;
-  overflow: hidden;
-  border-radius: 18px;
+/* kapsuły z małego szkła: „Basket Approved" i liczba zdjęć */
+.wiz-kaps {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 12px 0 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  background: rgb(14 12 16 / 0.3);
+  backdrop-filter: blur(10px) saturate(1.7);
+  -webkit-backdrop-filter: blur(10px) saturate(1.7);
   box-shadow:
-    0 18px 40px -18px rgb(0 0 0 / calc(0.9 * var(--moc-cienia))),
-    0 0 0 1px rgb(255 255 255 / 0.12);
+    inset 0 1px 0 rgb(255 255 255 / 0.32),
+    inset 0 0 0 1px rgb(255 255 255 / 0.14);
+}
+
+.wiz-kaps-fiolet {
+  background: rgb(124 58 237 / 0.4);
+}
+
+/*
+  Szyba z płynnego szkła. Tu jest tylko rozmycie i barwa - zagięcie kadru przy rancie
+  dokłada `useSoczewka` (lib/soczewka.ts), w silnikach, które to umieją.
+*/
+.wiz-szyba-panel {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  z-index: 2;
+  border-radius: 24px;
+  padding: 15px 16px 14px;
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.1), rgb(255 255 255 / 0.03)),
+    rgb(14 12 16 / 0.22);
+  backdrop-filter: blur(9px) saturate(1.7) brightness(0.82);
+  -webkit-backdrop-filter: blur(9px) saturate(1.7) brightness(0.82);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.35),
+    inset 0 -1px 0 rgb(255 255 255 / 0.08),
+    0 10px 30px -10px rgb(0 0 0 / 0.6);
+}
+
+/* światło obiega rant szyby: jasne w lewym górnym rogu i w prawym dolnym */
+.wiz-szyba-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background: linear-gradient(
+    140deg,
+    rgb(255 255 255 / 0.62) 0%,
+    rgb(255 255 255 / 0.12) 22%,
+    rgb(255 255 255 / 0.03) 48%,
+    rgb(255 210 160 / 0.16) 76%,
+    rgb(255 255 255 / 0.42) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+.wiz-r1 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .wiz-nazwa {
-  margin: 13px 6px 0;
-  font-size: 19px;
+  margin: 0;
+  min-width: 0;
+  font-size: 18px;
   font-weight: 650;
   line-height: 1.15;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.02em;
+  text-shadow: 0 1px 12px rgb(0 0 0 / 0.35);
   /* długie nazwy („Boisko obok Zespołu Szkół...") łamią się najwyżej raz */
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -4803,110 +4865,127 @@ select option {
   overflow: hidden;
 }
 
+.wiz-ogien {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
 .wiz-miejsce {
-  margin: 4px 6px 0;
+  margin-top: 4px;
   font-size: 12.5px;
+  font-weight: 500;
   line-height: 1.25;
-  color: var(--color-muted);
+  color: rgb(255 255 255 / 0.72);
 }
 
-.wiz-kafle {
+/* ludzie, którzy idą dziś - ciepło, bo to ta sama liczba, która zapala ogień na pinezce */
+.wiz-miejsce b {
+  font-weight: 650;
+  color: #ffd29a;
+}
+
+.wiz-fakty {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 7px;
-  margin: 13px 2px 0;
+  grid-template-columns: minmax(0, auto) minmax(10px, 1fr) minmax(0, auto) minmax(10px, 1fr) minmax(0, auto);
+  align-items: center;
+  margin-top: 13px;
+  padding-top: 12px;
+  border-top: 1px solid rgb(255 255 255 / 0.16);
 }
 
-.wiz-kafle > div {
+.wiz-fakty > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   min-width: 0;
-  padding: 9px 10px;
-  border-radius: 15px;
-  background: linear-gradient(180deg, rgb(var(--rgb-szyba) / 0.13), rgb(var(--rgb-szyba) / 0.04));
-  box-shadow:
-    inset 0 1px 0 rgb(var(--rgb-szyba) / 0.2),
-    inset 0 0 0 1px rgb(var(--rgb-szyba) / 0.07);
 }
 
-.wiz-kafle b {
+.wiz-kreska {
+  justify-self: center;
+  width: 1px;
+  height: 26px;
+  background: rgb(255 255 255 / 0.14);
+}
+
+.wiz-fakty svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: rgb(255 210 160 / 0.9);
+}
+
+.wiz-fakty span {
+  min-width: 0;
+}
+
+.wiz-fakty b {
   display: block;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  font-size: 14.5px;
-  font-weight: 650;
+  font-size: 13px;
+  font-weight: 600;
   line-height: 1.1;
 }
 
-.wiz-kafle span {
+.wiz-fakty small {
   display: block;
-  margin-top: 4px;
+  margin-top: 3px;
   font-size: 9.5px;
-  letter-spacing: 0.11em;
+  font-weight: 600;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--color-muted);
-}
-
-.wiz-stopka {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin: 12px 6px 0;
-  font-size: 12.5px;
-  line-height: 1.2;
-  color: var(--color-muted);
-}
-
-.wiz-stopka b {
-  font-weight: 650;
-  color: var(--color-ink);
-}
-
-.wiz-ogien {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  white-space: nowrap;
+  color: rgb(255 255 255 / 0.55);
 }
 
 .wiz-dotknij {
-  margin: 10px 6px 0;
+  margin-top: 10px;
   padding-top: 9px;
-  border-top: 1px solid rgb(var(--rgb-szyba) / 0.1);
+  border-top: 1px solid rgb(255 255 255 / 0.12);
   text-align: center;
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--color-flame);
+  color: #ffb25c;
 }
 
 /* odblask jedzie za kursorem - miękkie światło, które rozjaśnia tylko to, co pod nim */
 .wiz-blask {
   position: absolute;
   inset: 0;
-  z-index: 4;
+  z-index: 7;
   border-radius: inherit;
   pointer-events: none;
-  background: radial-gradient(260px circle at var(--wiz-mx) var(--wiz-my), rgb(255 255 255 / 0.22), transparent 60%);
+  background: radial-gradient(280px circle at var(--wiz-mx) var(--wiz-my), rgb(255 255 255 / 0.24), transparent 60%);
   mix-blend-mode: soft-light;
 }
 
-/* --- karta kolekcjonerska: Basket Approved --- */
+/* --- Basket Approved: ta sama karta w holograficznej fioletowej obwódce --- */
 .wiz-holo {
-  border-radius: 20px;
-  padding: 8px;
+  border-radius: 34px;
+  padding: 7px;
   box-shadow:
-    0 2px 8px -2px rgb(0 0 0 / calc(0.5 * var(--moc-cienia))),
+    0 12px 30px -12px rgb(0 0 0 / calc(0.7 * var(--moc-cienia))),
     0 40px 90px -30px rgb(0 0 0 / calc(0.95 * var(--moc-cienia))),
-    0 26px 60px -30px rgb(139 92 246 / calc(0.65 * var(--moc-poswiaty, 1)));
+    0 26px 60px -28px rgb(139 92 246 / calc(0.7 * var(--moc-poswiaty, 1)));
 }
 
-/* holograficzna folia na rancie - gradient przesuwa się za odblaskiem, więc folia „mieni się" */
+.wiz-holo .wiz-okno {
+  border-radius: 27px;
+}
+
+/* folia mieni się razem z odblaskiem: gradient przesuwa się za kursorem */
 .wiz-folia {
   position: absolute;
   inset: 0;
-  z-index: -2;
+  z-index: -1;
+  border-radius: inherit;
   background: linear-gradient(
     115deg,
     #2b1747 0%,
@@ -4927,108 +5006,19 @@ select option {
   content: "";
   position: absolute;
   inset: 0;
+  border-radius: inherit;
   background: repeating-linear-gradient(55deg, rgb(255 255 255 / 0.08) 0 2px, transparent 2px 6px);
   mix-blend-mode: overlay;
 }
 
-.wiz-holo .wiz-srodek {
-  overflow: hidden;
-  border-radius: 13px;
-  padding: 9px 9px 12px;
-  background:
-    radial-gradient(120% 70% at 50% 0%, rgb(168 85 247 / 0.16), transparent 60%),
-    linear-gradient(180deg, rgb(var(--rgb-plyta) / 0.97), rgb(var(--rgb-plyta)));
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12);
-}
-
-.wiz-holo-gora {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1px 3px 8px;
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: #c4a1ff;
-}
-
-.wiz-holo .wiz-kadr {
-  border-radius: 8px;
-  box-shadow:
-    0 0 0 1px rgb(216 180 254 / 0.5),
-    0 14px 30px -16px rgb(0 0 0 / calc(0.8 * var(--moc-cienia)));
-}
-
-.wiz-holo .wiz-nazwa {
-  margin: 11px 3px 0;
-  font-family: var(--font-display);
-  font-size: 24px;
-  font-weight: 400;
-  line-height: 0.94;
-  letter-spacing: 0.005em;
-  text-transform: uppercase;
-}
-
-.wiz-holo .wiz-miejsce {
-  margin: 6px 3px 0;
-  font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--color-faint);
-}
-
-.wiz-holo .wiz-kafle {
-  gap: 0;
-  margin: 11px 0 0;
-  padding-top: 9px;
-  border-top: 1px solid rgb(216 180 254 / 0.28);
-}
-
-.wiz-holo .wiz-kafle > div {
-  padding: 0 6px;
-  border-radius: 0;
-  background: none;
-  box-shadow: none;
-  text-align: center;
-}
-
-.wiz-holo .wiz-kafle > div + div {
-  border-left: 1px solid rgb(216 180 254 / 0.2);
-}
-
-.wiz-holo .wiz-kafle b {
-  font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: 400;
-  line-height: 1;
-  letter-spacing: 0.01em;
-}
-
-.wiz-holo .wiz-kafle span {
-  margin-top: 5px;
-  font-size: 7.5px;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  color: var(--color-faint);
-}
-
-.wiz-holo .wiz-stopka {
-  margin: 10px 3px 0;
-  padding-top: 8px;
-  border-top: 1px solid rgb(216 180 254 / 0.18);
-  font-size: 11.5px;
-}
-
-/* tęczowy połysk hologramu - jedzie razem z odblaskiem */
+/* tęczowy połysk hologramu nad całą kartą - jedzie razem z odblaskiem */
 .wiz-tecza {
   position: absolute;
   inset: 0;
-  z-index: 4;
+  z-index: 6;
   border-radius: inherit;
   pointer-events: none;
-  opacity: 0.2;
+  opacity: 0.16;
   mix-blend-mode: color-dodge;
   background: linear-gradient(
     125deg,
@@ -5042,65 +5032,65 @@ select option {
   background-position: var(--wiz-mx) var(--wiz-my);
 }
 
-.wiz-holo .wiz-blask {
-  z-index: 5;
-  background: radial-gradient(220px circle at var(--wiz-mx) var(--wiz-my), rgb(255 255 255 / 0.3), transparent 55%);
-  mix-blend-mode: overlay;
-}
-
-[data-motyw="polska"] .wiz-holo-gora,
-[data-motyw="coconaut"] .wiz-holo-gora {
-  color: #7c3aed;
-}
-
 /* --- wersja dotykowa: mniejsza, a światło przesuwa się samo, bo nie ma kursora --- */
-.wiz-dotyk.wiz-barwa {
+.wiz-dotyk {
+  border-radius: 26px;
+}
+.wiz-dotyk.wiz-holo {
+  border-radius: 28px;
+  padding: 6px;
+}
+.wiz-dotyk.wiz-holo .wiz-okno {
   border-radius: 22px;
-  padding: 8px 8px 10px;
 }
-.wiz-dotyk .wiz-kadr {
-  border-radius: 15px;
+.wiz-dotyk .wiz-gora {
+  top: 10px;
+  left: 10px;
+  right: 10px;
 }
-.wiz-dotyk.wiz-holo .wiz-kadr {
-  border-radius: 7px;
+/* w prawym górnym rogu karty dotykowej siedzi krzyżyk zamykania */
+.wiz-dotyk .wiz-kaps-zdjecia {
+  display: none;
+}
+.wiz-dotyk .wiz-kaps {
+  height: 27px;
+  font-size: 10.5px;
+}
+.wiz-dotyk .wiz-szyba-panel {
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  border-radius: 20px;
+  padding: 12px 13px 11px;
 }
 .wiz-dotyk .wiz-nazwa {
-  margin-top: 10px;
-  font-size: 15.5px;
+  font-size: 15px;
 }
-.wiz-dotyk.wiz-holo .wiz-nazwa {
-  font-size: 20px;
+.wiz-dotyk .wiz-ogien {
+  font-size: 12px;
 }
 .wiz-dotyk .wiz-miejsce {
   font-size: 11px;
 }
-.wiz-dotyk.wiz-holo .wiz-miejsce {
-  font-size: 8.5px;
-}
-.wiz-dotyk .wiz-kafle {
-  gap: 5px;
+.wiz-dotyk .wiz-fakty {
   margin-top: 10px;
+  padding-top: 9px;
 }
-.wiz-dotyk .wiz-kafle > div {
-  padding: 7px 8px;
-  border-radius: 12px;
+.wiz-dotyk .wiz-fakty > div {
+  gap: 5px;
 }
-.wiz-dotyk .wiz-kafle b {
-  font-size: 12.5px;
+.wiz-dotyk .wiz-kreska {
+  height: 22px;
 }
-.wiz-dotyk.wiz-holo .wiz-kafle b {
-  font-size: 17px;
+.wiz-dotyk .wiz-fakty svg {
+  width: 14px;
+  height: 14px;
 }
-.wiz-dotyk .wiz-kafle span {
-  font-size: 8.5px;
+.wiz-dotyk .wiz-fakty b {
+  font-size: 11.5px;
 }
-.wiz-dotyk .wiz-stopka {
-  margin-top: 9px;
-  font-size: 11px;
-}
-/* w rogu karty dotykowej siedzi krzyżyk zamykania - płomień z nagłówka by się z nim zderzał */
-.wiz-dotyk .wiz-holo-gora svg {
-  visibility: hidden;
+.wiz-dotyk .wiz-fakty small {
+  font-size: 8px;
 }
 
 .wiz-dotyk .wiz-blask,

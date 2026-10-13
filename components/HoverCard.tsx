@@ -6,10 +6,11 @@ import { zapasowyAdres } from "@/lib/obrazy";
 import { PhotoPlaceholder } from "./CourtPhoto";
 import { photoUrl } from "@/lib/supabase/config";
 import { godziny, kiedy, plakietka, wysokiPlakat, type Wydarzenie } from "@/lib/wydarzenia";
-import { ClockIcon, FireBallIcon } from "./icons";
+import { ClockIcon, FireBallIcon, HoopIcon, SurfaceIcon } from "./icons";
 import { ustalBarwe, zapamietanaBarwa } from "@/lib/barwa-zdjecia";
 import { plural } from "@/lib/site";
-import { useState } from "react";
+import { useSoczewka } from "@/lib/soczewka";
+import { useRef, useState } from "react";
 
 /** Rodzaj boiska w linijce pod nazwą - pełnym słowem, bo stoi obok nazwy miasta. */
 const RODZAJ_BOISKA: Record<CourtType, string> = {
@@ -83,12 +84,13 @@ export function HoverCard({
 }) {
   // zdjęcia nie przychodzą razem z listą boisk - dociągamy je dla tej jednej pinezki
   /*
-    Cztery kadry, nie trzy: przy wydarzeniu z pionowym plakatem siatka ma inny kształt
-    (wąski plakat po lewej, cztery zdjęcia boiska po prawej) i potrzebuje o jedno więcej.
-    Nadmiarowy kadr nic nie kosztuje, bo zapytanie i tak idzie po całą galerię boiska -
-    a zwykła wizytówka bierze z nich tylko pierwszy, kadr tytułowy.
+    Bierzemy całą galerię: zwykła wizytówka pokazuje kadr tytułowy i liczbę wszystkich
+    zdjęć, a wizytówka wydarzenia do czterech kadrów obok plakatu (przy pionowym plakacie
+    siatka potrzebuje czterech). Zapytanie i tak idzie po całą galerię boiska, więc dłuższa
+    lista nic nie kosztuje.
   */
-  const thumbs = useCourtPhotos(court.id, KADROW_WIZYTOWKI);
+  const galeria = useCourtPhotos(court.id, 99);
+  const thumbs = galeria.slice(0, KADROW_WIZYTOWKI);
 
   /*
     Barwa zdjęcia tytułowego (patrz `lib/barwa-zdjecia.ts`) - barwi cień, który wizytówka
@@ -130,6 +132,7 @@ export function HoverCard({
     <WizytowkaBoiska
       court={court}
       kadr={thumbs[0] ?? null}
+      ileZdjec={galeria.length}
       tapHint={tapHint}
       stan={stan}
       osobyDzis={osobyDzis}
@@ -140,25 +143,28 @@ export function HoverCard({
 }
 
 /*
-  WIZYTÓWKA BOISKA - „BARWA ZDJĘCIA" (wybrana z dziesięciu propozycji, październik 2026).
+  WIZYTÓWKA BOISKA - „SZYBA NA KADRZE" (wybrana z dziesięciu propozycji, październik 2026).
 
-  Tłem karty jest jej własne zdjęcie tytułowe, mocno rozmyte i nasycone: karta ma kolory
-  boiska, tak jak w Apple Music tło ma kolory okładki. Czerwony tartan daje ciepłą kartę,
-  szary beton i niebo - chłodną. Na tym tle ostry kadr, nazwa, miasto, trzy kafle i stopka
-  z ogniem i zapisami na dziś. Rozmyte tło to TEN SAM adres miniatury co kadr, więc nie
-  kosztuje drugiego pobrania.
+  Zdjęcie tytułowe zajmuje całą kartę, a nazwa i parametry leżą na szybie z płynnego
+  szkła przy dolnej krawędzi. Szyba naprawdę zagina kadr przy rancie (patrz
+  `lib/soczewka.ts`), więc czyta się jak tafla położona na zdjęciu, a nie jak pasek
+  naklejony na dole. Mniej ramek, więcej boiska.
 
-  Karta przechyla się za kursorem nad pinezką, a odblask przesuwa się po tafli - zmienne
+  W linijce pod nazwą jest miasto, a obok rodzaj boiska - albo, gdy ktoś się dziś zapisał,
+  ilu ludzi tam idzie. To ta sama liczba, która zapala ogień na pinezce, więc wizytówka
+  od razu tłumaczy, dlaczego pinezka płonie.
+
+  Karta przechyla się za kursorem nad pinezką, a odblask przesuwa się po niej - zmienne
   `--wiz-rx`, `--wiz-ry`, `--wiz-mx` i `--wiz-my` ustawia MapView na pojemniku karty.
   Na dotyku nie ma kursora, więc światło przesuwa się samo, powoli (patrz `.wiz-dotyk`).
 
-  Boisko z Basket Approved dostaje ten sam układ w oprawie karty kolekcjonerskiej:
-  holograficzna fioletowa folia na rancie, ciemny środek, nazwa Antonem i tęczowy połysk,
-  który jedzie razem z odblaskiem. To ta sama barwa co fioletowa pinezka na mapie.
+  Boisko z Basket Approved dostaje dookoła holograficzną fioletową obwódkę z folii,
+  która mieni się razem z odblaskiem - ta sama barwa co fioletowa pinezka na mapie.
 */
 function WizytowkaBoiska({
   court,
   kadr,
+  ileZdjec,
   tapHint,
   stan,
   osobyDzis,
@@ -168,6 +174,8 @@ function WizytowkaBoiska({
   court: MapCourt;
   /** kadr tytułowy - z narożnika, ten sam, który otwiera galerię boiska */
   kadr: CourtPhotoRef | null;
+  /** wszystkie zdjęcia w galerii boiska */
+  ileZdjec: number;
   tapHint: boolean;
   stan: "wchodzi" | "znika";
   osobyDzis: number;
@@ -176,7 +184,8 @@ function WizytowkaBoiska({
   poBarwie: (barwa: string) => void;
 }) {
   const holo = court.basketApproved;
-  const adresKadru = kadr?.url ? thumbUrl(kadr.url, thumbWidth(0)) : null;
+  const szybaRef = useRef<HTMLDivElement>(null);
+  useSoczewka(szybaRef, tapHint ? 20 : 24, { moc: 1.3 });
 
   /* barwę liczymy z kadru tytułowego - on niesie kolor boiska */
   const poKadrze = (img: HTMLImageElement) => {
@@ -187,30 +196,15 @@ function WizytowkaBoiska({
 
   return (
     <div
-      className={`wiz ${holo ? "wiz-holo" : "wiz-barwa"} ${tapHint ? "wiz-dotyk w-full" : "w-[320px]"} ${
+      className={`wiz wiz-szyba ${holo ? "wiz-holo" : ""} ${tapHint ? "wiz-dotyk w-full" : "w-[300px]"} ${
         stan === "znika" ? "karta-mapy-znika" : "karta-mapy"
       }`}
       style={akcent ? ({ "--wiz-akcent": akcent } as React.CSSProperties) : undefined}
     >
-      {holo ? (
-        <span aria-hidden className="wiz-folia" />
-      ) : (
-        <span
-          aria-hidden
-          className="wiz-tlo"
-          style={adresKadru ? { backgroundImage: `url("${adresKadru}")` } : undefined}
-        />
-      )}
+      {holo && <span aria-hidden className="wiz-folia" />}
 
-      <div className="wiz-srodek">
-        {holo && (
-          <div className="wiz-holo-gora">
-            <span>Basket Approved</span>
-            <FireBallIcon variant="basket" className="h-4 w-4" />
-          </div>
-        )}
-
-        <div className="wiz-kadr">
+      <div className="wiz-okno">
+        <div className="wiz-foto">
           {kadr?.url ? (
             /*
               Zwykły <img> ze stałym adresem miniatury, a nie next/image: ten sam adres
@@ -223,55 +217,85 @@ function WizytowkaBoiska({
           )}
         </div>
 
-        <h3 className="wiz-nazwa">{court.name}</h3>
-        <p className="wiz-miejsce">
-          {court.city} · {RODZAJ_BOISKA[court.type] ?? court.type}
-        </p>
-
-        <div className="wiz-kafle">
-          <div>
-            <b>{court.hoops}</b>
-            <span>{plural(court.hoops, ["kosz", "kosze", "koszy"])}</span>
-          </div>
-          <div>
-            <b>{godzinyNaKafel(court.hours, court.access)}</b>
-            <span>otwarte</span>
-          </div>
-          <div>
-            <b>{nawierzchniaNaKafel(court.surface)}</b>
-            <span>podłoże</span>
-          </div>
+        <div className="wiz-gora">
+          {holo ? (
+            <span className="wiz-kaps wiz-kaps-fiolet">
+              <FireBallIcon variant="basket" className="h-[15px] w-[15px] shrink-0" />
+              Basket Approved
+            </span>
+          ) : (
+            <span />
+          )}
+          {ileZdjec > 1 && (
+            <span className="wiz-kaps wiz-kaps-zdjecia">
+              <svg viewBox="0 0 24 24" className="h-[15px] w-[15px] shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+                <rect x="3" y="5" width="15" height="13" rx="2.5" />
+                <path d="M7 21h12.5a1.5 1.5 0 0 0 1.5-1.5V8" />
+                <path d="m3.5 15 4-4 3.5 3.5 2.5-2.5 4 4" />
+              </svg>
+              {ileZdjec} {plural(ileZdjec, ["zdjęcie", "zdjęcia", "zdjęć"])}
+            </span>
+          )}
         </div>
 
-        {/*
-          Ogień i zapisy pokazujemy tylko wtedy, gdy są. Pusty licznik („0 podpaleń",
-          „0 osób") to najgorsza możliwa informacja przy boisku - zniechęca, zamiast
-          zapraszać. Gdy nie ma ani jednego, ani drugiego, stopki nie ma wcale.
-        */}
-        {(court.likes > 0 || osobyDzis > 0) && (
-          <div className="wiz-stopka">
+        <div ref={szybaRef} className="wiz-szyba-panel">
+          <div className="wiz-r1">
+            <h3 className="wiz-nazwa">{court.name}</h3>
+            {/* pusty licznik („0") nic nie mówi, a zniechęca - ogień tylko wtedy, gdy jest */}
             {court.likes > 0 && (
               <span className="wiz-ogien">
                 <FireBallIcon className="h-[15px] w-[15px] shrink-0" />
-                <b>{court.likes}</b> {plural(court.likes, ["podpalenie", "podpalenia", "podpaleń"])}
-              </span>
-            )}
-            {osobyDzis > 0 && (
-              <span>
-                <b>
-                  {osobyDzis} {plural(osobyDzis, ["osoba", "osoby", "osób"])}
-                </b>{" "}
-                {plural(osobyDzis, ["idzie", "idą", "idzie"])} dziś
+                {court.likes}
               </span>
             )}
           </div>
-        )}
-
-        {tapHint && (
-          <p className="wiz-dotknij">
-            dotknij, żeby otworzyć boisko <span aria-hidden>→</span>
+          <p className="wiz-miejsce">
+            {court.city} ·{" "}
+            {osobyDzis > 0 ? (
+              <b>
+                {osobyDzis} {plural(osobyDzis, ["osoba idzie", "osoby idą", "osób idzie"])} dziś
+              </b>
+            ) : (
+              (RODZAJ_BOISKA[court.type] ?? court.type)
+            )}
           </p>
-        )}
+          {/*
+            Kolumny mają szerokość treści, a kreski stoją pośrodku wolnego miejsca między
+            nimi. Przy równych kolumnach „Poliuretan" czy „6:00-22:00" ucinały się, choć
+            obok kosze zajmowały jedną cyfrę.
+          */}
+          <div className="wiz-fakty">
+            <div>
+              <HoopIcon />
+              <span>
+                <b>{court.hoops}</b>
+                <small>{plural(court.hoops, ["kosz", "kosze", "koszy"])}</small>
+              </span>
+            </div>
+            <i aria-hidden className="wiz-kreska" />
+            <div>
+              <ClockIcon />
+              <span>
+                {/* pełne godziny bez „:00" („6-22") - na wizytówce każdy znak kosztuje miejsce */}
+                <b>{godzinyNaKafel(court.hours, court.access).replace(/:00/g, "")}</b>
+                <small>otwarte</small>
+              </span>
+            </div>
+            <i aria-hidden className="wiz-kreska" />
+            <div>
+              <SurfaceIcon />
+              <span>
+                <b>{nawierzchniaNaKafel(court.surface)}</b>
+                <small>podłoże</small>
+              </span>
+            </div>
+          </div>
+          {tapHint && (
+            <p className="wiz-dotknij">
+              dotknij, żeby otworzyć boisko <span aria-hidden>→</span>
+            </p>
+          )}
+        </div>
       </div>
 
       {holo && <span aria-hidden className="wiz-tecza" />}
