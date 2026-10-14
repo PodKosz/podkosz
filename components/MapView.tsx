@@ -51,8 +51,6 @@ const WARSTWY_MOTYWU: [
   keyof typeof BARWY_MAPY,
 ][] = [
   ["bg", "background-color", "tlo"],
-  ["winieta-blisko", "fill-color", "tlo"],
-  ["winieta-dal", "fill-color", "tlo"],
   ["woj-fill", "fill-color", "flame"],
   ["woj-active", "fill-color", "flame"],
   ["woj-line", "line-color", "glow"],
@@ -82,20 +80,33 @@ const POLAND_BOUNDS: [number, number, number, number] = [13.9, 48.9, 24.3, 55.0]
     - `winieta`: obrazek z gradientem dalej od granicy, z plamistym szumem, żeby front
       ciemności nie był równym pierścieniem. Przy granicy zaczyna się od zera, więc jego
       rzadka rozdzielczość (ok. 3 km na piksel) nie rozmywa konturu kraju;
-    - `winieta-dal`: poza obszarem obrazka pełna ciemność, ta sama, którą obrazek kończy.
-  Razem dają 0,3 tuż za granicą i 0,93 ok. 240 km dalej (narastanie 1-(1-u)^1,7, front
-  przesunięty szumem o ±90 km). Obrazek jest biały z kanałem alfa - barwę ciemności (tło
-  motywu) nadaje mu jasność rastra, patrz `pomalujWgMotywu`. Wygenerowany w podglądzie
-  „Mapa na nowo" (funkcja `winieta`) - przy zmianie WINIETA_A0 trzeba go przeliczyć.
+    - `winieta-dal`: poza obszarem obrazka pełna ciemność, ta sama, którą obrazek kończy;
+    - `winieta-usa`: wokół minigier w USA mapa zostaje jasna - drugi obrazek, który w swoim
+      prostokącie zastępuje `winieta-dal` i gaśnie dopiero z odległością od pinezek.
+  Razem dają 0,2 tuż za granicą i 0,82 ok. 300 km dalej (narastanie 1-(1-u)^1,7, front
+  przesunięty szumem o ±90 km); wokół minigier jasno do 150 km, pełna ciemność ok. 700 km
+  dalej. Obrazki są białe z kanałem alfa - barwę ciemności (tło motywu) nadaje im jasność
+  rastra, patrz `pomalujWgMotywu`. Wygenerowane w podglądzie „Mapa na nowo" (funkcje
+  `winieta` i `winietaPunkty`) - przy zmianie WINIETA_A0 trzeba je przeliczyć.
 */
-const WINIETA_A0 = 0.3;
-const WINIETA_DAL = 0.9;
-const WINIETA_ROGI: [[number, number], [number, number], [number, number], [number, number]] = [
+const WINIETA_A0 = 0.2;
+const WINIETA_DAL = 0.775;
+type Rogi = [[number, number], [number, number], [number, number], [number, number]];
+const WINIETA_ROGI: Rogi = [
   [7.5, 58.8],
   [30.505371, 58.8],
   [30.505371, 44.992658],
   [7.5, 44.992658],
 ];
+/* prostokąt z minigrami w USA (Venice Beach, Las Vegas, Chicago, Manhattan) */
+const WINIETA_USA_ROGI: Rogi = [
+  [-128, 52],
+  [-61.998764, 52],
+  [-61.998764, 21.99384],
+  [-128, 21.99384],
+];
+/* pierścień dziury w warstwie „dal" - kolejność odwrotna niż rogi obrazka */
+const dziura = (r: Rogi) => [r[0], r[3], r[2], r[1], r[0]];
 /* przy widoku całego świata (telefon oddala się do minigier w USA) ciemność słabnie */
 const winietaWgPrzyblizenia = (moc: number): ExpressionSpecification => [
   "interpolate",
@@ -372,6 +383,7 @@ const STYLE: StyleSpecification = {
     carto: podkladMapy("dark_nolabels"),
     "polska-maska": { type: "geojson", data: "/geo/polska-maska.geojson" },
     winieta: { type: "image", url: "/mapa/winieta.png", coordinates: WINIETA_ROGI },
+    "winieta-usa": { type: "image", url: "/mapa/winieta-usa.png", coordinates: WINIETA_USA_ROGI },
     "winieta-dal": {
       type: "geojson",
       data: {
@@ -381,7 +393,8 @@ const STYLE: StyleSpecification = {
           type: "Polygon",
           coordinates: [
             [[-180, -85], [180, -85], [180, 85], [-180, 85], [-180, -85]],
-            [WINIETA_ROGI[0], WINIETA_ROGI[3], WINIETA_ROGI[2], WINIETA_ROGI[1], WINIETA_ROGI[0]],
+            dziura(WINIETA_ROGI),
+            dziura(WINIETA_USA_ROGI),
           ],
         },
       },
@@ -409,7 +422,7 @@ const STYLE: StyleSpecification = {
       type: "fill",
       source: "polska-maska",
       filter: ["==", ["geometry-type"], "Polygon"],
-      paint: { "fill-color": BARWY_MAPY.tlo, "fill-opacity": winietaWgPrzyblizenia(WINIETA_A0) },
+      paint: { "fill-color": "rgb(7,7,7)", "fill-opacity": winietaWgPrzyblizenia(WINIETA_A0) },
     },
     {
       id: "winieta",
@@ -418,9 +431,20 @@ const STYLE: StyleSpecification = {
       paint: {
         "raster-opacity": winietaWgPrzyblizenia(1),
         "raster-fade-duration": 0,
-        /* biały obrazek przyjmuje jasność tła motywu (#07070a) */
-        "raster-brightness-min": 0.028,
-        "raster-brightness-max": 0.028,
+        /* biały obrazek przyjmuje szarość tła motywu, patrz pomalujWgMotywu */
+        "raster-brightness-min": 7 / 255,
+        "raster-brightness-max": 7 / 255,
+      },
+    },
+    {
+      id: "winieta-usa",
+      type: "raster",
+      source: "winieta-usa",
+      paint: {
+        "raster-opacity": winietaWgPrzyblizenia(1),
+        "raster-fade-duration": 0,
+        "raster-brightness-min": 7 / 255,
+        "raster-brightness-max": 7 / 255,
       },
     },
     {
@@ -428,7 +452,7 @@ const STYLE: StyleSpecification = {
       type: "fill",
       source: "winieta-dal",
       paint: {
-        "fill-color": BARWY_MAPY.tlo,
+        "fill-color": "rgb(7,7,7)",
         "fill-opacity": winietaWgPrzyblizenia(WINIETA_DAL),
         "fill-antialias": false,
       },
@@ -458,7 +482,8 @@ const STYLE: StyleSpecification = {
       source: "woj",
       paint: {
         "line-color": BARWY_MAPY.glow,
-        "line-width": 0.8,
+        /* cienka nitka (opcja 51 z podglądu, październik 2026) - wcześniej 0,8 px */
+        "line-width": 0.35,
         "line-opacity": 0.35,
       },
     },
@@ -518,13 +543,24 @@ function pomalujWgMotywu(map: MlMap) {
     if (map.getLayer(warstwa)) map.setPaintProperty(warstwa, wlasciwosc, barwy[barwa]);
   }
 
-  /* obrazek winiety jest biały - jasność rastra robi z niego tło motywu (ciemne albo jasne) */
+  /*
+    Ciemność winiety ma barwę tła motywu (ciemną albo jasną), ale w odcieniu szarości:
+    obrazki są białe, a jasność rastra potrafi zrobić z bieli tylko szarość. Wypełnienia
+    dostają dokładnie ten sam szary - z odcieniem tła (#07070a jest lekko niebieskie) na
+    styku obrazka z wypełnieniem było widać krawędź.
+  */
   const tlo = /^#([0-9a-f]{6})$/i.exec(barwy.tlo);
-  if (tlo && map.getLayer("winieta")) {
+  if (tlo) {
     const n = parseInt(tlo[1], 16);
-    const jasnosc = (0.2126 * (n >> 16) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
-    map.setPaintProperty("winieta", "raster-brightness-min", jasnosc);
-    map.setPaintProperty("winieta", "raster-brightness-max", jasnosc);
+    const szary = Math.round(0.2126 * (n >> 16) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255));
+    for (const warstwa of ["winieta-blisko", "winieta-dal"]) {
+      if (map.getLayer(warstwa)) map.setPaintProperty(warstwa, "fill-color", `rgb(${szary},${szary},${szary})`);
+    }
+    for (const warstwa of ["winieta", "winieta-usa"]) {
+      if (!map.getLayer(warstwa)) continue;
+      map.setPaintProperty(warstwa, "raster-brightness-min", szary / 255);
+      map.setPaintProperty(warstwa, "raster-brightness-max", szary / 255);
+    }
   }
 
   /*
