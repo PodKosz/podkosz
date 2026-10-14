@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
-import { Map as MlMap, Marker, StyleSpecification, setWorkerUrl } from "maplibre-gl";
+import { LngLat, Map as MlMap, Marker, MercatorCoordinate, StyleSpecification, setWorkerUrl } from "maplibre-gl";
+import type { ExpressionSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { MapCourt } from "@/lib/types";
 import { CITIES_GEOJSON } from "@/lib/cities";
@@ -50,6 +51,8 @@ const WARSTWY_MOTYWU: [
   keyof typeof BARWY_MAPY,
 ][] = [
   ["bg", "background-color", "tlo"],
+  ["winieta-blisko", "fill-color", "tlo"],
+  ["winieta-dal", "fill-color", "tlo"],
   ["woj-fill", "fill-color", "flame"],
   ["woj-active", "fill-color", "flame"],
   ["woj-line", "line-color", "glow"],
@@ -68,6 +71,88 @@ function zeStylu(nazwa: string, awaryjna: string) {
 }
 
 const POLAND_BOUNDS: [number, number, number, number] = [13.9, 48.9, 24.3, 55.0];
+
+/*
+  Kraje dookoła Polski stopniowo gasną w tło mapy, a sama Polska zostaje w pełnym kolorze
+  (wybrana opcja 50 z podglądu „Mapa na nowo", październik 2026).
+
+  Ciemność składa się z trzech warstw, bo każda robi co innego:
+    - `winieta-blisko`: stałe `a0` na całym świecie poza Polską (`polska-maska.geojson`,
+      suma województw). Wektor, więc krawędź przy granicy jest ostra przy każdym przybliżeniu;
+    - `winieta`: obrazek z gradientem dalej od granicy, z plamistym szumem, żeby front
+      ciemności nie był równym pierścieniem. Przy granicy zaczyna się od zera, więc jego
+      rzadka rozdzielczość (ok. 3 km na piksel) nie rozmywa konturu kraju;
+    - `winieta-dal`: poza obszarem obrazka pełna ciemność, ta sama, którą obrazek kończy.
+  Razem dają 0,3 tuż za granicą i 0,93 ok. 240 km dalej (narastanie 1-(1-u)^1,7, front
+  przesunięty szumem o ±90 km). Obrazek jest biały z kanałem alfa - barwę ciemności (tło
+  motywu) nadaje mu jasność rastra, patrz `pomalujWgMotywu`. Wygenerowany w podglądzie
+  „Mapa na nowo" (funkcja `winieta`) - przy zmianie WINIETA_A0 trzeba go przeliczyć.
+*/
+const WINIETA_A0 = 0.3;
+const WINIETA_DAL = 0.9;
+const WINIETA_ROGI: [[number, number], [number, number], [number, number], [number, number]] = [
+  [7.5, 58.8],
+  [30.505371, 58.8],
+  [30.505371, 44.992658],
+  [7.5, 44.992658],
+];
+/* przy widoku całego świata (telefon oddala się do minigier w USA) ciemność słabnie */
+const winietaWgPrzyblizenia = (moc: number): ExpressionSpecification => [
+  "interpolate",
+  ["linear"],
+  ["zoom"],
+  2.5,
+  moc * 0.4,
+  4,
+  moc,
+];
+
+/*
+  Kadr na Polskę ma zostawić miejsce na wizytówkę nad najwyżej położoną pinezką.
+
+  Na komputerze wizytówka boiska wisi NAD pinezką: 58 px nad jej ostrym końcem, karta ma
+  380 px wysokości. Kadr dociągnięty do samej góry stawiał pinezki z Trójmiasta tak wysoko,
+  że na monitorze 4K uciekało górne 80 px karty. Polska jest więc na komputerze odrobinę
+  mniejsza i dosunięta w dół - na ekranie 4K o ok. 10%. Na niższych ekranach karta jest za
+  wysoka, żeby zmieścić ją przez samo oddalenie, więc kadr maleje najwyżej o
+  `MAKS_ODDALENIE`, a resztę załatwia wizytówka, która przy górnej krawędzi pokazuje się
+  pod pinezką.
+
+  `PINEZKI_DO` to szerokość najdalej na północ wysuniętego boiska (Sopot, 54,45° w
+  październiku 2026), wpisana na stałe, a nie liczona z listy: kadr startowy musi być
+  zawsze ten sam, bo po nim `zapiszKadr` rozpoznaje „widok całej Polski".
+*/
+const MIEJSCE_NA_WIZYTOWKE = 58 + 380 + 14;
+const PINEZKI_DO = 54.46;
+const MAKS_ODDALENIE = 0.2;
+
+function kadrPolski(map: MlMap): { center: LngLat; zoom: number } | null {
+  const el = map.getContainer();
+  const szer = el.clientWidth;
+  const padding = fitPadding(szer);
+  const zwykly = map.cameraForBounds(POLAND_BOUNDS, { padding });
+  if (!zwykly?.center || zwykly.zoom === undefined) return null;
+  const kadr = { center: LngLat.convert(zwykly.center), zoom: zwykly.zoom };
+
+  /* telefon i tablet: wizytówka siedzi nad dolnym panelem, nie nad pinezką */
+  if (szer < 1024 || window.matchMedia("(pointer: coarse)").matches) return kadr;
+
+  const [w, s, e] = POLAND_BOUNDS;
+  const zKarta = map.cameraForBounds([w, s, e, PINEZKI_DO], {
+    padding: { ...padding, top: MIEJSCE_NA_WIZYTOWKE },
+  });
+  if (!zKarta?.center || zKarta.zoom === undefined || zKarta.zoom >= kadr.zoom) return kadr;
+  if (kadr.zoom - zKarta.zoom <= MAKS_ODDALENIE) {
+    return { center: LngLat.convert(zKarta.center), zoom: zKarta.zoom };
+  }
+
+  /* niski ekran: oddalamy tylko o MAKS_ODDALENIE, a Polskę dosuwamy do dolnego marginesu */
+  const zoom = kadr.zoom - MAKS_ODDALENIE;
+  const y =
+    MercatorCoordinate.fromLngLat([kadr.center.lng, s]).y -
+    (el.clientHeight / 2 - padding.bottom) / (512 * 2 ** zoom);
+  return { center: new LngLat(kadr.center.lng, new MercatorCoordinate(0.5, y).toLngLat().lat), zoom };
+}
 
 /**
  * Jak daleko wolno oddalić mapę.
@@ -285,6 +370,22 @@ const STYLE: StyleSpecification = {
   glyphs: "/mapa/fonts/{fontstack}/{range}.pbf",
   sources: {
     carto: podkladMapy("dark_nolabels"),
+    "polska-maska": { type: "geojson", data: "/geo/polska-maska.geojson" },
+    winieta: { type: "image", url: "/mapa/winieta.png", coordinates: WINIETA_ROGI },
+    "winieta-dal": {
+      type: "geojson",
+      data: {
+        type: "Feature",
+        properties: {},
+        geometry: {
+          type: "Polygon",
+          coordinates: [
+            [[-180, -85], [180, -85], [180, 85], [-180, 85], [-180, -85]],
+            [WINIETA_ROGI[0], WINIETA_ROGI[3], WINIETA_ROGI[2], WINIETA_ROGI[1], WINIETA_ROGI[0]],
+          ],
+        },
+      },
+    },
     woj: { type: "geojson", data: "/geo/wojewodztwa.geojson" },
     miasta: { type: "geojson", data: CITIES_GEOJSON },
   },
@@ -300,6 +401,36 @@ const STYLE: StyleSpecification = {
         "raster-saturation": -0.35,
         "raster-hue-rotate": -12,
         ...WYOSTRZENIE_ULIC,
+      },
+    },
+    /* kraje dookoła gasną - opis przy WINIETA_A0 */
+    {
+      id: "winieta-blisko",
+      type: "fill",
+      source: "polska-maska",
+      filter: ["==", ["geometry-type"], "Polygon"],
+      paint: { "fill-color": BARWY_MAPY.tlo, "fill-opacity": winietaWgPrzyblizenia(WINIETA_A0) },
+    },
+    {
+      id: "winieta",
+      type: "raster",
+      source: "winieta",
+      paint: {
+        "raster-opacity": winietaWgPrzyblizenia(1),
+        "raster-fade-duration": 0,
+        /* biały obrazek przyjmuje jasność tła motywu (#07070a) */
+        "raster-brightness-min": 0.028,
+        "raster-brightness-max": 0.028,
+      },
+    },
+    {
+      id: "winieta-dal",
+      type: "fill",
+      source: "winieta-dal",
+      paint: {
+        "fill-color": BARWY_MAPY.tlo,
+        "fill-opacity": winietaWgPrzyblizenia(WINIETA_DAL),
+        "fill-antialias": false,
       },
     },
     {
@@ -385,6 +516,15 @@ function pomalujWgMotywu(map: MlMap) {
 
   for (const [warstwa, wlasciwosc, barwa] of WARSTWY_MOTYWU) {
     if (map.getLayer(warstwa)) map.setPaintProperty(warstwa, wlasciwosc, barwy[barwa]);
+  }
+
+  /* obrazek winiety jest biały - jasność rastra robi z niego tło motywu (ciemne albo jasne) */
+  const tlo = /^#([0-9a-f]{6})$/i.exec(barwy.tlo);
+  if (tlo && map.getLayer("winieta")) {
+    const n = parseInt(tlo[1], 16);
+    const jasnosc = (0.2126 * (n >> 16) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
+    map.setPaintProperty("winieta", "raster-brightness-min", jasnosc);
+    map.setPaintProperty("winieta", "raster-brightness-max", jasnosc);
   }
 
   /*
@@ -564,6 +704,16 @@ export function MapView({
 
   /** pojemnik wizytówki na kursor - dostaje zmienne przechyłu i odblasku */
   const kartaPozRef = useRef<HTMLDivElement | null>(null);
+  /*
+    Zmierzona wysokość wizytówki na kursor. Karta boiska ma 380 px, ale wizytówka wydarzenia
+    rośnie z treścią, więc mierzymy po narysowaniu - jeszcze przed malowaniem klatki
+    (`useLayoutEffect`), żeby karta nie mignęła w złym miejscu.
+  */
+  const [wysKarty, setWysKarty] = useState(380);
+  useLayoutEffect(() => {
+    const h = kartaPozRef.current?.offsetHeight;
+    if (h && Math.abs(h - wysKarty) > 1) setWysKarty(h);
+  }, [hover, znika, wysKarty]);
 
   /*
     Wizytówka przechyla się za kursorem, a odblask przesuwa się po tafli.
@@ -852,7 +1002,8 @@ export function MapView({
         framed = true;
         // z województwem w adresie kadr ustawia dolot do regionu - nie odbieramy mu go
         if (!wojKlikRef.current) {
-          map.fitBounds(POLAND_BOUNDS, { padding: fitPadding(width), duration: 0 });
+          const kadr = kadrPolski(map);
+          if (kadr) map.jumpTo(kadr);
         }
       }
     });
@@ -872,8 +1023,8 @@ export function MapView({
     if (!zAdresu) {
       map.once("idle", () => {
         if (ruszona || wojKlikRef.current) return;
-        const szer = map.getContainer().clientWidth;
-        map.fitBounds(POLAND_BOUNDS, { padding: fitPadding(szer), duration: 0 });
+        const kadr = kadrPolski(map);
+        if (kadr) map.jumpTo(kadr);
       });
     }
 
@@ -889,10 +1040,8 @@ export function MapView({
         zapisany widok, choć nikt mapy nie ruszył. To samo po powrocie przyciskiem z globusem
         albo po wyjściu z województwa.
       */
-      const polska = map.cameraForBounds(POLAND_BOUNDS, {
-        padding: fitPadding(map.getContainer().clientWidth),
-      });
-      if (polska?.center && polska.zoom !== undefined) {
+      const polska = kadrPolski(map);
+      if (polska) {
         const tu = map.project(map.getCenter());
         const tam = map.project(polska.center);
         if (Math.abs(map.getZoom() - polska.zoom) < 0.02 && tu.dist(tam) < 2) {
@@ -1597,11 +1746,8 @@ export function MapView({
     if (!bylWybor.current) return;
     bylWybor.current = false;
 
-    map.fitBounds(POLAND_BOUNDS, {
-      padding: fitPadding(containerRef.current?.clientWidth ?? 1024),
-      duration: 900,
-      essential: true,
-    });
+    const kadr = kadrPolski(map);
+    if (kadr) map.flyTo({ ...kadr, duration: 900, essential: true });
   }, [wojKlikniete, ready]);
 
   /*
@@ -1659,11 +1805,11 @@ export function MapView({
 
   const zoomBy = (d: number) => mapRef.current?.zoomTo((mapRef.current?.getZoom() ?? 6) + d, { duration: 320 });
 
-  const resetView = () =>
-    mapRef.current?.fitBounds(POLAND_BOUNDS, {
-      padding: fitPadding(containerRef.current?.clientWidth ?? 1024),
-      duration: 900,
-    });
+  const resetView = () => {
+    const map = mapRef.current;
+    const kadr = map && kadrPolski(map);
+    if (kadr) map.flyTo({ ...kadr, duration: 900 });
+  };
 
   return (
     <div className="map-shell absolute inset-0">
@@ -1725,8 +1871,13 @@ export function MapView({
             <div
               className="pointer-events-none absolute z-20"
               ref={kartaPozRef}
-              // perspektywa dla przechyłu wizytówki za kursorem (zmienne --wiz-* ustawia efekt wyżej)
-              style={{ left: karta.x, top: karta.y - 58, transform: "translate(-50%,-100%)", perspective: 900 }}
+              // perspektywa dla przechyłu wizytówki za kursorem (zmienne --wiz-* ustawia efekt wyżej);
+              // przy górnej krawędzi mapy karta nie zmieściłaby się nad pinezką - wtedy staje pod nią
+              style={
+                karta.y - 58 - wysKarty >= 8
+                  ? { left: karta.x, top: karta.y - 58, transform: "translate(-50%,-100%)", perspective: 900 }
+                  : { left: karta.x, top: karta.y + 14, transform: "translate(-50%,0)", perspective: 900 }
+              }
             >
               <HoverCard
                 court={karta.court}
