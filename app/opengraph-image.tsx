@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { SITE_URL } from "@/lib/site";
+import { ZASLONA } from "@/lib/zaslona";
 import { ZNAK, znakSvg } from "@/lib/znak";
 
 /**
@@ -12,8 +13,11 @@ import { ZNAK, znakSvg } from "@/lib/znak";
  * Rysunek składa satori, a ono nie zna `background-clip: text` ani znaczników SVG w drzewie,
  * dlatego gradient na napisie zastępuje jednolity pomarańcz, a logo wchodzi jako obrazek
  * z adresu `data:`.
+ *
+ * Dopóki stoi zasłona, obrazek nie zdradza, czym jest serwis: zostaje znak, nazwa
+ * i „Już niedługo" - tak samo jak na samej zasłonie (`app/(zaslona)/wkrotce`).
  */
-export const alt = "PodKosz - największa mapa boisk do koszykówki w Polsce";
+export const alt = ZASLONA ? "PodKosz - już niedługo" : "PodKosz - największa mapa boisk do koszykówki w Polsce";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -67,13 +71,16 @@ export default function OgImage() {
             color: "#ffb25c",
           }}
         >
-          <span>Największa mapa boisk</span>
-          <span>do koszykówki w Polsce</span>
+          {/* bez fragmentów Reacta - satori składa tylko zwykłe elementy */}
+          <span>{ZASLONA ? "Już niedługo" : "Największa mapa boisk"}</span>
+          {ZASLONA ? null : <span>do koszykówki w Polsce</span>}
         </div>
 
-        <div style={{ marginTop: 22, fontSize: 26, color: "rgba(255,255,255,.6)" }}>
-          Zdjęcia · nawierzchnia · liczba koszy · godziny
-        </div>
+        {ZASLONA ? null : (
+          <div style={{ marginTop: 22, fontSize: 26, color: "rgba(255,255,255,.6)" }}>
+            Zdjęcia · nawierzchnia · liczba koszy · godziny
+          </div>
+        )}
 
         <div
           style={{

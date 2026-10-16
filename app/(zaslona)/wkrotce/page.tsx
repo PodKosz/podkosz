@@ -6,7 +6,7 @@ import { Znak } from "@/components/Znak";
 
 export const metadata: Metadata = {
   title: "PodKosz - już niedługo",
-  description: "Największa mapa boisk do koszykówki w Polsce. Otwieramy wkrótce.",
+  description: "Już niedługo.",
   robots: { index: false, follow: false },
   alternates: { canonical: undefined },
 };
@@ -17,6 +17,10 @@ export const metadata: Metadata = {
  * Nie ma tu nawigacji ani stopki (pomija je układ główny), żeby nic nie prowadziło dalej.
  * Tło: przekrzywiony kontur boiska rozciągnięty poza ekran, dwie dryfujące plamy światła
  * i ciepła poświata pod napisem.
+ *
+ * Zasłona celowo NIE mówi, czym jest serwis - ani tu, ani w opisie strony, ani w obrazku
+ * podglądu linku, ani w potwierdzeniu zapisu. Do premiery ma być wiadomo tylko tyle,
+ * że coś się szykuje (decyzja z 16.10.2026).
  */
 export default function Wkrotce() {
   return (
@@ -93,12 +97,6 @@ export default function Wkrotce() {
         <h1 className="-mb-[0.18em] mt-8 flame-text pb-[0.18em] pr-[0.06em] text-[clamp(46px,12vw,116px)] font-bold leading-[1.1] tracking-[-0.035em]">
           Już niedługo
         </h1>
-
-        {/* łamanie wpisane ręcznie: „w Polsce" ma zamykać pierwszy wiersz */}
-        <p className="mt-6 flex max-w-[64ch] flex-col text-[15px] leading-relaxed text-muted sm:text-[16px]">
-          <span>Chcemy zbudować największą mapę boisk do koszykówki w Polsce.</span>
-          <span>Otwieramy wkrótce!</span>
-        </p>
 
         {/* delikatna kreska w kolorach marki zamiast pustki pod tekstem */}
         <span

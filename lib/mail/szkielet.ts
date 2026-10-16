@@ -200,15 +200,20 @@ export function przycisk(napis: string, adres: string) {
  *
  * `stopka` to zdanie wyjaśniające, skąd ten mail - inne dla powitania (bo powstało konto)
  * i dla wiadomości o otwarciu (bo ktoś sam się zapisał).
+ *
+ * `bezOpisu` zdejmuje ze stopki hasło „Mapa boisk do koszykówki w Polsce" - dla listów,
+ * które wychodzą do ludzi z zewnątrz, zanim zasłona zejdzie (potwierdzenie zapisu).
  */
 export function szkielet({
   podglad,
   tresc,
   stopka,
+  bezOpisu = false,
 }: {
   podglad: string;
   tresc: string;
   stopka: string;
+  bezOpisu?: boolean;
 }) {
   /*
     Outlook nie zna background-image, więc pod treść wkładamy warunkowy prostokąt VML
@@ -333,7 +338,7 @@ export function szkielet({
       </a>
       <div style="font-family:${CZCIONKA};font-size:12px;line-height:1.7;color:${SLABY};
         padding-top:16px;">
-        Mapa boisk do koszykówki w Polsce &middot;
+        ${bezOpisu ? "" : "Mapa boisk do koszykówki w Polsce &middot;"}
         <a href="${SITE_URL}" style="color:${PRZYGASZONY};text-decoration:none;">podkosz.pl</a>
       </div>
       <div style="font-family:${CZCIONKA};font-size:11px;line-height:1.7;color:${SLABY};
