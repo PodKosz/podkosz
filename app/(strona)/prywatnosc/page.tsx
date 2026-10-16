@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Lista, Mail, Sekcja, TytulDokumentu } from "@/components/Dokument";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -10,27 +11,26 @@ export const metadata: Metadata = {
 };
 
 /** Ostatnia zmiana treści - pokazywana na stronie i przydatna przy weryfikacji Google OAuth. */
-const AKTUALIZACJA = "28 września 2026";
-const KONTAKT = "podkoszpl@gmail.com";
+const AKTUALIZACJA = "16 października 2026";
 
+/**
+ * Polityka prywatności w wersji pełnej - „po" otwarciu, opisuje cały serwis.
+ *
+ * Dopóki stoi zasłona, widzą ją tylko wpuszczeni (testerzy i administrator). Reszta dostaje
+ * pod tym samym adresem wersję „przed" z `app/(zaslona)/wkrotce/prywatnosc`, którą podstawia
+ * proxy (`WERSJE_PRZED` w `proxy.ts`). Zmieniając zasady przetwarzania danych, sprawdź obie.
+ */
 export default function PrivacyPage() {
   return (
     <main className="mx-auto min-h-dvh max-w-3xl px-6 pb-24 pt-28">
-      <p className="text-[12px] uppercase tracking-[0.2em] text-flame">Dokumenty</p>
-      <h1 className="mt-2 text-[clamp(30px,5vw,46px)] font-semibold tracking-[-0.02em]">
-        Polityka prywatności
-      </h1>
-      <p className="mt-3 text-[14px] text-faint">Ostatnia aktualizacja: {AKTUALIZACJA}</p>
+      <TytulDokumentu tytul="Polityka prywatności" aktualizacja={AKTUALIZACJA} />
 
       <div className="mt-10 space-y-10">
         <Sekcja title="Kto odpowiada za dane">
           <p>
             Administratorem danych jest Szymon Tyszkowski, twórca serwisu {SITE_NAME} ({SITE_URL}),
             występujący w serwisie jako Basket. We wszystkich sprawach dotyczących danych pisz na{" "}
-            <a className="text-flame" href={`mailto:${KONTAKT}`}>
-              {KONTAKT}
-            </a>
-            .
+            <Mail />.
           </p>
         </Sekcja>
 
@@ -55,7 +55,7 @@ export default function PrivacyPage() {
               ],
               [
                 "Lista na otwarcie",
-                "adres e-mail podany w formularzu „Zapisz się na otwarcie” - wyłącznie do jednej wiadomości w dniu otwarcia serwisu. Podstawa: Twoja zgoda (lit. a), którą możesz wycofać w każdej chwili, pisząc do nas.",
+                "adres e-mail podany w formularzu „Zapisz się na otwarcie” - wyłącznie do krótkiego potwierdzenia zapisu i jednej wiadomości w dniu otwarcia serwisu. Podstawa: Twoja zgoda (lit. a), którą możesz wycofać w każdej chwili, pisząc do nas. Razem z adresem zapisujemy skrót (hash) adresu IP, żeby ograniczyć liczbę zapisów z jednego urządzenia - znika razem z adresem (podstawa: bezpieczeństwo serwisu, lit. f).",
               ],
               [
                 "Wiadomości e-mail z serwisu",
@@ -128,7 +128,7 @@ export default function PrivacyPage() {
                 "Odrzucone zgłoszenia i poprawki zdjęć",
                 "12 miesięcy od decyzji, jako ślad moderacyjny; potem znikają razem ze zdjęciami.",
               ],
-              ["Lista na otwarcie", "do 30 dni po wysłaniu wiadomości o otwarciu."],
+              ["Lista na otwarcie", "adres i skrót IP - do 30 dni po wysłaniu wiadomości o otwarciu."],
               ["Opinie i zgłoszenia błędów", "24 miesiące."],
               ["Skróty adresów IP przy zgłoszeniach", "30 dni."],
               ["Statystyka odwiedzin", "12 miesięcy; licznik osób na stronie - doba."],
@@ -144,10 +144,7 @@ export default function PrivacyPage() {
             przetwarzania i przeniesienia. Zgodę możesz wycofać w każdej chwili - nie wpływa to na
             to, co zrobiliśmy przed jej wycofaniem. Możesz też w każdej chwili sprzeciwić się
             przetwarzaniu opartemu na naszym prawnie uzasadnionym interesie, w tym powiadomieniom
-            o wydarzeniach. Wystarczy wiadomość na{" "}
-            <a className="text-flame" href={`mailto:${KONTAKT}`}>
-              {KONTAKT}
-            </a>{" "}
+            o wydarzeniach. Wystarczy wiadomość na <Mail />{" "}
             - odpowiadamy w ciągu 30 dni. Masz też prawo złożyć skargę do Prezesa Urzędu Ochrony
             Danych Osobowych (ul. Stawki 2, 00-193 Warszawa, uodo.gov.pl).
           </p>
@@ -189,26 +186,5 @@ export default function PrivacyPage() {
         Zobacz też <Link href="/regulamin" className="text-flame">regulamin serwisu</Link>.
       </div>
     </main>
-  );
-}
-
-function Sekcja({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section>
-      <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">{title}</h2>
-      <div className="mt-3 space-y-3 text-[16px] leading-relaxed text-ink/90">{children}</div>
-    </section>
-  );
-}
-
-function Lista({ items }: { items: [string, string][] }) {
-  return (
-    <ul className="space-y-3">
-      {items.map(([name, desc]) => (
-        <li key={name} className="border-l-2 border-flame/40 pl-4">
-          <span className="font-semibold">{name}</span> - <span className="text-muted">{desc}</span>
-        </li>
-      ))}
-    </ul>
   );
 }

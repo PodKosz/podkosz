@@ -225,8 +225,9 @@ export function ZapisNaOtwarcie() {
 
       {/*
         Obowiązek informacyjny przy zbieraniu adresu (art. 13 RODO) - w miejscu, w którym
-        adres się podaje, a nie tylko w stopce. Zasłona przepuszcza `/prywatnosc`, więc
-        link działa także przed otwarciem.
+        adres się podaje, a nie tylko w stopce. Pod `/prywatnosc` zasłona podstawia wersję
+        „przed" otwarciem (`WERSJE_PRZED` w `proxy.ts`), więc link działa i nie zdradza,
+        co jest za zasłoną.
       */}
       <p className="max-w-[360px] text-center text-[11px] leading-snug text-faint">
         Adres posłuży tylko do tego jednego maila, a miesiąc po otwarciu go usuwam.{" "}

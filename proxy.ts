@@ -45,25 +45,6 @@ const ZAWSZE_DOSTEPNE = [
   */
   "/api/sesja",
   /*
-    Polityka prywatności i regulamin - z tego samego powodu, co endpoint zapisu: ktoś
-    z zewnątrz MUSI móc je otworzyć, zanim wejdzie za zasłonę.
-
-    Takim miejscem jest ekran zgody Google przy logowaniu: stoją na nim odnośniki do obu
-    tych stron, a człowiek klika je ZANIM założy konto - czyli zanim ma jakąkolwiek szansę
-    przejść za zasłonę. Przepisanie na „Już niedługo" znaczyło, że ktoś pytający o to, co
-    robimy z jego danymi, dostaje w odpowiedzi plakat.
-
-    Sama strona zasłony nie linkuje dziś do żadnej z nich - nie ma na niej ani jednego
-    odnośnika. Gdyby kiedyś miała, ten wpis jest już na swoim miejscu.
-
-    NIE otwiera to serwisu. Te dwie strony nie pokazują ani jednego boiska, ani jednego
-    konta i nie prowadzą nigdzie dalej - a `noindex` zostaje na nich tak czy owak, bo
-    nakłada go układ całej grupy `(strona)` na czas zasłony (patrz `app/(strona)/layout.tsx`).
-    Wyszukiwarka ich więc nie zaindeksuje, mimo że robot je pobierze.
-  */
-  "/prywatnosc",
-  "/regulamin",
-  /*
     Wypis z powiadomień. Link przychodzi w liście, a list może dojść także wtedy, gdy
     zasłona stoi - wypisanie się nie może zależeć od tego, czy serwis jest otwarty.
     Strona i trasa znają tylko token, nie pokazują żadnych danych.
@@ -71,6 +52,29 @@ const ZAWSZE_DOSTEPNE = [
   "/wypisz",
   "/api/wypisz",
 ];
+
+/**
+ * Polityka prywatności i regulamin w wersji „przed" otwarciem - co zasłona podstawia
+ * pod ich adresy każdemu, kogo nie wpuszcza (zamiast plakatu „Już niedługo").
+ *
+ * Plakat odpada z tego samego powodu, co przy endpoincie zapisu: ktoś z zewnątrz MUSI
+ * móc przeczytać te dokumenty, zanim wejdzie dalej. Linkuje do nich formularz zapisu na
+ * otwarcie (obowiązek informacyjny przy zbieraniu adresu) i ekran zgody Google, a ten
+ * człowiek ogląda, ZANIM założy konto.
+ *
+ * Do 16.10.2026 obie strony szły tu w wersji pełnej, i to był wyciek: tekst opisywał cały
+ * serwis, a układ grupy `(strona)` dokładał pasek nawigacji, stopkę i opis serwisu
+ * w metadanych - czyli wszystko, czego zasłona ma nie mówić. Wersja „przed" opisuje tylko
+ * to, co dzieje się z danymi przed otwarciem, i stoi w układzie zasłony, bez nawigacji
+ * i stopki (`app/(zaslona)/wkrotce/prywatnosc`, `.../regulamin`).
+ *
+ * Wpuszczeni (testerzy i administrator) dostają pod tymi adresami wersję pełną: korzystają
+ * z pełnego serwisu, więc to ona ich dotyczy. Po otwarciu nic tu się nie podmienia.
+ */
+const WERSJE_PRZED = new Map([
+  ["/prywatnosc", `${SCIEZKA_ZASLONY}/prywatnosc`],
+  ["/regulamin", `${SCIEZKA_ZASLONY}/regulamin`],
+]);
 
 /** Wynik sprawdzenia adresu IP - żeby nie pytać bazy przy każdym żądaniu. */
 /*
@@ -252,10 +256,11 @@ export async function proxy(request: NextRequest) {
   if (!wpuszczony) {
     /*
       Zasłonę podstawiamy przepisaniem adresu (a nie przekierowaniem), więc w pasku zostaje to,
-      co gość wpisał. `X-Robots-Tag` zamyka temat indeksowania nawet bez czytania robots.txt.
+      co gość wpisał - także pod adresami dokumentów, gdzie zamiast plakatu idzie ich wersja
+      „przed". `X-Robots-Tag` zamyka temat indeksowania nawet bez czytania robots.txt.
     */
     const cel = request.nextUrl.clone();
-    cel.pathname = SCIEZKA_ZASLONY;
+    cel.pathname = WERSJE_PRZED.get(sciezka) ?? SCIEZKA_ZASLONY;
     cel.search = "";
 
     const zaslona = NextResponse.rewrite(cel);

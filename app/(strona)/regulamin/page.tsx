@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Mail, Punkt, TytulDokumentu } from "@/components/Dokument";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -10,16 +11,18 @@ export const metadata: Metadata = {
 };
 
 const AKTUALIZACJA = "19 sierpnia 2026";
-const KONTAKT = "podkoszpl@gmail.com";
 
+/**
+ * Regulamin w wersji pełnej - „po" otwarciu, opisuje cały serwis.
+ *
+ * Dopóki stoi zasłona, widzą go tylko wpuszczeni (testerzy i administrator). Reszta dostaje
+ * pod tym samym adresem wersję „przed" z `app/(zaslona)/wkrotce/regulamin`, którą podstawia
+ * proxy (`WERSJE_PRZED` w `proxy.ts`).
+ */
 export default function TermsPage() {
   return (
     <main className="mx-auto min-h-dvh max-w-3xl px-6 pb-24 pt-28">
-      <p className="text-[12px] uppercase tracking-[0.2em] text-flame">Dokumenty</p>
-      <h1 className="mt-2 text-[clamp(30px,5vw,46px)] font-semibold tracking-[-0.02em]">
-        Regulamin
-      </h1>
-      <p className="mt-3 text-[14px] text-faint">Ostatnia aktualizacja: {AKTUALIZACJA}</p>
+      <TytulDokumentu tytul="Regulamin" aktualizacja={AKTUALIZACJA} />
 
       <div className="mt-10 space-y-10">
         <Punkt nr={1} title="Czym jest serwis">
@@ -53,11 +56,7 @@ export default function TermsPage() {
             Zdjęcia pozostają Twoje. Przesyłając je, udzielasz serwisowi nieodpłatnej,
             niewyłącznej i nieograniczonej czasowo zgody na ich publikację w serwisie {SITE_NAME},
             w podglądach linków w mediach społecznościowych i w wynikach wyszukiwania. Możesz w
-            każdej chwili poprosić o usunięcie swoich zdjęć - napisz na{" "}
-            <a className="text-flame" href={`mailto:${KONTAKT}`}>
-              {KONTAKT}
-            </a>
-            .
+            każdej chwili poprosić o usunięcie swoich zdjęć - napisz na <Mail />.
           </p>
           <p className="mt-3">
             Dane o lokalizacjach pochodzące z OpenStreetMap wykorzystujemy na licencji ODbL, z
@@ -101,11 +100,7 @@ export default function TermsPage() {
           <p>
             Błąd we wpisie zgłosisz przyciskiem „Zgłoś błąd&rdquo; na karcie boiska, a wszystko inne -
             przez okienko opinii na stronie <Link href="/o-nas" className="text-flame">O nas</Link>{" "}
-            albo mailem na{" "}
-            <a className="text-flame" href={`mailto:${KONTAKT}`}>
-              {KONTAKT}
-            </a>
-            . Naruszenia praw autorskich i prośby o usunięcie zdjęć rozpatrujemy niezwłocznie.
+            albo mailem na <Mail />. Naruszenia praw autorskich i prośby o usunięcie zdjęć rozpatrujemy niezwłocznie.
           </p>
         </Punkt>
       </div>
@@ -118,24 +113,5 @@ export default function TermsPage() {
         .
       </div>
     </main>
-  );
-}
-
-function Punkt({
-  nr,
-  title,
-  children,
-}: {
-  nr: number;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section>
-      <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">
-        {nr}. {title}
-      </h2>
-      <div className="mt-3 space-y-3 text-[16px] leading-relaxed text-ink/90">{children}</div>
-    </section>
   );
 }
