@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { LngLat, Map as MlMap, Marker, MercatorCoordinate, StyleSpecification, setWorkerUrl } from "maplibre-gl";
 import type { ExpressionSpecification } from "maplibre-gl";
@@ -20,6 +20,8 @@ import { pobierzWydarzenia, type Wydarzenie } from "@/lib/wydarzenia";
 import { punktyWKadrze, type PunktOsm } from "@/lib/punkty-osm";
 import { MIEJSCA_GRY, NAZWY_GIER, type MiejsceGry, type RodzajGry } from "@/lib/minigra";
 import { szwyPilki } from "@/lib/pilka";
+import { plural } from "@/lib/site";
+import { zbudujDrzewoGrup, type GrupaBoisk, type PoziomGrup } from "@/lib/grupy-boisk";
 /* podgląd propozycji pinezek - rusztowanie do wyrzucenia, patrz `lib/pinezka-podglad.ts` */
 import { pinezkaPodgladHtml, wariantZAdresu } from "@/lib/pinezka-podglad";
 
@@ -57,8 +59,6 @@ const WARSTWY_MOTYWU: [
   ["miasta-kropka", "circle-color", "atrament"],
   ["miasta-nazwa", "text-color", "atrament"],
   ["miasta-nazwa", "text-halo-color", "tlo"],
-  ["boiska-klastry", "circle-color", "flame"],
-  ["boiska-punkty", "circle-color", "flame"],
 ];
 
 /** Wyliczona wartość zmiennej z arkusza; puste zwraca wartość zapasową. */
@@ -229,10 +229,54 @@ const fitPadding = (width: number) => {
   };
 };
 
-/** Od tylu boisk mapa przechodzi z pinezek HTML na warstwę GeoJSON z klastrami. */
-const CLUSTER_FROM = 300;
-/** Od tego przybliżenia zamiast kropek rysujemy pełne pinezki. */
-const PIN_ZOOM = 11;
+/*
+  Kiedy grupy boisk rozpadają się na mniejsze (patrz `lib/grupy-boisk.ts`): województwa na
+  skupiska, skupiska na okolice, okolice na pojedyncze pinezki.
+
+  Progi liczymy w stopniach przybliżenia PONAD kadr całej Polski na danym ekranie
+  (`kadrPolski`), a nie w wartościach bezwzględnych. Polska mieści się w oknie przy
+  przybliżeniu 5,6-6,6 na komputerze (zależnie od wysokości ekranu) i ok. 4,5 na telefonie,
+  a zasada ma być jedna dla wszystkich: widok startowy pokazuje województwa, pierwsze
+  przybliżenie - ich rozpad. Na typowym monitorze (kadr 5,9) wychodzi:
+
+    6,8   skupiska - kilka pinezek na województwo,
+    8,9   okolice - duże miasto dzieli się na części,
+    10,9  pojedyncze boiska (w dawnym trybie dużej bazy pinezki wchodziły od 11).
+
+  Dolot po kliknięciu w województwo kończy się mniej więcej na kadrze + 1,2, czyli zawsze
+  już po rozpadzie na skupiska - odstępy progów są z tym zgrane.
+
+  Węższy ekran dostaje progi przesunięte w głąb (`korekta`). Telefon mieści Polskę
+  półtora stopnia przybliżenia płycej niż monitor, a pinezki ma mniejsze tylko o 30-45% -
+  względem kraju są więc mniej więcej dwa razy większe i przy tych samych progach grupy
+  rozpadałyby się na pinezki wchodzące jedna na drugą. Korekta rośnie płynnie od zera przy
+  1024 px do 0,84 przy telefonie 390 px (skupiska dostają połowę, bo dolot do województwa
+  na telefonie kończy się płycej).
+*/
+function progiGrup(szerokosc: number) {
+  const korekta = Math.min(0.9, Math.max(0, Math.log2(1024 / Math.max(szerokosc, 1)) * 0.6));
+  return { skupiska: 0.9 + korekta / 2, okolice: 3 + korekta, boiska: 5 + korekta };
+}
+/** Kadr Polski na typowym monitorze - zapas, gdyby mapa nie miała jeszcze wymiarów. */
+const ZOOM_POLSKI_ZAPAS = 5.9;
+/**
+ * Odstęp między pinezkami województw (w pikselach, przy pełnej skali), poniżej którego
+ * zlewają się w jedną pinezkę całego kraju - mniej więcej średnica pinezki grupy.
+ */
+const ODSTEP_WOJEWODZTW = 44;
+/** Skala pinezek grup na telefonie - musi być zgodna z `.grupa-marker` w globals.css. */
+const SKALA_GRUP_TELEFON = 0.7;
+/** Ile trwa rozjazd pinezek przy rozpadzie grupy (ms). */
+const CZAS_ROZPADU = 420;
+
+type PoziomMapy = PoziomGrup | "boiska";
+const GLEBOKOSC: Record<PoziomMapy, number> = {
+  kraj: 0,
+  wojewodztwa: 1,
+  skupiska: 2,
+  okolice: 3,
+  boiska: 4,
+};
 
 /**
  * Od jakiego przybliżenia widać szare pinezki nieodkrytych boisk.
@@ -242,8 +286,8 @@ const PIN_ZOOM = 11;
  * na mapie miasta, tych punktów nie ma i to jest zamierzone: siedem tysięcy szarych
  * kropek nad krajem zasłoniłoby prawdziwe boiska i zamieniło mapę w szum.
  *
- * Pinezki wydarzeń mają wyjątek od progów (patrz `syncPins`), te nie mają żadnego -
- * nieodkryte boisko to zaproszenie dla kogoś, kto już jest w okolicy.
+ * Pinezki wydarzeń mają wyjątek od grupowania (patrz „pinezki i grupy boisk"), szare punkty
+ * nie mają żadnego - nieodkryte boisko to zaproszenie dla kogoś, kto już jest w okolicy.
  */
 const PRZYBLIZENIE_PUNKTOW = 15;
 
@@ -300,7 +344,7 @@ function skalaPinezkiWydarzenia(zoom: number) {
     5,7  - widać pół Europy. Zejście o 30%.
 
   Poniżej 5,7 skala się zatrzymuje. Można by ciągnąć ją dalej w dół, ale to już
-  zgadywanie - a przy takim oddaleniu i tak wchodzi warstwa klastrów.
+  zgadywanie - a przy takim oddaleniu boiska i tak są już złożone w grupy.
 
   Pinezki WYDARZENIA to nie dotyczy: mają własne malenie (`--skala-zoom-wyd`, aż do
   jednej trzeciej) i pomnożenie jednego przez drugie zrobiłoby z nich pyłek.
@@ -624,6 +668,10 @@ export function MapView({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MlMap | null>(null);
   const markersRef = useRef<Record<string, { marker: Marker; el: HTMLDivElement }>>({});
+  /** pinezki grup boisk po identyfikatorze grupy; `podpis` mówi, czy treść trzeba przerysować */
+  const grupyRef = useRef<
+    Record<string, { marker: Marker; el: HTMLDivElement; grupa: GrupaBoisk; podpis: string }>
+  >({});
   const [ready, setReady] = useState(false);
   const [diag, setDiag] = useState<MapDiag | null>(null);
   const [showDiag, setShowDiag] = useState(false);
@@ -942,13 +990,12 @@ export function MapView({
 
       /*
         Kliknięcie w puste miejsce wybiera województwo. „Puste" znaczy: poza pinezkami
-        i poza klastrami - te mają własne obsługi i prowadzą do boisk, a nie do kadru na
-        region. Pinezki HTML zatrzymują zdarzenie na swoim elemencie i tu w ogóle nie
-        docierają; warstwy GeoJSON trzeba odsiać ręcznie, bo one żyją na tej samej kanwie.
+        boisk i grup - te mają własne obsługi i prowadzą do boiska albo w głąb grupy, a nie
+        do kadru na region. Pinezki HTML zatrzymują zdarzenie na swoim elemencie i tu w ogóle
+        nie docierają; warstwę szarych punktów (GeoJSON) trzeba odsiać ręcznie, bo żyje na
+        tej samej kanwie.
       */
-      const warstwy = ["boiska-klastry", "boiska-punkty", "leads-dots"].filter((w) =>
-        map.getLayer(w)
-      );
+      const warstwy = ["leads-dots"].filter((w) => map.getLayer(w));
       if (warstwy.length && map.queryRenderedFeatures(e.point, { layers: warstwy }).length) {
         return;
       }
@@ -1161,6 +1208,24 @@ export function MapView({
     }
   }, []);
 
+  /*
+    Ogień zapisów na pinezce grupy: płonie, jeśli ktoś wybiera się dziś na którekolwiek
+    z jej boisk. Bez tego grupowanie chowałoby jedyną informację na mapie, która żyje
+    w ciągu dnia - na widoku całej Polski ogień byłby widoczny dopiero po przybliżeniu.
+    Rozmiaru grupy zapisy nie zmieniają (patrz `.grupa-marker` w arkuszu), tylko płomień.
+  */
+  const oznaczGrupe = useCallback((el: HTMLElement, g: GrupaBoisk) => {
+    let osoby = 0;
+    for (const id of g.idBoisk) osoby += checkinyRef.current[id] ?? 0;
+    if (osoby > 0) {
+      el.dataset.osoby = String(osoby);
+      el.style.setProperty("--zar", String(Math.min(osoby, 6)));
+    } else {
+      delete el.dataset.osoby;
+      el.style.removeProperty("--zar");
+    }
+  }, []);
+
   useEffect(() => {
     let aktualne = true;
 
@@ -1169,6 +1234,7 @@ export function MapView({
       if (!aktualne) return;
       checkinyRef.current = dane;
       for (const [id, { el }] of Object.entries(markersRef.current)) oznaczPinezke(el, id);
+      for (const { el, grupa } of Object.values(grupyRef.current)) oznaczGrupe(el, grupa);
     };
 
     void odswiez();
@@ -1178,7 +1244,7 @@ export function MapView({
       aktualne = false;
       window.clearInterval(zegar);
     };
-  }, [oznaczPinezke]);
+  }, [oznaczPinezke, oznaczGrupe]);
 
   /*
     Wydarzenia. Osobne pobranie od boisk (lista boisk siedzi w pamięci podręcznej na
@@ -1329,18 +1395,35 @@ export function MapView({
     };
   }, [ready, onSelectPunkt]);
 
-  /* ---- pinezki i klastry ----
-     Przy kilkunastu boiskach każde dostaje własną pinezkę HTML - tak jak dotąd.
-     Powyżej CLUSTER_FROM wpisów tysiące elementów DOM zabiłyby przeglądarkę, więc punkty
-     lecą jako warstwa GeoJSON z klastrowaniem, a ładne pinezki rysujemy tylko dla tego, co
-     naprawdę widać na ekranie po przybliżeniu. Wygląd mapy przy dzisiejszej bazie się nie
-     zmienia - mechanizm jest gotowy na import boisk z OpenStreetMap. */
+  /* ---- pinezki i grupy boisk ----
+
+     Na widoku całej Polski boiska są złożone w pinezki z liczbą: jedna na województwo.
+     Przybliżanie rozkłada je warstwa po warstwie - województwo na skupiska, skupisko na
+     okolice, okolicę na pojedyncze pinezki. Drzewo grup liczy `lib/grupy-boisk.ts`, wygląd
+     pinezki grupy to `markerGrupyHtml` niżej (propozycja 10 z galerii, 17.10.2026).
+
+     Zastąpiło to dwa dawne tryby: do trzystu boisk każde miało własną pinezkę na każdym
+     przybliżeniu, a powyżej wchodziły kropki z klastrami biblioteki mapy. Pierwszy przy
+     setkach boisk w województwie robił z mapy plamę, drugi nie wyglądał jak reszta serwisu.
+
+     Dwa wyjątki od grupowania, oba z tego samego powodu - mają być widoczne od razu:
+       - boisko z wydarzeniem stoi zawsze osobno, na każdym poziomie,
+       - grupa z jednym boiskiem to po prostu pinezka tego boiska.
+
+     Pinezki HTML powstają tylko dla tego, co jest na ekranie (z zapasem), więc baza
+     z tysiącami boisk nie zamienia się w tysiące elementów strony. */
+  const drzewoGrup = useMemo(
+    () => zbudujDrzewoGrup(courts.filter((c) => !wydarzenia[c.id])),
+    [courts, wydarzenia]
+  );
+
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
 
-    const clustered = courts.length >= CLUSTER_FROM;
     const byId = new Map(courts.map((c) => [c.id, c]));
+    const zWydarzeniem = courts.filter((c) => wydarzeniaRef.current[c.id]);
+    const bezRuchu = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     /** Tworzy (albo zwraca istniejącą) pinezkę HTML dla boiska. */
     const ensureMarker = (court: MapCourt) => {
@@ -1401,204 +1484,268 @@ export function MapView({
       }
     };
 
-    /* --- tryb prosty: wszystkie boiska jako pinezki --- */
-    if (!clustered) {
-      for (const id of ["boiska-liczby", "boiska-klastry", "boiska-punkty"]) {
-        if (map.getLayer(id)) map.removeLayer(id);
+    /**
+     * Przybliżenie po kliknięciu grupy: kadr na jej boiska, ale nie płycej niż próg, na
+     * którym grupa się rozpada. Bez tej dolnej granicy kliknięcie w województwo z boiskami
+     * rozrzuconymi od granicy do granicy tylko przesuwałoby mapę - kadr na nie wypadał
+     * przed progiem i na ekranie zostawała ta sama liczba.
+     */
+    const przyblizDoGrupy = (g: GrupaBoisk) => {
+      const polska = kadrPolski(map);
+      if (g.poziom === "kraj") {
+        if (polska) map.flyTo({ ...polska, duration: 800, essential: true });
+        return;
       }
-      if (map.getSource("boiska")) map.removeSource("boiska");
 
-      pruneMarkers(new Set(courts.map((c) => c.id)));
-      for (const court of courts) ensureMarker(court);
-      for (const [id, { el }] of Object.entries(markersRef.current)) {
-        el.dataset.active = String(id === activeId);
+      const progi = progiGrup(map.getContainer().clientWidth);
+      const prog =
+        g.poziom === "wojewodztwa" ? progi.skupiska : g.poziom === "skupiska" ? progi.okolice : progi.boiska;
+      const minimum = (polska?.zoom ?? ZOOM_POLSKI_ZAPAS) + prog + 0.05;
+      const kamera = map.cameraForBounds(g.ramka, {
+        padding: fitPadding(map.getContainer().clientWidth),
+        maxZoom: 15,
+      });
+      map.flyTo({
+        center: kamera?.center ? LngLat.convert(kamera.center) : [g.lng, g.lat],
+        zoom: Math.max(kamera?.zoom ?? minimum, minimum),
+        duration: 750,
+        essential: true,
+      });
+    };
+
+    /** Tworzy albo odświeża pinezkę grupy; `nowa` mówi, czy właśnie powstała. */
+    const ensureGrupa = (g: GrupaBoisk) => {
+      const podpis = `${g.idBoisk.length}|${g.lat}|${g.lng}|${g.nazwa}`;
+      const gotowa = grupyRef.current[g.id];
+      if (gotowa) {
+        gotowa.grupa = g;
+        if (gotowa.podpis !== podpis) {
+          gotowa.podpis = podpis;
+          gotowa.el.innerHTML = markerGrupyHtml(g);
+          gotowa.el.setAttribute("aria-label", `${opisGrupy(g)} - przybliż`);
+          gotowa.marker.setLngLat([g.lng, g.lat]);
+        }
+        oznaczGrupe(gotowa.el, g);
+        return { el: gotowa.el, nowa: false };
       }
-      return;
-    }
 
-    /* --- tryb dużej bazy: klastry + pinezki tylko na widocznym fragmencie --- */
-    const data = {
-      type: "FeatureCollection" as const,
-      features: courts.map((c) => ({
-        type: "Feature" as const,
-        geometry: { type: "Point" as const, coordinates: [c.lng, c.lat] },
-        properties: { id: c.id },
-      })),
+      const el = document.createElement("div");
+      el.className = "court-marker grupa-marker";
+      el.setAttribute("role", "button");
+      el.setAttribute("aria-label", `${opisGrupy(g)} - przybliż`);
+      el.innerHTML = markerGrupyHtml(g);
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        lastPinTapRef.current = performance.now();
+        /* skład grupy mógł się zmienić od założenia pinezki (filtry) - bierzemy aktualny */
+        przyblizDoGrupy(grupyRef.current[g.id]?.grupa ?? g);
+      });
+      oznaczGrupe(el, g);
+
+      const marker = new Marker({ element: el, anchor: "bottom" })
+        .setLngLat([g.lng, g.lat])
+        .addTo(map);
+      grupyRef.current[g.id] = { marker, el, grupa: g, podpis };
+      return { el, nowa: true };
+    };
+
+    const pruneGrupy = (zostaw: Set<string>) => {
+      for (const [id, wpis] of Object.entries(grupyRef.current)) {
+        if (!zostaw.has(id)) {
+          wpis.marker.remove();
+          delete grupyRef.current[id];
+        }
+      }
+    };
+
+    /** Który poziom pokazać przy obecnym przybliżeniu - progi opisane przy `progiGrup`. */
+    const wybierzPoziom = (): PoziomMapy => {
+      const zoom = map.getZoom();
+      const zPolski = kadrPolski(map)?.zoom ?? ZOOM_POLSKI_ZAPAS;
+      const progi = progiGrup(map.getContainer().clientWidth);
+      if (zoom >= zPolski + progi.boiska) return "boiska";
+      if (zoom >= zPolski + progi.okolice) return "okolice";
+      if (zoom >= zPolski + progi.skupiska) return "skupiska";
+
+      /*
+        Województwa zlewają się w jedną pinezkę kraju dopiero wtedy, kiedy ich pinezki
+        zaczęłyby na siebie wjeżdżać - w praktyce na telefonie oddalonym do Europy i dalej.
+        Mierzymy to wprost na ekranie, a nie progiem przybliżenia: odstęp zależy od tego,
+        które województwa mają boiska i jak duże są pinezki na danym ekranie.
+      */
+      const punkty = drzewoGrup.poziomy.wojewodztwa.map((g) => map.project([g.lng, g.lat]));
+      let najblizej = Infinity;
+      for (let i = 0; i < punkty.length; i++) {
+        for (let j = i + 1; j < punkty.length; j++) {
+          najblizej = Math.min(najblizej, punkty[i].dist(punkty[j]));
+        }
+      }
+      const skala = window.matchMedia("(max-width: 640px)").matches ? SKALA_GRUP_TELEFON : 1;
+      return najblizej < ODSTEP_WOJEWODZTW * skala ? "kraj" : "wojewodztwa";
+    };
+
+    /** Grupa z poziomu `poziom`, w której leży grupa `g` - stamtąd wyjeżdża jej pinezka. */
+    const przodek = (g: GrupaBoisk, poziom: PoziomGrup) => {
+      let a: GrupaBoisk | undefined = g;
+      while (a && GLEBOKOSC[a.poziom] > GLEBOKOSC[poziom]) {
+        a = a.rodzic ? drzewoGrup.grupy.get(a.rodzic) : undefined;
+      }
+      return a?.poziom === poziom ? a : undefined;
     };
 
     /**
-     * Dorysowuje pinezki HTML dla punktów widocznych na ekranie po przybliżeniu.
-     *
-     * Widoczne boiska liczymy z tablicy w pamięci, a nie przez `queryRenderedFeatures`:
-     * warstwa kropek jest w trybie pinezek przezroczysta, a przezroczystych elementów to
-     * zapytanie nie zwraca - raz ukryte kropki nigdy by się nie odnalazły i pinezki
-     * przestawałyby powstawać (sprawdzone na żywej mapie).
+     * Rozpad grupy: nowa pinezka startuje w miejscu grupy, z której się wyłania, i odjeżdża
+     * na swoje. Animujemy właściwość `translate` samego znacznika, bo `transform` należy do
+     * MapLibre (nim stawia pinezkę na mapie) - a te dwie właściwości się składają, nie
+     * nadpisują. Przezroczystości znacznika też nie ruszamy, bo i nią rządzi MapLibre.
      */
-    const syncPins = () => {
-      if (!map.getLayer("boiska-punkty")) return;
+    const wyjedz = (el: HTMLElement, skad: GrupaBoisk | undefined, dokad: [number, number]) => {
+      if (!skad || bezRuchu) return;
+      const a = map.project([skad.lng, skad.lat]);
+      const b = map.project(dokad);
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      if (Math.hypot(dx, dy) < 2) return;
 
-      const pokazKropki = (widoczne: boolean) => {
-        map.setPaintProperty("boiska-punkty", "circle-opacity", widoczne ? 1 : 0);
-        map.setPaintProperty("boiska-punkty", "circle-stroke-opacity", widoczne ? 1 : 0);
+      el.style.transition = "none";
+      el.style.translate = `${dx}px ${dy}px`;
+      const koniec = (e: TransitionEvent) => {
+        if (e.target !== el || e.propertyName !== "translate") return;
+        el.style.transition = "";
+        el.style.translate = "";
+        el.removeEventListener("transitionend", koniec);
       };
+      el.addEventListener("transitionend", koniec);
+      /* dwie klatki: pierwsza maluje pinezkę w miejscu startu, druga puszcza ruch */
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          el.style.transition = `translate ${CZAS_ROZPADU}ms cubic-bezier(.2,.8,.2,1)`;
+          el.style.translate = "0px 0px";
+        })
+      );
+    };
 
-      /*
-        WYDARZENIA SĄ WYJĄTKIEM OD OBU PROGÓW NIŻEJ i to jest cała ich sensowność.
+    /*
+      Poziom wybrany progami i poziom faktycznie narysowany. Bywają różne: przy zbyt wielu
+      boiskach na ekranie zamiast pojedynczych pinezek zostają okolice (`PIN_LIMIT`).
+    */
+    let wybrany: PoziomMapy | null = null;
+    let narysowany: PoziomMapy | null = null;
 
-        W trybie dużej bazy pinezki HTML pojawiają się dopiero od przybliżenia 11, a przy
-        więcej niż 160 punktach w kadrze znikają z powrotem w kropki - i słusznie, bo
-        tysiąc pinezek to plama. Ale pinezka wydarzenia ma być widoczna z pierwszego
-        spojrzenia na mapę CAŁEJ POLSKI, zanim ktokolwiek zacznie przybliżać. Bez tego
-        wyjątku biało-czerwona pochodnia pokazywała się dopiero temu, kto już wiedział,
-        gdzie patrzeć - czyli nikomu.
+    const sync = () => {
+      wybrany = wybierzPoziom();
+      let poziom = wybrany;
 
-        Kosztu nie ma: wydarzeń jest naraz kilka, nie kilkaset.
-      */
-      const zWydarzeniem = courts.filter((c) => wydarzeniaRef.current[c.id]);
-      const idWydarzen = new Set(zWydarzeniem.map((c) => c.id));
+      const b = map.getBounds();
+      /* zapas za krawędzią ekranu, żeby przy przesuwaniu pinezki nie wyskakiwały znikąd */
+      const zapasX = (b.getEast() - b.getWest()) * 0.15;
+      const zapasY = (b.getNorth() - b.getSouth()) * 0.15;
+      const naEkranie = (lng: number, lat: number) =>
+        lng >= b.getWest() - zapasX &&
+        lng <= b.getEast() + zapasX &&
+        lat >= b.getSouth() - zapasY &&
+        lat <= b.getNorth() + zapasY;
 
-      const tylkoWydarzenia = () => {
-        pokazKropki(true);
-        pruneMarkers(idWydarzen);
-        for (const court of zWydarzeniem) {
-          ensureMarker(court).el.dataset.active = String(court.id === activeId);
+      const boiskaNaMapie = new Map(zWydarzeniem.map((c) => [c.id, c]));
+      const grupyNaMapie: GrupaBoisk[] = [];
+
+      if (poziom === "boiska") {
+        const widoczne = courts.filter(
+          (c) => !wydarzeniaRef.current[c.id] && naEkranie(c.lng, c.lat)
+        );
+        // przy zbyt wielu boiskach na ekranie zostają okolice - pinezki byłyby kaszą
+        if (widoczne.length > PIN_LIMIT) poziom = "okolice";
+        else for (const c of widoczne) boiskaNaMapie.set(c.id, c);
+      }
+
+      if (poziom !== "boiska") {
+        /* województw jest kilkanaście, a kraj jeden - te rysujemy zawsze, resztę tylko na ekranie */
+        const wszystkie = poziom === "kraj" || poziom === "wojewodztwa";
+        for (const g of drzewoGrup.poziomy[poziom]) {
+          if (!wszystkie && !naEkranie(g.lng, g.lat)) continue;
+          if (g.idBoisk.length === 1) {
+            const c = byId.get(g.idBoisk[0]);
+            if (c) boiskaNaMapie.set(c.id, c);
+          } else {
+            grupyNaMapie.push(g);
+          }
         }
-      };
-
-      if (map.getZoom() < PIN_ZOOM) {
-        tylkoWydarzenia();
-        return;
       }
 
-      const bounds = map.getBounds();
-      const widoczne = courts.filter((c) => bounds.contains([c.lng, c.lat]));
+      /* rozjazd tylko przy przybliżaniu - przy oddalaniu grupy po prostu się pojawiają */
+      const poprzedni =
+        narysowany && narysowany !== "boiska" && GLEBOKOSC[poziom] > GLEBOKOSC[narysowany]
+          ? narysowany
+          : null;
 
-      // przy zbyt wielu punktach na ekranie zostawiamy kropki - pinezki byłyby kaszą
-      if (widoczne.length > PIN_LIMIT) {
-        tylkoWydarzenia();
-        return;
+      pruneMarkers(new Set(boiskaNaMapie.keys()));
+      for (const court of boiskaNaMapie.values()) {
+        const nowa = !markersRef.current[court.id];
+        const { el } = ensureMarker(court);
+        el.dataset.active = String(court.id === activeId);
+        if (nowa && poprzedni) {
+          const id = drzewoGrup.przynaleznosc[poprzedni].get(court.id);
+          wyjedz(el, id ? drzewoGrup.grupy.get(id) : undefined, [court.lng, court.lat]);
+        }
       }
 
-      pokazKropki(false);
-      const wybrane = new Set([...widoczne.map((c) => c.id), ...idWydarzen]);
-      pruneMarkers(wybrane);
-      for (const court of widoczne) {
-        ensureMarker(court).el.dataset.active = String(court.id === activeId);
+      pruneGrupy(new Set(grupyNaMapie.map((g) => g.id)));
+      for (const g of grupyNaMapie) {
+        const { el, nowa } = ensureGrupa(g);
+        /* boisko podświetlone na liście świeci przez grupę, w której jest schowane */
+        el.dataset.active = String(
+          activeId !== null && drzewoGrup.przynaleznosc[g.poziom].get(activeId) === g.id
+        );
+        if (nowa && poprzedni) wyjedz(el, przodek(g, poprzedni), [g.lng, g.lat]);
       }
+
+      narysowany = poziom;
     };
 
-    const attach = () => {
-      const source = map.getSource("boiska");
-      if (source) {
-        (source as unknown as { setData: (d: typeof data) => void }).setData(data);
-        syncPins();
-        return;
-      }
-
-      map.addSource("boiska", {
-        type: "geojson",
-        data,
-        cluster: true,
-        clusterMaxZoom: PIN_ZOOM - 1,
-        clusterRadius: 55,
+    /*
+      Przy przybliżaniu sprawdzamy poziom w każdej klatce (rolka, szczypanie, dolot), żeby
+      rozpad szedł za palcem, a nie czekał na koniec ruchu. Pełne przeliczenie tylko przy
+      zmianie poziomu - sam wybór poziomu to kilkanaście rzutów punktów. Po zatrzymaniu
+      mapy liczymy wszystko od nowa, bo przesunięcie zmienia to, co jest na ekranie.
+    */
+    let klatka = 0;
+    const przyZoomie = () => {
+      if (klatka) return;
+      klatka = requestAnimationFrame(() => {
+        klatka = 0;
+        if (wybierzPoziom() !== wybrany) sync();
       });
-
-      map.addLayer({
-        id: "boiska-klastry",
-        type: "circle",
-        source: "boiska",
-        filter: ["has", "point_count"],
-        paint: {
-          "circle-color": BARWY_MAPY.flame,
-          "circle-opacity": 0.9,
-          "circle-radius": ["step", ["get", "point_count"], 16, 10, 21, 50, 27, 200, 34],
-          "circle-stroke-width": 2,
-          "circle-stroke-color": "rgba(8,8,11,0.85)",
-        },
-      });
-
-      map.addLayer({
-        id: "boiska-liczby",
-        type: "symbol",
-        source: "boiska",
-        filter: ["has", "point_count"],
-        layout: {
-          "text-field": ["get", "point_count_abbreviated"],
-          /* w zestawie glifów nie ma odmiany Bold - Medium jest najgrubszą dostępną */
-          "text-font": ["Noto Sans Medium"],
-          "text-size": 13,
-        },
-        paint: { "text-color": "#12060a" },
-      });
-
-      // Pojedyncze punkty: widoczne, dopóki nie zastąpią ich pinezki HTML. Warstwa zostaje
-      // w stylu z zerową przezroczystością, bo właśnie z niej odczytujemy, co jest na ekranie.
-      map.addLayer({
-        id: "boiska-punkty",
-        type: "circle",
-        source: "boiska",
-        filter: ["!", ["has", "point_count"]],
-        paint: {
-          "circle-radius": 6,
-          "circle-color": BARWY_MAPY.flame,
-          "circle-stroke-width": 1.4,
-          "circle-stroke-color": "rgba(8,8,11,0.9)",
-        },
-      });
-
-      // klik w klaster przybliża do miejsca, w którym się rozsypuje
-      map.on("click", "boiska-klastry", (e) => {
-        const f = e.features?.[0];
-        const clusterId = f?.properties?.cluster_id;
-        if (clusterId == null || !f) return;
-        const [lng, lat] = (f.geometry as unknown as { coordinates: [number, number] }).coordinates;
-        const src = map.getSource("boiska") as unknown as {
-          getClusterExpansionZoom: (id: number) => Promise<number>;
-        };
-        void Promise.resolve(src.getClusterExpansionZoom(Number(clusterId)))
-          .then((zoom) => map.easeTo({ center: [lng, lat], zoom, duration: 500 }))
-          .catch(() => map.easeTo({ center: [lng, lat], zoom: map.getZoom() + 2 }));
-      });
-      map.on("mouseenter", "boiska-klastry", () => {
-        map.getCanvas().style.cursor = "pointer";
-      });
-      map.on("mouseleave", "boiska-klastry", () => {
-        map.getCanvas().style.cursor = "";
-      });
-
-      // pojedyncza kropka (gdy pinezek nie rysujemy) też ma prowadzić do boiska
-      map.on("click", "boiska-punkty", (e) => {
-        const id = String(e.features?.[0]?.properties?.id ?? "");
-        const court = byId.get(id);
-        if (court) onSelectCourt(court);
-      });
-
-      syncPins();
     };
 
-    if (map.getLayer("carto")) attach();
-    else map.once("styledata", attach);
-
-    map.on("moveend", syncPins);
-    map.on("idle", syncPins);
+    sync();
+    map.on("zoom", przyZoomie);
+    map.on("moveend", sync);
+    map.on("resize", sync);
     return () => {
-      map.off("moveend", syncPins);
-      map.off("idle", syncPins);
+      cancelAnimationFrame(klatka);
+      map.off("zoom", przyZoomie);
+      map.off("moveend", sync);
+      map.off("resize", sync);
     };
     /*
-      `wydarzenia` w zależnościach: bez tego pinezka wydarzenia nie powstałaby wcale
-      w trybie klastrowym. Wydarzenia dociągają się osobnym zapytaniem, już PO pierwszym
-      rysowaniu pinezek - a przy niskim przybliżeniu nie ma wtedy żadnego znacznika, na
-      którym można by tylko podmienić treść.
+      Wydarzenia wchodzą tu przez `drzewoGrup`: boisko z wydarzeniem wychodzi z grupy
+      i dostaje własną pinezkę, a wydarzenia dociągają się osobnym zapytaniem, już po
+      pierwszym rysowaniu - bez tej zależności pinezka wydarzenia nie powstałaby wcale.
     */
-  }, [courts, ready, activeId, onHoverCourt, onSelectCourt, reposition, centerPin, coarse, oznaczPinezke, schowajKarte, wydarzenia]);
+  }, [courts, drzewoGrup, ready, activeId, onHoverCourt, onSelectCourt, reposition, centerPin, coarse, oznaczPinezke, oznaczGrupe, schowajKarte]);
 
   /* ---- podświetlenie aktywnej pinezki ---- */
   useEffect(() => {
     for (const [id, { el }] of Object.entries(markersRef.current)) {
       el.dataset.active = String(id === activeId);
     }
-  }, [activeId, courts]);
+    /* boisko schowane w grupie świeci przez nią */
+    for (const { el, grupa } of Object.values(grupyRef.current)) {
+      el.dataset.active = String(
+        activeId !== null && drzewoGrup.przynaleznosc[grupa.poziom].get(activeId) === grupa.id
+      );
+    }
+  }, [activeId, courts, drzewoGrup]);
 
   /* ---- szare punkty kandydatów z OSM ----
      Tysiące pinezek HTML zabiłyby przeglądarkę, więc lecą jako warstwa GeoJSON.
@@ -2134,6 +2281,75 @@ function markerHtmlNieodkryte() {
     </span>
     <span class="punkt-osm-nozka" style="width:2px;height:8px"></span>
     <span class="punkt-osm-kropka" style="width:6px;height:3px;border-radius:99px"></span>
+  </div>`;
+}
+
+/*
+  Pinezka grupy boisk - propozycja 10 („Rośnie z liczbą") z galerii w F:\CLAUDE\podkosz-pinezki,
+  wybrana 17.10.2026.
+
+  Budowa jeden do jednego z `markerHtml`: kula na nóżce z kropką, poświata, cień i ogień
+  zapisów - więc działają na nią te same reguły arkusza (powiększenie przy najechaniu,
+  podświetlenie, płomień). Różnice:
+
+    - w kuli liczba boisk, a szwy zostają pod nią przygaszone do połowy,
+    - kula rośnie z liczbą: 38 px (jak zwykła pinezka) do 20 boisk, 58 px od tysiąca,
+      pomiędzy logarytmicznie - różnicę między 30 a 300 widać, a 3000 nie rozsadza mapy,
+    - nad kulą podpis z nazwą i liczbą, widoczny po najechaniu kursorem.
+*/
+const KULA_GRUPY_MIN = 38;
+const KULA_GRUPY_MAX = 58;
+
+function rozmiarKuliGrupy(ile: number) {
+  const t = Math.log(ile / 20) / Math.log(1000 / 20);
+  return Math.round(KULA_GRUPY_MIN + (KULA_GRUPY_MAX - KULA_GRUPY_MIN) * Math.max(0, Math.min(1, t)));
+}
+
+/** Liczba w kuli: do czterech cyfr wprost, większe w tysiącach - piąta cyfra już się nie mieści. */
+function liczbaGrupy(ile: number) {
+  return ile < 10_000 ? String(ile) : `${Math.round(ile / 1000)}k`;
+}
+
+/** „Małopolskie · 350 boisk" - podpis nad kulą i opis dla czytnika ekranu. */
+function opisGrupy(g: GrupaBoisk) {
+  const ile = g.idBoisk.length;
+  const nazwa = g.nazwa.charAt(0).toLocaleUpperCase("pl") + g.nazwa.slice(1);
+  return `${nazwa} · ${ile} ${plural(ile, ["boisko", "boiska", "boisk"])}`;
+}
+
+/** Nazwy miast pochodzą ze zgłoszeń - do HTML trafiają zawsze zabezpieczone. */
+function bezpieczny(tekst: string) {
+  const zamiany: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+  return tekst.replace(/[&<>"']/g, (z) => zamiany[z] ?? z);
+}
+
+function markerGrupyHtml(g: GrupaBoisk) {
+  const ile = g.idBoisk.length;
+  const size = rozmiarKuliGrupy(ile);
+  const tekst = liczbaGrupy(ile);
+  /* cyfry drobnieją z ich liczbą, jak w galerii: 15 px do dwóch cyfr przy kuli 38 px */
+  const fs = Math.round([15, 15, 13, 11][Math.min(tekst.length, 4) - 1] * (size / 38) * 10) / 10;
+
+  return `
+  <div class="pinezka-korpus relative flex flex-col items-center"
+       style="filter: drop-shadow(0 6px 14px rgb(0 0 0 / calc(.6 * var(--moc-cienia, 1))));--kula:${size}px;--cien:var(--rgb-ember);--o1:var(--rgb-glow-soft);--o2:var(--rgb-glow);--o3:var(--rgb-flame);--o4:var(--rgb-ember-deep)">
+    <span class="grupa-podpis">${bezpieczny(opisGrupy(g))}</span>
+    <span class="pulse-glow absolute -top-2 left-1/2 -translate-x-1/2 rounded-full"
+          style="width:${size * 1.8}px;height:${size * 1.8}px;background:radial-gradient(circle, rgb(var(--rgb-flame) / .55) 0%, rgb(var(--rgb-ember) / .18) 45%, transparent 70%)"></span>
+    <span class="pinezka-ogien">
+      <span class="ogien-aura"></span>
+      <span class="ogien-jezyk"></span>
+      <span class="ogien-jezyk ogien-jezyk-maly"></span>
+    </span>
+    <span class="marker-core relative grid place-items-center rounded-full transition-all duration-200"
+          style="width:${size}px;height:${size}px;background:linear-gradient(135deg,var(--color-glow-soft),var(--color-flame) 55%,var(--color-ember));box-shadow:0 0 0 1.5px rgba(255,255,255,.28) inset, 0 6px 18px -4px rgb(var(--rgb-ember) / calc(.9 * var(--moc-poswiaty, 1)))">
+      <svg viewBox="0 0 24 24" style="width:${size}px;height:${size}px;opacity:.5" fill="none" stroke="rgba(40,10,0,.72)" stroke-width=".97" stroke-linecap="round">
+        <path d="${szwyPilki(12, 12, 12)}"/>
+      </svg>
+      <span class="grupa-liczba" style="font-size:${fs}px">${tekst}</span>
+    </span>
+    <span style="width:2px;height:10px;background:linear-gradient(180deg,var(--color-flame),transparent)"></span>
+    <span style="width:7px;height:3px;border-radius:99px;background:rgb(var(--rgb-flame) / .85)"></span>
   </div>`;
 }
 

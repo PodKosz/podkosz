@@ -2682,6 +2682,92 @@ select option {
 }
 
 /*
+  ---------- pinezki grup boisk ----------
+
+  Grupa (patrz `lib/grupy-boisk.ts` i `markerGrupyHtml` w MapView) ma budowę pinezki boiska
+  i korzysta z jej reguł: powiększenie kuli przy najechaniu, podświetlenie, ogień zapisów.
+  Rozmiar niesie jednak liczba boisk, więc grupa NIE maleje przy oddalaniu (`--skala-zoom`)
+  ani nie rośnie od liczby zapisanych (`--zar` zostaje tylko dla płomienia). Reguły stoją
+  po regułach pinezki boiska i mają co najmniej ich wagę, więc wygrywają.
+*/
+.court-marker.grupa-marker .pinezka-korpus,
+.court-marker.grupa-marker[data-osoby] .pinezka-korpus {
+  scale: var(--skala-pinezki, 1);
+  animation: grupa-wejscie 0.28s ease-out both;
+}
+
+@keyframes grupa-wejscie {
+  from {
+    opacity: 0;
+  }
+}
+
+.court-marker.grupa-marker:hover {
+  z-index: 6;
+}
+
+.grupa-liczba {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  color: #fff;
+  font-family: var(--font-sans);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-variant-numeric: lining-nums;
+  text-shadow:
+    0 0 3px rgb(60 14 0 / 0.55),
+    0 1px 1px rgb(60 14 0 / 0.5);
+}
+
+/* podpis nad kulą - tylko przy prawdziwym kursorze; na dotyku stuknięcie i tak przybliża */
+.grupa-podpis {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  translate: -50% 4px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  white-space: nowrap;
+  pointer-events: none;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--color-ink);
+  background: rgb(var(--rgb-dymek) / 0.94);
+  box-shadow:
+    0 0 0 1px var(--color-hairline),
+    0 10px 24px -12px rgb(0 0 0 / calc(0.9 * var(--moc-cienia, 1)));
+  opacity: 0;
+  transition:
+    opacity 0.16s ease-out,
+    translate 0.16s ease-out;
+}
+
+@media (hover: hover) {
+  .court-marker.grupa-marker:hover .grupa-podpis {
+    opacity: 1;
+    translate: -50% 0;
+  }
+}
+
+/* telefon: zwykłe pinezki schodzą do 0,55, grupy tylko do 0,7 - liczba ma się dać przeczytać */
+@media (max-width: 640px) {
+  .court-marker.grupa-marker {
+    --skala-pinezki: 0.7;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .court-marker.grupa-marker .pinezka-korpus {
+    animation: none;
+  }
+}
+
+/*
   ---------- wizytówka minigry ----------
 
   Karta siedzi WEWNĄTRZ niebieskiej pinezki (patrz `wizytowkaGryHtml` w MapView), więc
