@@ -334,7 +334,7 @@ export function CourtDetail({
                   <div className="flex items-center gap-3">
                     <FireBallIcon variant="basket" className="h-8 w-8" />
                     <p className="text-[13px] font-bold uppercase tracking-[0.28em] basket-text">
-                      Basket Approved
+                      Coconaut Choice
                     </p>
                   </div>
                   {/*

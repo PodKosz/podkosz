@@ -171,7 +171,7 @@ export function HubAdmin({ onGoTo }: { onGoTo: (widok: string) => void }) {
 
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <Liczba etykieta="Boiska" wartosc={dane.boiska} nota={`w ${dane.miast} miastach`} pudelko />
-          <Liczba etykieta="Heat" wartosc={dane.boiska_heat} nota="wyróżnione" pudelko />
+          <Liczba etykieta="Coconaut Choice" wartosc={dane.boiska_heat} nota="wyróżnione" pudelko />
           <Liczba etykieta="Zdjęcia" wartosc={dane.zdjecia} nota="w Storage" pudelko />
           <Liczba etykieta="Podpalenia" wartosc={dane.podpalenia} nota="łącznie" pudelko />
           <Liczba

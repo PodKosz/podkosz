@@ -159,7 +159,8 @@ export function FireBallIcon({
 }
 
 /**
- * Odznaka "Basket Approved" - rekomendacja przyznawana osobiście przez twórcę.
+ * Odznaka "Coconaut Choice" (do 17.10.2026 "Basket Approved") - rekomendacja przyznawana
+ * osobiście przez twórcę, w barwach partnera.
  *
  * Wyjaśnienie pod kursorem daje `Podpowiedz`, a nie atrybut `title`: systemowa chmurka
  * przeglądarki wyglądała jak wyrwana z innej strony i nie da się jej ostylować.
@@ -167,13 +168,13 @@ export function FireBallIcon({
  */
 export function BasketApprovedBadge({ className = "" }: { className?: string }) {
   return (
-    <Podpowiedz tekst="Basket Approved - rekomendacja twórcy serwisu" className={className}>
+    <Podpowiedz tekst="Coconaut Choice - rekomendacja twórcy serwisu" className={className}>
       <span
-        aria-label="Basket Approved - rekomendacja twórcy serwisu"
+        aria-label="Coconaut Choice - rekomendacja twórcy serwisu"
         className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-1.5 py-[3px] text-[10px] font-bold uppercase tracking-[0.16em] text-kadr basket-gradient basket-ring sm:px-2.5 sm:py-[4px]"
       >
         <FireBallIcon variant="basket" className="h-3.5 w-3.5" />
-        <span className="hidden sm:inline">Basket Approved</span>
+        <span className="hidden sm:inline">Coconaut Choice</span>
       </span>
     </Podpowiedz>
   );

@@ -859,7 +859,7 @@ function Editor({
               className="w-full resize-none bg-transparent text-[14px] leading-relaxed outline-none placeholder:text-faint"
             />
             <div className="mt-1 flex items-center justify-between text-[11px] text-faint">
-              <span>Trafi dużą czcionką do sekcji Basket Approved.</span>
+              <span>Trafi dużą czcionką do sekcji Coconaut Choice.</span>
               <span>{(s.basketNote ?? "").length}/400</span>
             </div>
           </div>

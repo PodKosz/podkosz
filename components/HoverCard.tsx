@@ -59,7 +59,7 @@ function Miniatura({
 /**
  * Podgląd po najechaniu na pinezkę (na dotyku: po jej dotknięciu) - miniaturki i szybkie info.
  *
- * Zwykłe boisko dostaje wizytówkę „barwa zdjęcia", boisko z Basket Approved ten sam układ
+ * Zwykłe boisko dostaje wizytówkę „barwa zdjęcia", boisko z Coconaut Choice ten sam układ
  * w oprawie karty kolekcjonerskiej (opis niżej, przy `WizytowkaBoiska`). Wydarzenie ma
  * własną kartę z „płynnego szkła" (`.szklo-plynne` w globals.css oraz FiltrSzkla).
  * `tapHint` dokłada stopkę z zaproszeniem do dotknięcia, bo wtedy cała karta jest linkiem.
@@ -158,8 +158,9 @@ export function HoverCard({
   `--wiz-rx`, `--wiz-ry`, `--wiz-mx` i `--wiz-my` ustawia MapView na pojemniku karty.
   Na dotyku nie ma kursora, więc światło przesuwa się samo, powoli (patrz `.wiz-dotyk`).
 
-  Boisko z Basket Approved dostaje dookoła holograficzną obwódkę z folii, która mieni się
-  razem z odblaskiem - w zieleni z logo Coconaut, tej samej co jego pinezka na mapie.
+  Boisko z wyróżnieniem Coconaut Choice (do 17.10.2026 „Basket Approved") dostaje dookoła
+  holograficzną obwódkę z folii, która mieni się razem z odblaskiem - w zieleni z logo
+  Coconaut, tej samej co jego pinezka na mapie.
 */
 function WizytowkaBoiska({
   court,
@@ -221,7 +222,7 @@ function WizytowkaBoiska({
           {holo ? (
             <span className="wiz-kaps wiz-kaps-wyroznienie">
               <FireBallIcon variant="basket" className="h-[15px] w-[15px] shrink-0" />
-              Basket Approved
+              Coconaut Choice
             </span>
           ) : (
             <span />

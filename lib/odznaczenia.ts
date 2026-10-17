@@ -339,9 +339,9 @@ export function wyroznienia(s: StatystykiGracza): Wyroznienie[] {
     },
     {
       id: "approved",
-      nazwa: "Basket Approved",
+      nazwa: "Coconaut Choice",
       opis: "Własne boisko z plakietką twórcy serwisu.",
-      warunek: "Dodaj boisko, które dostanie plakietkę Basket Approved.",
+      warunek: "Dodaj boisko, które dostanie plakietkę Coconaut Choice.",
       barwa: "fiolet",
       zdobyte: s.approved,
     },
