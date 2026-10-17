@@ -119,7 +119,7 @@ export interface ZarWojewodztwa {
  * Podpina warstwę do kanwy mapy i oddaje sterowanie nią.
  *
  * Warstwa ląduje tuż ZA kanwą, a przed pinezkami: żar ma leżeć na mapie, ale pod
- * pinezkami - inaczej podbarwiałby je na pomarańczowo i psuł fioletowe wyróżnienie Heatu.
+ * pinezkami - inaczej podbarwiałby je na pomarańczowo i psuł zielone wyróżnienie Heatu.
  */
 export function stworzZarWojewodztwa(map: MlMap, przyrostek: string): ZarWojewodztwa {
   const kontener = map.getCanvasContainer();

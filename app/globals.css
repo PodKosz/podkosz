@@ -41,10 +41,14 @@
   --color-ember: #ff4d0a;
   --color-glow: #ffb25c;
 
-  /* Basket Approved - osobista rekomendacja twórcy, celowo w kontrze do pomarańczy */
-  --color-basket: #a855f7;
-  --color-basket-deep: #6d28d9;
-  --color-basket-glow: #e9d5ff;
+  /*
+    Basket Approved - osobista rekomendacja twórcy, celowo w kontrze do pomarańczy.
+    Od 17.10.2026 w zieleni z logo Coconaut (#38aa32, odczytane z pliku logo), wcześniej
+    fiolet. Nazwa plakietki zmieni się po wyborze nowej, z „Coconaut" w środku.
+  */
+  --color-basket: #38aa32;
+  --color-basket-deep: #1d7419;
+  --color-basket-glow: #d9f7cf;
   --color-lime: #b6ff3d;
   --color-lime-deep: #6fbf00;
   --color-hairline: rgb(255 255 255 / 0.09);
@@ -684,14 +688,14 @@ body {
     0 8px 30px -6px rgb(var(--rgb-ember) / 0.55);
 }
 
-/* ---------- Basket Approved: fioletowa rekomendacja twórcy ---------- */
+/* ---------- Basket Approved: rekomendacja twórcy w zieleni Coconaut ---------- */
 
 .basket-gradient {
-  background: linear-gradient(135deg, #e9d5ff 0%, #a855f7 42%, #6d28d9 100%);
+  background: linear-gradient(135deg, #d9f7cf 0%, #38aa32 42%, #1d7419 100%);
 }
 
 .basket-text {
-  background: linear-gradient(135deg, #e9d5ff 0%, #a855f7 75%);
+  background: linear-gradient(135deg, #d9f7cf 0%, #38aa32 75%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -699,8 +703,8 @@ body {
 
 .basket-ring {
   box-shadow:
-    0 0 0 1px rgba(168, 85, 247, 0.45),
-    0 6px 22px -6px rgba(109, 40, 217, 0.9);
+    0 0 0 1px rgba(56, 170, 50, 0.45),
+    0 6px 22px -6px rgba(29, 116, 25, 0.9);
 }
 
 /* ---------- Liquid: powoli dryfujące plamy gradientu ---------- */
@@ -4876,8 +4880,8 @@ select option {
     inset 0 0 0 1px rgb(255 255 255 / 0.14);
 }
 
-.wiz-kaps-fiolet {
-  background: rgb(124 58 237 / 0.4);
+.wiz-kaps-wyroznienie {
+  background: rgb(40 140 36 / 0.45);
 }
 
 /*
@@ -5052,14 +5056,19 @@ select option {
   mix-blend-mode: soft-light;
 }
 
-/* --- Basket Approved: ta sama karta w holograficznej fioletowej obwódce --- */
+/*
+  --- Basket Approved: ta sama karta w holograficznej obwódce ---
+
+  Barwy z logo Coconaut (od 17.10.2026, wcześniej fiolet). Efekt bez zmian: folia z prążkami
+  przesuwa się za kursorem, a nad kartą jedzie tęczowy połysk - zmieniły się tylko kolory.
+*/
 .wiz-holo {
   border-radius: 34px;
   padding: 7px;
   box-shadow:
     0 12px 30px -12px rgb(0 0 0 / calc(0.7 * var(--moc-cienia))),
     0 40px 90px -30px rgb(0 0 0 / calc(0.95 * var(--moc-cienia))),
-    0 26px 60px -28px rgb(139 92 246 / calc(0.7 * var(--moc-poswiaty, 1)));
+    0 26px 60px -28px rgb(56 170 50 / calc(0.7 * var(--moc-poswiaty, 1)));
 }
 
 .wiz-holo .wiz-okno {
@@ -5074,14 +5083,14 @@ select option {
   border-radius: inherit;
   background: linear-gradient(
     115deg,
-    #2b1747 0%,
-    #6d28d9 16%,
-    #c084fc 30%,
-    #fbcfe8 40%,
-    #bae6fd 50%,
-    #c4b5fd 60%,
-    #7c3aed 74%,
-    #2b1747 100%
+    #0e2a0f 0%,
+    #1d7419 16%,
+    #5fcf57 30%,
+    #eafbc8 40%,
+    #bdf3e2 50%,
+    #a6e8a0 60%,
+    #38aa32 74%,
+    #0e2a0f 100%
   );
   background-size: 260% 260%;
   background-position: var(--wiz-mx) var(--wiz-my);
@@ -5109,7 +5118,7 @@ select option {
   background: linear-gradient(
     125deg,
     transparent 20%,
-    rgb(255 120 220 / 0.7) 35%,
+    rgb(170 255 140 / 0.7) 35%,
     rgb(120 220 255 / 0.7) 50%,
     rgb(255 240 150 / 0.6) 62%,
     transparent 78%

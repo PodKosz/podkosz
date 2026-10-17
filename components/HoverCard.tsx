@@ -158,8 +158,8 @@ export function HoverCard({
   `--wiz-rx`, `--wiz-ry`, `--wiz-mx` i `--wiz-my` ustawia MapView na pojemniku karty.
   Na dotyku nie ma kursora, więc światło przesuwa się samo, powoli (patrz `.wiz-dotyk`).
 
-  Boisko z Basket Approved dostaje dookoła holograficzną fioletową obwódkę z folii,
-  która mieni się razem z odblaskiem - ta sama barwa co fioletowa pinezka na mapie.
+  Boisko z Basket Approved dostaje dookoła holograficzną obwódkę z folii, która mieni się
+  razem z odblaskiem - w zieleni z logo Coconaut, tej samej co jego pinezka na mapie.
 */
 function WizytowkaBoiska({
   court,
@@ -219,7 +219,7 @@ function WizytowkaBoiska({
 
         <div className="wiz-gora">
           {holo ? (
-            <span className="wiz-kaps wiz-kaps-fiolet">
+            <span className="wiz-kaps wiz-kaps-wyroznienie">
               <FireBallIcon variant="basket" className="h-[15px] w-[15px] shrink-0" />
               Basket Approved
             </span>

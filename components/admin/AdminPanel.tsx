@@ -843,7 +843,7 @@ function Editor({
         >
           <BasketApprovedBadge />
           <span className="text-[13px] text-muted">
-            Twoja rekomendacja - fioletowa sekcja na karcie i fioletowa pinezka na mapie
+            Twoja rekomendacja - zielona sekcja na karcie i zielona pinezka na mapie
           </span>
           <span className="switch ml-auto" data-on={!!s.basketApproved} />
         </button>

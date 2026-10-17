@@ -554,7 +554,7 @@ export function CourtForm({
                 className="w-full resize-none bg-transparent text-[14px] leading-relaxed outline-none placeholder:text-faint"
               />
               <div className="mt-1 flex items-center justify-between text-[11px] text-faint">
-                <span>Tekst pojawi się dużą czcionką w fioletowej sekcji.</span>
+                <span>Tekst pojawi się dużą czcionką w zielonej sekcji.</span>
                 <span>{v.basketNote.length}/400</span>
               </div>
             </div>

@@ -2146,7 +2146,7 @@ export function MapView({
 /**
  * Pinezka minigry - ta sama forma co zwykła, ale niebieska i z piłką zamiast kosza.
  *
- * Kolor jest inny z rozmysłem: pomarańcz to boiska w bazie, fiolet to wyróżnienie Heat,
+ * Kolor jest inny z rozmysłem: pomarańcz to boiska w bazie, zieleń to wyróżnienie Heat,
  * a błękit nie znaczy na tej mapie nic innego - więc od razu widać, że to coś osobnego,
  * i nikt nie pomyśli, że w Kalifornii dodano boisko do polskiej bazy.
  */
@@ -2364,11 +2364,14 @@ function markerHtml(court: MapCourt, wydarzenie = false) {
   */
   const size = wydarzenie ? 67 : big ? 46 : 38;
 
-  // Boiska z wyróżnieniem Heat świecą na fioletowo - mają odróżniać się na pierwszy rzut oka.
+  /*
+    Boiska z wyróżnieniem Heat świecą na zielono, w barwie z logo Coconaut (#38aa32; do
+    17.10.2026 na fioletowo) - mają odróżniać się na pierwszy rzut oka.
+  */
   const glow = wydarzenie
     ? "rgba(255,255,255,.62) 0%, rgba(232,17,45,.4) 42%, transparent 72%"
     : court.basketApproved
-      ? "rgba(168,85,247,.6) 0%, rgba(109,40,217,.2) 45%, transparent 70%"
+      ? "rgba(56,170,50,.6) 0%, rgba(29,116,25,.2) 45%, transparent 70%"
       : "rgb(var(--rgb-flame) / .55) 0%, rgb(var(--rgb-ember) / .18) 45%, transparent 70%";
   /*
     Gradient biel-czerwień, nie flaga. Ostry podział na pół czytał się jak wklejona
@@ -2379,29 +2382,29 @@ function markerHtml(court: MapCourt, wydarzenie = false) {
   const core = wydarzenie
     ? "linear-gradient(135deg,#ffffff,#ffd3d8 32%,#e8112d 72%,#a60c1e)"
     : court.basketApproved
-      ? "linear-gradient(135deg,#e9d5ff,#a855f7 55%,#6d28d9)"
+      ? "linear-gradient(135deg,#d9f7cf,#38aa32 55%,#1d7419)"
       : "linear-gradient(135deg,var(--color-glow-soft),var(--color-flame) 55%,var(--color-ember))";
   /* łuna pod kulą słabnie w motywach jasnych - na bieli 90% barwy to plama, nie światło */
   const shadow = wydarzenie
     ? "rgb(232 17 45 / calc(.95 * var(--moc-poswiaty, 1)))"
     : court.basketApproved
-      ? "rgb(109 40 217 / calc(.9 * var(--moc-poswiaty, 1)))"
+      ? "rgb(29 116 25 / calc(.9 * var(--moc-poswiaty, 1)))"
       : "rgb(var(--rgb-ember) / calc(.9 * var(--moc-poswiaty, 1)))";
   const seam = wydarzenie
     ? "rgba(150,8,24,.55)"
     : court.basketApproved
-      ? "rgba(35,5,60,.7)"
+      ? "rgba(8,40,6,.7)"
       : "rgba(40,10,0,.72)";
-  const stem = wydarzenie ? "#e8112d" : court.basketApproved ? "#a855f7" : "var(--color-flame)";
+  const stem = wydarzenie ? "#e8112d" : court.basketApproved ? "#38aa32" : "var(--color-flame)";
   const dot = wydarzenie
     ? "rgba(232,17,45,.9)"
     : court.basketApproved
-      ? "rgba(168,85,247,.85)"
+      ? "rgba(56,170,50,.85)"
       : "rgb(var(--rgb-flame) / .85)";
 
   /*
     Paleta ognia idzie za kolorem pinezki, nie odwrotnie: pomarańczowa pinezka pali się
-    pomarańczowo, fioletowa pinezka Heatu - fioletowo. Płomień w obcym kolorze wyglądał
+    pomarańczowo, zielona pinezka Heatu - zielono. Płomień w obcym kolorze wyglądał
     jak nalepka doklejona za kulą; w kolorze pinezki jest jej przedłużeniem.
 
     Barwy jako trójki liczb, a nie gotowe kolory, bo w gradientach potrzebny jest ten sam
@@ -2411,7 +2414,7 @@ function markerHtml(court: MapCourt, wydarzenie = false) {
   const ogien = wydarzenie
     ? { o1: "255 255 255", o2: "255 210 214", o3: "232 17 45", o4: "138 6 20" }
     : court.basketApproved
-    ? { o1: "245 235 255", o2: "192 132 252", o3: "139 92 246", o4: "91 33 182" }
+    ? { o1: "238 252 232", o2: "140 220 120", o3: "56 170 50", o4: "22 98 20" }
     : {
         o1: "var(--rgb-glow-soft)",
         o2: "var(--rgb-glow)",
@@ -2421,11 +2424,11 @@ function markerHtml(court: MapCourt, wydarzenie = false) {
 
   /*
     Kolor poświaty pod kulą przy najechaniu i na pinezce aktywnej. Wcześniej ten cień był
-    wpisany na sztywno w arkuszu, na pomarańczowo i z `!important` - fioletowa pinezka
+    wpisany na sztywno w arkuszu, na pomarańczowo i z `!important` - wyróżniona pinezka
     Heatu dostawała więc pod spodem pomarańczową łunę i wyglądała, jakby ktoś pomylił
     warstwy. Podajemy trójkę RGB, bo arkusz składa z niej kolor z własną przezroczystością.
   */
-  const cien = wydarzenie ? "232 17 45" : court.basketApproved ? "139 92 246" : "var(--rgb-ember)";
+  const cien = wydarzenie ? "232 17 45" : court.basketApproved ? "56 170 50" : "var(--rgb-ember)";
 
   /*
     PODGLĄD PROPOZYCJI PINEZEK - rusztowanie do wyrzucenia po wybraniu kształtu.

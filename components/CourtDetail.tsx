@@ -1,5 +1,6 @@
 import { SzkicKafla, type RodzajSzkicu } from "./SzkicKafla";
 import Link from "next/link";
+import Image from "next/image";
 import { Court, SIATKA_LABEL, TYPE_LABEL, godzinyNaKafel, nawierzchniaNaKafel } from "@/lib/types";
 import { czyAutorAnonimowy, formatDistance, slugifyPlace } from "@/lib/site";
 import { JAKOSC_ZDJECIA, adresMiniatury } from "@/lib/obrazy";
@@ -311,29 +312,42 @@ export function CourtDetail({
 
         {court.basketApproved && court.basketNote && (
           <section className="relative mt-12 overflow-hidden rounded-[28px] p-[1.5px] basket-gradient">
-            <div className="relative overflow-hidden rounded-[27px] bg-[#0e0817] px-7 py-9 sm:px-12 sm:py-12">
+            <div className="relative overflow-hidden rounded-[27px] bg-[#07120a] px-7 py-9 sm:px-12 sm:py-12">
               {/* poświata w tle, żeby sekcja świeciła a nie tylko miała ramkę */}
               <span
                 className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full"
                 style={{
                   background:
-                    "radial-gradient(circle, rgba(168,85,247,.45) 0%, rgba(109,40,217,.12) 55%, transparent 72%)",
+                    "radial-gradient(circle, rgba(56,170,50,.42) 0%, rgba(29,116,25,.12) 55%, transparent 72%)",
                 }}
               />
               <span
                 className="pointer-events-none absolute -bottom-28 -left-20 h-80 w-80 rounded-full"
                 style={{
                   background:
-                    "radial-gradient(circle, rgba(109,40,217,.35) 0%, transparent 70%)",
+                    "radial-gradient(circle, rgba(29,116,25,.34) 0%, transparent 70%)",
                 }}
               />
 
               <div className="relative">
-                <div className="flex items-center gap-3">
-                  <FireBallIcon variant="basket" className="h-8 w-8" />
-                  <p className="text-[13px] font-bold uppercase tracking-[0.28em] basket-text">
-                    Basket Approved
-                  </p>
+                <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
+                  <div className="flex items-center gap-3">
+                    <FireBallIcon variant="basket" className="h-8 w-8" />
+                    <p className="text-[13px] font-bold uppercase tracking-[0.28em] basket-text">
+                      Basket Approved
+                    </p>
+                  </div>
+                  {/*
+                    Wyróżnienie w barwach partnera (od 17.10.2026). Logo wprost z pliku od
+                    Coconaut, bez przeróbek - zielony znak na ciemnym tle sekcji.
+                  */}
+                  <Image
+                    src="/partnerzy/coconaut-logo.png"
+                    alt="Coconaut"
+                    width={1054}
+                    height={211}
+                    className="h-[22px] w-auto sm:h-[26px]"
+                  />
                 </div>
 
                 <blockquote className="mt-5 text-[clamp(21px,2.9vw,34px)] font-semibold leading-[1.28] tracking-[-0.015em] text-kadr">
