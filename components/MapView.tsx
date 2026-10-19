@@ -2139,6 +2139,23 @@ export function MapView({
  * a błękit nie znaczy na tej mapie nic innego - więc od razu widać, że to coś osobnego,
  * i nikt nie pomyśli, że w Kalifornii dodano boisko do polskiej bazy.
  */
+/*
+  Materiał piłki: „Matowa guma” - wariant 05 z galerii stylów pinezek
+  (F:/CLAUDE/podkosz-pinezki/style-pinezek.html), wybrany 19.10.2026.
+
+  Kształt, kolory i szwy zostają, dochodzi wykonanie prawdziwej piłki: ziarnista skóra
+  z drobnymi wypustkami, miękkie światło z lewej góry bez połysku i szwy jak wgłębione
+  rowki - jasna krawędź rowka po stronie odwróconej od światła. Trzy warstwy leżą w kuli
+  POD szwami; barwę cienia biorą z `--b3` (najciemniejszy ton kuli), a wielkość faktury
+  z `--kula` - obie zmienne ustawia korpus pinezki. Reguły w globals.css przy `.pilka-faktura`.
+*/
+const WARSTWY_GUMY =
+  `<span class="pilka-faktura"></span><span class="pilka-cien"></span>` +
+  `<svg class="pilka-rowki" viewBox="0 0 24 24" aria-hidden="true"><path d="${szwyPilki(12, 12, 12)}"/></svg>`;
+
+/** cień całej pinezki w gumie: krótszy i bliżej mapy niż dawny, bo matowa kula nie świeci */
+const CIEN_GUMY = "drop-shadow(0 4px 6px rgb(0 0 0 / calc(.5 * var(--moc-cienia, 1))))";
+
 function markerGryHtml(g: MiejsceGry) {
   const size = 38;
   const gra = NAZWY_GIER[g.rodzaj];
@@ -2156,7 +2173,7 @@ function markerGryHtml(g: MiejsceGry) {
     Teraz obie pinezki są tym samym kształtem w dwóch barwach i nie ma jak ich rozjechać.
   */
   return `<span class="relative flex flex-col items-center"
-      style="--cien:29 95 208;filter:drop-shadow(0 6px 14px rgb(0 0 0 / calc(.6 * var(--moc-cienia, 1))))">
+      style="--cien:29 95 208;--b3:29 95 208;--kula:${size}px;filter:${CIEN_GUMY}">
 
     ${wizytowkaGryHtml(g, gra)}
 
@@ -2167,15 +2184,16 @@ function markerGryHtml(g: MiejsceGry) {
     <span class="marker-core relative grid place-items-center rounded-full transition-all duration-200"
       style="width:${size}px;height:${size}px;
       background:linear-gradient(135deg,#d7ecff,#56acff 55%,#1d5fd0);
-      box-shadow:0 0 0 1.5px rgba(255,255,255,.28) inset, 0 6px 18px -4px rgba(20,80,180,.9)">
-      <svg viewBox="0 0 24 24" style="width:${size}px;height:${size}px" fill="none"
+      box-shadow:inset 0 0 0 .5px rgb(var(--b3) / .55), 0 5px 14px -7px rgba(20,80,180,.9)">
+      ${WARSTWY_GUMY}
+      <svg class="pilka-szwy" viewBox="0 0 24 24" style="width:${size}px;height:${size}px" fill="none"
         stroke="rgba(10,30,70,.72)" stroke-width=".97" stroke-linecap="round">
         <path d="${szwyPilki(12, 12, 12)}"/>
       </svg>
     </span>
 
-    <span style="width:2px;height:10px;background:linear-gradient(180deg,#56acff,transparent)"></span>
-    <span style="width:7px;height:3px;border-radius:99px;background:rgba(86,172,255,.85)"></span>
+    <span style="position:relative;width:2px;height:10px;background:linear-gradient(180deg,#56acff,transparent)"></span>
+    <span style="position:relative;width:7px;height:3px;border-radius:99px;background:rgba(86,172,255,.85)"></span>
   </span>`;
 }
 
@@ -2321,7 +2339,7 @@ function markerGrupyHtml(g: GrupaBoisk) {
 
   return `
   <div class="pinezka-korpus relative flex flex-col items-center"
-       style="filter: drop-shadow(0 6px 14px rgb(0 0 0 / calc(.6 * var(--moc-cienia, 1))));--kula:${size}px;--cien:var(--rgb-ember);--o1:var(--rgb-glow-soft);--o2:var(--rgb-glow);--o3:var(--rgb-flame);--o4:var(--rgb-ember-deep)">
+       style="filter: ${CIEN_GUMY};--kula:${size}px;--b3:var(--rgb-ember);--cien:var(--rgb-ember);--o1:var(--rgb-glow-soft);--o2:var(--rgb-glow);--o3:var(--rgb-flame);--o4:var(--rgb-ember-deep)">
     <span class="grupa-podpis">${bezpieczny(opisGrupy(g))}</span>
     <span class="pulse-glow absolute -top-2 left-1/2 -translate-x-1/2 rounded-full"
           style="width:${size * 1.8}px;height:${size * 1.8}px;background:radial-gradient(circle, rgb(var(--rgb-flame) / .55) 0%, rgb(var(--rgb-ember) / .18) 45%, transparent 70%)"></span>
@@ -2331,14 +2349,15 @@ function markerGrupyHtml(g: GrupaBoisk) {
       <span class="ogien-jezyk ogien-jezyk-maly"></span>
     </span>
     <span class="marker-core relative grid place-items-center rounded-full transition-all duration-200"
-          style="width:${size}px;height:${size}px;background:linear-gradient(135deg,var(--color-glow-soft),var(--color-flame) 55%,var(--color-ember));box-shadow:0 0 0 1.5px rgba(255,255,255,.28) inset, 0 6px 18px -4px rgb(var(--rgb-ember) / calc(.9 * var(--moc-poswiaty, 1)))">
-      <svg viewBox="0 0 24 24" style="width:${size}px;height:${size}px;opacity:.5" fill="none" stroke="rgba(40,10,0,.72)" stroke-width=".97" stroke-linecap="round">
+          style="width:${size}px;height:${size}px;background:linear-gradient(135deg,var(--color-glow-soft),var(--color-flame) 55%,var(--color-ember));box-shadow:inset 0 0 0 .5px rgb(var(--b3) / .55), 0 5px 14px -7px rgb(var(--rgb-ember) / calc(.9 * var(--moc-poswiaty, 1)))">
+      ${WARSTWY_GUMY}
+      <svg class="pilka-szwy" viewBox="0 0 24 24" style="width:${size}px;height:${size}px;opacity:.5" fill="none" stroke="rgba(40,10,0,.72)" stroke-width=".97" stroke-linecap="round">
         <path d="${szwyPilki(12, 12, 12)}"/>
       </svg>
       <span class="grupa-liczba" style="font-size:${fs}px">${tekst}</span>
     </span>
-    <span style="width:2px;height:10px;background:linear-gradient(180deg,var(--color-flame),transparent)"></span>
-    <span style="width:7px;height:3px;border-radius:99px;background:rgb(var(--rgb-flame) / .85)"></span>
+    <span style="position:relative;width:2px;height:10px;background:linear-gradient(180deg,var(--color-flame),transparent)"></span>
+    <span style="position:relative;width:7px;height:3px;border-radius:99px;background:rgb(var(--rgb-flame) / .85)"></span>
   </div>`;
 }
 
@@ -2419,6 +2438,8 @@ function markerHtml(court: MapCourt, wydarzenie = false) {
     warstwy. Podajemy trójkę RGB, bo arkusz składa z niej kolor z własną przezroczystością.
   */
   const cien = wydarzenie ? "232 17 45" : court.basketApproved ? "56 170 50" : "var(--rgb-ember)";
+  /* najciemniejszy ton kuli - nim guma ciemnieje przy krawędzi (patrz WARSTWY_GUMY) */
+  const b3 = wydarzenie ? "166 12 30" : court.basketApproved ? "29 116 25" : "var(--rgb-ember)";
 
   /*
     PODGLĄD PROPOZYCJI PINEZEK - rusztowanie do wyrzucenia po wybraniu kształtu.
@@ -2441,7 +2462,7 @@ function markerHtml(court: MapCourt, wydarzenie = false) {
 
   return `
   <div class="pinezka-korpus relative flex flex-col items-center transition-transform duration-200 ease-out"
-       style="filter: drop-shadow(0 6px 14px rgb(0 0 0 / calc(.6 * var(--moc-cienia, 1))));--kula:${size}px;--cien:${cien};--o1:${ogien.o1};--o2:${ogien.o2};--o3:${ogien.o3};--o4:${ogien.o4}">
+       style="filter: ${CIEN_GUMY};--kula:${size}px;--b3:${b3};--cien:${cien};--o1:${ogien.o1};--o2:${ogien.o2};--o3:${ogien.o3};--o4:${ogien.o4}">
     <span class="pulse-glow absolute -top-2 left-1/2 -translate-x-1/2 rounded-full"
           style="width:${size * 1.8}px;height:${size * 1.8}px;background:radial-gradient(circle, ${glow})"></span>
     <!--
@@ -2464,7 +2485,8 @@ function markerHtml(court: MapCourt, wydarzenie = false) {
       <span class="ogien-jezyk ogien-jezyk-maly"></span>
     </span>
     <span class="marker-core relative grid place-items-center rounded-full transition-all duration-200"
-          style="width:${size}px;height:${size}px;background:${core};box-shadow:0 0 0 1.5px rgba(255,255,255,.28) inset, 0 6px 18px -4px ${shadow}">
+          style="width:${size}px;height:${size}px;background:${core};box-shadow:inset 0 0 0 .5px rgb(var(--b3) / .55), 0 5px 14px -7px ${shadow}">
+      ${WARSTWY_GUMY}
       <!--
         Szwy idą przez CAŁĄ kulę, nie przez jej środek.
 
@@ -2477,11 +2499,11 @@ function markerHtml(court: MapCourt, wydarzenie = false) {
         co w galerii propozycji (1.05 przy 13) - inaczej pinezka wyglądałaby na mapie
         inaczej niż wariant, który został wybrany.
       -->
-      <svg viewBox="0 0 24 24" style="width:${size}px;height:${size}px" fill="none" stroke="${seam}" stroke-width=".97" stroke-linecap="round">
+      <svg class="pilka-szwy" viewBox="0 0 24 24" style="width:${size}px;height:${size}px" fill="none" stroke="${seam}" stroke-width=".97" stroke-linecap="round">
         <path d="${szwyPilki(12, 12, 12)}"/>
       </svg>
     </span>
-    <span style="width:2px;height:10px;background:linear-gradient(180deg,${stem},transparent)"></span>
-    <span style="width:7px;height:3px;border-radius:99px;background:${dot}"></span>
+    <span style="position:relative;width:2px;height:10px;background:linear-gradient(180deg,${stem},transparent)"></span>
+    <span style="position:relative;width:7px;height:3px;border-radius:99px;background:${dot}"></span>
   </div>`;
 }

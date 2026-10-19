@@ -2655,18 +2655,116 @@ select option {
 }
 
 /*
-  Poświata pod kulą przy najechaniu i na pinezce aktywnej idzie w kolorze samej pinezki -
-  trójkę RGB podaje marker w zmiennej `--cien`. Wcześniej stał tu wpisany na sztywno
-  pomarańcz, więc fioletowa pinezka Heatu dostawała pod spodem pomarańczową łunę i
-  wyglądała, jakby ktoś pomylił warstwy. Wartość zapasowa zostaje pomarańczowa, bo takich
-  pinezek jest większość.
+  ---------- materiał piłki: „Matowa guma” ----------
+
+  Wariant 05 z galerii stylów pinezek (F:/CLAUDE/podkosz-pinezki/style-pinezek.html),
+  wybrany 19.10.2026. Kształt, kolory i szwy zostały - dochodzi wykonanie prawdziwej piłki.
+  Trzy warstwy w kuli (budowa w `WARSTWY_GUMY` w MapView), wszystkie POD szwami:
+
+    - faktura: ziarnista skóra z drobnymi wypustkami. Jeden mały kafelek SVG wspólny dla
+      wszystkich pinezek, więc przeglądarka rysuje go raz. Ku brzegowi kuli gaśnie, jakby
+      wypustki uciekały w perspektywę;
+    - cień: miękkie światło z lewej góry i ciemnienie ku prawej dolnej krawędzi w barwie
+      najciemniejszego tonu kuli (`--b3` z korpusu) - bez żadnego połysku;
+    - rowki: jasna kopia szwów przesunięta o pół piksela w stronę cienia, więc szew wygląda
+      na wgłębiony, a nie namalowany.
+
+  Wielkość faktury liczy się od średnicy kuli (`--kula` z korpusu): kula 46 i 67 px ma tyle
+  samo wypustek, tylko większych. Kafelek wygenerowany tym samym losowaniem co w galerii
+  (ziarno 7, siatka 10 x 6) i zamrożony tutaj.
+*/
+:root {
+  --ziarno-pilki: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='12.471' viewBox='0 0 24 12.471'%3E%3Cdefs%3E%3CradialGradient id='g' cx='38%25' cy='34%25' r='66%25'%3E%3Cstop offset='0' stop-color='%23fff' stop-opacity='.6'/%3E%3Cstop offset='.42' stop-color='%23fff' stop-opacity='.08'/%3E%3Cstop offset='.72' stop-color='%23000' stop-opacity='.16'/%3E%3Cstop offset='1' stop-color='%23000' stop-opacity='.42'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill-opacity='.14'/%3E%3Cg fill='url(%23g)'%3E%3Ccircle cx='-0.25' cy='0.21' r='1'/%3E%3Ccircle cx='-0.25' cy='12.68' r='1'/%3E%3Ccircle cx='23.75' cy='0.21' r='1'/%3E%3Ccircle cx='23.75' cy='12.68' r='1'/%3E%3Ccircle cx='2.26' cy='0.11' r='1.04'/%3E%3Ccircle cx='2.26' cy='12.59' r='1.04'/%3E%3Ccircle cx='4.71' cy='0.13' r='1.07'/%3E%3Ccircle cx='4.71' cy='12.6' r='1.07'/%3E%3Ccircle cx='7.22' cy='0.09' r='1.05'/%3E%3Ccircle cx='7.22' cy='12.56' r='1.05'/%3E%3Ccircle cx='9.76' cy='-0.13' r='1.01'/%3E%3Ccircle cx='9.76' cy='12.34' r='1.01'/%3E%3Ccircle cx='12.1' cy='0.1' r='0.97'/%3E%3Ccircle cx='12.1' cy='12.57' r='0.97'/%3E%3Ccircle cx='14.49' cy='-0.02' r='1.09'/%3E%3Ccircle cx='14.49' cy='12.45' r='1.09'/%3E%3Ccircle cx='16.95' cy='-0.19' r='1.03'/%3E%3Ccircle cx='16.95' cy='12.28' r='1.03'/%3E%3Ccircle cx='19.41' cy='0.09' r='1.05'/%3E%3Ccircle cx='19.41' cy='12.57' r='1.05'/%3E%3Ccircle cx='21.64' cy='0.21' r='1.09'/%3E%3Ccircle cx='21.64' cy='12.68' r='1.09'/%3E%3Ccircle cx='1.14' cy='2' r='1.08'/%3E%3Ccircle cx='3.52' cy='1.9' r='1'/%3E%3Ccircle cx='5.96' cy='1.98' r='1.09'/%3E%3Ccircle cx='8.43' cy='2.19' r='1.09'/%3E%3Ccircle cx='10.58' cy='1.97' r='1.04'/%3E%3Ccircle cx='13.2' cy='2.04' r='0.99'/%3E%3Ccircle cx='15.8' cy='1.86' r='1.01'/%3E%3Ccircle cx='17.92' cy='2.16' r='1.09'/%3E%3Ccircle cx='20.41' cy='1.91' r='1.02'/%3E%3Ccircle cx='22.69' cy='2.01' r='1.02'/%3E%3Ccircle cx='-0.08' cy='4.17' r='1.05'/%3E%3Ccircle cx='23.92' cy='4.17' r='1.05'/%3E%3Ccircle cx='2.27' cy='4.36' r='1.03'/%3E%3Ccircle cx='4.98' cy='4.22' r='1.05'/%3E%3Ccircle cx='7.21' cy='4.16' r='1.06'/%3E%3Ccircle cx='9.82' cy='4.11' r='1.06'/%3E%3Ccircle cx='11.88' cy='4.2' r='1.01'/%3E%3Ccircle cx='14.32' cy='4.1' r='1.07'/%3E%3Ccircle cx='16.99' cy='3.96' r='1.08'/%3E%3Ccircle cx='18.99' cy='4.11' r='0.98'/%3E%3Ccircle cx='21.39' cy='4.41' r='0.99'/%3E%3Ccircle cx='1.27' cy='6.06' r='1.03'/%3E%3Ccircle cx='3.65' cy='6.05' r='1.09'/%3E%3Ccircle cx='6.19' cy='6.43' r='1.09'/%3E%3Ccircle cx='8.6' cy='6.37' r='1'/%3E%3Ccircle cx='10.56' cy='6.11' r='0.97'/%3E%3Ccircle cx='12.95' cy='6.29' r='0.99'/%3E%3Ccircle cx='15.72' cy='6.23' r='1.06'/%3E%3Ccircle cx='17.87' cy='6.43' r='0.99'/%3E%3Ccircle cx='20.34' cy='6.43' r='0.98'/%3E%3Ccircle cx='22.79' cy='5.99' r='1.09'/%3E%3Ccircle cx='0.07' cy='8.52' r='0.96'/%3E%3Ccircle cx='24.07' cy='8.52' r='0.96'/%3E%3Ccircle cx='2.6' cy='8.16' r='1.1'/%3E%3Ccircle cx='4.83' cy='8.4' r='1'/%3E%3Ccircle cx='7.06' cy='8.17' r='1.04'/%3E%3Ccircle cx='9.38' cy='8.45' r='1.06'/%3E%3Ccircle cx='12.11' cy='8.31' r='0.96'/%3E%3Ccircle cx='14.21' cy='8.52' r='0.98'/%3E%3Ccircle cx='16.89' cy='8.51' r='0.97'/%3E%3Ccircle cx='19.39' cy='8.49' r='1.1'/%3E%3Ccircle cx='21.83' cy='8.45' r='1.02'/%3E%3Ccircle cx='1.07' cy='10.51' r='1.09'/%3E%3Ccircle cx='25.07' cy='10.51' r='1.09'/%3E%3Ccircle cx='3.55' cy='10.26' r='1.02'/%3E%3Ccircle cx='6.19' cy='10.42' r='1.01'/%3E%3Ccircle cx='8.46' cy='10.51' r='1.01'/%3E%3Ccircle cx='10.91' cy='10.35' r='0.99'/%3E%3Ccircle cx='13.11' cy='10.64' r='1.1'/%3E%3Ccircle cx='15.67' cy='10.58' r='1.09'/%3E%3Ccircle cx='17.85' cy='10.46' r='0.98'/%3E%3Ccircle cx='20.4' cy='10.42' r='1.07'/%3E%3Ccircle cx='-0.98' cy='10.38' r='0.99'/%3E%3Ccircle cx='23.02' cy='10.38' r='0.99'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+.marker-core {
+  /* mieszanie faktury (`overlay`) zostaje w kuli i nie sięga mapy pod pinezką */
+  isolation: isolate;
+  /* ugięcie pod kursorem idzie od spodu kuli - piłka przysiada na nóżce */
+  transform-origin: 50% 100%;
+}
+
+.pilka-faktura,
+.pilka-cien {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.pilka-faktura {
+  background-image: var(--ziarno-pilki);
+  background-size: calc(var(--kula, 38px) * 0.385) calc(var(--kula, 38px) * 0.2);
+  mix-blend-mode: overlay;
+  opacity: 0.9;
+  -webkit-mask: radial-gradient(closest-side, #000 55%, rgb(0 0 0 / 0.4) 100%);
+  mask: radial-gradient(closest-side, #000 55%, rgb(0 0 0 / 0.4) 100%);
+}
+
+.pilka-cien {
+  background:
+    radial-gradient(circle at 33% 28%, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0) 44%),
+    radial-gradient(
+      circle at 36% 32%,
+      rgb(0 0 0 / 0) 38%,
+      rgb(var(--b3, 255 77 10) / 0.48) 86%,
+      rgb(20 5 0 / 0.5) 100%
+    );
+}
+
+.pilka-rowki {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  /* przesunięta kopia nie może wyjść poza kulę */
+  clip-path: circle(50%);
+}
+
+.pilka-rowki path {
+  fill: none;
+  stroke: rgb(255 255 255 / 0.22);
+  stroke-width: 0.97;
+  stroke-linecap: round;
+  transform: translate(0.3px, 0.4px);
+}
+
+/* szwy nad warstwami gumy: pozycjonowane, więc malują się w kolejności z drzewa */
+.pilka-szwy {
+  position: relative;
+}
+
+/* matowa kula nie świeci tak mocno jak gładka - łuna wokół pinezek o jedną trzecią słabsza */
+.court-marker {
+  --sila-poswiaty: 0.65;
+}
+
+/*
+  Pod kursorem i na pinezce aktywnej piłka sprężynuje: przysiada (szersza i niższa),
+  odbija się (węższa i wyższa) i zostaje o 8% większa, dopóki kursor nad nią wisi. Sama
+  `scale`, bez `transform` - wcześniej było tu `transform: scale(1.22)` i mocniejsza łuna
+  w kolorze pinezki, a jedno złożyłoby się z drugim.
 */
 .court-marker:hover .marker-core,
 .court-marker[data-active="true"] .marker-core {
-  transform: scale(1.22);
-  box-shadow:
-    0 0 0 2px rgb(var(--rgb-szyba) / 0.45) inset,
-    0 10px 26px -4px rgb(var(--cien, 255 77 10)) !important;
+  animation: pilka-guma 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes pilka-guma {
+  0% {
+    scale: 1;
+  }
+  35% {
+    scale: 1.14 0.9;
+  }
+  65% {
+    scale: 1.02 1.1;
+  }
+  100% {
+    scale: 1.08;
+  }
 }
 
 .court-marker[data-active="true"] {
@@ -2941,11 +3039,11 @@ select option {
 @keyframes wydarzenie-luna {
   0%,
   100% {
-    opacity: 0.75;
+    opacity: calc(0.75 * var(--sila-poswiaty, 1));
     transform: scale(1);
   }
   50% {
-    opacity: 1;
+    opacity: var(--sila-poswiaty, 1);
     transform: scale(1.09);
   }
 }
@@ -5218,11 +5316,11 @@ select option {
 @keyframes pulse-glow {
   0%,
   100% {
-    opacity: calc(0.55 * var(--moc-poswiaty, 1));
+    opacity: calc(0.55 * var(--moc-poswiaty, 1) * var(--sila-poswiaty, 1));
     transform: scale(1);
   }
   50% {
-    opacity: calc(0.95 * var(--moc-poswiaty, 1));
+    opacity: calc(0.95 * var(--moc-poswiaty, 1) * var(--sila-poswiaty, 1));
     transform: scale(1.18);
   }
 }
