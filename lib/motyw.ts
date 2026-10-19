@@ -3,33 +3,39 @@
 import { useSyncExternalStore } from "react";
 
 /**
- * Motyw graficzny serwisu - „classic", „polska" albo „coconaut".
+ * Motyw strony - „ciemny" (domyślny) albo „jasny".
  *
  * Motyw zmienia wyłącznie warstwę barwną. Nie ma tu żadnej logiki poza zapamiętaniem
- * wyboru: cała różnica siedzi w zmiennych CSS (patrz blok „motywy graficzne"
- * w `app/globals.css`), a przełącznik ustawia tylko atrybut `data-motyw` na elemencie
- * `html`. Dzięki temu ani jeden komponent nie wie, która skórka jest włączona - i nie
- * może się o nią potknąć.
+ * wyboru: cała różnica siedzi w zmiennych CSS (patrz blok „motywy" w `app/globals.css`),
+ * a suwak w menu konta ustawia tylko atrybut `data-motyw` na elemencie `html`. Dzięki
+ * temu ani jeden komponent nie wie, który motyw jest włączony - i nie może się o niego
+ * potknąć.
  *
- * Wybór trzymamy w `localStorage`, nie w bazie: to ustawienie urządzenia, nie konta.
- * Na czas pokazów wystarcza, a przy okazji nie wymaga migracji ani zapytania do bazy
- * przy każdym wejściu.
+ * Wybór trzymamy w `localStorage`, nie w bazie: to ustawienie urządzenia, nie konta -
+ * na telefonie w nocy ktoś chce ciemnego, na komputerze w biurze jasnego.
  */
 
 export const MOTYWY = [
-  { id: "classic", nazwa: "Classic" },
-  { id: "polska", nazwa: "Polska" },
-  { id: "coconaut", nazwa: "Coconaut" },
+  { id: "ciemny", nazwa: "Ciemny" },
+  { id: "jasny", nazwa: "Jasny" },
 ] as const;
 
 export type Motyw = (typeof MOTYWY)[number]["id"];
 
-const DOMYSLNY: Motyw = "classic";
+const DOMYSLNY: Motyw = "ciemny";
 export const KLUCZ_MOTYWU = "podkosz-motyw";
 /* własne zdarzenie, bo `storage` nie leci do karty, która sama zapisała wartość */
 const ZDARZENIE = "podkosz-motyw-zmiana";
 
+/*
+  Dawne skórki z pokazów (do 19.10.2026) były jasne - kto którąś wybrał, chciał jasnej
+  strony, więc dostaje motyw jasny, a nie powrót do ciemnego. Ta sama mapa siedzi
+  w `SKRYPT_MOTYWU` niżej, bo skrypt działa, zanim ten moduł się wczyta.
+*/
+const DAWNE_JASNE = ["polska", "coconaut"];
+
 function poprawny(wartosc: string | null): Motyw {
+  if (wartosc && DAWNE_JASNE.includes(wartosc)) return "jasny";
   return MOTYWY.some((m) => m.id === wartosc) ? (wartosc as Motyw) : DOMYSLNY;
 }
 
@@ -46,7 +52,7 @@ export function ustawMotyw(motyw: Motyw) {
 
 /**
  * Nadaje atrybut na `html`. Motyw domyślny zdejmuje atrybut, a nie ustawia go na
- * „classic" - w arkuszu barwy domyślne siedzą wprost na `:root`, więc brak atrybutu jest
+ * „ciemny" - w arkuszu barwy domyślne siedzą wprost na `:root`, więc brak atrybutu jest
  * poprawnym stanem i nie wymaga niczego dopisywać.
  */
 function zastosuj(motyw: Motyw) {
@@ -106,4 +112,4 @@ export function useMotyw(): Motyw {
   dopisana z Reactem, po hydracji, pozwoliłaby treści mignąć w stanie końcowym i zniknąć.
   Poza `try`, bo nie zależy od pamięci przeglądarki, którą prywatne okno potrafi zablokować.
 */
-export const SKRYPT_MOTYWU = `try{var m=localStorage.getItem("${KLUCZ_MOTYWU}");if(m&&m!=="${DOMYSLNY}")document.documentElement.dataset.motyw=m}catch(e){}document.documentElement.classList.add("wjazdy")`;
+export const SKRYPT_MOTYWU = `try{var m=localStorage.getItem("${KLUCZ_MOTYWU}");if(${JSON.stringify(DAWNE_JASNE)}.indexOf(m)>=0)m="jasny";if(m==="jasny")document.documentElement.dataset.motyw=m}catch(e){}document.documentElement.classList.add("wjazdy")`;

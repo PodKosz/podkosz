@@ -312,7 +312,8 @@ export function CourtDetail({
 
         {court.basketApproved && court.basketNote && (
           <section className="relative mt-12 overflow-hidden rounded-[28px] p-[1.5px] basket-gradient">
-            <div className="relative overflow-hidden rounded-[27px] bg-[#07120a] px-7 py-9 sm:px-12 sm:py-12">
+            {/* tło i barwy napisów z motywu (`--tlo-wyroznienia` w globals.css) - w jasnym sekcja jest jasna */}
+            <div className="relative overflow-hidden rounded-[27px] bg-[var(--tlo-wyroznienia)] px-7 py-9 sm:px-12 sm:py-12">
               {/* poświata w tle, żeby sekcja świeciła a nie tylko miała ramkę */}
               <span
                 className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full"
@@ -350,11 +351,11 @@ export function CourtDetail({
                   />
                 </div>
 
-                <blockquote className="mt-5 text-[clamp(21px,2.9vw,34px)] font-semibold leading-[1.28] tracking-[-0.015em] text-kadr">
+                <blockquote className="mt-5 text-[clamp(21px,2.9vw,34px)] font-semibold leading-[1.28] tracking-[-0.015em] text-ink">
                   {court.basketNote}
                 </blockquote>
 
-                <p className="mt-5 text-[13px] text-kadr/55">
+                <p className="mt-5 text-[13px] text-muted">
                   - Basket, twórca PodKosza
                 </p>
               </div>

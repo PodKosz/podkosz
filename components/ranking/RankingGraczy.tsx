@@ -193,7 +193,8 @@ function KartaGracza({
         {String(miejsce).padStart(2, "0")}
       </span>
 
-      <span className="relative z-[2] flex w-full flex-col items-center justify-center gap-4 px-6 py-8 text-center">
+      {/* napisy leżą na zdjęciach pod ciemną zasłoną - zostają białe w obu motywach */}
+      <span className="relative z-[2] flex w-full flex-col items-center justify-center gap-4 px-6 py-8 text-center text-kadr">
         {/*
           Zdjęcie profilowe siedzi w środku PIŁKI ODZNACZEŃ - tej samej, którą gracz ma na
           swoim profilu. Ranking mówi więc dwie rzeczy naraz: kto dodał najwięcej boisk
@@ -250,7 +251,7 @@ function KartaGracza({
                 {plural(odkrywca.courts, ["boisko", "boiska", "boisk"])}
               </span>
             </span>
-            <span className="h-5 w-px bg-white/12" />
+            <span className="h-5 w-px bg-kadr/15" />
             <span className="flex items-center gap-1.5 text-glow">
               <FireBallIcon className={zwyciezca ? "h-5 w-5" : "h-4 w-4"} />
               <b className={`tabular-nums ${zwyciezca ? "text-[clamp(19px,1.9vw,26px)]" : "text-[17px]"}`}>

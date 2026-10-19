@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signInWithGoogle, signOut } from "@/lib/auth";
 import { supabaseEnabled } from "@/lib/supabase/config";
-import { MOTYWY, useMotyw, ustawMotyw } from "@/lib/motyw";
+import { useMotyw, ustawMotyw } from "@/lib/motyw";
 import { GoogleMark } from "./GoogleMark";
 
 export interface AuthUser {
@@ -139,11 +139,11 @@ export function AuthMenu({ user }: { user: AuthUser | null }) {
             Ulubione boiska
           </Link>
           {/*
-            Przełącznik motywu - na razie tylko dla administratora, do pokazów. Stoi pod
-            „Ulubionymi boiskami", bo to ustawienie widoku, nie pozycja nawigacji: nie
-            prowadzi nigdzie, zmienia to, na co się właśnie patrzy.
+            Suwak motywu jasny/ciemny - dla każdego zalogowanego. Stoi pod „Ulubionymi
+            boiskami", bo to ustawienie widoku, nie pozycja nawigacji: nie prowadzi nigdzie,
+            zmienia to, na co się właśnie patrzy.
           */}
-          {user.isAdmin && <PrzelacznikMotywu />}
+          <PrzelacznikMotywu />
 
           {user.isAdmin && (
             <Link
@@ -167,31 +167,25 @@ export function AuthMenu({ user }: { user: AuthUser | null }) {
 }
 
 /**
- * Trzy motywy w jednym rzędzie, jak segmentowany przełącznik.
+ * Suwak motywu: włączony znaczy jasny, wyłączony - ciemny (domyślny).
  *
- * Zaznaczony segment dostaje gradient barwy głównej - a ta należy już do wybranego motywu,
- * więc przełącznik pokazuje sobą to, co włącza. Przy „Coconaut" zaznaczenie jest zielone,
- * przy „Polska" czerwone; nie trzeba dokładać próbek barw, bo cały interfejs jest próbką.
+ * Menu po przełączeniu zostaje otwarte. Zmiana jest widoczna od razu na całej stronie,
+ * a kto chciał tylko zobaczyć, jak wygląda drugi motyw, przełączy z powrotem tym samym
+ * ruchem - zamknięte menu kazałoby mu je otwierać jeszcze raz.
  */
 function PrzelacznikMotywu() {
-  const motyw = useMotyw();
+  const jasny = useMotyw() === "jasny";
 
   return (
-    <div className="px-3 pb-1.5 pt-2.5">
-      <p className="mb-2 text-[10px] uppercase tracking-[0.16em] text-faint">Motyw</p>
-      <div className="segmenty flex gap-1 p-1">
-        {MOTYWY.map((m) => (
-          <button
-            key={m.id}
-            onClick={() => ustawMotyw(m.id)}
-            data-on={motyw === m.id}
-            title={`Motyw ${m.nazwa}`}
-            className="segment flex-1 px-1 py-1.5 text-[11px] text-muted"
-          >
-            {m.nazwa}
-          </button>
-        ))}
-      </div>
-    </div>
+    <button
+      type="button"
+      role="switch"
+      aria-checked={jasny}
+      onClick={() => ustawMotyw(jasny ? "ciemny" : "jasny")}
+      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[13px] text-muted hover:text-ink"
+    >
+      Jasny motyw
+      <span aria-hidden className="switch ml-auto" data-on={jasny} />
+    </button>
   );
 }

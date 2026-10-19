@@ -32,7 +32,7 @@
   --color-muted: #9a9aa6;
   --color-faint: #6b6b76;
   /*
-    Barwy akcentu podajemy tu wartościami z motywu „classic", bo Tailwind z tego bloku
+    Barwy akcentu podajemy tu wartościami z motywu ciemnego, bo Tailwind z tego bloku
     generuje klasy narzędziowe (`text-flame`, `bg-ember/20`). Prawdziwe wartości nadaje
     niżej blok motywów - definiuje te same zmienne, tylko później w arkuszu, więc przy
     równej wadze wygrywa i skórka podmienia barwę bez ruszania ani jednej klasy.
@@ -67,27 +67,28 @@
   --radius-panel: 24px;
 }
 
-/* ---------- motywy graficzne ---------- */
+/* ---------- motywy: ciemny i jasny ---------- */
 /*
-  Serwis ma trzy skórki: „classic" (ciemna, pomarańczowa - ta od początku), „polska"
-  (jasna, biało-czerwona, w barwach kadry i PZKosz) i „coconaut" (jasna, biało-zielona,
-  w barwach marki Coconaut). Wybiera się je z menu konta, a przełącznik ustawia atrybut
-  `data-motyw` na elemencie `html`.
+  Serwis ma dwa motywy: „ciemny" (domyślny - pomarańcz na ciemnym tle, ten od początku)
+  i „jasny" (te same akcenty na jasnym tle). Przełącza je suwak w menu konta, a ten
+  ustawia atrybut `data-motyw` na elemencie `html` (patrz `lib/motyw.ts`). Do 19.10.2026
+  były tu jeszcze dwie skórki z pokazów, „polska" i „coconaut" - kto je wybrał, dostaje
+  teraz motyw jasny.
 
   Reguła nadrzędna: motyw zmienia WYŁĄCZNIE warstwę barwną. Żaden element, żadna ikona,
   żaden mechanizm nie wie, który motyw jest włączony - cała różnica siedzi w zmiennych
   poniżej, a komponenty nie mają o nich pojęcia.
 
-  Dwa motywy jasne wymagały jednak czegoś więcej niż podmiany akcentu, bo cała stylistyka
-  szkła jest zbudowana na ciemnym tle: powierzchnie to białe filmy o kilku procentach
-  przezroczystości, krawędzie to biel na 9%, a napisy są niemal białe. Na białej stronie
-  wszystko to znika. Dlatego paleta ma trzy warstwy:
+  Motyw jasny wymaga jednak czegoś więcej niż podmiany tła, bo cała stylistyka szkła jest
+  zbudowana na ciemnym tle: powierzchnie to białe filmy o kilku procentach przezroczystości,
+  krawędzie to biel na 9%, a napisy są niemal białe. Na białej stronie wszystko to znika.
+  Dlatego paleta ma trzy warstwy:
 
    1. AKCENT - drabinka pięciu stopni barwy marki plus te same barwy w składowych RGB.
       Składowe są konieczne, bo pół serwisu maluje się przezroczystością: z `#ff7a18`
       nie da się zrobić „to samo, ale 30%".
    2. POWIERZCHNIE - `--rgb-szyba` (film i krawędzie) oraz `--rgb-plyta` (nieprzepuszczalne
-      tła paneli). W motywach jasnych szyba jest ciemna, a płyta biała: dokładnie odwrotnie
+      tła paneli). W motywie jasnym szyba jest ciemna, a płyta biała: dokładnie odwrotnie
       niż w ciemnym, i to jedno przestawienie odwraca wszystkie kilkadziesiąt powierzchni.
    3. TEKST I TŁO - `--color-ink`, `--color-muted`, `--color-faint`, `--color-void`.
 
@@ -100,15 +101,14 @@
   Czego motyw nie rusza:
    - drabinki stopni odznaczeń (iskra → żar → płomień → błękit) - tam barwa jest treścią,
      mówi, jak wysoko ktoś zaszedł;
-   - barw obcych marek (Google w przycisku logowania);
-   - fioletu wyróżnienia Heat, który ma się odcinać od barwy głównej w każdym motywie;
+   - barw obcych marek (Google w przycisku logowania, zieleń Coconaut);
    - przygaszeń na zdjęciach. Ciemna zasłona pod napisem na kadrze boiska zostaje ciemna,
      bo leży na fotografii, nie na powierzchni strony - i napis na niej jest biały
      niezależnie od motywu.
 */
 
 :root,
-[data-motyw="classic"] {
+[data-motyw="ciemny"] {
   color-scheme: dark;
 
   /* akcent */
@@ -147,12 +147,12 @@
   --rgb-dymek: 30 30 36;
   /* mnożnik przezroczystości cieni - na bieli czarny cień o 90% wygląda jak brud */
   --moc-cienia: 1;
-  /* to samo dla poświat pod pinezkami: czerwona łuna na bieli czyta się jak plama */
+  /* to samo dla poświat pod pinezkami: łuna w pełnej sile czyta się na bieli jak plama */
   --moc-poswiaty: 1;
   /*
     Barwa przygaszeń leżących NA zdjęciach: dolna zasłona pod napisem na karcie boiska
     i winieta pod twarzą gracza. W motywie ciemnym to niemal czerń, bo taka jest strona.
-    W jasnych schodzi w głęboki ton marki - czarna płyta pośrodku białej strony czytała się
+    W jasnym schodzi w głęboki ton marki - czarna płyta pośrodku białej strony czytała się
     jak dziura, a nie jak przygaszone zdjęcie. Ton jest CIEMNY, nie jasny, bo napisy na nim
     zostają białe.
   */
@@ -166,6 +166,28 @@
   --menu-3: #0c0908;
   --color-hairline: rgb(255 255 255 / 0.09);
 
+  /*
+    Sekcja Coconaut Choice na stronie boiska: tło i gradient napisu. Zieleń marki jest ta
+    sama w obu motywach, zmienia się tylko jasność - na ciemnym tle napis idzie od jasnej
+    zieleni do barwy logo, na jasnym od barwy logo do ciemnej.
+  */
+  --tlo-wyroznienia: #07120a;
+  --wyroznienie-tekst-1: #d9f7cf;
+  --wyroznienie-tekst-2: #38aa32;
+
+  /* szklany kafelek (`.kafel-szklo`): rąbki światła, krycie tafli i obwódka */
+  --rgb-rabek: 255 255 255;
+  --kafel-plyta-gora: 0.22;
+  --kafel-plyta-dol: 0.36;
+  --kafel-obrys: transparent;
+  /*
+    Szkło kart przy piłce, stojaka i kafelków: o ile przyciemnia tło pod sobą i jak mocny
+    jest rant. W ciemnym przyciemnienie trzyma szkło nad świecącą nazwą gracza; w jasnym to
+    samo przyciemnienie robiło z każdej tafli szarą płytkę, a pełny rant - ciemną ramkę.
+  */
+  --szklo-jasnosc: 0.78;
+  --moc-krawedzi: 1;
+
   /* tekst i tło */
   --color-void: #07070a;
   --color-deep: #0c0c11;
@@ -176,120 +198,73 @@
 }
 
 /*
-  Polska: biel i czerwień kadry, na jasnym tle.
+  Jasny: te same pomarańcze na jasnym tle.
 
-  Czerwień jest dobrana tak, żeby działała w dwie strony: leży na bieli strony (małe
-  wersaliki etykiet) i pod czarnym napisem na przycisku. Barwa z druku (#e4032e) wygrywa
-  pierwsze, przegrywa drugie; #e00b26 wychodzi na 4,5 : 1 wobec obu, więc czyta się i tak,
-  i tak.
+  Drabinka akcentu schodzi o dwa tony, z tego samego powodu co w dawnych skórkach jasnych:
+  `--color-flame` maluje też małe wersaliki etykiet NA BIELI, a #ff7a18 ma na białym tle
+  tylko 2,6 : 1 kontrastu. #d95a0b daje 3,9 : 1 wobec bieli i 5,4 : 1 pod czarnym napisem
+  przycisku - i dalej czyta się jako ta sama pomarańcz. Pełny, jasny odcień zostaje tam,
+  gdzie leży na kolorze: gradient przycisków (`--grad-*`) jest identyczny jak w ciemnym.
 
-  Najjaśniejszy stopień drabinki jest tu ciemniejszy od barwy głównej, nie jaśniejszy -
-  odwrotnie niż w motywie ciemnym. To nie pomyłka: `--color-glow` maluje obrysy i poświaty,
-  a te muszą być widoczne NA BIELI. Jasny odcień zostaje w `--grad-1`, czyli tam, gdzie leży
-  na kolorze.
+  Najjaśniejszy stopień drabinki (`--color-glow`) jest tu ciemniejszy od barwy głównej,
+  nie jaśniejszy - odwrotnie niż w ciemnym. To nie pomyłka: ta zmienna maluje obrysy
+  i poświaty, a te muszą być widoczne NA BIELI.
 */
-[data-motyw="polska"] {
+[data-motyw="jasny"] {
   color-scheme: light;
 
-  --color-glow-soft: #ff8a99;
-  --color-glow: #e6142c;
-  --color-flame-soft: #f5233a;
-  --color-flame: #e00b26;
-  --color-ember: #b00a1e;
-  --color-ember-deep: #8c0717;
+  --color-glow-soft: #ff9f4d;
+  --color-glow: #e8650f;
+  --color-flame-soft: #ef7020;
+  --color-flame: #d95a0b;
+  --color-ember: #b8470a;
+  --color-ember-deep: #943807;
 
-  --color-cien-a: #c0324a;
-  --color-cien-b: #94162a;
-  --color-cien-c: #6e0d1b;
+  --color-cien-a: #c9761f;
+  --color-cien-b: #a8480d;
+  --color-cien-c: #8a2f06;
 
-  --grad-1: #ff6b7d;
-  --grad-2: #e00b26;
-  --grad-3: #b00a1e;
+  --grad-1: #ffb25c;
+  --grad-2: #ff7a18;
+  --grad-3: #ff4d0a;
 
-  --rgb-glow-soft: 255 138 153;
-  --rgb-glow: 230 20 44;
-  --rgb-flame: 224 11 38;
-  --rgb-ember: 176 10 30;
-  --rgb-ember-deep: 140 7 23;
+  --rgb-glow-soft: 255 159 77;
+  --rgb-glow: 232 101 15;
+  --rgb-flame: 217 90 11;
+  --rgb-ember: 184 71 10;
+  --rgb-ember-deep: 148 56 7;
 
-  --rgb-szyba: 22 20 24;
+  --rgb-szyba: 26 21 18;
   --rgb-plyta: 255 255 255;
   --rgb-dymek: 255 255 255;
   --moc-cienia: 0.3;
   --moc-poswiaty: 0.5;
-  --rgb-zaslona: 74 6 18;
+  --rgb-zaslona: 56 22 6;
   --panel-1: #ffffff;
-  --panel-2: #fbf9fa;
-  --panel-3: #f3f1f3;
+  --panel-2: #fcfaf8;
+  --panel-3: #f5f1ee;
   --menu-1: #ffffff;
-  --menu-2: #fdfbfc;
-  --menu-3: #f5f2f4;
-  --color-hairline: rgb(22 20 24 / 0.13);
+  --menu-2: #fefcfa;
+  --menu-3: #f7f2ef;
+  --color-hairline: rgb(26 21 18 / 0.13);
 
-  --color-void: #f7f6f7;
-  --color-deep: #eceaec;
-  --color-ink: #14121a;
-  --color-muted: #55525c;
-  --color-faint: #86828e;
-  --color-white: #16141a;
-}
+  --tlo-wyroznienia: #f1f9ee;
+  --wyroznienie-tekst-1: #38aa32;
+  --wyroznienie-tekst-2: #1d7419;
 
-/*
-  Coconaut: biel i zieleń z puszki, też na jasnym tle. Ta sama zasada co przy „polska" -
-  zieleń marki (#00b54a) jest za jasna na białą stronę, więc schodzimy o dwa tony, a jasny
-  odcień zostaje w gradiencie przycisków.
+  --rgb-rabek: 255 255 255;
+  --kafel-plyta-gora: 0.78;
+  --kafel-plyta-dol: 0.92;
+  --kafel-obrys: rgb(26 21 18 / 0.08);
+  --szklo-jasnosc: 1.02;
+  --moc-krawedzi: 0.3;
 
-  „Lime" dostaje tu inną barwę i to jedyne miejsce, gdzie motyw przestawia coś poza własną
-  drabinką: limonka znaczy w serwisie „śmieszne boisko" i „ślad GPS w porządku", a obok
-  zielonej barwy głównej przestałaby cokolwiek znaczyć. Idzie więc w błękit.
-*/
-[data-motyw="coconaut"] {
-  color-scheme: light;
-
-  --color-glow-soft: #7ce8a8;
-  --color-glow: #06a648;
-  --color-flame-soft: #0bb350;
-  --color-flame: #05913f;
-  --color-ember: #04702f;
-  --color-ember-deep: #035622;
-
-  --color-cien-a: #2b8b55;
-  --color-cien-b: #146638;
-  --color-cien-c: #0b4a26;
-
-  --grad-1: #4ede8d;
-  --grad-2: #05913f;
-  --grad-3: #04702f;
-
-  --rgb-glow-soft: 124 232 168;
-  --rgb-glow: 6 166 72;
-  --rgb-flame: 5 145 63;
-  --rgb-ember: 4 112 47;
-  --rgb-ember-deep: 3 86 34;
-
-  --rgb-szyba: 16 22 20;
-  --rgb-plyta: 255 255 255;
-  --rgb-dymek: 255 255 255;
-  --moc-cienia: 0.3;
-  --moc-poswiaty: 0.5;
-  --rgb-zaslona: 4 44 24;
-  --panel-1: #ffffff;
-  --panel-2: #f9fcfa;
-  --panel-3: #f0f6f2;
-  --menu-1: #ffffff;
-  --menu-2: #fbfdfc;
-  --menu-3: #f2f8f4;
-  --color-hairline: rgb(16 22 20 / 0.13);
-
-  --color-void: #f5f8f6;
-  --color-deep: #e8efea;
-  --color-ink: #0e1512;
-  --color-muted: #4f5a54;
-  --color-faint: #7f8a84;
-  --color-white: #101612;
-
-  --color-lime: #0a84ff;
-  --color-lime-deep: #0060c0;
+  --color-void: #f8f6f3;
+  --color-deep: #eeeae6;
+  --color-ink: #17120e;
+  --color-muted: #5a524b;
+  --color-faint: #8a8179;
+  --color-white: #1a1511;
 }
 html,
 body {
@@ -695,7 +670,7 @@ body {
 }
 
 .basket-text {
-  background: linear-gradient(135deg, #d9f7cf 0%, #38aa32 75%);
+  background: linear-gradient(135deg, var(--wyroznienie-tekst-1) 0%, var(--wyroznienie-tekst-2) 75%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -1114,33 +1089,46 @@ body {
   Osobna klasa, a nie przemalowany `.kafel`, bo ten sam kafelek stoi też na `/konto` i
   w panelu admina, gdzie żadnego stojaka obok nie ma.
 */
+/*
+  Rąbki światła, smuga i wewnętrzna poświata idą barwą `--rgb-rabek`, a nie `--rgb-szyba`.
+  W ciemnym motywie to ta sama biel, więc kafelek wygląda dokładnie jak wcześniej. W jasnym
+  szyba jest ciemna - malowane nią rąbki i poświata robiły z kafelka przydymioną, szarą
+  płytkę. Światło na szkle jest białe w każdym motywie; w jasnym tafla jest za to prawie
+  nieprzezroczysta i dostaje włosową obwódkę, bo biały rąbek na białym nie wyznacza krawędzi.
+*/
 .kafel-szklo {
   background:
     linear-gradient(
       180deg,
-      rgb(var(--rgb-szyba) / 0.52) 0,
-      rgb(var(--rgb-szyba) / 0.16) 2px,
-      rgb(var(--rgb-szyba) / 0.03) 10px,
-      rgb(var(--rgb-szyba) / 0) 34%,
-      rgb(var(--rgb-szyba) / 0) 72%,
-      rgb(var(--rgb-szyba) / 0.07) calc(100% - 8px),
-      rgb(var(--rgb-szyba) / 0.3) calc(100% - 2px),
-      rgb(var(--rgb-szyba) / 0.14) 100%
+      rgb(var(--rgb-rabek) / 0.52) 0,
+      rgb(var(--rgb-rabek) / 0.16) 2px,
+      rgb(var(--rgb-rabek) / 0.03) 10px,
+      rgb(var(--rgb-rabek) / 0) 34%,
+      rgb(var(--rgb-rabek) / 0) 72%,
+      rgb(var(--rgb-rabek) / 0.07) calc(100% - 8px),
+      rgb(var(--rgb-rabek) / 0.3) calc(100% - 2px),
+      rgb(var(--rgb-rabek) / 0.14) 100%
     ),
     linear-gradient(
       128deg,
-      rgb(var(--rgb-szyba) / 0.14) 0%,
-      rgb(var(--rgb-szyba) / 0.035) 28%,
-      rgb(var(--rgb-szyba) / 0) 56%
+      rgb(var(--rgb-rabek) / 0.14) 0%,
+      rgb(var(--rgb-rabek) / 0.035) 28%,
+      rgb(var(--rgb-rabek) / 0) 56%
     ),
-    linear-gradient(180deg, rgb(var(--rgb-plyta) / 0.22) 0%, rgb(var(--rgb-plyta) / 0.36) 100%);
+    linear-gradient(
+      180deg,
+      rgb(var(--rgb-plyta) / var(--kafel-plyta-gora)) 0%,
+      rgb(var(--rgb-plyta) / var(--kafel-plyta-dol)) 100%
+    );
   box-shadow:
-    inset 0 0 22px -6px rgb(var(--rgb-szyba) / 0.14),
+    inset 0 0 0 1px var(--kafel-obrys),
+    inset 0 0 22px -6px rgb(var(--rgb-rabek) / 0.14),
     0 18px 40px -26px rgb(0 0 0 / calc(0.9 * var(--moc-cienia)));
 }
 .kafel-szklo:hover {
   box-shadow:
-    inset 0 0 26px -6px rgb(var(--rgb-szyba) / 0.2),
+    inset 0 0 0 1px var(--kafel-obrys),
+    inset 0 0 26px -6px rgb(var(--rgb-rabek) / 0.2),
     0 26px 54px -26px rgb(var(--rgb-flame) / 0.3);
 }
 
@@ -4468,8 +4456,8 @@ select option {
   z-index: 0;
   border-radius: inherit;
   pointer-events: none;
-  -webkit-backdrop-filter: blur(34px) saturate(180%) brightness(0.78);
-  backdrop-filter: blur(34px) saturate(180%) brightness(0.78);
+  -webkit-backdrop-filter: blur(34px) saturate(180%) brightness(var(--szklo-jasnosc));
+  backdrop-filter: blur(34px) saturate(180%) brightness(var(--szklo-jasnosc));
   -webkit-mask-image:
     linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%),
     linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
@@ -4499,11 +4487,11 @@ select option {
   pointer-events: none;
   background: linear-gradient(
     136deg,
-    rgb(var(--rgb-szyba) / 0.55) 0%,
-    rgb(var(--rgb-szyba) / 0.12) 24%,
-    rgb(var(--rgb-szyba) / 0.04) 48%,
+    rgb(var(--rgb-szyba) / calc(0.55 * var(--moc-krawedzi))) 0%,
+    rgb(var(--rgb-szyba) / calc(0.12 * var(--moc-krawedzi))) 24%,
+    rgb(var(--rgb-szyba) / calc(0.04 * var(--moc-krawedzi))) 48%,
     rgb(var(--rgb-glow) / 0.18) 76%,
-    rgb(var(--rgb-szyba) / 0.34) 100%
+    rgb(var(--rgb-szyba) / calc(0.34 * var(--moc-krawedzi))) 100%
   );
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
@@ -4531,12 +4519,12 @@ select option {
   padding: 1.5px;
   background: linear-gradient(
     180deg,
-    rgb(var(--rgb-szyba) / 0.85) 0%,
-    rgb(var(--rgb-szyba) / 0.3) 7%,
-    rgb(var(--rgb-szyba) / 0.1) 24%,
-    rgb(var(--rgb-szyba) / 0.08) 72%,
-    rgb(var(--rgb-szyba) / 0.18) 90%,
-    rgb(var(--rgb-szyba) / 0.34) 100%
+    rgb(var(--rgb-szyba) / calc(0.85 * var(--moc-krawedzi))) 0%,
+    rgb(var(--rgb-szyba) / calc(0.3 * var(--moc-krawedzi))) 7%,
+    rgb(var(--rgb-szyba) / calc(0.1 * var(--moc-krawedzi))) 24%,
+    rgb(var(--rgb-szyba) / calc(0.08 * var(--moc-krawedzi))) 72%,
+    rgb(var(--rgb-szyba) / calc(0.18 * var(--moc-krawedzi))) 90%,
+    rgb(var(--rgb-szyba) / calc(0.34 * var(--moc-krawedzi))) 100%
   );
 }
 
@@ -4550,12 +4538,12 @@ select option {
 .szklo-krawedzie::after {
   background: linear-gradient(
     180deg,
-    rgb(var(--rgb-szyba) / 0.8) 0%,
-    rgb(var(--rgb-szyba) / 0.28) 7%,
-    rgb(var(--rgb-szyba) / 0.09) 24%,
-    rgb(var(--rgb-szyba) / 0.07) 74%,
-    rgb(var(--rgb-szyba) / 0.11) 92%,
-    rgb(var(--rgb-szyba) / 0.17) 100%
+    rgb(var(--rgb-szyba) / calc(0.8 * var(--moc-krawedzi))) 0%,
+    rgb(var(--rgb-szyba) / calc(0.28 * var(--moc-krawedzi))) 7%,
+    rgb(var(--rgb-szyba) / calc(0.09 * var(--moc-krawedzi))) 24%,
+    rgb(var(--rgb-szyba) / calc(0.07 * var(--moc-krawedzi))) 74%,
+    rgb(var(--rgb-szyba) / calc(0.11 * var(--moc-krawedzi))) 92%,
+    rgb(var(--rgb-szyba) / calc(0.17 * var(--moc-krawedzi))) 100%
   );
 }
 
@@ -4582,16 +4570,16 @@ select option {
   background:
     linear-gradient(
       180deg,
-      rgb(var(--rgb-szyba) / 0.52) 0,
-      rgb(var(--rgb-szyba) / 0.16) 2px,
-      rgb(var(--rgb-szyba) / 0.03) 10px,
-      rgb(var(--rgb-szyba) / 0) 34%
+      rgb(var(--rgb-rabek) / 0.52) 0,
+      rgb(var(--rgb-rabek) / 0.16) 2px,
+      rgb(var(--rgb-rabek) / 0.03) 10px,
+      rgb(var(--rgb-rabek) / 0) 34%
     ),
     linear-gradient(
       128deg,
-      rgb(var(--rgb-szyba) / 0.14) 0%,
-      rgb(var(--rgb-szyba) / 0.035) 28%,
-      rgb(var(--rgb-szyba) / 0) 56%
+      rgb(var(--rgb-rabek) / 0.14) 0%,
+      rgb(var(--rgb-rabek) / 0.035) 28%,
+      rgb(var(--rgb-rabek) / 0) 56%
     );
 }
 .kula-karta-gora {

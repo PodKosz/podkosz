@@ -35,7 +35,7 @@ import { pinezkaPodgladHtml, wariantZAdresu } from "@/lib/pinezka-podglad";
  * później: efekt niżej odczytuje wyliczone zmienne z arkusza i przestawia je przez
  * `setPaintProperty`.
  *
- * Wartości poniżej to motyw „classic" i zarazem zabezpieczenie: gdyby odczyt zmiennych
+ * Wartości poniżej to motyw ciemny i zarazem zabezpieczenie: gdyby odczyt zmiennych
  * zawiódł, mapa ma czym się pomalować.
  */
 const BARWY_MAPY = {

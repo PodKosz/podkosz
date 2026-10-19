@@ -4,8 +4,8 @@ import { ZNAK } from "@/lib/znak";
  * Znak PodKosza (pinezka z piłką do koszykówki) jako SVG w Reakcie - bez hooków, więc działa i na
  * serwerze (zasłona), i w komponentach klienta (`Brand` podaje `uid` z useId).
  *
- * Gradient bierze barwy z motywu (`--color-*`), jak dawne logo: w motywie klasycznym daje dokładnie
- * pomarańcz wybranej wersji, w „polska" i „coconaut" przechodzi w ich kolory. Pierwszy przystanek
+ * Gradient bierze barwy z motywu (`--color-*`), jak dawne logo: w motywie ciemnym daje dokładnie
+ * pomarańcz wybranej wersji, w motywie jasnym - jego ciemniejszą pomarańcz. Pierwszy przystanek
  * to barwa blasku rozjaśniona bielą - kremowy początek z wersji wybranej na ikonę.
  *
  * `uid` musi być unikalny na stronie: gradient i przycięcie są odwołaniami `url(#…)`, a dwa znaki
