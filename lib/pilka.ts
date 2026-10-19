@@ -14,22 +14,26 @@
  * Tak, jak na prawdziwej piłce widzianej NA WPROST:
  *
  *   - szew pionowy i poziomy przez środek,
- *   - dwa łuki POZIOME po obu stronach szwu poziomego: górny zwisa ku środkowi
- *     (dolina), dolny wypina się ku środkowi (garb), oba dotykają obwodu z lewej
- *     i z prawej.
+ *   - dwa łuki PIONOWE po obu stronach szwu pionowego, wygięte ku środkowi - lewy „)",
+ *     prawy „(" - oba dochodzą do obwodu u góry i u dołu. Ten sam układ co w logo
+ *     (`lib/znak.ts`), więc pinezki na mapie i znak serwisu są jedną rodziną.
  *
- * Poprzedni układ miał łuki PIONOWE, wygięte na zewnątrz wzdłuż krawędzi. Wyglądało
- * to jak celownik, nie jak piłka: to dwa dodatkowe łuki w poprzek, a nie sam krzyż,
- * dają wrażenie kuli. Stary wariant jest zapisany w
- * `dokumentacja/pinezka-szwy-2026-09.md` razem z instrukcją powrotu.
+ * Historia, na wypadek powrotu (oba stare warianty z instrukcją są w
+ * `dokumentacja/pinezka-szwy-2026-09.md`):
+ *   - do 18.09.2026 łuki pionowe, ale wygięte NA ZEWNĄTRZ, wzdłuż krawędzi kuli -
+ *     czytały się jak celownik, nie jak piłka;
+ *   - 18.09-19.10.2026 łuki POZIOME (górny zwisał ku środkowi, dolny się wypinał),
+ *     czyli dzisiejszy rysunek obrócony o 90 stopni. Obrócony na prośbę twórcy,
+ *     żeby linie na piłce szły pionowo, jak w logo.
  *
  * ------------------------------------------------------------------ skąd te proporcje
  *
  * Zdjęte z rysunku odniesienia, nie dobrane na oko:
  *
- *   0.36 r / 0.933 r  - końce łuku; 0.36² + 0.933² = 1, czyli dokładnie na obwodzie
- *   0.30 r            - jak blisko środka podchodzi wierzchołek łuku; tyle zostaje
- *                       prześwitu między łukiem a szwem poziomym
+ *   0.585 r / 0.78 r  - końce łuku: odsunięcie od osi pionowej i od równika; to 0.975 r
+ *                       od środka, więc z grubością kreski łuk dochodzi do obwodu
+ *   0.30 r            - jak blisko osi podchodzi wierzchołek łuku; tyle zostaje
+ *                       prześwitu między łukiem a szwem pionowym
  *   0.96 r            - zasięg szwu prostego. Skrócony, bo przy `stroke-linecap="round"`
  *                       okrągłe zakończenie wystaje o pół grubości kreski i przy pełnym
  *                       promieniu wyłaziłoby poza kulę.
@@ -49,14 +53,16 @@ const z = (n: number) => Math.round(n * 100) / 100;
  */
 export function szwyPilki(cx: number, cy: number, r: number): string {
   const k = z(r * 0.96); // zasięg pionu i poziomu
-  const ex = z(r * 0.78); // końce łuku: odsunięcie w bok
-  const ey = z(r * 0.585); // ...i w pionie
-  const wyg = z(r * 0.585 - r * 0.3); // promień pionowy łuku -> wierzchołek na 0.3 r
+  const ex = z(r * 0.585); // końce łuku: odsunięcie w bok
+  const ey = z(r * 0.78); // ...i w pionie
+  const wyg = z(r * 0.585 - r * 0.3); // poziomy promień łuku -> wierzchołek 0.3 r od osi
 
   return [
     `M${z(cx)} ${z(cy - k)}V${z(cy + k)}`,
     `M${z(cx - k)} ${z(cy)}H${z(cx + k)}`,
-    `M${z(cx - ex)} ${z(cy - ey)}A${ex} ${wyg} 0 0 0 ${z(cx + ex)} ${z(cy - ey)}`,
-    `M${z(cx - ex)} ${z(cy + ey)}A${ex} ${wyg} 0 0 1 ${z(cx + ex)} ${z(cy + ey)}`,
+    // lewy łuk „)" - z góry na dół, wygięty w prawo, ku środkowi
+    `M${z(cx - ex)} ${z(cy - ey)}A${wyg} ${ey} 0 0 1 ${z(cx - ex)} ${z(cy + ey)}`,
+    // prawy łuk „(" - lustrzane odbicie lewego
+    `M${z(cx + ex)} ${z(cy - ey)}A${wyg} ${ey} 0 0 0 ${z(cx + ex)} ${z(cy + ey)}`,
   ].join("");
 }

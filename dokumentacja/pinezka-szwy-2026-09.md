@@ -1,14 +1,38 @@
-# Szwy piłki - wersja sprzed 18 września 2026
+# Szwy piłki - poprzednie układy
 
-Zapis poprzedniego układu szwów, na wypadek gdybyśmy chcieli do niego wrócić. Wszystko,
+Zapis poprzednich układów szwów, na wypadek gdybyśmy chcieli do nich wrócić. Wszystko,
 co potrzebne do powrotu, jest w tym pliku - nie trzeba szukać w historii repozytorium.
 
-## Co się zmieniło i dlaczego
+## 18 września - 19 października 2026: łuki poziome
+
+Od 19.10.2026 szwy są obrócone o 90 stopni: łuki biegną pionowo, wygięte ku środkowi,
+jak w logo. Wcześniej były **poziome** - górny łuk zwisał ku równikowi, dolny się ku niemu
+wypinał. Powrót: podmienić `szwyPilki` w [`lib/pilka.ts`](../lib/pilka.ts) na:
+
+```ts
+export function szwyPilki(cx: number, cy: number, r: number): string {
+  const k = z(r * 0.96); // zasięg pionu i poziomu
+  const ex = z(r * 0.78); // końce łuku: odsunięcie w bok
+  const ey = z(r * 0.585); // ...i w pionie
+  const wyg = z(r * 0.585 - r * 0.3); // promień pionowy łuku -> wierzchołek na 0.3 r
+
+  return [
+    `M${z(cx)} ${z(cy - k)}V${z(cy + k)}`,
+    `M${z(cx - k)} ${z(cy)}H${z(cx + k)}`,
+    `M${z(cx - ex)} ${z(cy - ey)}A${ex} ${wyg} 0 0 0 ${z(cx + ex)} ${z(cy - ey)}`,
+    `M${z(cx - ex)} ${z(cy + ey)}A${ex} ${wyg} 0 0 1 ${z(cx + ex)} ${z(cy + ey)}`,
+  ].join("");
+}
+```
+
+## Do 18 września 2026: łuki pionowe wygięte na zewnątrz
+
+### Co się zmieniło i dlaczego
 
 **Było:** dwa łuki **pionowe**, wygięte na zewnątrz, biegnące wzdłuż lewej i prawej
 krawędzi kuli, równolegle do szwu pionowego.
 
-**Jest:** dwa łuki **poziome**, po obu stronach szwu poziomego. Górny zwisa ku środkowi
+**Zmienione na (18.09.2026):** dwa łuki **poziome**, po obu stronach szwu poziomego. Górny zwisa ku środkowi
 (dolina), dolny wypina się ku środkowi (garb), oba dotykają obwodu z lewej i z prawej.
 
 Powód: stary układ czytał się jak celownik, a nie jak piłka. Cztery linie w kształcie
@@ -16,7 +40,7 @@ krzyża plus dwa łuki przy samej krawędzi dają wrażenie płaskiego symbolu. 
 biegnące **w poprzek** budują kulę - to one są tym, po czym oko rozpoznaje piłkę do
 kosza. Układ jest przerysowany z rysunku odniesienia, nie dobrany na oko.
 
-## Jak wrócić
+### Jak wrócić
 
 Cała zmiana siedzi w jednej funkcji: `szwyPilki` w [`lib/pilka.ts`](../lib/pilka.ts).
 Wystarczy podmienić jej zawartość na poniższą i **nie trzeba ruszać niczego więcej** -
@@ -44,7 +68,7 @@ export function szwyPilki(cx: number, cy: number, r: number): string {
 Jeśli zależy Ci na odtworzeniu **co do piksela**, a nie na przybliżeniu - użyj
 oryginalnych ścieżek z tabeli niżej. Są to dokładne wartości, które stały w kodzie.
 
-## Oryginalne ścieżki, miejsce po miejscu
+### Oryginalne ścieżki, miejsce po miejscu
 
 Wszystkie rysowane jako dwa osobne `<path>` obok `<circle>` kuli.
 
@@ -57,7 +81,7 @@ Wszystkie rysowane jako dwa osobne `<path>` obok `<circle>` kuli.
 | `app/(strona)/nieodkryte/[id]/page.tsx` | duża piłka na stronie nieodkrytego | 9.2 |
 | `components/Brand.tsx` | piłka w kole środkowym logo | 7.5 |
 
-### Promień 9.2 (kadr 24 x 24) - pinezki, ikona, strona nieodkrytego
+#### Promień 9.2 (kadr 24 x 24) - pinezki, ikona, strona nieodkrytego
 
 ```html
 <circle cx="12" cy="12" r="9.2"/>
@@ -65,7 +89,7 @@ Wszystkie rysowane jako dwa osobne `<path>` obok `<circle>` kuli.
 <path d="M5.4 5.4c3.9 3.9 3.9 9.3 0 13.2M18.6 5.4c-3.9 3.9-3.9 9.3 0 13.2"/>
 ```
 
-### Promień 7.2 (kadr 24 x 24) - pinezka minigry
+#### Promień 7.2 (kadr 24 x 24) - pinezka minigry
 
 ```html
 <circle cx="12" cy="12" r="7.2"/>
@@ -73,7 +97,7 @@ Wszystkie rysowane jako dwa osobne `<path>` obok `<circle>` kuli.
 <path d="M7 6.4c2.6 3.2 2.6 8 0 11.2M17 6.4c-2.6 3.2-2.6 8 0 11.2"/>
 ```
 
-### Promień 7.5 (kadr 64 x 64) - logo
+#### Promień 7.5 (kadr 64 x 64) - logo
 
 ```html
 <circle cx="32" cy="32" r="7.5" strokeWidth="2.2"/>
@@ -81,7 +105,7 @@ Wszystkie rysowane jako dwa osobne `<path>` obok `<circle>` kuli.
 <path d="M27.2 26c2.7 3.3 2.7 8.7 0 12M36.8 26c-2.7 3.3-2.7 8.7 0 12" strokeWidth="1.3" opacity=".95"/>
 ```
 
-## Czego ta zmiana NIE ruszyła
+### Czego ta zmiana NIE ruszyła
 
 - **Kształt pinezki.** Wybrany wariant („Kula na nóżce”, numer 1 w galerii propozycji)
   to dokładnie to, co było: kula na nóżce z kropką oparcia. Zmieniły się wyłącznie szwy.
