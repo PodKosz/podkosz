@@ -2366,7 +2366,8 @@ function markerHtml(court: MapCourt, wydarzenie = false) {
 
   /*
     Boiska z wyróżnieniem Heat świecą na zielono, w barwie z logo Coconaut (#38aa32; do
-    17.10.2026 na fioletowo) - mają odróżniać się na pierwszy rzut oka.
+    17.10.2026 na fioletowo) - mają odróżniać się na pierwszy rzut oka. Szwy piłki na
+    zielonej kuli są białe (od 19.10.2026, wcześniej ciemnozielone).
   */
   const glow = wydarzenie
     ? "rgba(255,255,255,.62) 0%, rgba(232,17,45,.4) 42%, transparent 72%"
@@ -2393,7 +2394,7 @@ function markerHtml(court: MapCourt, wydarzenie = false) {
   const seam = wydarzenie
     ? "rgba(150,8,24,.55)"
     : court.basketApproved
-      ? "rgba(8,40,6,.7)"
+      ? "rgba(255,255,255,.9)"
       : "rgba(40,10,0,.72)";
   const stem = wydarzenie ? "#e8112d" : court.basketApproved ? "#38aa32" : "var(--color-flame)";
   const dot = wydarzenie

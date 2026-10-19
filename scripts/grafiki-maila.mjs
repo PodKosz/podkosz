@@ -4,14 +4,17 @@
   W mailu nie da się użyć SVG ani CSS-owych gradientów - Gmail i Outlook je wycinają.
   Dlatego stylistykę strony (czarne tło, pomarańczowe światła, kontur boiska, logo)
   wypalamy tutaj w PNG-i, a szablon wskazuje je adresem na podkosz.pl. Zasłona przed
-  premierą ich nie zasłania: matcher w middleware.ts pomija pliki .png.
+  premierą ich nie zasłania: matcher w proxy.ts pomija pliki .png.
 
-  Uruchomienie:  node scripts/grafiki-maila.mjs
+  Uruchomienie:  node scripts/grafiki-maila.mjs        - tło i logo
+                 node scripts/grafiki-maila.mjs logo   - samo logo (po zmianie znaku w lib/znak.ts)
+  Po nowym logo trzeba podbić ?v= w lib/mail/szkielet.ts - skrzynki trzymają obrazki w pamięci.
 */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
+import { ZNAK } from "../lib/znak.ts";
 
 const KATALOG = path.dirname(fileURLToPath(import.meta.url));
 const WYJSCIE = path.join(KATALOG, "..", "public", "mail");
@@ -116,40 +119,41 @@ function tlo(zTlem = true) {
 </svg>`;
 }
 
-/* ---------- logo: znak marki + napis POD/KOSZ ---------- */
-function logo() {
-  const znak = `
-    <g stroke="url(#marka)" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="4.5" y="12.5" width="55" height="39" rx="4.5" stroke-width="2.4"/>
-      <path d="M32 12.5v39" stroke-width="1.8" opacity=".9"/>
-      <path d="M4.5 23.5h10v17h-10" stroke-width="1.8"/>
-      <path d="M59.5 23.5h-10v17h10" stroke-width="1.8"/>
-      <path d="M14.5 27a7 7 0 0 1 0 10" stroke-width="1.6" opacity=".85"/>
-      <path d="M49.5 27a7 7 0 0 0 0 10" stroke-width="1.6" opacity=".85"/>
-      <circle cx="32" cy="32" r="7.5" stroke-width="2.2"/>
-      <path d="M32 24.5v15M24.5 32h15" stroke-width="1.3" opacity=".95"/>
-      <path d="M27.2 26c2.7 3.3 2.7 8.7 0 12M36.8 26c-2.7 3.3-2.7 8.7 0 12" stroke-width="1.3" opacity=".95"/>
-    </g>`;
+/*
+  ---------- logo: znak marki + napis POD/KOSZ ----------
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="660" height="200" viewBox="0 0 330 100">
+  Znak bierzemy z lib/znak.ts - ta sama geometria i te same grubości kresek co w nawigacji,
+  więc logo w mailu nie rozjedzie się z tym na stronie. 660 x 200, w mailu wyświetlane w połowie.
+*/
+function logo() {
+  const g = ZNAK.grubosc.maly;
+  const gr = ZNAK.gradient;
+  /* pinezka ma w kadrze znaku 476 jednostek wysokości - tu około 170 px */
+  const skala = 0.36;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="660" height="200" viewBox="0 0 660 200">
   <defs>
-    <linearGradient id="marka" x1="0" y1="0" x2="0.8" y2="1">
-      <stop offset="0" stop-color="#ffc47d"/>
-      <stop offset="0.5" stop-color="#ff7a18"/>
-      <stop offset="1" stop-color="#ff3d00"/>
+    <linearGradient id="znak" gradientUnits="userSpaceOnUse" x1="${gr.x1}" y1="${gr.y1}" x2="${gr.x2}" y2="${gr.y2}">
+      ${gr.stopy.map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join("")}
     </linearGradient>
-    <linearGradient id="napis" x1="0" y1="0" x2="1" y2="0.6">
-      <stop offset="0" stop-color="#ffc47d"/>
-      <stop offset="0.45" stop-color="#ff7a18"/>
-      <stop offset="1" stop-color="#ff3d00"/>
+    <clipPath id="glowka"><path d="${ZNAK.rama}"/></clipPath>
+    <linearGradient id="napis" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFB25C"/>
+      <stop offset="0.5" stop-color="#FF7A18"/>
+      <stop offset="1" stop-color="#FF3D00"/>
     </linearGradient>
   </defs>
 
   <!-- tło zostaje przezroczyste: mail podkłada pod nie własną czerń -->
-  <g transform="translate(8 18) scale(1.0)">${znak}</g>
+  <g transform="translate(24 15) scale(${skala}) translate(-70 -22)" fill="none" stroke="url(#znak)"
+     stroke-linecap="round" stroke-linejoin="round">
+    <!-- szwy piłki przycięte do wnętrza pinezki, jak w components/Znak.tsx -->
+    <g clip-path="url(#glowka)">${ZNAK.szwy.map((d) => `<path d="${d}" stroke-width="${g.szwy}"/>`).join("")}</g>
+    <path d="${ZNAK.rama}" stroke-width="${g.rama}"/>
+  </g>
 
-  <text x="90" y="66" font-family="${CZ}" font-size="48" font-weight="700"
-        letter-spacing="-1.2" fill="#f5f5f7">POD<tspan fill="url(#napis)">KOSZ</tspan></text>
+  <text x="178" y="130" font-family="${CZ}" font-size="96" font-weight="700"
+        letter-spacing="-2"><tspan fill="#F4F4F6">POD</tspan><tspan fill="url(#napis)">KOSZ</tspan></text>
 </svg>`;
 }
 
@@ -187,7 +191,22 @@ function maska(poziomo, dlugosc) {
 
 async function main() {
   fs.mkdirSync(WYJSCIE, { recursive: true });
+  const tylkoLogo = process.argv.includes("logo");
+  if (!tylkoLogo) await zrobTlo();
 
+  /* logo z kanałem alfa - w mailu leży na czerni tabeli, nie na własnym prostokącie */
+  await sharp(Buffer.from(logo()), { density: 72 })
+    .png({ compressionLevel: 9 })
+    .toFile(path.join(WYJSCIE, "logo.png"));
+  console.log("logo.png");
+
+  for (const p of tylkoLogo ? ["logo.png"] : ["tlo.png", "logo.png"]) {
+    const m = await sharp(path.join(WYJSCIE, p)).metadata();
+    console.log(" ", p, `${m.width}x${m.height}`, `${Math.round(fs.statSync(path.join(WYJSCIE, p)).size / 1024)} kB`);
+  }
+}
+
+async function zrobTlo() {
   /* dekoracja bez tła - żeby dało się ją wygasić, zanim położymy ją na czerni */
   const dekoracja = await sharp(Buffer.from(tlo(false)), { density: 72 }).png().toBuffer();
 
@@ -206,17 +225,6 @@ async function main() {
     .png({ compressionLevel: 9, palette: false })
     .toFile(path.join(WYJSCIE, "tlo.png"));
   console.log("tlo.png");
-
-  /* logo z kanałem alfa - w mailu leży na czerni tabeli, nie na własnym prostokącie */
-  await sharp(Buffer.from(logo()), { density: 72 })
-    .png({ compressionLevel: 9 })
-    .toFile(path.join(WYJSCIE, "logo.png"));
-  console.log("logo.png");
-
-  for (const p of ["tlo.png", "logo.png"]) {
-    const m = await sharp(path.join(WYJSCIE, p)).metadata();
-    console.log(" ", p, `${m.width}x${m.height}`, `${Math.round(fs.statSync(path.join(WYJSCIE, p)).size / 1024)} kB`);
-  }
 }
 
 main().catch((e) => {

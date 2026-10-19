@@ -45,12 +45,15 @@ export const ZNAK = {
   rama: "M256 480C256 480 88 332 88 208A168 168 0 0 1 424 208C424 332 256 480 256 480Z",
   szwy: [`M${CX} 0V512`, `M0 ${CY}H512`, lukBoczny(-1), lukBoczny(1)],
   /**
-   * Grubości kresek. `duzy` - znak od ~120 px wzwyż, jak w wybranej wersji 001.
-   * `maly` - nawigacja i favicon: 7 jednostek w 36 px to pół piksela i szwy by znikły.
+   * Grubości kresek - wersja 7 z porównania grubości (19.10.2026): obrys pinezki jak w znaku
+   * 001 (28), szwy piłki grube (17). Wcześniej było 28 / 7, a nawigacja dostawała osobną,
+   * pogrubioną odmianę (32 / 13), bo 7 jednostek w 36 px to pół piksela i szwy znikały.
+   * Przy szwach 17 ten problem znika, więc obie odmiany są dziś równe - zostają jako dwie,
+   * żeby małe rozmiary dało się kiedyś znowu dostroić bez szukania wszystkich miejsc.
    */
   grubosc: {
-    duzy: { rama: 28, szwy: 7 },
-    maly: { rama: 32, szwy: 13 },
+    duzy: { rama: 28, szwy: 17 },
+    maly: { rama: 28, szwy: 17 },
   },
   /** gradient po przekątnej całego znaku: kremowy blask u góry z lewej, żar u dołu z prawej */
   gradient: {
