@@ -167,7 +167,8 @@ export function AuthMenu({ user }: { user: AuthUser | null }) {
 }
 
 /**
- * Suwak motywu: włączony znaczy jasny, wyłączony - ciemny (domyślny).
+ * Suwak motywu: włączony znaczy jasny, wyłączony - ciemny (domyślny). Podpis mówi wprost,
+ * który motyw jest teraz włączony („Motyw: Ciemny" / „Motyw: Jasny").
  *
  * Menu po przełączeniu zostaje otwarte. Zmiana jest widoczna od razu na całej stronie,
  * a kto chciał tylko zobaczyć, jak wygląda drugi motyw, przełączy z powrotem tym samym
@@ -184,7 +185,9 @@ function PrzelacznikMotywu() {
       onClick={() => ustawMotyw(jasny ? "ciemny" : "jasny")}
       className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[13px] text-muted hover:text-ink"
     >
-      Jasny motyw
+      <span>
+        Motyw: <span className="text-ink">{jasny ? "Jasny" : "Ciemny"}</span>
+      </span>
       <span aria-hidden className="switch ml-auto" data-on={jasny} />
     </button>
   );
