@@ -71,9 +71,9 @@
 /*
   Serwis ma dwa motywy: „ciemny" (domyślny - pomarańcz na ciemnym tle, ten od początku)
   i „jasny" (te same akcenty na jasnym tle). Przełącza je suwak w menu konta, a ten
-  ustawia atrybut `data-motyw` na elemencie `html` (patrz `lib/motyw.ts`). Do 19.10.2026
-  były tu jeszcze dwie skórki z pokazów, „polska" i „coconaut" - kto je wybrał, dostaje
-  teraz motyw jasny.
+  ustawia atrybut `data-motyw` na elemencie `html` (patrz `lib/motyw.ts`). Wybór trwa do
+  odświeżenia strony - każde wejście zaczyna się od ciemnego. Do 19.10.2026 były tu
+  jeszcze dwie skórki z pokazów, „polska" i „coconaut".
 
   Reguła nadrzędna: motyw zmienia WYŁĄCZNIE warstwę barwną. Żaden element, żadna ikona,
   żaden mechanizm nie wie, który motyw jest włączony - cała różnica siedzi w zmiennych

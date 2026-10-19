@@ -22,7 +22,7 @@ export default function ZaslonaLayout({ children }: Readonly<{ children: React.R
     /* to samo tłumienie i ten sam skrypt co w układzie serwisu - patrz app/(strona)/layout.tsx */
     <html lang="pl" suppressHydrationWarning>
       <body className="ambient antialiased">
-        {/* zasłona trzyma wybrany motyw, żeby pokaz nie zaczynał się od zmiany barw */}
+        {/* ten sam skrypt co w serwisie: klasa `wjazdy` przed pierwszym malowaniem (patrz lib/motyw.ts) */}
         <script dangerouslySetInnerHTML={{ __html: SKRYPT_MOTYWU }} />
         {children}
       </body>

@@ -42,11 +42,11 @@ export const metadata: Metadata = {
 export default function StronaLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     /*
-      `suppressHydrationWarning` dotyczy jednej rzeczy: atrybutu `data-motyw`, który skrypt
-      niżej dopisuje jeszcze przed hydracją. Serwer nie zna wyboru urządzenia, więc React
-      widzi element z atrybutem, którego sam nie wygenerował, i zgłasza rozbieżność - mimo
-      że to my go tam położyliśmy i ma tam zostać. Tłumienie jest płytkie: obejmuje sam
-      element `html`, nie jego drzewo, więc prawdziwe rozjazdy w treści dalej się zgłoszą.
+      `suppressHydrationWarning` dotyczy jednej rzeczy: klasy `wjazdy`, którą skrypt niżej
+      dopisuje do `html` jeszcze przed hydracją. React widzi element z klasą, której sam nie
+      wygenerował, i zgłasza rozbieżność - mimo że to my ją tam położyliśmy i ma tam zostać.
+      Tłumienie jest płytkie: obejmuje sam element `html`, nie jego drzewo, więc prawdziwe
+      rozjazdy w treści dalej się zgłoszą.
     */
     <html lang="pl" suppressHydrationWarning>
       <body className="ambient antialiased">
