@@ -15,7 +15,6 @@ import { ZarWojewodztwa, bboxWojewodztwa, stworzZarWojewodztwa } from "@/lib/zar
 import { useMotyw } from "@/lib/motyw";
 import { FiltrSzkla } from "./FiltrSzkla";
 import { czytajWidok, ostatniKadr, zapamietajKadr, zapiszWidok, zapomnijKadr } from "@/lib/adres";
-import { fetchCheckinyDzisiaj } from "@/lib/checkins";
 import { pobierzWydarzenia, type Wydarzenie } from "@/lib/wydarzenia";
 import { punktyWKadrze, type PunktOsm } from "@/lib/punkty-osm";
 import { MIEJSCA_GRY, NAZWY_GIER, type MiejsceGry, type RodzajGry } from "@/lib/minigra";
@@ -649,6 +648,7 @@ export function MapView({
   onSelectLead,
   registerClearCard,
   sheetOpen = false,
+  checkiny,
 }: {
   courts: MapCourt[];
   activeId: string | null;
@@ -664,6 +664,8 @@ export function MapView({
   registerClearCard?: (fn: () => void) => void;
   /** arkusz z filtrami na telefonie jest rozwinięty - wizytówki wtedy nie pokazujemy */
   sheetOpen?: boolean;
+  /** ile osób zapisało się dziś na które boisko - pobiera Explorer, bo filtruje po tym listę */
+  checkiny: Record<string, number>;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MlMap | null>(null);
@@ -766,6 +768,15 @@ export function MapView({
   useEffect(() => {
     onSelectLeadRef.current = onSelectLead;
   }, [onSelectLead]);
+
+  /*
+    Ile osób wybiera się dziś na które boisko. Trzymamy to w ref, a nie w stanie: dane
+    zmieniają pinezki bezpośrednio (klasa i zmienna CSS), więc przerysowywanie całej mapy
+    Reactem byłoby zbędne. Dane przychodzą z Explorera (odświeża je co dwie minuty) -
+    deklaracja żyje jeden dzień, ale ludzie dopisują się w ciągu dnia i pinezka ma to
+    pokazać bez przeładowania strony.
+  */
+  const checkinyRef = useRef<Record<string, number>>({});
 
   /** pokazanie karty przerywa ewentualne znikanie poprzedniej */
   const pokazKarte = useCallback((karta: Karta) => {
@@ -1165,14 +1176,6 @@ export function MapView({
   }, []);
 
   /*
-    Ile osób wybiera się dziś na które boisko. Trzymamy to w ref, a nie w stanie: dane
-    zmieniają pinezki bezpośrednio (klasa i zmienna CSS), więc przerysowywanie całej mapy
-    Reactem byłoby zbędne. Odświeżamy co dwie minuty - deklaracja żyje jeden dzień, ale
-    ludzie dopisują się w ciągu dnia i pinezka ma to pokazać bez przeładowania strony.
-  */
-  const checkinyRef = useRef<Record<string, number>>({});
-
-  /*
     Wydarzenia trzymamy INACZEJ niż deklaracje: w stanie, nie tylko w referencji. Deklaracje
     zmieniają wyłącznie wygląd pinezki, a wydarzenie zmienia też treść wizytówki nad nią -
     a tę rysuje React i musi się o zmianie dowiedzieć. Referencja obok stanu jest po to, żeby
@@ -1227,24 +1230,10 @@ export function MapView({
   }, []);
 
   useEffect(() => {
-    let aktualne = true;
-
-    const odswiez = async () => {
-      const dane = await fetchCheckinyDzisiaj();
-      if (!aktualne) return;
-      checkinyRef.current = dane;
-      for (const [id, { el }] of Object.entries(markersRef.current)) oznaczPinezke(el, id);
-      for (const { el, grupa } of Object.values(grupyRef.current)) oznaczGrupe(el, grupa);
-    };
-
-    void odswiez();
-    const zegar = window.setInterval(() => void odswiez(), 120_000);
-
-    return () => {
-      aktualne = false;
-      window.clearInterval(zegar);
-    };
-  }, [oznaczPinezke, oznaczGrupe]);
+    checkinyRef.current = checkiny;
+    for (const [id, { el }] of Object.entries(markersRef.current)) oznaczPinezke(el, id);
+    for (const { el, grupa } of Object.values(grupyRef.current)) oznaczGrupe(el, grupa);
+  }, [checkiny, oznaczPinezke, oznaczGrupe]);
 
   /*
     Wydarzenia. Osobne pobranie od boisk (lista boisk siedzi w pamięci podręcznej na

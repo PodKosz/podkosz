@@ -218,9 +218,9 @@ export async function boiskaPoId(ids: string[]): Promise<Map<string, Court>> {
   return mapa;
 }
 
-/** Kolumny potrzebne mapie i liście - bez złączenia ze zdjęciami. */
+/** Kolumny potrzebne mapie i liście - bez złączenia ze zdjęciami. Siatka i kosze idą do filtrów. */
 const MAP_SELECT =
-  "id, slug, name, city, voivodeship, lat, lng, type, surface, hoops, lit, access, hours, likes_count, basket_approved, funny";
+  "id, slug, name, city, voivodeship, lat, lng, type, surface, hoops, siatka, lit, access, hours, likes_count, basket_approved, funny";
 
 /**
  * Boiska na mapę: same skalary, bez zdjęć i opisów. To jest zapytanie, które musi wytrzymać
@@ -248,6 +248,7 @@ export const listMapCourts = unstable_cache(
       type: row.type,
       surface: row.surface,
       hoops: row.hoops,
+      siatka: row.siatka ?? null,
       lit: row.lit,
       access: row.access,
       hours: row.hours,
@@ -257,7 +258,8 @@ export const listMapCourts = unstable_cache(
       seed: seedFromId(row.id),
     }));
   },
-  ["courts-mapa"],
+  /* „siatka" w kluczu: lista bez tej kolumny z pamięci sprzed wdrożenia nie może wrócić do filtrów */
+  ["courts-mapa", "siatka"],
   { tags: [COURTS_TAG], revalidate: COURTS_TTL }
 );
 
@@ -273,6 +275,7 @@ type MapRow = Pick<
   | "type"
   | "surface"
   | "hoops"
+  | "siatka"
   | "lit"
   | "access"
   | "hours"

@@ -11,7 +11,8 @@ import {
   TYPE_LABEL,
   VOIVODESHIPS,
 } from "@/lib/types";
-import { DEFAULT_FILTERS, Filters } from "@/lib/filters";
+import { DEFAULT_FILTERS, Filters, KOSZE_FILTR, KtoGra, SIATKI_FILTR } from "@/lib/filters";
+import { plural } from "@/lib/site";
 import { useLosowanie } from "./Losowanie";
 import {
   BallIcon,
@@ -33,6 +34,16 @@ const ACCESS_TABS: [Access | "", string][] = [
   ["ograniczony", "Ograniczony"],
 ];
 
+const KTO_GRA_TABS: [KtoGra, string][] = [
+  ["", "Wszystkie"],
+  ["gra", "Ktoś gra"],
+  ["pusto", "Pusto"],
+];
+
+/** dopisuje wartość do listy albo ją z niej wyjmuje - pastylki działają jak przełączniki */
+const przelacz = <T,>(lista: T[], x: T) =>
+  lista.includes(x) ? lista.filter((y) => y !== x) : [...lista, x];
+
 const TYPE_ICON: Record<CourtType, typeof BallIcon> = {
   otwarty: BallIcon,
   kryty: CourtIcon,
@@ -45,6 +56,7 @@ export function Sidebar({
   maksLajki,
   results,
   counts,
+  grajace,
   sheetOpen,
   setSheetOpen,
 }: {
@@ -55,6 +67,8 @@ export function Sidebar({
   /** wyniki filtrowania - potrzebny sam licznik, listy panel już nie pokazuje */
   results: MapCourt[];
   counts: Record<CourtType, number>;
+  /** na ilu boiskach ktoś się dziś zapisał - do nagłówka filtra „kto gra dziś” */
+  grajace: number;
   /*
     Stan arkusza na telefonie siedzi w Explorerze, bo dotyczy też mapy: przy otwarciu
     panelu trzeba schować wizytówkę boiska, żeby jedno nie nachodziło na drugie.
@@ -239,6 +253,7 @@ export function Sidebar({
                 maksLajki={maksLajki}
                 toggleSurface={toggleSurface}
                 counts={counts}
+                grajace={grajace}
               />
             </div>
           </div>
@@ -337,6 +352,7 @@ export function Sidebar({
             maksLajki={maksLajki}
             toggleSurface={toggleSurface}
             counts={counts}
+            grajace={grajace}
           />
         </div>
       </aside>
@@ -396,12 +412,14 @@ function Filtry({
   maksLajki,
   toggleSurface,
   counts,
+  grajace,
 }: {
   filters: Filters;
   patch: (p: Partial<Filters>) => void;
   maksLajki: number;
   toggleSurface: (s: Surface) => void;
   counts: Record<CourtType, number>;
+  grajace: number;
 }) {
   /* czy cokolwiek odbiega od stanu domyślnego - od tego zależy, czy pokazujemy czyszczenie */
   const czynne =
@@ -410,7 +428,10 @@ function Filtry({
     Boolean(filters.voivodeship) ||
     Boolean(filters.access) ||
     filters.onlyLit ||
-    filters.minLikes > 0;
+    filters.minLikes > 0 ||
+    filters.siatki.length > 0 ||
+    filters.kosze.length > 0 ||
+    Boolean(filters.ktoGra);
 
   const prog = Math.min(filters.minLikes, maksLajki);
 
@@ -437,9 +458,44 @@ function Filtry({
         </div>
       </Sekcja>
 
+      {/*
+        Kto gra dziś - według zapisów „Idę zagrać”, tych samych, od których płonie pinezka.
+        Stoi wysoko, bo to jedyny filtr, który zmienia się w ciągu dnia: odpowiada na pytanie
+        „gdzie ktoś zagra”, a nie „jakie jest boisko”.
+      */}
+      <Sekcja
+        tytul="kto gra dziś"
+        kolejnosc={1}
+        prawo={
+          grajace > 0 ? (
+            <span className="text-[11px] uppercase tracking-[0.12em] text-flame">
+              {grajace} {plural(grajace, ["boisko", "boiska", "boisk"])}
+            </span>
+          ) : null
+        }
+      >
+        <div className="segmenty flex gap-1 p-1">
+          {KTO_GRA_TABS.map(([k, label]) => (
+            <button
+              key={k || "all"}
+              onClick={() => patch({ ktoGra: k })}
+              data-on={filters.ktoGra === k}
+              className="segment flex-1 px-2 py-2 text-[11px] text-muted"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <p className="mt-2 px-1 text-[11px] text-faint">
+          {grajace > 0
+            ? "według zapisów „Idę zagrać” na dziś"
+            : "na dziś nikt się jeszcze nie zapisał przez „Idę zagrać”"}
+        </p>
+      </Sekcja>
+
       <Sekcja
         tytul="nawierzchnia"
-        kolejnosc={1}
+        kolejnosc={2}
         prawo={
           filters.surfaces.length ? (
             <span className="text-[11px] uppercase tracking-[0.12em] text-flame">
@@ -462,7 +518,63 @@ function Filtry({
         </div>
       </Sekcja>
 
-      <Sekcja tytul="województwo" kolejnosc={2}>
+      <Sekcja
+        tytul="siatka na koszach"
+        kolejnosc={3}
+        prawo={
+          filters.siatki.length ? (
+            <span className="text-[11px] uppercase tracking-[0.12em] text-flame">
+              {filters.siatki.length} z {SIATKI_FILTR.length}
+            </span>
+          ) : null
+        }
+      >
+        <div className="flex flex-wrap gap-2">
+          {SIATKI_FILTR.map(([s, label]) => (
+            <button
+              key={s}
+              onClick={() => patch({ siatki: przelacz(filters.siatki, s) })}
+              data-on={filters.siatki.includes(s)}
+              className="pastylka rounded-full px-3.5 py-2 text-[12px] text-muted"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {/* starsze boiska nie mają siatki w bazie - bez tej uwagi ich zniknięcie wyglądałoby na błąd */}
+        {filters.siatki.length ? (
+          <p className="mt-2 px-1 text-[11px] text-faint">
+            boiska, przy których nikt nie podał siatki, są wtedy schowane
+          </p>
+        ) : null}
+      </Sekcja>
+
+      <Sekcja
+        tytul="liczba koszy"
+        kolejnosc={4}
+        prawo={
+          filters.kosze.length ? (
+            <span className="text-[11px] uppercase tracking-[0.12em] text-flame">
+              {filters.kosze.length} z {KOSZE_FILTR.length}
+            </span>
+          ) : null
+        }
+      >
+        <div className="flex flex-wrap gap-2">
+          {KOSZE_FILTR.map(([k, label]) => (
+            <button
+              key={k}
+              onClick={() => patch({ kosze: przelacz(filters.kosze, k) })}
+              data-on={filters.kosze.includes(k)}
+              className="pastylka rounded-full px-3.5 py-2 text-[12px] text-muted"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </Sekcja>
+
+      <Sekcja tytul="województwo" kolejnosc={5}>
         <div className="field flex items-center gap-2.5 px-3.5 py-2.5">
           <PinIcon className="h-3.5 w-3.5 shrink-0 text-flame" />
           <select
@@ -486,7 +598,7 @@ function Filtry({
         ) : null}
       </Sekcja>
 
-      <Sekcja tytul="dostępność" kolejnosc={3}>
+      <Sekcja tytul="dostępność" kolejnosc={6}>
         <div className="segmenty flex gap-1 p-1">
           {ACCESS_TABS.map(([k, label]) => (
             <button
@@ -502,7 +614,7 @@ function Filtry({
         </div>
       </Sekcja>
 
-      <Sekcja tytul="oświetlenie" kolejnosc={4}>
+      <Sekcja tytul="oświetlenie" kolejnosc={7}>
         <button
           onClick={() => patch({ onlyLit: !filters.onlyLit })}
           className="wiersz-filtra flex w-full items-center gap-3 px-1.5 py-2 text-left"
@@ -526,7 +638,7 @@ function Filtry({
       {maksLajki > 0 && (
         <Sekcja
           tytul="podpalenia"
-          kolejnosc={5}
+          kolejnosc={8}
           prawo={
             <span className="flex items-center gap-1.5 text-[13px] font-semibold text-glow">
               <FireBallIcon className="h-3.5 w-3.5" />
@@ -555,7 +667,7 @@ function Filtry({
       {czynne && (
         <div
           className="sekcja-filtra pt-5"
-          style={{ "--i": 6 } as React.CSSProperties}
+          style={{ "--i": 9 } as React.CSSProperties}
         >
           {/*
             Czyszczenie zostawia wpisaną frazę. Przycisk mówi o filtrach, a szukajka stoi

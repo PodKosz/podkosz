@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { MapCourt, toMapCourt } from "@/lib/types";
 import { toApprovedCourts, useSubmissions } from "@/lib/submissions";
 import { prefetchCourtPhotos } from "@/lib/galeria";
+import { fetchCheckinyDzisiaj } from "@/lib/checkins";
 import { useSesja } from "@/lib/sesja";
 import { supabaseEnabled } from "@/lib/supabase/config";
 import { DEFAULT_FILTERS, Filters, applyFilters, countByType } from "@/lib/filters";
@@ -127,6 +128,33 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
   );
 
   /*
+    Ile osób zapisało się dziś na które boisko. Pobieramy tutaj, a nie w mapie, bo z tych
+    samych liczb korzystają dwie rzeczy: płomień na pinezce (MapView) i filtr „kto gra dziś”.
+    Gdyby każde pytało osobno, filtr i płomienie potrafiłyby się na chwilę rozjechać - pusta
+    według filtra pinezka płonęłaby na mapie. Odświeżanie co dwie minuty, jak wcześniej w mapie.
+  */
+  const [checkiny, setCheckiny] = useState<Record<string, number>>({});
+  useEffect(() => {
+    let aktualne = true;
+    const odswiez = async () => {
+      const dane = await fetchCheckinyDzisiaj().catch(() => null);
+      if (aktualne && dane) setCheckiny(dane);
+    };
+    void odswiez();
+    const zegar = window.setInterval(() => void odswiez(), 120_000);
+    return () => {
+      aktualne = false;
+      window.clearInterval(zegar);
+    };
+  }, []);
+
+  /** na ilu boiskach ktoś dziś gra - liczba do nagłówka filtra, niezależna od innych filtrów */
+  const grajace = useMemo(
+    () => all.reduce((n, c) => n + ((checkiny[c.id] ?? 0) > 0 ? 1 : 0), 0),
+    [all, checkiny]
+  );
+
+  /*
     Powyżej progu SZUKANIE_W_BAZIE_OD zapytanie tekstowe wykonuje baza (indeks trigramowy,
     bez znaków diakrytycznych, sortowanie po trafności). Poniżej filtrujemy w przeglądarce -
     przy kilkunastu wpisach to szybsze niż uderzenie po sieci.
@@ -149,13 +177,13 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
   }, [duzaBaza, zapytanie]);
 
   const results = useMemo(() => {
-    const lokalne = applyFilters(all, filters);
+    const lokalne = applyFilters(all, filters, checkiny);
     if (!duzaBaza || zapytanie.length < 2) return lokalne;
     // dopóki baza nie odpowie na aktualne zapytanie, pokazujemy wynik lokalny
     if (znalezione?.q !== zapytanie) return lokalne;
     // trafność z bazy + pozostałe filtry (typ, nawierzchnia, oświetlenie) po naszej stronie
-    return wedlugTrafnosci(applyFilters(all, { ...filters, q: "" }), znalezione.ids);
-  }, [all, filters, duzaBaza, zapytanie, znalezione]);
+    return wedlugTrafnosci(applyFilters(all, { ...filters, q: "" }, checkiny), znalezione.ids);
+  }, [all, filters, checkiny, duzaBaza, zapytanie, znalezione]);
 
   const counts = useMemo(() => countByType(all), [all]);
 
@@ -269,6 +297,7 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
         onSelectLead={setActiveLead}
         registerClearCard={registerClearCard}
         sheetOpen={sheetOpen}
+        checkiny={checkiny}
       />
       <Sidebar
         filters={filters}
@@ -276,6 +305,7 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
         maksLajki={maksLajki}
         results={results}
         counts={counts}
+        grajace={grajace}
         sheetOpen={sheetOpen}
         setSheetOpen={openSheet}
       />

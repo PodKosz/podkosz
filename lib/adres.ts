@@ -1,8 +1,8 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { CourtType, MapCourt, Surface, Access } from "./types";
-import { Filters } from "./filters";
+import { CourtType, MapCourt, Surface, Access, Siatka } from "./types";
+import { Filters, KOSZE_FILTR, KoszeFiltr, SIATKI_FILTR } from "./filters";
 import { supabaseBrowser } from "./supabase/client";
 
 /**
@@ -51,6 +51,23 @@ export function czytajFiltry(sp: URLSearchParams): Partial<Filters> {
   const lajki = Number(sp.get("lajki"));
   if (Number.isFinite(lajki) && lajki > 0) out.minLikes = lajki;
 
+  /* listy z adresu przepuszczamy przez znane wartości - ręcznie dopisane śmieci nie mają
+     zamieniać mapy w pustą */
+  const siatka = sp.get("siatka");
+  if (siatka) {
+    const znane = SIATKI_FILTR.map(([s]) => s);
+    out.siatki = siatka.split(",").filter((s): s is Siatka => znane.includes(s as Siatka));
+  }
+
+  const kosze = sp.get("kosze");
+  if (kosze) {
+    const znane = KOSZE_FILTR.map(([k]) => k);
+    out.kosze = kosze.split(",").filter((k): k is KoszeFiltr => znane.includes(k as KoszeFiltr));
+  }
+
+  const kto = sp.get("kto");
+  if (kto === "gra" || kto === "pusto") out.ktoGra = kto;
+
   return out;
 }
 
@@ -70,6 +87,9 @@ export function filtryDoAdresu(f: Filters): Record<string, string | null> {
       pomyłka - a filtruje i tak dopiero od dwóch.
     */
     lajki: f.minLikes > 0 ? String(Math.ceil(f.minLikes)) : null,
+    siatka: f.siatki.length ? f.siatki.join(",") : null,
+    kosze: f.kosze.length ? f.kosze.join(",") : null,
+    kto: f.ktoGra || null,
   };
 }
 
@@ -79,7 +99,9 @@ export function filtryDoAdresu(f: Filters): Record<string, string | null> {
   przy każdym przesunięciu mapy - gdyby wchodziło do odczytu, każde drgnięcie kadru
   wyglądałoby jak zmiana filtrów i przeliczałoby całą listę boisk.
 */
-const KLUCZE_FILTROW = ["q", "typ", "naw", "woj", "dostep", "swiatlo", "lajki"] as const;
+const KLUCZE_FILTROW = [
+  "q", "typ", "naw", "woj", "dostep", "swiatlo", "lajki", "siatka", "kosze", "kto",
+] as const;
 
 const sluchacze = new Set<() => void>();
 

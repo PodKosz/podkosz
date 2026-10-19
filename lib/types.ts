@@ -100,6 +100,7 @@ export type MapCourt = Pick<
   | "type"
   | "surface"
   | "hoops"
+  | "siatka"
   | "lit"
   | "access"
   | "hours"
@@ -122,6 +123,7 @@ export function toMapCourt(court: Court): MapCourt {
     type: court.type,
     surface: court.surface,
     hoops: court.hoops,
+    siatka: court.siatka ?? null,
     lit: court.lit,
     access: court.access,
     hours: court.hours,
