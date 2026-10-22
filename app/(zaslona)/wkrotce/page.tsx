@@ -3,6 +3,7 @@ import { WejscieBeta } from "@/components/WejscieBeta";
 import { ZapisNaOtwarcie } from "@/components/ZapisNaOtwarcie";
 import { CourtOutline } from "@/components/CourtOutline";
 import { Znak } from "@/components/Znak";
+import { NapisPodkosz } from "@/components/NapisPodkosz";
 
 export const metadata: Metadata = {
   title: "PodKosz - już niedługo",
@@ -81,9 +82,8 @@ export default function Wkrotce() {
           style={{ filter: "drop-shadow(0 10px 34px rgb(var(--rgb-ember) / .5))" }}
         />
 
-        <p className="mt-6 text-[28px] font-bold leading-none tracking-tight sm:text-[40px]">
-          POD<span className="flame-text pr-[0.04em]">KOSZ</span>
-        </p>
+        {/* znak słowny narysowany od zera (lib/znak.ts) - ten sam co w nawigacji */}
+        <NapisPodkosz uid="zaslona" etykieta="PodKosz" className="mt-6 h-[20px] w-auto text-ink sm:h-[29px]" />
 
         {/*
           Gradient na literach kładzie background-clip: text, a ten maluje tylko pudełko

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Znak } from "./Znak";
+import { NapisPodkosz } from "./NapisPodkosz";
 
 /**
  * Klocki stron z dokumentami - polityki prywatności i regulaminu.
@@ -97,9 +98,7 @@ export function RamaPrzed({ uid, children }: { uid: string; children: React.Reac
         <span style={{ filter: "drop-shadow(0 4px 14px rgb(var(--rgb-ember) / .35))" }}>
           <Znak uid={uid} wysokosc={38} />
         </span>
-        <span className="text-[19px] font-bold leading-none tracking-tight">
-          POD<span className="flame-text pr-[0.04em]">KOSZ</span>
-        </span>
+        <NapisPodkosz uid={`${uid}-napis`} wysokosc={14} className="text-ink" />
       </Link>
 
       <div className="mt-14 sm:mt-16">{children}</div>

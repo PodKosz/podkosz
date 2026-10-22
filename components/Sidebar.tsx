@@ -198,7 +198,7 @@ export function Sidebar({
           className="pointer-events-auto shrink-0 pl-1"
           style={{ filter: "drop-shadow(0 6px 20px rgba(0,0,0,.85))" }}
         >
-          <Brand />
+          <Brand powered />
         </div>
 
         <div className="glass-dim pointer-events-auto shrink-0 rounded-[26px] p-2.5">
