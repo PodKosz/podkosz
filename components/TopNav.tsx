@@ -53,7 +53,7 @@ export function TopNav() {
 
       Pełne logo (znak, napis, „Powered by Coconaut”) i menu nie mieszczą się obok siebie na
       telefonie, więc poniżej progu `sm` pasek ma dwa rzędy: logo, a pod nim menu na całą
-      szerokość. Pasek ma wtedy ok. 121 px wysokości (od `sm` - 94 px) i od tego zależą: górny
+      szerokość. Pasek ma wtedy ok. 121 px wysokości (od `sm` - ok. 105 px) i od tego zależą: górny
       margines podstron (`pt-36 sm:pt-28`), górna krawędź rozwiniętego arkusza filtrów na mapie
       (Sidebar) i przycisk kandydatów OSM (Explorer).
     */

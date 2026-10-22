@@ -15,6 +15,7 @@ import {
   NetIcon,
   PeopleIcon,
   ResetIcon,
+  SlidersIcon,
   SurfaceIcon,
 } from "./icons";
 import { Brand } from "./Brand";
@@ -270,12 +271,13 @@ export function Sidebar({
         </div>
 
         {/*
-          Jedna karta: wyszukiwarka, pod nią wiersz z licznikiem i „Filtry”, a filtry rozwijają się
-          spod paska. Zwinięte zostawiają mapie całe miejsce, a liczba przy „Filtry” mówi, ile
-          z nich działa. Podpowiedzi wyszukiwarki wychodzą poza kartę (`.karta-mapy` nie przycina),
-          a rozwinięte filtry przy niskim oknie przewijają się w środku.
+          Układ „Bez ramki” (22.10.2026, 10 propozycji w podglądzie): sam pasek wyszukiwania na
+          mapie, pod nim po prawej napis „Filtry” bez tła, a filtry rozwijają się niżej jako osobna
+          karta. Licznika boisk tu nie ma - liczba przy „Filtry” mówi tylko, ile filtrów działa.
+          Zwinięte zostawiają mapie całe miejsce; rozwinięte przy niskim oknie przewijają się
+          w środku karty. Podpowiedzi wyszukiwarki leżą nad kartą filtrów (z-index w CSS).
         */}
-        <div className="panel-filtrow karta-mapy pointer-events-auto flex min-h-0 shrink flex-col rounded-[18px] p-2">
+        <div className="pointer-events-auto flex min-h-0 shrink flex-col">
           <Szukajka boiska={boiska} onBoisko={onBoisko} onMiejsce={onMiejsce} onWyczysc={onWyczyscCel} />
           <button
             onClick={() => setRozwiniete((v) => !v)}
@@ -283,18 +285,14 @@ export function Sidebar({
             aria-controls="filtry-mapy"
             className="filtry-przelacznik"
           >
-            <span>
-              <b>{results.length}</b> {plural(results.length, ["boisko", "boiska", "boisk"])} na mapie
-            </span>
-            <span className="filtry-przelacznik-prawo">
-              Filtry
-              {czynne > 0 && <i>{czynne}</i>}
-              <ChevronIcon className={`h-4 w-4 transition-transform duration-300 ${rozwiniete ? "rotate-180" : ""}`} />
-            </span>
+            <SlidersIcon className="h-4 w-4" aria-hidden />
+            Filtry
+            {czynne > 0 && <i>{czynne}</i>}
+            <ChevronIcon className={`h-4 w-4 transition-transform duration-300 ${rozwiniete ? "rotate-180" : ""}`} />
           </button>
           {rozwiniete && (
-            <div id="filtry-mapy" className="filtry-rozwiniete scroll-thin min-h-0 overflow-y-auto">
-              {filtry(false)}
+            <div id="filtry-mapy" className="panel-filtrow filtry-rozwiniete flex min-h-0 flex-col">
+              <div className="scroll-thin min-h-0 overflow-y-auto px-[18px] pb-[18px] pt-4">{filtry(false)}</div>
             </div>
           )}
         </div>
@@ -321,7 +319,7 @@ export function Sidebar({
         data-kadr="dol"
         // rozwinięty arkusz zaczyna się tuż pod paskiem nawigacji - na telefonie pasek ma dwa
         // rzędy (logo, pod nim menu), od `sm` jeden (TopNav)
-        className="panel-filtrow pointer-events-auto fixed inset-x-0 bottom-0 top-[120px] z-30 flex flex-col rounded-t-[22px] sm:top-[85px] lg:hidden"
+        className="panel-filtrow pointer-events-auto fixed inset-x-0 bottom-0 top-[120px] z-30 flex flex-col rounded-t-[22px] sm:top-[96px] lg:hidden"
       >
         <div ref={stripRef}>
           <button

@@ -9,8 +9,9 @@ import { Logotyp } from "./Logotyp";
  * „Powered by” z logo Coconaut. Od 22.10.2026 nie ma już odmiany bez napisu i podpisu - cały
  * komplet stoi na każdej podstronie i na telefonie.
  *
- * Na telefonie zestaw jest mniejszy (litery 16,7 px, znak 44 px), od progu `sm` taki jak na
- * mapie (20,5 px i 54 px).
+ * Na telefonie zestaw jest mniejszy (litery 16,7 px, znak 44 px), od progu `sm` litery mają
+ * 24,6 px, a znak 65 px - 120% pierwszej wersji, bo przy pasku wyszukiwania logo wyglądało
+ * na za małe (wybór z podglądu 22.10.2026).
  *
  * Identyfikator z useId - dwa loga na stronie (nawigacja + panel) miały kiedyś ten sam `id`,
  * a `url(#…)` trafiał do tego ukrytego i ikona znikała.
@@ -20,7 +21,7 @@ export function Brand() {
 
   return (
     <Link href="/" aria-label="PodKosz - mapa boisk" className="flex w-fit transition hover:opacity-90">
-      <Logotyp uid={`brand-${id}`} className="text-[16.7px] sm:text-[20.5px]" />
+      <Logotyp uid={`brand-${id}`} className="text-[16.7px] sm:text-[24.6px]" />
     </Link>
   );
 }

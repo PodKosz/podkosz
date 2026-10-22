@@ -90,7 +90,7 @@ export function RamaPrzed({ uid, children }: { uid: string; children: React.Reac
   return (
     <main className="mx-auto min-h-dvh max-w-3xl px-6 pb-24 pt-8 sm:pt-10">
       <Link href="/" aria-label="PodKosz - strona główna" className="flex w-fit transition hover:opacity-90">
-        <Logotyp uid={uid} className="text-[16.7px] sm:text-[20.5px]" />
+        <Logotyp uid={uid} className="text-[16.7px] sm:text-[24.6px]" />
       </Link>
 
       <div className="mt-14 sm:mt-16">{children}</div>
