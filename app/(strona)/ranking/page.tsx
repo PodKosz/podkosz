@@ -25,7 +25,7 @@ export default async function RankingPage() {
       na niedokończoną. 1600 pikseli mieści cztery karty w rzędzie i wciąż trzyma długość
       wiersza w ryzach tam, gdzie jest tekst.
     */
-    <main className="relative mx-auto min-h-dvh w-full max-w-[1600px] px-5 pb-28 pt-28 sm:px-8">
+    <main className="relative mx-auto min-h-dvh w-full max-w-[1600px] px-5 pb-28 pt-36 sm:pt-28 sm:px-8">
       <Tlo />
       <Wjazdy />
 

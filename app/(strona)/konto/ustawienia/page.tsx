@@ -24,7 +24,7 @@ export default async function UstawieniaPage() {
 
   if (!user) {
     return (
-      <main className="mx-auto min-h-dvh max-w-3xl px-6 pb-24 pt-28">
+      <main className="mx-auto min-h-dvh max-w-3xl px-6 pb-24 pt-36 sm:pt-28">
         <h1 className="text-[clamp(28px,5vw,44px)] font-semibold tracking-[-0.02em]">
           Ustawienia konta
         </h1>
@@ -51,7 +51,7 @@ export default async function UstawieniaPage() {
   ];
 
   return (
-    <main className="relative mx-auto min-h-dvh max-w-3xl px-6 pb-24 pt-28">
+    <main className="relative mx-auto min-h-dvh max-w-3xl px-6 pb-24 pt-36 sm:pt-28">
       <TloPilki />
 
       <Link

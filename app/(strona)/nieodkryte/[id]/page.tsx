@@ -47,7 +47,7 @@ export default async function NieodkrytePage({
   const nawigacja = `https://www.google.com/maps/dir/?api=1&destination=${punkt.lat},${punkt.lng}`;
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-6 py-16 sm:py-24">
+    <main className="mx-auto w-full max-w-2xl px-6 pb-16 pt-36 sm:pb-24 sm:pt-24">
       <Link
         href="/"
         className="glass inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-muted transition hover:text-ink sm:gap-2 sm:px-4 sm:py-2 sm:text-[12px]"

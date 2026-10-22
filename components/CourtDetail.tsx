@@ -99,7 +99,8 @@ export function CourtDetail({
         <div className="absolute inset-x-0 bottom-0 h-72 bg-gradient-to-t from-void via-void/85 to-transparent sm:h-56" />
 
         <div className={`relative flex h-full flex-col justify-end pb-10 ${SHELL}`}>
-          <div className="mb-auto mt-16 flex flex-wrap items-center gap-2 sm:mt-24 sm:gap-3">
+          {/* na telefonie pasek nawigacji ma dwa rzędy (logo, pod nim menu) - stąd większy odstęp */}
+          <div className="mb-auto mt-32 flex flex-wrap items-center gap-2 sm:mt-24 sm:gap-3">
             <Link
               href="/"
               className="glass inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-muted transition hover:text-ink sm:gap-2 sm:px-4 sm:py-2 sm:text-[12px] sm:tracking-[0.14em]"

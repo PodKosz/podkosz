@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { Znak } from "./Znak";
-import { NapisPodkosz } from "./NapisPodkosz";
+import { Logotyp } from "./Logotyp";
 
 /**
  * Klocki stron z dokumentami - polityki prywatności i regulaminu.
@@ -81,24 +80,17 @@ export function Punkt({
 
 /**
  * Rama dokumentu w wersji „przed": bez paska nawigacji i stopki serwisu - ich odnośniki
- * mówiłyby, co jest za zasłoną. Zostaje sam znak z nazwą, prowadzący z powrotem na stronę
- * zapowiedzi.
+ * mówiłyby, co jest za zasłoną. Zostaje sam pełny zestaw logo (znak, napis, „Powered by
+ * Coconaut”), prowadzący z powrotem na stronę zapowiedzi.
  *
  * Nie używa `Brand` z nawigacji, bo ten w opisie dla czytników ekranu nazywa serwis
- * mapą boisk.
+ * mapą boisk - bierze ten sam `Logotyp` z własnym opisem.
  */
 export function RamaPrzed({ uid, children }: { uid: string; children: React.ReactNode }) {
   return (
     <main className="mx-auto min-h-dvh max-w-3xl px-6 pb-24 pt-8 sm:pt-10">
-      <Link
-        href="/"
-        aria-label="PodKosz - strona główna"
-        className="inline-flex items-center gap-3 transition hover:opacity-90"
-      >
-        <span style={{ filter: "drop-shadow(0 4px 14px rgb(var(--rgb-ember) / .35))" }}>
-          <Znak uid={uid} wysokosc={38} />
-        </span>
-        <NapisPodkosz uid={`${uid}-napis`} wysokosc={14} className="text-ink" />
+      <Link href="/" aria-label="PodKosz - strona główna" className="flex w-fit transition hover:opacity-90">
+        <Logotyp uid={uid} className="text-[16.7px] sm:text-[20.5px]" />
       </Link>
 
       <div className="mt-14 sm:mt-16">{children}</div>

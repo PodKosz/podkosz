@@ -19,7 +19,7 @@ import { SITE_URL } from "@/lib/site";
   gwarantuje, że nowe listy dostają nową wersję.
 */
 export const TLO = `${SITE_URL}/mail/tlo.png?v=3`;
-export const LOGO = `${SITE_URL}/mail/logo.png?v=7`;
+export const LOGO = `${SITE_URL}/mail/logo.png?v=8`;
 /*
   Pas zejścia treści w czerń - kładziony na samym dole komórki z treścią. Od góry
   przezroczysty, na dole pełna czerń. Dlaczego obrazek, a nie gradient CSS: patrz nota
@@ -346,8 +346,8 @@ export function szkielet({
     <td align="center" bgcolor="${CZERN}" style="background-color:${CZERN};
       padding:8px 28px 40px;">
       <a href="${SITE_URL}" style="text-decoration:none;">
-        <img src="${LOGO}" alt="PodKosz" width="200" height="61"
-          style="display:block;border:0;outline:none;width:200px;height:auto;">
+        <img src="${LOGO}" alt="PodKosz - powered by Coconaut" width="259" height="68"
+          style="display:block;border:0;outline:none;width:259px;height:auto;">
       </a>
       <div style="font-family:${CZCIONKA};font-size:12px;line-height:1.7;color:${SLABY};
         padding-top:16px;">

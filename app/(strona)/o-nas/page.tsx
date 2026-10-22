@@ -25,7 +25,7 @@ export default async function AboutPage() {
   const total = await countCourts();
 
   return (
-    <main className="mx-auto min-h-dvh max-w-4xl px-6 pb-24 pt-28">
+    <main className="mx-auto min-h-dvh max-w-4xl px-6 pb-24 pt-36 sm:pt-28">
       <Wjazdy />
       {/*
         Obrys boiska pod całą stroną - ten sam kadr co na „Już niedługo": przekrzywiony,

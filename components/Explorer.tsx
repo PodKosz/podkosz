@@ -311,7 +311,7 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
       />
 
       {isAdmin && (
-        <div className="absolute right-4 top-20 z-20 flex flex-col items-end gap-2 lg:right-6 lg:top-24">
+        <div className="absolute right-4 top-[120px] z-20 flex flex-col items-end gap-2 sm:top-20 lg:right-6 lg:top-24">
           <button
             onClick={toggleLeads}
             className={`rounded-2xl px-4 py-2.5 text-[12px] font-semibold uppercase tracking-[0.12em] transition ${

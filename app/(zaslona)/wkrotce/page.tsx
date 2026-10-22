@@ -3,7 +3,7 @@ import { WejscieBeta } from "@/components/WejscieBeta";
 import { ZapisNaOtwarcie } from "@/components/ZapisNaOtwarcie";
 import { CourtOutline } from "@/components/CourtOutline";
 import { Znak } from "@/components/Znak";
-import { NapisPodkosz } from "@/components/NapisPodkosz";
+import { NapisZPartnerem } from "@/components/NapisPodkosz";
 
 export const metadata: Metadata = {
   title: "PodKosz - już niedługo",
@@ -82,8 +82,11 @@ export default function Wkrotce() {
           style={{ filter: "drop-shadow(0 10px 34px rgb(var(--rgb-ember) / .5))" }}
         />
 
-        {/* znak słowny narysowany od zera (lib/znak.ts) - ten sam co w nawigacji */}
-        <NapisPodkosz uid="zaslona" etykieta="PodKosz" className="mt-6 h-[20px] w-auto text-ink sm:h-[29px]" />
+        {/*
+          znak słowny narysowany od zera (lib/znak.ts) z „Powered by Coconaut” - ten sam komplet
+          co w nawigacji; partner nie zdradza, czym jest serwis
+        */}
+        <NapisZPartnerem uid="zaslona" etykieta="PodKosz" className="mt-6 text-[20px] text-ink sm:text-[29px]" />
 
         {/*
           Gradient na literach kładzie background-clip: text, a ten maluje tylko pudełko

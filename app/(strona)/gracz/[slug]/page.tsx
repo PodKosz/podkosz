@@ -121,7 +121,7 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
   ];
 
   return (
-    <main className="relative mx-auto min-h-dvh max-w-6xl overflow-x-clip px-6 pb-24 pt-28">
+    <main className="relative mx-auto min-h-dvh max-w-6xl overflow-x-clip px-6 pb-24 pt-36 sm:pt-28">
       <TloPilki uid="gracz" />
       <Wjazdy />
 

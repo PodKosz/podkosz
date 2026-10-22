@@ -34,7 +34,7 @@ export default async function KontoPage() {
 
   if (!user) {
     return (
-      <main className="relative mx-auto min-h-dvh max-w-3xl px-6 pb-24 pt-28">
+      <main className="relative mx-auto min-h-dvh max-w-3xl px-6 pb-24 pt-36 sm:pt-28">
         <TloPilki uid="konto" />
         <p className="text-[12px] uppercase tracking-[0.2em] text-flame">Moje konto</p>
         <h1 className="mt-2 text-[clamp(30px,5vw,46px)] font-semibold tracking-[-0.02em]">
@@ -63,7 +63,7 @@ export default async function KontoPage() {
   ];
 
   return (
-    <main className="relative mx-auto min-h-dvh max-w-6xl px-6 pb-24 pt-28">
+    <main className="relative mx-auto min-h-dvh max-w-6xl px-6 pb-24 pt-36 sm:pt-28">
       <TloPilki uid="konto" />
 
       {/*

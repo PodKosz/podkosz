@@ -198,7 +198,7 @@ export function Sidebar({
           className="pointer-events-auto shrink-0 pl-1"
           style={{ filter: "drop-shadow(0 6px 20px rgba(0,0,0,.85))" }}
         >
-          <Brand powered />
+          <Brand />
         </div>
 
         <div className="glass-dim pointer-events-auto shrink-0 rounded-[26px] p-2.5">
@@ -279,7 +279,9 @@ export function Sidebar({
         }}
         // od górnej krawędzi zwiniętego arkusza mapa na telefonie liczy dolny margines kadru
         data-kadr="dol"
-        className="panel-filtrow pointer-events-auto fixed inset-x-0 bottom-0 top-[68px] z-30 flex flex-col rounded-t-[26px] lg:hidden"
+        // rozwinięty arkusz zaczyna się tuż pod paskiem nawigacji - na telefonie pasek ma dwa
+        // rzędy (logo, pod nim menu), od `sm` jeden (TopNav)
+        className="panel-filtrow pointer-events-auto fixed inset-x-0 bottom-0 top-[120px] z-30 flex flex-col rounded-t-[26px] sm:top-[85px] lg:hidden"
       >
         <div ref={stripRef}>
         <button

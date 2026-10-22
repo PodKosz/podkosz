@@ -22,7 +22,7 @@ const AKTUALIZACJA = "16 października 2026";
  */
 export default function PrivacyPage() {
   return (
-    <main className="mx-auto min-h-dvh max-w-3xl px-6 pb-24 pt-28">
+    <main className="mx-auto min-h-dvh max-w-3xl px-6 pb-24 pt-36 sm:pt-28">
       <TytulDokumentu tytul="Polityka prywatności" aktualizacja={AKTUALIZACJA} />
 
       <div className="mt-10 space-y-10">

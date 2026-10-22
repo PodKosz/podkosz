@@ -14,7 +14,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
-import { ZNAK } from "../lib/znak.ts";
+import { NAPIS_BARWY, ZNAK, ZNAK_SLOWNY } from "../lib/znak.ts";
 
 const KATALOG = path.dirname(fileURLToPath(import.meta.url));
 const WYJSCIE = path.join(KATALOG, "..", "public", "mail");
@@ -24,11 +24,13 @@ const SZEROKOSC = 1200;
 const WYSOKOSC = 3000;
 const CZERN = "#07070a";
 /*
-  Napis POD/KOSZ w logo jako krzywe Instrument Sans Bold (krój serwisu). Nie <text>: librsvg
-  bierze czcionki z systemu, więc na każdym komputerze obrazek wychodziłby inny. Krzywe
-  robi narzedzia/napis-do-maila.py w podkosz-brand (HarfBuzz, z kerningiem).
+  „POWERED BY” pod napisem jako krzywe Instrument Sans SemiBold (krój serwisu). Nie <text>:
+  librsvg bierze czcionki z systemu, więc na każdym komputerze obrazek wychodziłby inny. Krzywe
+  robi narzedzia/powered-by-do-maila.py w podkosz-brand (HarfBuzz, z kerningiem). Sam napis
+  PODKOSZ to rysunek z lib/znak.ts - bez żadnej czcionki.
 */
-const NAPIS = JSON.parse(fs.readFileSync(path.join(KATALOG, "napis-pod-kosz.json"), "utf8"));
+const POWERED = JSON.parse(fs.readFileSync(path.join(KATALOG, "powered-by.json"), "utf8"));
+const COCONAUT = fs.readFileSync(path.join(KATALOG, "..", "public", "partnerzy", "coconaut-logo-web.png"));
 
 /* ---------- tło: czerń, pomarańczowe światła i kontur boiska ---------- */
 
@@ -125,40 +127,67 @@ function tlo(zTlem = true) {
 }
 
 /*
-  ---------- logo: znak marki + napis POD/KOSZ ----------
+  ---------- logo: pełny zestaw - znak, napis PODKOSZ, „Powered by” i logo Coconaut ----------
 
-  Znak bierzemy z lib/znak.ts - ta sama geometria i te same grubości kresek co w nawigacji,
-  więc logo w mailu nie rozjedzie się z tym na stronie. 660 x 200, w mailu wyświetlane w połowie.
+  Znak i napis bierzemy z lib/znak.ts - ta sama geometria co w nawigacji, więc logo w mailu nie
+  rozjedzie się z tym na stronie. Proporcje jak w components/Logotyp.tsx, gdzie wszystko liczy
+  się od wysokości liter (L): znak 2,634 L, odstęp 0,585 L, pod napisem wiersz 0,293 L niżej
+  z podpisem 0,366 L i logo Coconaut 0,488 L dosuniętym do prawej krawędzi Z.
+
+  Plik ma trzykrotność rozmiaru z maila - skrypt wypisuje ten rozmiar, a trzeba go przepisać
+  do `width`/`height` obrazka w lib/mail/szkielet.ts.
 */
+const L = 77;
+const ZNAK_H = 2.634 * L;
+const ZNAK_W = ZNAK_H * ZNAK.proporcja;
+const NAPIS_X = ZNAK_W + 0.585 * L;
+const NAPIS_W = (L * ZNAK_SLOWNY.szerokosc) / ZNAK_SLOWNY.wysokosc;
+const LOGO_W = Math.ceil(NAPIS_X + NAPIS_W);
+const LOGO_H = Math.ceil(ZNAK_H);
+
 function logo() {
   const g = ZNAK.grubosc.maly;
   const gr = ZNAK.gradient;
-  /* pinezka ma w kadrze znaku 476 jednostek wysokości - tu około 170 px */
-  const skala = 0.36;
+  const f = (n) => +n.toFixed(2);
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="660" height="200" viewBox="0 0 660 200">
+  /* kolumna napisu (litery + wiersz pod nimi) stoi na środku wysokości znaku */
+  const napisY = (ZNAK_H - L * (1 + 0.293 + 0.488)) / 2;
+  const cocoH = 0.488 * L;
+  const cocoW = (cocoH * 330) / 64;
+  const cocoX = NAPIS_X + NAPIS_W - cocoW;
+  const wierszY = napisY + 1.293 * L;
+  /* podpis: wersaliki na środku wysokości logo Coconaut, jak `items-center` na stronie */
+  const podpis = (0.366 * L) / 100;
+  const podpisX = cocoX - 0.341 * L - POWERED.szerokosc * podpis;
+  const podpisBaza = wierszY + cocoH / 2 + (POWERED.wersaliki * podpis) / 2;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${LOGO_W}" height="${LOGO_H}" viewBox="0 0 ${LOGO_W} ${LOGO_H}">
   <defs>
     <linearGradient id="znak" gradientUnits="userSpaceOnUse" x1="${gr.x1}" y1="${gr.y1}" x2="${gr.x2}" y2="${gr.y2}">
       ${gr.stopy.map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join("")}
     </linearGradient>
     <clipPath id="glowka"><path d="${ZNAK.rama}"/></clipPath>
-    <linearGradient id="napis" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#FFB25C"/>
-      <stop offset="0.5" stop-color="#FF7A18"/>
-      <stop offset="1" stop-color="#FF3D00"/>
+    <linearGradient id="napis" gradientUnits="userSpaceOnUse" x1="${ZNAK_SLOWNY.koszOd}" y1="0" x2="${ZNAK_SLOWNY.szerokosc}" y2="${ZNAK_SLOWNY.wysokosc}">
+      ${NAPIS_BARWY.plomien.map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join("")}
     </linearGradient>
   </defs>
 
   <!-- tło zostaje przezroczyste: mail podkłada pod nie własną czerń -->
-  <g transform="translate(24 15) scale(${skala}) translate(-70 -22)" fill="none" stroke="url(#znak)"
+  <g transform="scale(${f(ZNAK_H / 476)}) translate(-70 -22)" fill="none" stroke="url(#znak)"
      stroke-linecap="round" stroke-linejoin="round">
     <!-- szwy piłki przycięte do wnętrza pinezki, jak w components/Znak.tsx -->
     <g clip-path="url(#glowka)">${ZNAK.szwy.map((d) => `<path d="${d}" stroke-width="${g.szwy}"/>`).join("")}</g>
     <path d="${ZNAK.rama}" stroke-width="${g.rama}"/>
   </g>
 
-  <path d="${NAPIS.pod}" fill="#F4F4F6"/>
-  <path d="${NAPIS.kosz}" fill="url(#napis)"/>
+  <g transform="translate(${f(NAPIS_X)} ${f(napisY)}) scale(${f(L / 100)})">
+    <path d="${ZNAK_SLOWNY.pod}" fill="${NAPIS_BARWY.pod}"/>
+    <path d="${ZNAK_SLOWNY.kosz}" fill="url(#napis)"/>
+  </g>
+
+  <path transform="translate(${f(podpisX)} ${f(podpisBaza)}) scale(${f(podpis)})" d="${POWERED.d}" fill="${NAPIS_BARWY.pod}"/>
+  <image x="${f(cocoX)}" y="${f(wierszY)}" width="${f(cocoW)}" height="${f(cocoH)}"
+    xlink:href="data:image/png;base64,${COCONAUT.toString("base64")}"/>
 </svg>`;
 }
 
@@ -203,7 +232,7 @@ async function main() {
   await sharp(Buffer.from(logo()), { density: 72 })
     .png({ compressionLevel: 9 })
     .toFile(path.join(WYJSCIE, "logo.png"));
-  console.log("logo.png");
+  console.log("logo.png", `- w mailu ${Math.round(LOGO_W / 3)}x${Math.round(LOGO_H / 3)} (lib/mail/szkielet.ts)`);
 
   for (const p of tylkoLogo ? ["logo.png"] : ["tlo.png", "logo.png"]) {
     const m = await sharp(path.join(WYJSCIE, p)).metadata();

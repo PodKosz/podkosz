@@ -13,7 +13,7 @@ export default async function AdminPage() {
   const user = await getSessionUser();
 
   return (
-    <main className="mx-auto min-h-dvh max-w-5xl px-6 pb-24 pt-28">
+    <main className="mx-auto min-h-dvh max-w-5xl px-6 pb-24 pt-36 sm:pt-28">
       <AdminPanel isAdmin={!!user?.isAdmin} signedIn={!!user} />
     </main>
   );

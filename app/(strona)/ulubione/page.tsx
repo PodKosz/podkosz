@@ -16,7 +16,7 @@ export default async function FavoritesPage() {
   const courts = user ? await listFavoriteCourts(user.id) : [];
 
   return (
-    <main className="mx-auto min-h-dvh max-w-5xl px-6 pb-24 pt-28">
+    <main className="mx-auto min-h-dvh max-w-5xl px-6 pb-24 pt-36 sm:pt-28">
       <p className="text-[12px] uppercase tracking-[0.2em] text-flame">Twoja lista</p>
       <h1 className="mt-2 text-[clamp(30px,5vw,46px)] font-semibold tracking-[-0.02em]">
         Ulubione boiska

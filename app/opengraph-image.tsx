@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { SITE_URL } from "@/lib/site";
 import { ZASLONA } from "@/lib/zaslona";
-import { ZNAK, znakSvg } from "@/lib/znak";
+import { ZNAK, ZNAK_SLOWNY, napisSvg, znakSvg } from "@/lib/znak";
 
 /**
  * Obrazek podglądu linków (Facebook, Messenger, WhatsApp, X, Discord).
@@ -12,9 +12,10 @@ import { ZNAK, znakSvg } from "@/lib/znak";
  * i miast, które podstawiają własne zdjęcie boiska. Bez niego wrzucony link pokazywał
  * sam tekst.
  *
- * Rysunek składa satori, a ono nie zna `background-clip: text` ani znaczników SVG w drzewie,
- * dlatego gradient na napisie zastępuje jednolity pomarańcz, a logo wchodzi jako obrazek
- * z adresu `data:`.
+ * Rysunek składa satori, a ono nie zna znaczników SVG w drzewie, dlatego znak i napis PODKOSZ
+ * (ten sam rysunek co na stronie, z lib/znak.ts) wchodzą jako obrazki z adresu `data:`. Pod
+ * napisem - jak wszędzie, gdzie stoi logo - „Powered by” i logo Coconaut, dosunięte do prawej
+ * krawędzi Z.
  *
  * Dopóki stoi zasłona, obrazek nie zdradza, czym jest serwis: zostaje znak, nazwa
  * i „Już niedługo" - tak samo jak na samej zasłonie (`app/(zaslona)/wkrotce`).
@@ -29,16 +30,27 @@ const LOGO_H = Math.round(LOGO_W / ZNAK.proporcja);
 const LOGO = znakSvg("og", { rozmiar: "duzy", szerokosc: LOGO_W });
 
 /*
+  Napis i wiersz „Powered by” w proporcjach ze strony (NapisZPartnerem): przy literach 50 px
+  podpis ma 18,3 px, logo Coconaut 24,4 px, odstęp 17 px, a wiersz stoi 14,7 px pod napisem.
+*/
+const LITERY = 50;
+const NAPIS = napisSvg("og-napis", LITERY);
+const NAPIS_W = Math.round((LITERY * ZNAK_SLOWNY.szerokosc) / ZNAK_SLOWNY.wysokosc);
+const COCONAUT_H = Math.round(LITERY * 0.488);
+const COCONAUT_W = Math.round((COCONAUT_H * 330) / 64);
+
+/*
   Krój serwisu (Instrument Sans) w trzech grubościach, jakich używa obrazek. Satori nie czyta
   plików zmiennych ani WOFF2, więc leżą tu statyczne TTF wycięte z tego samego pliku co na
   stronie (assets/fonts, robi je czcionki-strony.py w podkosz-brand). Bez nich satori brało
   wbudowany Geist Regular, a grubości 600 i 700 tylko udawało.
 */
 const czcionka = (plik: string) => readFile(join(process.cwd(), "assets/fonts", plik));
-const [REGULAR, SEMIBOLD, BOLD] = await Promise.all([
+const [REGULAR, SEMIBOLD, BOLD, COCONAUT] = await Promise.all([
   czcionka("InstrumentSans-Regular.ttf"),
   czcionka("InstrumentSans-SemiBold.ttf"),
   czcionka("InstrumentSans-Bold.ttf"),
+  readFile(join(process.cwd(), "public/partnerzy/coconaut-logo-web.png")),
 ]);
 
 export default function OgImage() {
@@ -68,9 +80,27 @@ export default function OgImage() {
           alt=""
         />
 
-        <div style={{ display: "flex", marginTop: 18, fontSize: 58, fontWeight: 700 }}>
-          <span>POD</span>
-          <span style={{ color: "#ff7a18" }}>KOSZ</span>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", marginTop: 22 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`data:image/svg+xml;utf8,${encodeURIComponent(NAPIS)}`}
+            width={NAPIS_W}
+            height={LITERY}
+            alt=""
+          />
+          <div style={{ display: "flex", alignItems: "center", marginTop: 15 }}>
+            <span style={{ fontSize: 18.3, fontWeight: 600, letterSpacing: 3.66, lineHeight: 1 }}>
+              POWERED BY
+            </span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`data:image/png;base64,${COCONAUT.toString("base64")}`}
+              width={COCONAUT_W}
+              height={COCONAUT_H}
+              alt=""
+              style={{ marginLeft: 17 }}
+            />
+          </div>
         </div>
 
         {/* łamanie wpisane na sztywno - inaczej satori zostawiało „w Polsce" samo w drugim wierszu */}

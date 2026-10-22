@@ -48,26 +48,42 @@ export function TopNav() {
   if (path.startsWith("/gra/")) return null;
 
   return (
-    /* `data-kadr` - od dolnej krawędzi paska mapa na telefonie liczy górny margines kadru */
+    /*
+      `data-kadr` - od dolnej krawędzi paska mapa na telefonie liczy górny margines kadru.
+
+      Pełne logo (znak, napis, „Powered by Coconaut”) i menu nie mieszczą się obok siebie na
+      telefonie, więc poniżej progu `sm` pasek ma dwa rzędy: logo, a pod nim menu na całą
+      szerokość. Pasek ma wtedy ok. 121 px wysokości (od `sm` - 94 px) i od tego zależą: górny
+      margines podstron (`pt-36 sm:pt-28`), górna krawędź rozwiniętego arkusza filtrów na mapie
+      (Sidebar) i przycisk kandydatów OSM (Explorer).
+    */
     <div
       data-kadr="gora"
-      className="pointer-events-none fixed inset-x-0 top-0 z-40 flex items-center justify-between gap-2 p-3 sm:p-5"
+      className="pointer-events-none fixed inset-x-0 top-0 z-40 flex flex-col items-start gap-2 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-5"
     >
-      {/* na telefonie logo jest zawsze, także na mapie - inaczej nie ma jak wrócić */}
-      <div className="pointer-events-auto shrink-0">
-        <span className="lg:hidden">
-          <Brand compact />
-        </span>
-        <span className="hidden lg:block">{path !== "/" && <Brand compact />}</span>
+      {/*
+        Logo jest wszędzie, także na telefonie na mapie - inaczej nie ma jak wrócić. Wyjątek to
+        mapa na komputerze: tam logo stoi w panelu bocznym (Sidebar), a tu zostaje pusty element,
+        żeby menu nie uciekło na lewą stronę. `lg:pl-1` jak w panelu - logo nie przeskakuje przy
+        przejściu z mapy na podstronę. Na mapie cień trzyma czytelność na tle kafelków.
+      */}
+      <div
+        className="pointer-events-auto shrink-0 lg:pl-1"
+        style={path === "/" ? { filter: "drop-shadow(0 6px 20px rgba(0,0,0,.85))" } : undefined}
+      >
+        <div className={path === "/" ? "lg:hidden" : undefined}>
+          <Brand />
+        </div>
       </div>
 
       {/*
         Cztery nazwy plus przycisk i awatar ledwo mieszczą się na wąskim telefonie, dlatego
         na mobile odstępy i światło międzyliterowe są zbite do minimum, a od progu `sm`
         wracają do normy. To była realna kolizja, nie ostrożność: przy poprzednich wartościach
-        pasek wychodził poza prawą krawędź ekranu przy 375 pikselach.
+        pasek wychodził poza prawą krawędź ekranu przy 375 pikselach. Na telefonie menu ma
+        własny rząd, więc rozciąga się na całą szerokość i rozkłada pozycje równo.
       */}
-      <nav className="glass pointer-events-auto flex shrink-0 items-center gap-0.5 rounded-full p-1 pl-1.5 lg:gap-1 lg:p-1.5 lg:pl-3">
+      <nav className="glass pointer-events-auto flex w-full shrink-0 items-center justify-between gap-0.5 rounded-full p-1 pl-1.5 sm:w-auto sm:justify-start lg:gap-1 lg:p-1.5 lg:pl-3">
         {LINKS.map((l) => (
           <Link
             key={l.href}

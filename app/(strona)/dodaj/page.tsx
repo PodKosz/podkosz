@@ -20,7 +20,7 @@ export default async function AddPage() {
   */
   if (user?.isBanned) {
     return (
-      <main className="mx-auto min-h-dvh max-w-2xl px-6 pb-24 pt-28">
+      <main className="mx-auto min-h-dvh max-w-2xl px-6 pb-24 pt-36 sm:pt-28">
         <p className="text-[12px] uppercase tracking-[0.2em] text-flame">Dodaj boisko</p>
         <h1 className="mt-2 text-[clamp(28px,5vw,42px)] font-semibold tracking-[-0.02em]">
           Konto jest zablokowane
@@ -43,7 +43,7 @@ export default async function AddPage() {
   */
   if (!user) {
     return (
-      <main className="mx-auto min-h-dvh max-w-2xl px-6 pb-24 pt-28">
+      <main className="mx-auto min-h-dvh max-w-2xl px-6 pb-24 pt-36 sm:pt-28">
         <p className="text-[12px] uppercase tracking-[0.2em] text-flame">Dodaj boisko</p>
         <h1 className="mt-2 text-[clamp(28px,5vw,42px)] font-semibold tracking-[-0.02em]">
           Najpierw zaloguj się
@@ -60,7 +60,7 @@ export default async function AddPage() {
   }
 
   return (
-    <main className="min-h-dvh px-5 pb-24 pt-28">
+    <main className="min-h-dvh px-5 pb-24 pt-36 sm:pt-28">
       <AddFlow user={{ name: user.name, email: user.email }} admin={Boolean(user.isAdmin)} />
     </main>
   );

@@ -33,7 +33,7 @@ export function PlaceListing({
   const types = [...new Set(courts.map((c) => TYPE_LABEL[c.type]))];
 
   return (
-    <main className="mx-auto min-h-dvh max-w-6xl px-6 pb-24 pt-28">
+    <main className="mx-auto min-h-dvh max-w-6xl px-6 pb-24 pt-36 sm:pt-28">
       <Link
         href="/"
         className="glass inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12px] uppercase tracking-[0.14em] text-muted transition hover:text-ink"

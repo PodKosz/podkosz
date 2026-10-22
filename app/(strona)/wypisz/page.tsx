@@ -26,7 +26,7 @@ export default async function WypiszPage({
   const wynik = typeof p.wynik === "string" ? p.wynik : "";
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-xl flex-col justify-center px-6 pb-24 pt-28">
+    <main className="mx-auto flex min-h-dvh max-w-xl flex-col justify-center px-6 pb-24 pt-36 sm:pt-28">
       <p className="text-[12px] uppercase tracking-[0.2em] text-flame">Powiadomienia</p>
 
       {wynik === "ok" ? (
