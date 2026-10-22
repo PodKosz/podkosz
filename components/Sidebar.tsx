@@ -72,6 +72,25 @@ const NAWIERZCHNIE: [Surface | "", string][] = [
   ["syntetyk", "Sztuczna trawa"],
 ];
 
+/**
+ * Ile grup filtrów odbiega od domyślnych - liczba przy „Filtry” na zwiniętym panelu. Liczy też
+ * filtry z adresu strony, które nie mają już kontrolek (typ, województwo, tekst), bo działają.
+ */
+function ileCzynnych(f: Filters) {
+  return [
+    Object.values(f.types).some((t) => !t),
+    f.surfaces.length > 0,
+    Boolean(f.voivodeship),
+    Boolean(f.access),
+    f.onlyLit,
+    f.minLikes > 0,
+    f.siatki.length > 0,
+    f.kosze.length > 0,
+    Boolean(f.ktoGra),
+    Boolean(f.q.trim()),
+  ].filter(Boolean).length;
+}
+
 /** filtr wielokrotnego wyboru pokazany jako pojedynczy: zaznaczone, gdy wybrana jest dokładnie ta jedna wartość */
 const jedna = <T,>(lista: T[], v: T | "") => (v === "" ? lista.length === 0 : lista.length === 1 && lista[0] === v);
 
@@ -110,6 +129,9 @@ export function Sidebar({
 }) {
   /** kostka na czas losowania boiska - `nakladka` doklejamy na końcu drzewa */
   const { losuj, nakladka } = useLosowanie();
+  /** Na komputerze filtry są zwinięte pod paskiem wyszukiwania - mapa ma wtedy całe miejsce. */
+  const [rozwiniete, setRozwiniete] = useState(false);
+  const czynne = ileCzynnych(filters);
 
   /*
     Gest na telefonie: przeciągnięcie w górę wyciąga arkusz, w dół go schowa.
@@ -222,12 +244,13 @@ export function Sidebar({
     onMiejsce(cel);
   };
 
-  const filtry = (
+  const filtry = (licznik: boolean) => (
     <Filtry
       filters={filters}
       patch={patch}
       wyczysc={() => setFilters({ ...DEFAULT_FILTERS })}
-      ile={results.length}
+      czynne={czynne > 0}
+      ile={licznik ? results.length : null}
       policz={policz}
       grajace={grajace}
       losuj={() => losuj("/losowe")}
@@ -246,14 +269,34 @@ export function Sidebar({
           <Brand />
         </div>
 
-        {/* wyszukiwarka nad panelem, a jej podpowiedzi przykrywają filtry (z-index w CSS) */}
-        <div className="pointer-events-auto relative z-10 shrink-0">
+        {/*
+          Jedna karta: wyszukiwarka, pod nią wiersz z licznikiem i „Filtry”, a filtry rozwijają się
+          spod paska. Zwinięte zostawiają mapie całe miejsce, a liczba przy „Filtry” mówi, ile
+          z nich działa. Podpowiedzi wyszukiwarki wychodzą poza kartę (`.karta-mapy` nie przycina),
+          a rozwinięte filtry przy niskim oknie przewijają się w środku.
+        */}
+        <div className="panel-filtrow karta-mapy pointer-events-auto flex min-h-0 shrink flex-col rounded-[18px] p-2">
           <Szukajka boiska={boiska} onBoisko={onBoisko} onMiejsce={onMiejsce} onWyczysc={onWyczyscCel} />
-        </div>
-
-        {/* panel na wysokość treści; przy niskim oknie przewija się w środku */}
-        <div className="panel-filtrow pointer-events-auto flex min-h-0 shrink flex-col rounded-[20px]">
-          <div className="scroll-thin min-h-0 overflow-y-auto px-[18px] pb-[18px] pt-4">{filtry}</div>
+          <button
+            onClick={() => setRozwiniete((v) => !v)}
+            aria-expanded={rozwiniete}
+            aria-controls="filtry-mapy"
+            className="filtry-przelacznik"
+          >
+            <span>
+              <b>{results.length}</b> {plural(results.length, ["boisko", "boiska", "boisk"])} na mapie
+            </span>
+            <span className="filtry-przelacznik-prawo">
+              Filtry
+              {czynne > 0 && <i>{czynne}</i>}
+              <ChevronIcon className={`h-4 w-4 transition-transform duration-300 ${rozwiniete ? "rotate-180" : ""}`} />
+            </span>
+          </button>
+          {rozwiniete && (
+            <div id="filtry-mapy" className="filtry-rozwiniete scroll-thin min-h-0 overflow-y-auto">
+              {filtry(false)}
+            </div>
+          )}
         </div>
       </div>
 
@@ -335,7 +378,7 @@ export function Sidebar({
             sheetOpen ? "block" : "hidden"
           }`}
         >
-          {filtry}
+          {filtry(true)}
         </div>
       </aside>
 
@@ -408,6 +451,7 @@ function Filtry({
   filters,
   patch,
   wyczysc,
+  czynne,
   ile,
   policz,
   grajace,
@@ -416,39 +460,25 @@ function Filtry({
   filters: Filters;
   patch: (p: Partial<Filters>) => void;
   wyczysc: () => void;
-  ile: number;
+  /** czy cokolwiek odbiega od stanu domyślnego - od tego zależy przycisk czyszczenia */
+  czynne: boolean;
+  /** licznik nad filtrami - na telefonie; na komputerze stoi w wierszu „Filtry” pod wyszukiwarką */
+  ile: number | null;
   policz: (f: Filters) => number;
   grajace: number;
   losuj: () => void;
 }) {
-  /* czy cokolwiek odbiega od stanu domyślnego - także filtry z adresu, które nie mają już kontrolek */
-  const czynne =
-    Object.values(filters.types).some((t) => !t) ||
-    filters.surfaces.length > 0 ||
-    Boolean(filters.voivodeship) ||
-    Boolean(filters.access) ||
-    filters.onlyLit ||
-    filters.minLikes > 0 ||
-    filters.siatki.length > 0 ||
-    filters.kosze.length > 0 ||
-    Boolean(filters.ktoGra) ||
-    Boolean(filters.q.trim());
-
   const podpalone = filters.minLikes > 0;
 
   return (
     <div className="filtry">
-      <div className="filtry-naglowek">
-        <span>
-          <b>{ile}</b> {plural(ile, ["boisko", "boiska", "boisk"])} na mapie
-        </span>
-        {czynne && (
-          <button onClick={wyczysc} className="filtry-link">
-            <ResetIcon className="h-[13px] w-[13px]" />
-            Wyczyść
-          </button>
-        )}
-      </div>
+      {ile !== null && (
+        <div className="filtry-naglowek">
+          <span>
+            <b>{ile}</b> {plural(ile, ["boisko", "boiska", "boisk"])} na mapie
+          </span>
+        </div>
+      )}
 
       <Sekcja tytul="Kto gra dziś" Ikona={PeopleIcon} kolejnosc={0}>
         <Wybor

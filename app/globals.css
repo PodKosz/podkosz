@@ -5977,6 +5977,77 @@ select option {
   color: var(--color-ink);
 }
 
+/*
+  Na komputerze wyszukiwarka i filtry to jedna karta: pole, pod nim wiersz z licznikiem
+  i „Filtry”, a filtry rozwijają się spod paska. Karta nie przycina treści - podpowiedzi
+  wyszukiwarki muszą z niej wychodzić nad mapę, także przy zwiniętych filtrach.
+*/
+.karta-mapy {
+  overflow: visible;
+}
+
+.karta-mapy .szukajka-pole {
+  box-shadow: inset 0 1px 0 rgb(var(--rgb-szyba) / 0.06);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.filtry-przelacznik {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 42px;
+  margin-top: 2px;
+  padding: 0 8px 0 10px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  color: var(--color-muted);
+  transition: background 150ms ease;
+}
+
+.filtry-przelacznik:hover {
+  background: var(--f-kafel-hover);
+}
+
+.filtry-przelacznik b {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink);
+}
+
+.filtry-przelacznik-prawo {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+}
+
+/* ile filtrów działa - w barwie wybranej opcji, żeby było widać, że coś jest włączone */
+.filtry-przelacznik-prawo i {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding-inline: 5px;
+  border-radius: 999px;
+  background: var(--f-aktywny);
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--f-aktywny-tekst);
+}
+
+.filtry-rozwiniete {
+  margin-top: 4px;
+  padding: 16px 10px 10px;
+  border-top: 1px solid var(--color-hairline);
+}
+
 /* ---- filtry ---- */
 .filtry {
   display: flex;
@@ -5996,19 +6067,6 @@ select option {
 .filtry-naglowek b {
   font-size: 15px;
   font-variant-numeric: tabular-nums;
-  color: var(--color-ink);
-}
-
-.filtry-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--color-muted);
-  transition: color 150ms ease;
-}
-
-.filtry-link:hover {
   color: var(--color-ink);
 }
 

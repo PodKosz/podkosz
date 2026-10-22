@@ -91,7 +91,7 @@ export function zPhotona(
         lng,
         zoom: 15,
       };
-    } else {
+    } else if (p.type === "city" || p.type === "district" || p.type === "locality") {
       m = {
         nazwa: p.name ?? "",
         opis: [p.type === "city" ? p.county : p.city, p.state].filter(Boolean).join(", "),
@@ -100,6 +100,9 @@ export function zPhotona(
         lng,
         zoom: p.type === "city" ? 12 : 13,
       };
+    } else {
+      /* powiaty, województwa i „other” (dworce, urzędy o nazwie miasta) tylko dublowały miasto */
+      continue;
     }
 
     const klucz = `${m.nazwa}|${m.opis}`;

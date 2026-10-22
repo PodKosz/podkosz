@@ -41,6 +41,12 @@ export async function GET(request: Request) {
   if (wejscie.searchParams.has("lat") && Number.isFinite(lat) && Number.isFinite(lng)) {
     cel.searchParams.set("lat", lat.toFixed(2));
     cel.searchParams.set("lon", lng.toFixed(2));
+    /*
+      Przy domyślnej sile okolica wygrywała ze wszystkim: „Poznań” oglądany z Warszawy dawał
+      same ulice Poznańskie, a miasta nie było wcale. Przy 0,5 najpierw idzie miasto, a za nim
+      ulice z okolicy.
+    */
+    cel.searchParams.set("location_bias_scale", "0.5");
   }
 
   try {
@@ -53,7 +59,7 @@ export async function GET(request: Request) {
     const dane = (await res.json()) as { features?: Parameters<typeof zPhotona>[0] };
     return Response.json(
       { miejsca: zPhotona(dane.features ?? [], q) },
-      { headers: { "Cache-Control": `public, s-maxage=${CACHE_S}, stale-while-revalidate=${7 * CACHE_S}` } }
+      { headers: { "Cache-Control": `public, max-age=3600, s-maxage=${CACHE_S}, stale-while-revalidate=${7 * CACHE_S}` } }
     );
   } catch {
     return Response.json({ miejsca: [], blad: "brak odpowiedzi" }, { status: 502 });
