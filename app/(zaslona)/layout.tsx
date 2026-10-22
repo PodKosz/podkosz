@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { preload } from "react-dom";
 import "../globals.css";
 import { SKRYPT_MOTYWU } from "@/lib/motyw";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
@@ -18,6 +19,9 @@ export const metadata: Metadata = {
 };
 
 export default function ZaslonaLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  /* ta sama czcionka co w serwisie, wczytywana od razu - patrz app/(strona)/layout.tsx */
+  preload("/fonts/instrument-sans.woff2", { as: "font", type: "font/woff2", crossOrigin: "anonymous" });
+
   return (
     /* to samo tłumienie i ten sam skrypt co w układzie serwisu - patrz app/(strona)/layout.tsx */
     <html lang="pl" suppressHydrationWarning>

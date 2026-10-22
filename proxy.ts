@@ -128,8 +128,10 @@ function stronaBlokady() {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow"><title>Dostęp zablokowany - PodKosz</title>
 <style>
+  @font-face{font-family:"Instrument Sans";font-weight:400 700;font-display:swap;
+    src:url("/fonts/instrument-sans.woff2") format("woff2")}
   html,body{margin:0;height:100%;background:#07070a;color:#f5f5f7;
-    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+    font-family:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
   main{min-height:100%;display:grid;place-items:center;padding:24px;text-align:center}
   h1{margin:0 0 12px;font-size:clamp(28px,6vw,44px);letter-spacing:-.02em;
     background:linear-gradient(120deg,#ffc47d,#ff7a18 45%,#ff3d00);
@@ -272,5 +274,6 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|maplibre|geo|.*\\.(?:png|jpg|svg|webp)$).*)"],
+  /* woff2: czcionki muszą dojść także spod zasłony i do maili - nic o serwisie nie mówią */
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|maplibre|geo|.*\\.(?:png|jpg|svg|webp|woff2)$).*)"],
 };

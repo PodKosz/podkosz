@@ -1,4 +1,6 @@
 import { ImageResponse } from "next/og";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { SITE_URL } from "@/lib/site";
 import { ZASLONA } from "@/lib/zaslona";
 import { ZNAK, znakSvg } from "@/lib/znak";
@@ -26,6 +28,19 @@ const LOGO_W = 140;
 const LOGO_H = Math.round(LOGO_W / ZNAK.proporcja);
 const LOGO = znakSvg("og", { rozmiar: "duzy", szerokosc: LOGO_W });
 
+/*
+  Krój serwisu (Instrument Sans) w trzech grubościach, jakich używa obrazek. Satori nie czyta
+  plików zmiennych ani WOFF2, więc leżą tu statyczne TTF wycięte z tego samego pliku co na
+  stronie (assets/fonts, robi je czcionki-strony.py w podkosz-brand). Bez nich satori brało
+  wbudowany Geist Regular, a grubości 600 i 700 tylko udawało.
+*/
+const czcionka = (plik: string) => readFile(join(process.cwd(), "assets/fonts", plik));
+const [REGULAR, SEMIBOLD, BOLD] = await Promise.all([
+  czcionka("InstrumentSans-Regular.ttf"),
+  czcionka("InstrumentSans-SemiBold.ttf"),
+  czcionka("InstrumentSans-Bold.ttf"),
+]);
+
 export default function OgImage() {
   return new ImageResponse(
     (
@@ -42,7 +57,7 @@ export default function OgImage() {
             "radial-gradient(900px 520px at 12% -10%, rgba(255,122,24,.28), transparent 70%)," +
             "radial-gradient(760px 460px at 100% 112%, rgba(255,178,92,.18), transparent 72%)",
           color: "#fff",
-          fontFamily: "sans-serif",
+          fontFamily: "Instrument Sans",
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -97,6 +112,13 @@ export default function OgImage() {
         </div>
       </div>
     ),
-    size,
+    {
+      ...size,
+      fonts: [
+        { name: "Instrument Sans", data: REGULAR, weight: 400, style: "normal" },
+        { name: "Instrument Sans", data: SEMIBOLD, weight: 600, style: "normal" },
+        { name: "Instrument Sans", data: BOLD, weight: 700, style: "normal" },
+      ],
+    },
   );
 }

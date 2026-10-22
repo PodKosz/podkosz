@@ -19,7 +19,7 @@ import { SITE_URL } from "@/lib/site";
   gwarantuje, że nowe listy dostają nową wersję.
 */
 export const TLO = `${SITE_URL}/mail/tlo.png?v=3`;
-export const LOGO = `${SITE_URL}/mail/logo.png?v=6`;
+export const LOGO = `${SITE_URL}/mail/logo.png?v=7`;
 /*
   Pas zejścia treści w czerń - kładziony na samym dole komórki z treścią. Od góry
   przezroczysty, na dole pełna czerń. Dlaczego obrazek, a nie gradient CSS: patrz nota
@@ -40,8 +40,14 @@ export const PRZYGASZONY = "#a7a6ad";
 export const SLABY = "#77767d";
 export const PLOMIEN = "#ff7a18";
 export const ZAR = "#ffb25c";
+/*
+  Krój serwisu w liście. Czcionki z sieci pokazują tylko niektóre programy pocztowe (Apple
+  Mail na iPhonie i Macu, część aplikacji na Androidzie) - Gmail i Outlook wycinają
+  @font-face i biorą następną czcionkę z listy. Dlatego za Instrument Sans stoją kroje
+  o podobnym kroju i szerokości, a Outlook i tak dostaje Arial (warunek `mso` w nagłówku).
+*/
 export const CZCIONKA =
-  "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif";
+  "'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif";
 
 /** Bezpiecznik na treści pochodzące od użytkownika (nick). */
 export function esc(t: string) {
@@ -236,6 +242,13 @@ export function szkielet({
 <title>PodKosz</title>
 <!--[if mso]><style>table,td{font-family:Arial,sans-serif !important;}</style><![endif]-->
 <style>
+  /* krój serwisu - pokażą go programy, które czytają czcionki z sieci (patrz CZCIONKA) */
+  @font-face {
+    font-family: 'Instrument Sans';
+    font-style: normal;
+    font-weight: 400 700;
+    src: url('${SITE_URL}/fonts/instrument-sans.woff2') format('woff2');
+  }
   /*
     Klienci poczty same zamieniają adresy, daty i numery w linki i malują je na niebiesko.
     Poniższe reguły oddają im kolor z powrotem.

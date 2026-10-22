@@ -23,7 +23,12 @@ const WYJSCIE = path.join(KATALOG, "..", "public", "mail");
 const SZEROKOSC = 1200;
 const WYSOKOSC = 3000;
 const CZERN = "#07070a";
-const CZ = "Segoe UI, Arial, sans-serif";
+/*
+  Napis POD/KOSZ w logo jako krzywe Instrument Sans Bold (krój serwisu). Nie <text>: librsvg
+  bierze czcionki z systemu, więc na każdym komputerze obrazek wychodziłby inny. Krzywe
+  robi narzedzia/napis-do-maila.py w podkosz-brand (HarfBuzz, z kerningiem).
+*/
+const NAPIS = JSON.parse(fs.readFileSync(path.join(KATALOG, "napis-pod-kosz.json"), "utf8"));
 
 /* ---------- tło: czerń, pomarańczowe światła i kontur boiska ---------- */
 
@@ -152,8 +157,8 @@ function logo() {
     <path d="${ZNAK.rama}" stroke-width="${g.rama}"/>
   </g>
 
-  <text x="178" y="130" font-family="${CZ}" font-size="96" font-weight="700"
-        letter-spacing="-2"><tspan fill="#F4F4F6">POD</tspan><tspan fill="url(#napis)">KOSZ</tspan></text>
+  <path d="${NAPIS.pod}" fill="#F4F4F6"/>
+  <path d="${NAPIS.kosz}" fill="url(#napis)"/>
 </svg>`;
 }
 

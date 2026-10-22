@@ -126,7 +126,8 @@ function spis() {
 <html lang="pl"><head><meta charset="utf-8"><title>Podgląd listów - PodKosz</title>
 <style>
   body{margin:0;padding:48px 24px;background:#07070a;color:#f5f5f7;
-    font:15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;}
+    font:15px/1.6 'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;}
+  @font-face{font-family:'Instrument Sans';font-weight:400 700;src:url('/fonts/instrument-sans.woff2') format('woff2');}
   main{max-width:680px;margin:0 auto;}
   h1{font-size:26px;letter-spacing:-.5px;margin:0 0 6px;}
   p.wstep{color:#a7a6ad;margin:0 0 32px;}

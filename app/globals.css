@@ -1,11 +1,44 @@
 @import "tailwindcss";
 
 /*
-  Anton - wąski, ciężki krój plakatowy z rolek. Tylko do wartości w kafelkach i liczb
-  w panelu „Kto gra": w tekście ciągłym byłby nieczytelny. Dwa pliki, bo polskie litery
-  (ą, ę, ł, ż…) leżą w rozszerzonym zakresie - przeglądarka pobiera drugi dopiero wtedy,
-  gdy na stronie pojawi się któraś z nich. OFL, z Google Fonts przez @fontsource.
+  System pisma (od 22.10.2026): DWA kroje, oba z naszego serwera, więc strona wygląda
+  identycznie na każdym urządzeniu. Wcześniej cały tekst szedł czcionką systemu - SF Pro
+  na iPhonie, Segoe UI na Windows, Roboto na Androidzie, Arial w mailach - i każdy widział
+  PodKosza trochę inaczej.
+
+    - Instrument Sans: wszystko - tytuły, tekst, przyciski, podpisy wersalikami, napis
+      PODKOSZ (do czasu znaku narysowanego od zera). Jeden plik zmienny, grubości 400-700,
+      łacina z polskimi znakami (41 kB). Robi go `czcionki-strony.py` w podkosz-brand.
+    - Anton: tylko wartości w kafelkach karty boiska i nagłówek „Zapisz się".
+
+  Obie na licencji SIL OFL 1.1 (wolno używać, osadzać i przerabiać; nie wolno sprzedawać
+  samych plików). Grubości 800 w kodzie dają 700 - cięższej Instrument Sans nie ma.
+
+  Anton - wąski, ciężki krój plakatowy z rolek. W tekście ciągłym byłby nieczytelny. Dwa
+  pliki, bo polskie litery (ą, ę, ł, ż…) leżą w rozszerzonym zakresie - przeglądarka pobiera
+  drugi dopiero wtedy, gdy na stronie pojawi się któraś z nich.
 */
+@font-face {
+  font-family: "Instrument Sans";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/fonts/instrument-sans.woff2") format("woff2-variations"), url("/fonts/instrument-sans.woff2") format("woff2");
+}
+/*
+  Zapasowa czcionka o wymiarach Instrument Sans: Arial przeskalowany tak, żeby linia tekstu
+  miała tę samą szerokość i wysokość. Zanim plik dojedzie, tekst stoi już na swoim miejscu
+  i nie przeskakuje przy podmianie. Liczby z `czcionki-strony.py` (średnia szerokość liter
+  polskiego tekstu w obu krojach).
+*/
+@font-face {
+  font-family: "Instrument Sans Zapas";
+  src: local("Arial"), local("ArialMT"), local("Helvetica Neue"), local("Helvetica");
+  size-adjust: 100.44%;
+  ascent-override: 96.58%;
+  descent-override: 24.89%;
+  line-gap-override: 0%;
+}
 @font-face {
   font-family: "Anton";
   font-style: normal;
@@ -61,8 +94,8 @@
   */
   --color-kadr: #ffffff;
 
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
-    "Segoe UI Variable Display", "Segoe UI", Inter, system-ui, sans-serif;
+  --font-sans: "Instrument Sans", "Instrument Sans Zapas", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, system-ui, sans-serif;
 
   --radius-panel: 24px;
 }

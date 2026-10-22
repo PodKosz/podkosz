@@ -66,7 +66,8 @@ export function rysujLicznik(
   ctx.save();
   ctx.translate(szer / 2, wys * 0.62);
   ctx.scale(skok, skok);
-  ctx.font = "800 340px system-ui, -apple-system, sans-serif";
+  /* krój serwisu; 700 to najgrubsza Instrument Sans (plik jest już wczytany przez stronę) */
+  ctx.font = "700 340px 'Instrument Sans', system-ui, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.lineWidth = 3;

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { preload } from "react-dom";
 import "../globals.css";
 import { TopNav } from "@/components/TopNav";
 import { BramkaLogowania } from "@/components/BramkaLogowania";
@@ -40,6 +41,12 @@ export const metadata: Metadata = {
  * zależnej od użytkownika mogą się cache'ować.
  */
 export default function StronaLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  /*
+    Plik czcionki rusza razem z dokumentem, a nie dopiero wtedy, gdy przeglądarka przeczyta
+    arkusz i zobaczy, że go potrzebuje - tekst krócej stoi w czcionce zapasowej.
+  */
+  preload("/fonts/instrument-sans.woff2", { as: "font", type: "font/woff2", crossOrigin: "anonymous" });
+
   return (
     /*
       `suppressHydrationWarning` dotyczy jednej rzeczy: klasy `wjazdy`, którą skrypt niżej
