@@ -241,3 +241,82 @@ export function DiceIcon(props: P) {
     </svg>
   );
 }
+
+/* ---- wyszukiwarka i panel filtrów (układ „Symetria”, 22.10.2026) ---- */
+
+/** celownik: „moja lokalizacja” w polu wyszukiwania */
+export function LocateIcon(props: P) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" stroke="currentColor" strokeLinecap="round" {...props}>
+      <circle cx="12" cy="12" r="3" />
+      <circle cx="12" cy="12" r="7.5" />
+      <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+    </svg>
+  );
+}
+
+export function CloseIcon(props: P) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.7" stroke="currentColor" strokeLinecap="round" {...props}>
+      <path d="M6.5 6.5l11 11M17.5 6.5l-11 11" />
+    </svg>
+  );
+}
+
+/** ulica w podpowiedziach adresów */
+export function StreetIcon(props: P) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" stroke="currentColor" strokeLinecap="round" {...props}>
+      <path d="M8 3 5 21M16 3l3 18M12 4v2.5M12 10.5v3M12 17.5V20" />
+    </svg>
+  );
+}
+
+/** miejscowość albo dzielnica w podpowiedziach adresów */
+export function CityIcon(props: P) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M4 21V10l6-3v14M10 21V4l10 4v13M2.5 21h19M14 11h2M14 15h2M6.5 13h1M6.5 17h1" />
+    </svg>
+  );
+}
+
+/** „kto gra dziś” */
+export function PeopleIcon(props: P) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" stroke="currentColor" strokeLinecap="round" {...props}>
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5" />
+      <circle cx="17" cy="9" r="2.4" />
+      <path d="M15.6 14.1c2.2.2 3.9 1.7 4.4 4.4" />
+    </svg>
+  );
+}
+
+/** płomień jednym kolorem - „podpalone” w filtrach (FireBallIcon ma własny gradient) */
+export function FlameIcon(props: P) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" stroke="currentColor" strokeLinejoin="round" {...props}>
+      <path d="M12 3c.6 2.6-.8 4.2-2.2 5.6C8.2 10.2 7 11.8 7 14a5 5 0 0 0 10 0c0-3.4-2.6-5-3.4-7.6-.3-1-.2-2.2-1.6-3.4Z" />
+    </svg>
+  );
+}
+
+/** siatka na koszu */
+export function NetIcon(props: P) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" stroke="currentColor" strokeLinejoin="round" {...props}>
+      <path d="M5 5h14l-2.2 14H7.2L5 5Z" />
+      <path d="M5.6 9h12.8M6.3 13.5h11.4M9 5l1.6 14M15 5l-1.6 14" />
+    </svg>
+  );
+}
+
+/** strzałka „od nowa” - czyszczenie filtrów */
+export function ResetIcon(props: P) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4.5v4h4" />
+    </svg>
+  );
+}

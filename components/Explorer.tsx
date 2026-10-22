@@ -10,7 +10,7 @@ import { prefetchCourtPhotos } from "@/lib/galeria";
 import { fetchCheckinyDzisiaj } from "@/lib/checkins";
 import { useSesja } from "@/lib/sesja";
 import { supabaseEnabled } from "@/lib/supabase/config";
-import { DEFAULT_FILTERS, Filters, applyFilters, countByType } from "@/lib/filters";
+import { DEFAULT_FILTERS, Filters, applyFilters } from "@/lib/filters";
 import {
   SZUKANIE_W_BAZIE_OD,
   czytajFiltry,
@@ -51,6 +51,7 @@ const MapView = dynamic(() => wczytajMape().then((m) => m.MapView), {
   ),
 });
 import { Sidebar } from "./Sidebar";
+import type { CelMapy } from "@/lib/miejsca";
 import { CourtOutline } from "./CourtOutline";
 
 export function Explorer({ courts }: { courts: MapCourt[] }) {
@@ -118,16 +119,6 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
     [submissions, courts]
   );
   /*
-    Górna granica suwaka podpaleń bierze się z danych, a nie z okrągłej liczby wpisanej
-    na sztywno. Przy stałym maksimum 400 wystarczyło ruszyć suwak, żeby wyczyścić całą
-    mapę - bo takiej liczby podpaleń nie ma jeszcze żadne boisko.
-  */
-  const maksLajki = useMemo(
-    () => all.reduce((n, c) => Math.max(n, c.likes), 0),
-    [all]
-  );
-
-  /*
     Ile osób zapisało się dziś na które boisko. Pobieramy tutaj, a nie w mapie, bo z tych
     samych liczb korzystają dwie rzeczy: płomień na pinezce (MapView) i filtr „kto gra dziś”.
     Gdyby każde pytało osobno, filtr i płomienie potrafiłyby się na chwilę rozjechać - pusta
@@ -185,7 +176,20 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
     return wedlugTrafnosci(applyFilters(all, { ...filters, q: "" }, checkiny), znalezione.ids);
   }, [all, filters, checkiny, duzaBaza, zapytanie, znalezione]);
 
-  const counts = useMemo(() => countByType(all), [all]);
+  /** ile boisk przejdzie przez podane filtry - liczby przy opcjach „kto gra dziś” w panelu */
+  const policz = useCallback((f: Filters) => applyFilters(all, f, checkiny).length, [all, checkiny]);
+
+  /*
+    Cel z wyszukiwarki: dolot do adresu (z białą kropką) albo do boiska (bez kropki - tam
+    stoi pinezka, którą od razu podświetlamy). Nowy obiekt przy każdym wyborze, więc ten sam
+    adres wybrany drugi raz też przesuwa kamerę.
+  */
+  const [cel, setCel] = useState<CelMapy | null>(null);
+  const doBoiska = useCallback((c: MapCourt) => {
+    setCel({ lat: c.lat, lng: c.lng, zoom: 15.5, znacznik: false });
+    setActiveId(c.id);
+  }, []);
+  const wyczyscCel = useCallback(() => setCel(null), []);
 
   /*
     Miniatury do wizytówek ściągamy z góry, w bezczynnym momencie po wczytaniu strony:
@@ -298,14 +302,18 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
         registerClearCard={registerClearCard}
         sheetOpen={sheetOpen}
         checkiny={checkiny}
+        cel={cel}
       />
       <Sidebar
         filters={filters}
         setFilters={setFilters}
-        maksLajki={maksLajki}
         results={results}
-        counts={counts}
+        policz={policz}
         grajace={grajace}
+        boiska={all}
+        onBoisko={doBoiska}
+        onMiejsce={setCel}
+        onWyczyscCel={wyczyscCel}
         sheetOpen={sheetOpen}
         setSheetOpen={openSheet}
       />

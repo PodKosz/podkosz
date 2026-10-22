@@ -8,6 +8,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { MapCourt } from "@/lib/types";
 import { CITIES_GEOJSON } from "@/lib/cities";
 import type { LeadPoint } from "@/lib/leads";
+import type { CelMapy } from "@/lib/miejsca";
 import { HoverCard } from "./HoverCard";
 import { rozgrzejBoisko } from "@/lib/galeria";
 import { kafelkiPodkladu, podkladMapy } from "@/lib/podklad";
@@ -649,6 +650,7 @@ export function MapView({
   registerClearCard,
   sheetOpen = false,
   checkiny,
+  cel = null,
 }: {
   courts: MapCourt[];
   activeId: string | null;
@@ -666,6 +668,8 @@ export function MapView({
   sheetOpen?: boolean;
   /** ile osób zapisało się dziś na które boisko - pobiera Explorer, bo filtruje po tym listę */
   checkiny: Record<string, number>;
+  /** dokąd lecieć po wyborze w wyszukiwarce; `znacznik` - biała kropka w punkcie adresu */
+  cel?: CelMapy | null;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MlMap | null>(null);
@@ -1844,6 +1848,45 @@ export function MapView({
     if (!map || !ready) return;
     pomalujWgMotywu(map);
   }, [motyw, ready, courts]);
+
+  /*
+    Cel z wyszukiwarki: dolot i biała kropka w wybranym punkcie (adres, własna lokalizacja).
+    Kropka jest warstwą mapy, nie znacznikiem HTML - leży pod pinezkami, więc nie zasłania
+    boiska stojącego dokładnie pod tym adresem. `null` zdejmuje kropkę bez ruszania kamery.
+  */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    const dane = {
+      type: "FeatureCollection" as const,
+      features: cel?.znacznik
+        ? [{ type: "Feature" as const, geometry: { type: "Point" as const, coordinates: [cel.lng, cel.lat] }, properties: {} }]
+        : [],
+    };
+    const zrodlo = map.getSource("cel-szukania") as unknown as { setData: (d: typeof dane) => void } | undefined;
+    if (zrodlo) zrodlo.setData(dane);
+    else {
+      map.addSource("cel-szukania", { type: "geojson", data: dane });
+      map.addLayer({
+        id: "cel-szukania-halo",
+        type: "circle",
+        source: "cel-szukania",
+        paint: { "circle-radius": 17, "circle-color": "#ffffff", "circle-opacity": 0.16 },
+      });
+      map.addLayer({
+        id: "cel-szukania",
+        type: "circle",
+        source: "cel-szukania",
+        paint: {
+          "circle-radius": 6.5,
+          "circle-color": "#ffffff",
+          "circle-stroke-color": "#111113",
+          "circle-stroke-width": 2.5,
+        },
+      });
+    }
+    if (cel) map.flyTo({ center: [cel.lng, cel.lat], zoom: cel.zoom, speed: 1.4, essential: true });
+  }, [cel, ready]);
 
   /* ---- podświetlenie województwa ---- */
   useEffect(() => {

@@ -1,74 +1,106 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  ACCESS_LABEL,
-  Access,
-  CourtType,
-  MapCourt,
-  SURFACE_LABEL,
-  Surface,
-  TYPE_LABEL,
-  VOIVODESHIPS,
-} from "@/lib/types";
-import { DEFAULT_FILTERS, Filters, KOSZE_FILTR, KtoGra, SIATKI_FILTR } from "@/lib/filters";
+import { Access, MapCourt, Siatka, Surface } from "@/lib/types";
+import { DEFAULT_FILTERS, Filters, KoszeFiltr, KtoGra } from "@/lib/filters";
 import { plural } from "@/lib/site";
 import { useLosowanie } from "./Losowanie";
 import {
-  BallIcon,
   BulbIcon,
   ChevronIcon,
-  CourtIcon,
+  ClockIcon,
   DiceIcon,
-  FireBallIcon,
+  FlameIcon,
   HoopIcon,
-  PinIcon,
-  SearchIcon,
+  NetIcon,
+  PeopleIcon,
+  ResetIcon,
+  SurfaceIcon,
 } from "./icons";
 import { Brand } from "./Brand";
+import { Szukajka } from "./Szukajka";
+import type { CelMapy } from "@/lib/miejsca";
 
-const ACCESS_TABS: [Access | "", string][] = [
-  ["", "Każda"],
-  ["24h", "24/7"],
-  ["godziny", "Godziny"],
-  ["ograniczony", "Ograniczony"],
-];
+/*
+  Opcje filtrów w kolejności ważności dla kogoś, kto szuka, gdzie zagrać:
+    1. kto gra dziś - jedyny filtr, który zmienia się w ciągu dnia, i najmocniejszy powód,
+       żeby wyjść z domu;
+    2. dostępność, oświetlenie, podpalenia - czy da się zagrać teraz albo wieczorem
+       i czy boisko jest lubiane;
+    3. liczba koszy - czy zagramy na całe boisko;
+    4. nawierzchnia i siatka - jakość, ważna, ale dopiero na końcu.
 
-const KTO_GRA_TABS: [KtoGra, string][] = [
+  Wypadły: typ boiska (krytych na razie nie ma), parkiet z nawierzchni (to nawierzchnia hal),
+  województwo (miejsce wpisuje się w wyszukiwarkę) i suwak podpaleń (jest przełącznik
+  „Podpalone” - przy kilku podpaleniach na boisko suwak i tak miał dwie, trzy pozycje).
+  Filtry z adresu strony dalej działają; „Wyczyść” zdejmuje także te bez kontrolek.
+*/
+const KTO_GRA: [KtoGra, string][] = [
   ["", "Wszystkie"],
   ["gra", "Ktoś gra"],
   ["pusto", "Pusto"],
 ];
 
-/** dopisuje wartość do listy albo ją z niej wyjmuje - pastylki działają jak przełączniki */
-const przelacz = <T,>(lista: T[], x: T) =>
-  lista.includes(x) ? lista.filter((y) => y !== x) : [...lista, x];
+const DOSTEP: [Access | "", string][] = [
+  ["", "Każda"],
+  ["24h", "24/7"],
+  ["godziny", "Godziny"],
+  ["ograniczony", "Ograniczona"],
+];
 
-const TYPE_ICON: Record<CourtType, typeof BallIcon> = {
-  otwarty: BallIcon,
-  kryty: CourtIcon,
-  streetball: HoopIcon,
-};
+const KOSZE: [KoszeFiltr | "", string][] = [
+  ["", "Dowolnie"],
+  ["1", "1"],
+  ["2", "2"],
+  ["3", "3+"],
+];
+
+const SIATKI: [Siatka | "", string][] = [
+  ["", "Dowolna"],
+  ["siatka", "Siatka"],
+  ["lancuch", "Łańcuch"],
+  ["brak", "Bez siatki"],
+];
+
+/** sześć pól, czyli równa siatka 3 × 2 - pierwsze zdejmuje wybór */
+const NAWIERZCHNIE: [Surface | "", string][] = [
+  ["", "Każda"],
+  ["beton", "Beton"],
+  ["asfalt", "Asfalt"],
+  ["poliuretan", "Poliuretan"],
+  ["plytki", "Płytki"],
+  ["syntetyk", "Sztuczna trawa"],
+];
+
+/** filtr wielokrotnego wyboru pokazany jako pojedynczy: zaznaczone, gdy wybrana jest dokładnie ta jedna wartość */
+const jedna = <T,>(lista: T[], v: T | "") => (v === "" ? lista.length === 0 : lista.length === 1 && lista[0] === v);
 
 export function Sidebar({
   filters,
   setFilters,
-  maksLajki,
   results,
-  counts,
+  policz,
   grajace,
+  boiska,
+  onBoisko,
+  onMiejsce,
+  onWyczyscCel,
   sheetOpen,
   setSheetOpen,
 }: {
   filters: Filters;
   setFilters: (f: Filters) => void;
-  /** najwięcej podpaleń, jakie ma dziś jakiekolwiek boisko - górna granica suwaka */
-  maksLajki: number;
-  /** wyniki filtrowania - potrzebny sam licznik, listy panel już nie pokazuje */
+  /** wyniki filtrowania - panel potrzebuje samego licznika */
   results: MapCourt[];
-  counts: Record<CourtType, number>;
-  /** na ilu boiskach ktoś się dziś zapisał - do nagłówka filtra „kto gra dziś” */
+  /** ile boisk przejdzie przez podane filtry - liczby przy opcjach „kto gra dziś” */
+  policz: (f: Filters) => number;
+  /** na ilu boiskach ktoś się dziś zapisał - do podpowiedzi pod „kto gra dziś” */
   grajace: number;
+  /** wszystkie boiska - wyszukiwarka podpowiada z nich nazwy i liczy najbliższe */
+  boiska: MapCourt[];
+  onBoisko: (c: MapCourt) => void;
+  onMiejsce: (cel: CelMapy) => void;
+  onWyczyscCel: () => void;
   /*
     Stan arkusza na telefonie siedzi w Explorerze, bo dotyczy też mapy: przy otwarciu
     panelu trzeba schować wizytówkę boiska, żeby jedno nie nachodziło na drugie.
@@ -76,8 +108,6 @@ export function Sidebar({
   sheetOpen: boolean;
   setSheetOpen: (open: boolean) => void;
 }) {
-  /** Na komputerze panel filtrów jest schowany pod napisem „filtry”. */
-  const [panelOpen, setPanelOpen] = useState(false);
   /** kostka na czas losowania boiska - `nakladka` doklejamy na końcu drzewa */
   const { losuj, nakladka } = useLosowanie();
 
@@ -98,7 +128,7 @@ export function Sidebar({
     Arkusz ma zawsze pełną wysokość, a zwinięty jest zsunięty w dół transformacją -
     dzięki temu wysuwanie da się animować (przejście z `top: auto` na konkretną wartość
     przeglądarka potrafi tylko przeskoczyć). Wysokość widocznego paska mierzymy, bo
-    zależy od tego, ile miejsca zajmuje wyszukiwarka i wiersz z licznikiem.
+    zależy od tego, ile miejsca zajmuje wyszukiwarka i lista najbliższych boisk.
   */
   const stripRef = useRef<HTMLDivElement | null>(null);
   const [stripH, setStripH] = useState(150);
@@ -182,16 +212,31 @@ export function Sidebar({
 
   const patch = (p: Partial<Filters>) => setFilters({ ...filters, ...p });
 
-  const toggleSurface = (s: Surface) =>
-    patch({
-      surfaces: filters.surfaces.includes(s)
-        ? filters.surfaces.filter((x) => x !== s)
-        : [...filters.surfaces, s],
-    });
+  /* wybór w wyszukiwarce na telefonie zwija arkusz - inaczej zasłaniałby mapę, do której leci */
+  const naBoisko = (c: MapCourt) => {
+    setSheetOpen(false);
+    onBoisko(c);
+  };
+  const naMiejsce = (cel: CelMapy) => {
+    setSheetOpen(false);
+    onMiejsce(cel);
+  };
+
+  const filtry = (
+    <Filtry
+      filters={filters}
+      patch={patch}
+      wyczysc={() => setFilters({ ...DEFAULT_FILTERS })}
+      ile={results.length}
+      policz={policz}
+      grajace={grajace}
+      losuj={() => losuj("/losowe")}
+    />
+  );
 
   return (
     <>
-      {/* ---------- komputer: osobne pudełka jedno pod drugim ---------- */}
+      {/* ---------- komputer: logo, wyszukiwarka i filtry jedno pod drugim ---------- */}
       <div className="pointer-events-none absolute left-5 top-5 bottom-5 z-30 hidden w-[386px] flex-col gap-3 lg:flex">
         {/* logo bez kafelka - leży wprost na mapie, cień trzyma czytelność */}
         <div
@@ -201,63 +246,15 @@ export function Sidebar({
           <Brand />
         </div>
 
-        <div className="glass-dim pointer-events-auto shrink-0 rounded-[26px] p-2.5">
-          <div className="field flex items-center gap-2 py-1.5 pl-4 pr-1.5">
-            <input
-              value={filters.q}
-              onChange={(e) => patch({ q: e.target.value })}
-              placeholder="Szukaj boiska w Polsce…"
-              className="w-full bg-transparent py-2 text-[13px] uppercase tracking-wide outline-none placeholder:text-faint"
-            />
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full flame-gradient text-black">
-              <SearchIcon className="h-4 w-4" />
-            </span>
-          </div>
+        {/* wyszukiwarka nad panelem, a jej podpowiedzi przykrywają filtry (z-index w CSS) */}
+        <div className="pointer-events-auto relative z-10 shrink-0">
+          <Szukajka boiska={boiska} onBoisko={onBoisko} onMiejsce={onMiejsce} onWyczysc={onWyczyscCel} />
         </div>
 
-        <div className="pointer-events-auto flex shrink-0 items-center gap-2">
-          <button
-            onClick={() => setPanelOpen((v) => !v)}
-            className="glass-dim flex items-center gap-2 rounded-full px-4 py-2 text-[11px] uppercase tracking-[0.16em] text-muted transition hover:text-ink"
-          >
-            filtry
-            <span className="text-faint normal-case tracking-normal">
-              ({results.length})
-            </span>
-            <ChevronIcon
-              className={`h-3.5 w-3.5 transition-transform duration-300 ${panelOpen ? "rotate-180" : ""}`}
-            />
-          </button>
-
-          {/*
-            Przycisk, nie odnośnik: losowanie ma najpierw pokazać kostkę, a dopiero potem
-            przejść na kartę boiska. Adres i tak liczy serwer - `useLosowanie` odpytuje
-            tę samą trasę `/losowe`, tylko przez `fetch`.
-          */}
-          <button
-            onClick={() => losuj("/losowe")}
-            className="glass-dim flex items-center gap-2 rounded-full px-4 py-2 text-[11px] uppercase tracking-[0.16em] text-muted transition hover:text-flame"
-            title="Wskocz na kartę losowego boiska"
-          >
-            <DiceIcon className="h-4 w-4" />
-            losowe boisko
-          </button>
+        {/* panel na wysokość treści; przy niskim oknie przewija się w środku */}
+        <div className="panel-filtrow pointer-events-auto flex min-h-0 shrink flex-col rounded-[20px]">
+          <div className="scroll-thin min-h-0 overflow-y-auto px-[18px] pb-[18px] pt-4">{filtry}</div>
         </div>
-
-        {panelOpen && (
-          <div className="panel-filtrow pointer-events-auto min-h-0 flex-1 rounded-[26px]">
-            <div className="scroll-thin h-full overflow-y-auto px-5 py-4">
-              <Filtry
-                filters={filters}
-                patch={patch}
-                maksLajki={maksLajki}
-                toggleSurface={toggleSurface}
-                counts={counts}
-                grajace={grajace}
-              />
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ---------- telefon: arkusz wysuwany od dołu ---------- */}
@@ -281,81 +278,64 @@ export function Sidebar({
         data-kadr="dol"
         // rozwinięty arkusz zaczyna się tuż pod paskiem nawigacji - na telefonie pasek ma dwa
         // rzędy (logo, pod nim menu), od `sm` jeden (TopNav)
-        className="panel-filtrow pointer-events-auto fixed inset-x-0 bottom-0 top-[120px] z-30 flex flex-col rounded-t-[26px] sm:top-[85px] lg:hidden"
+        className="panel-filtrow pointer-events-auto fixed inset-x-0 bottom-0 top-[120px] z-30 flex flex-col rounded-t-[22px] sm:top-[85px] lg:hidden"
       >
         <div ref={stripRef}>
-        <button
-          onClick={() => setSheetOpen(!sheetOpen)}
-          className="flex min-h-5 w-full flex-col items-center justify-center gap-1.5 pb-1 pt-2"
-          aria-label={sheetOpen ? "Zwiń panel" : "Rozwiń panel"}
-        >
-          <span className="h-1 w-10 rounded-full bg-white/25" />
-          {sheetOpen && (
-            <span className="flex items-center gap-1 text-[11px] uppercase tracking-[0.14em] text-faint">
-              <ChevronIcon className="h-3.5 w-3.5" /> zwiń, pokaż mapę
-            </span>
-          )}
-        </button>
-
-        <div className="px-4 pt-0.5">
-          <div className="field flex items-center gap-2 py-1 pl-4 pr-1">
-            <input
-              value={filters.q}
-              onChange={(e) => patch({ q: e.target.value })}
-              placeholder="Szukaj boiska w Polsce…"
-              className="w-full bg-transparent py-1.5 text-[13px] uppercase tracking-wide outline-none placeholder:text-faint"
-            />
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full flame-gradient text-black">
-              <SearchIcon className="h-4 w-4" />
-            </span>
-          </div>
-        </div>
-
-        {/*
-          Zwinięty pasek w jednym wierszu: licznik po lewej, „filtry" po prawej. Wcześniej były
-          to dwie linie jedna pod drugą plus przycisk losowania obok, a cały pasek zajmował
-          piątą część ekranu telefonu. Losowanie przeszło do rozwiniętego panelu, nad filtry.
-        */}
-        {!sheetOpen && (
           <button
-            onClick={() => setSheetOpen(true)}
-            className="flex w-full items-center justify-between gap-3 px-5 pt-2"
-            style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom, 0px))" }}
+            onClick={() => setSheetOpen(!sheetOpen)}
+            className="flex min-h-5 w-full flex-col items-center justify-center gap-1.5 pb-1 pt-2"
+            aria-label={sheetOpen ? "Zwiń panel" : "Rozwiń panel"}
           >
-            <span className="text-[13px] font-semibold">
-              {results.length} {results.length === 1 ? "boisko" : "boisk"} na mapie
-            </span>
-            <span className="flex items-center gap-1 text-[12px] uppercase tracking-[0.12em] text-flame">
-              filtry
-              <ChevronIcon className="h-4 w-4 rotate-180" />
-            </span>
+            <span className="h-1 w-10 rounded-full bg-[rgb(var(--rgb-szyba)/0.25)]" />
+            {sheetOpen && (
+              <span className="flex items-center gap-1 text-[11px] uppercase tracking-[0.14em] text-faint">
+                <ChevronIcon className="h-3.5 w-3.5" /> zwiń, pokaż mapę
+              </span>
+            )}
           </button>
-        )}
+
+          <div className="px-4 pt-0.5">
+            {/* wejście w pole rozwija arkusz - podpowiedzi potrzebują miejsca nad klawiaturą */}
+            <Szukajka
+              boiska={boiska}
+              onBoisko={naBoisko}
+              onMiejsce={naMiejsce}
+              onWyczysc={onWyczyscCel}
+              onFocus={() => setSheetOpen(true)}
+            />
+          </div>
+
+          {/*
+            Zwinięty pasek w jednym wierszu: licznik po lewej, „filtry" po prawej. Wcześniej były
+            to dwie linie jedna pod drugą plus przycisk losowania obok, a cały pasek zajmował
+            piątą część ekranu telefonu. Losowanie jest na dole rozwiniętego panelu.
+          */}
+          {!sheetOpen && (
+            <button
+              onClick={() => setSheetOpen(true)}
+              className="flex w-full items-center justify-between gap-3 px-5 pt-2.5"
+              style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom, 0px))" }}
+            >
+              <span className="text-[13px] text-muted">
+                <b className="text-[15px] font-semibold tabular-nums text-ink">{results.length}</b>{" "}
+                {plural(results.length, ["boisko", "boiska", "boisk"])} na mapie
+              </span>
+              <span className="flex items-center gap-1 text-[12px] uppercase tracking-[0.12em] text-ink">
+                filtry
+                <ChevronIcon className="h-4 w-4 rotate-180" />
+              </span>
+            </button>
+          )}
         </div>
 
         <div
           ref={scrollRef}
           style={{ touchAction: "pan-y" }}
-          className={`scroll-thin mt-2 flex-1 overflow-y-auto overscroll-contain px-4 pb-5 ${
+          className={`scroll-thin mt-3 flex-1 overflow-y-auto overscroll-contain px-4 pb-5 ${
             sheetOpen ? "block" : "hidden"
           }`}
         >
-          {/* losowanie z kostką - na telefonie i tablecie tutaj, na komputerze obok filtrów */}
-          <button
-            onClick={() => losuj("/losowe")}
-            className="glass-dim mt-1 flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-[12px] uppercase tracking-[0.16em] text-muted transition active:text-flame"
-          >
-            <DiceIcon className="h-4 w-4" />
-            losowe boisko
-          </button>
-          <Filtry
-            filters={filters}
-            patch={patch}
-            maksLajki={maksLajki}
-            toggleSurface={toggleSurface}
-            counts={counts}
-            grajace={grajace}
-          />
+          {filtry}
         </div>
       </aside>
 
@@ -365,67 +345,85 @@ export function Sidebar({
 }
 
 /**
- * Jedna sekcja filtrów: nagłówek, opcjonalna wartość po prawej, treść.
+ * Jedna sekcja filtrów: ikona z nagłówkiem i treść.
  *
  * `kolejnosc` to miejsce w kaskadzie wjazdu - CSS bierze z niej opóźnienie animacji, więc
  * sekcje pojawiają się jedna po drugiej, a nie wszystkie naraz.
  */
 function Sekcja({
   tytul,
-  prawo,
+  Ikona,
   kolejnosc,
   children,
 }: {
   tytul: string;
-  prawo?: React.ReactNode;
+  Ikona: typeof ClockIcon;
   kolejnosc: number;
   children: React.ReactNode;
 }) {
   return (
-    <section
-      className="sekcja-filtra py-5 first:pt-1"
-      style={{ "--i": kolejnosc } as React.CSSProperties}
-    >
-      <div className="mb-3 flex items-baseline gap-3">
-        <h2 className="text-[11px] uppercase tracking-[0.18em] text-faint">{tytul}</h2>
-        {prawo ? <span className="ml-auto">{prawo}</span> : null}
-      </div>
+    <section className="sekcja-filtra" style={{ "--i": kolejnosc } as React.CSSProperties}>
+      <h2>
+        <Ikona className="h-3.5 w-3.5" aria-hidden />
+        {tytul}
+      </h2>
       {children}
     </section>
+  );
+}
+
+/** Wybór jednej opcji: równe segmenty na całą szerokość panelu. */
+function Wybor<T extends string>({
+  opcje,
+  wybrane,
+  ustaw,
+  liczby,
+  etykieta,
+}: {
+  opcje: [T, string][];
+  wybrane: (v: T) => boolean;
+  ustaw: (v: T) => void;
+  /** liczba boisk przy każdej opcji - tylko tam, gdzie mówi coś ważnego */
+  liczby?: (v: T) => number;
+  etykieta: string;
+}) {
+  return (
+    <div className="wybor" role="group" aria-label={etykieta}>
+      {opcje.map(([v, label]) => (
+        <button key={v || "wszystko"} onClick={() => ustaw(v)} aria-pressed={wybrane(v)} className="wybor-opcja">
+          {label}
+          {liczby ? <span className="wybor-liczba">{liczby(v)}</span> : null}
+        </button>
+      ))}
+    </div>
   );
 }
 
 /**
  * Filtry mapy - ta sama treść na komputerze i w arkuszu na telefonie.
  *
- * Panel jest teraz wyłącznie filtrami. Wcześniej pod nimi jechała jeszcze numerowana lista
- * wszystkich wyników i to ona zajmowała większość wysokości: filtry były wąskim paskiem na
- * górze, a dwie z nich („Nawierzchnia" i „Więcej filtrów") siedziały schowane w zwijanych
- * pudełkach, bo inaczej nie miały gdzie się zmieścić. Do województwa czy oświetlenia trzeba
- * było dojechać dwoma kliknięciami.
- *
- * Teraz każdy filtr ma własną sekcję i wszystkie są widoczne od razu, bez zwijania. Nie ma
- * czego rozwijać, bo nie ma z czym konkurować o miejsce - a stan filtrów czyta się z jednego
- * spojrzenia, zamiast pamiętać, co jest pod którym pudełkiem.
+ * Wszystkie widoczne od razu, bez zwijania: stan filtrów czyta się z jednego spojrzenia.
  */
 function Filtry({
   filters,
   patch,
-  maksLajki,
-  toggleSurface,
-  counts,
+  wyczysc,
+  ile,
+  policz,
   grajace,
+  losuj,
 }: {
   filters: Filters;
   patch: (p: Partial<Filters>) => void;
-  maksLajki: number;
-  toggleSurface: (s: Surface) => void;
-  counts: Record<CourtType, number>;
+  wyczysc: () => void;
+  ile: number;
+  policz: (f: Filters) => number;
   grajace: number;
+  losuj: () => void;
 }) {
-  /* czy cokolwiek odbiega od stanu domyślnego - od tego zależy, czy pokazujemy czyszczenie */
+  /* czy cokolwiek odbiega od stanu domyślnego - także filtry z adresu, które nie mają już kontrolek */
   const czynne =
-    (Object.keys(filters.types) as CourtType[]).some((t) => !filters.types[t]) ||
+    Object.values(filters.types).some((t) => !t) ||
     filters.surfaces.length > 0 ||
     Boolean(filters.voivodeship) ||
     Boolean(filters.access) ||
@@ -433,257 +431,126 @@ function Filtry({
     filters.minLikes > 0 ||
     filters.siatki.length > 0 ||
     filters.kosze.length > 0 ||
-    Boolean(filters.ktoGra);
+    Boolean(filters.ktoGra) ||
+    Boolean(filters.q.trim());
 
-  const prog = Math.min(filters.minLikes, maksLajki);
+  const podpalone = filters.minLikes > 0;
 
   return (
-    <div>
-      <Sekcja tytul="typ boiska" kolejnosc={0}>
-        <div className="space-y-1">
-          {(Object.keys(TYPE_LABEL) as CourtType[]).map((t) => {
-            const Icon = TYPE_ICON[t];
-            return (
-              <button
-                key={t}
-                onClick={() => patch({ types: { ...filters.types, [t]: !filters.types[t] } })}
-                className="wiersz-filtra flex w-full items-center gap-3 px-1.5 py-2 text-left"
-              >
-                <Icon className="h-4 w-4 shrink-0 text-flame" />
-                <span className="flex-1 text-[14px]">
-                  {TYPE_LABEL[t]} <span className="text-faint">[{counts[t]}]</span>
-                </span>
-                <span className="switch" data-on={filters.types[t]} />
-              </button>
-            );
-          })}
-        </div>
+    <div className="filtry">
+      <div className="filtry-naglowek">
+        <span>
+          <b>{ile}</b> {plural(ile, ["boisko", "boiska", "boisk"])} na mapie
+        </span>
+        {czynne && (
+          <button onClick={wyczysc} className="filtry-link">
+            <ResetIcon className="h-[13px] w-[13px]" />
+            Wyczyść
+          </button>
+        )}
+      </div>
+
+      <Sekcja tytul="Kto gra dziś" Ikona={PeopleIcon} kolejnosc={0}>
+        <Wybor
+          etykieta="Kto gra dziś"
+          opcje={KTO_GRA}
+          wybrane={(v) => filters.ktoGra === v}
+          ustaw={(v) => patch({ ktoGra: v })}
+          liczby={(v) => policz({ ...filters, ktoGra: v })}
+        />
+        {grajace === 0 && <p className="filtry-uwaga">na dziś nikt się jeszcze nie zapisał przez „Idę zagrać”</p>}
       </Sekcja>
 
-      {/*
-        Kto gra dziś - według zapisów „Idę zagrać”, tych samych, od których płonie pinezka.
-        Stoi wysoko, bo to jedyny filtr, który zmienia się w ciągu dnia: odpowiada na pytanie
-        „gdzie ktoś zagra”, a nie „jakie jest boisko”.
-      */}
-      <Sekcja
-        tytul="kto gra dziś"
-        kolejnosc={1}
-        prawo={
-          grajace > 0 ? (
-            <span className="text-[11px] uppercase tracking-[0.12em] text-flame">
-              {grajace} {plural(grajace, ["boisko", "boiska", "boisk"])}
-            </span>
-          ) : null
-        }
-      >
-        <div className="segmenty flex gap-1 p-1">
-          {KTO_GRA_TABS.map(([k, label]) => (
-            <button
-              key={k || "all"}
-              onClick={() => patch({ ktoGra: k })}
-              data-on={filters.ktoGra === k}
-              className="segment flex-1 px-2 py-2 text-[11px] text-muted"
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        <p className="mt-2 px-1 text-[11px] text-faint">
-          {grajace > 0
-            ? "według zapisów „Idę zagrać” na dziś"
-            : "na dziś nikt się jeszcze nie zapisał przez „Idę zagrać”"}
-        </p>
+      <Sekcja tytul="Dostępność" Ikona={ClockIcon} kolejnosc={1}>
+        <Wybor
+          etykieta="Dostępność"
+          opcje={DOSTEP}
+          wybrane={(v) => filters.access === v}
+          ustaw={(v) => patch({ access: v })}
+        />
       </Sekcja>
 
-      <Sekcja
-        tytul="nawierzchnia"
-        kolejnosc={2}
-        prawo={
-          filters.surfaces.length ? (
-            <span className="text-[11px] uppercase tracking-[0.12em] text-flame">
-              {filters.surfaces.length} z {Object.keys(SURFACE_LABEL).length}
-            </span>
-          ) : null
-        }
-      >
-        <div className="flex flex-wrap gap-2">
-          {(Object.keys(SURFACE_LABEL) as Surface[]).map((s) => (
-            <button
-              key={s}
-              onClick={() => toggleSurface(s)}
-              data-on={filters.surfaces.includes(s)}
-              className="pastylka rounded-full px-3.5 py-2 text-[12px] text-muted"
-            >
-              {SURFACE_LABEL[s]}
-            </button>
-          ))}
-        </div>
-      </Sekcja>
-
-      <Sekcja
-        tytul="siatka na koszach"
-        kolejnosc={3}
-        prawo={
-          filters.siatki.length ? (
-            <span className="text-[11px] uppercase tracking-[0.12em] text-flame">
-              {filters.siatki.length} z {SIATKI_FILTR.length}
-            </span>
-          ) : null
-        }
-      >
-        <div className="flex flex-wrap gap-2">
-          {SIATKI_FILTR.map(([s, label]) => (
-            <button
-              key={s}
-              onClick={() => patch({ siatki: przelacz(filters.siatki, s) })}
-              data-on={filters.siatki.includes(s)}
-              className="pastylka rounded-full px-3.5 py-2 text-[12px] text-muted"
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        {/* starsze boiska nie mają siatki w bazie - bez tej uwagi ich zniknięcie wyglądałoby na błąd */}
-        {filters.siatki.length ? (
-          <p className="mt-2 px-1 text-[11px] text-faint">
-            boiska, przy których nikt nie podał siatki, są wtedy schowane
-          </p>
-        ) : null}
-      </Sekcja>
-
-      <Sekcja
-        tytul="liczba koszy"
-        kolejnosc={4}
-        prawo={
-          filters.kosze.length ? (
-            <span className="text-[11px] uppercase tracking-[0.12em] text-flame">
-              {filters.kosze.length} z {KOSZE_FILTR.length}
-            </span>
-          ) : null
-        }
-      >
-        <div className="flex flex-wrap gap-2">
-          {KOSZE_FILTR.map(([k, label]) => (
-            <button
-              key={k}
-              onClick={() => patch({ kosze: przelacz(filters.kosze, k) })}
-              data-on={filters.kosze.includes(k)}
-              className="pastylka rounded-full px-3.5 py-2 text-[12px] text-muted"
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </Sekcja>
-
-      <Sekcja tytul="województwo" kolejnosc={5}>
-        <div className="field flex items-center gap-2.5 px-3.5 py-2.5">
-          <PinIcon className="h-3.5 w-3.5 shrink-0 text-flame" />
-          <select
-            value={filters.voivodeship}
-            onChange={(e) => patch({ voivodeship: e.target.value })}
-            className="w-full bg-transparent text-[13px] outline-none"
-          >
-            <option value="">wszystkie województwa</option>
-            {VOIVODESHIPS.map((w) => (
-              <option key={w} value={w}>
-                {w}
-              </option>
-            ))}
-          </select>
-        </div>
-        {/* podświetlenie regionu na mapie robi już samo wybranie - stąd ta podpowiedź */}
-        {filters.voivodeship ? (
-          <p className="mt-2 px-1 text-[11px] text-faint">
-            region świeci na mapie, dopóki nie odsuniesz kamery
-          </p>
-        ) : null}
-      </Sekcja>
-
-      <Sekcja tytul="dostępność" kolejnosc={6}>
-        <div className="segmenty flex gap-1 p-1">
-          {ACCESS_TABS.map(([k, label]) => (
-            <button
-              key={k || "all"}
-              onClick={() => patch({ access: k })}
-              data-on={filters.access === k}
-              title={k ? ACCESS_LABEL[k] : "Każda dostępność"}
-              className="segment flex-1 px-2 py-2 text-[11px] text-muted"
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </Sekcja>
-
-      <Sekcja tytul="oświetlenie" kolejnosc={7}>
+      <div className="filtry-dwa sekcja-filtra" style={{ "--i": 2 } as React.CSSProperties}>
         <button
           onClick={() => patch({ onlyLit: !filters.onlyLit })}
-          className="wiersz-filtra flex w-full items-center gap-3 px-1.5 py-2 text-left"
+          aria-pressed={filters.onlyLit}
+          className="przelacznik-filtra"
         >
-          <BulbIcon className="h-4 w-4 shrink-0 text-flame" />
-          <span className="flex-1 text-[14px]">Tylko oświetlone</span>
+          <BulbIcon className="h-[18px] w-[18px]" aria-hidden />
+          <span>Oświetlone</span>
           <span className="switch" data-on={filters.onlyLit} />
         </button>
+        <button
+          onClick={() => patch({ minLikes: podpalone ? 0 : 1 })}
+          aria-pressed={podpalone}
+          className="przelacznik-filtra"
+          title="Boiska, które ktoś podpalił - polecił innym"
+        >
+          <FlameIcon className="h-[18px] w-[18px]" aria-hidden />
+          <span>Podpalone</span>
+          <span className="switch" data-on={podpalone} />
+        </button>
+      </div>
+
+      <Sekcja tytul="Liczba koszy" Ikona={HoopIcon} kolejnosc={3}>
+        <Wybor
+          etykieta="Liczba koszy"
+          opcje={KOSZE}
+          wybrane={(v) => jedna(filters.kosze, v)}
+          ustaw={(v) => patch({ kosze: v ? [v] : [] })}
+        />
+      </Sekcja>
+
+      <Sekcja tytul="Nawierzchnia" Ikona={SurfaceIcon} kolejnosc={4}>
+        <div className="kafle-filtra" role="group" aria-label="Nawierzchnia">
+          {NAWIERZCHNIE.map(([s, label]) => (
+            <button
+              key={s || "kazda"}
+              onClick={() =>
+                patch({
+                  surfaces: !s
+                    ? []
+                    : filters.surfaces.includes(s)
+                      ? filters.surfaces.filter((x) => x !== s)
+                      : [...filters.surfaces, s],
+                })
+              }
+              aria-pressed={s ? filters.surfaces.includes(s) : filters.surfaces.length === 0}
+              className="kafel-filtra"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </Sekcja>
+
+      <Sekcja tytul="Siatka na koszach" Ikona={NetIcon} kolejnosc={5}>
+        <Wybor
+          etykieta="Siatka na koszach"
+          opcje={SIATKI}
+          wybrane={(v) => jedna(filters.siatki, v)}
+          ustaw={(v) => patch({ siatki: v ? [v] : [] })}
+        />
+        {/* starsze boiska nie mają siatki w bazie - bez tej uwagi ich zniknięcie wyglądałoby na błąd */}
+        {filters.siatki.length > 0 && (
+          <p className="filtry-uwaga">boiska, przy których nikt nie podał siatki, są wtedy schowane</p>
+        )}
       </Sekcja>
 
       {/*
-        Suwak podpaleń pokazujemy tylko wtedy, gdy jest co filtrować, i w zakresie wyliczonym
-        z danych. Przy sztywnym maksimum 400 wystarczyło go ruszyć, żeby zniknęły wszystkie
-        boiska - bo tylu podpaleń nie ma jeszcze żadne.
-
-        Uchwyt chodzi płynnie, choć filtr działa na liczbach całkowitych. Krok równy jedności
-        przy maksimum dwa dawał trzy pozycje i uchwyt przeskakiwał przez pół paska; teraz
-        sunie setnymi, a próg odczytujemy w górę. Liczba w nagłówku pokazuje próg, który
-        naprawdę obowiązuje, więc nic się nie rozjeżdża.
+        Przycisk losowania, nie odnośnik: najpierw kostka, potem karta boiska. Adres i tak
+        liczy serwer - `useLosowanie` odpytuje tę samą trasę `/losowe`, tylko przez `fetch`.
       */}
-      {maksLajki > 0 && (
-        <Sekcja
-          tytul="podpalenia"
-          kolejnosc={8}
-          prawo={
-            <span className="flex items-center gap-1.5 text-[13px] font-semibold text-glow">
-              <FireBallIcon className="h-3.5 w-3.5" />
-              od {Math.ceil(filters.minLikes)}
-            </span>
-          }
-        >
-          <input
-            type="range"
-            min={0}
-            max={maksLajki}
-            step={maksLajki / 100}
-            value={prog}
-            onChange={(e) => patch({ minLikes: Number(e.target.value) })}
-            /* przebyta część toru świeci - CSS bierze procent z tej zmiennej */
-            style={{ "--wypelnienie": `${(prog / maksLajki) * 100}%` } as React.CSSProperties}
-            className="suwak-podpalen w-full"
-            aria-label="Minimum podpaleń"
-          />
-          <p className="mt-2 text-[11px] text-faint">
-            najwięcej podpaleń ma teraz jedno boisko: {maksLajki}
-          </p>
-        </Sekcja>
-      )}
-
-      {czynne && (
-        <div
-          className="sekcja-filtra pt-5"
-          style={{ "--i": 9 } as React.CSSProperties}
-        >
-          {/*
-            Czyszczenie zostawia wpisaną frazę. Przycisk mówi o filtrach, a szukajka stoi
-            osobno, nad panelem - wytarcie razem z nią wyglądałoby na zjedzenie tekstu,
-            którego nikt nie kazał ruszać.
-          */}
-          <button
-            onClick={() => patch({ ...DEFAULT_FILTERS, q: filters.q })}
-            className="wyczysc-filtry flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-[11px] uppercase tracking-[0.16em] text-flame"
-          >
-            wyczyść filtry
-          </button>
-        </div>
-      )}
+      <div className="filtry-stopka sekcja-filtra" style={{ "--i": 6 } as React.CSSProperties}>
+        <button onClick={losuj} className="przycisk-filtra" title="Wskocz na kartę losowego boiska">
+          <DiceIcon className="h-4 w-4" aria-hidden />
+          Wylosuj boisko
+        </button>
+        <button onClick={wyczysc} disabled={!czynne} className="przycisk-filtra">
+          <ResetIcon className="h-4 w-4" aria-hidden />
+          Wyczyść filtry
+        </button>
+      </div>
     </div>
   );
 }

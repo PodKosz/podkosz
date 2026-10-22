@@ -95,10 +95,3 @@ export function applyFilters<T extends MapCourt>(
     return true;
   });
 }
-
-export function countByType(courts: MapCourt[]): Record<CourtType, number> {
-  return courts.reduce(
-    (acc, c) => ({ ...acc, [c.type]: acc[c.type] + 1 }),
-    { otwarty: 0, kryty: 0, streetball: 0 } as Record<CourtType, number>
-  );
-}
