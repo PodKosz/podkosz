@@ -548,7 +548,7 @@ const STYLE: StyleSpecification = {
       filter: ["<=", ["get", "rank"], ["step", ["zoom"], 1, 6.2, 2, 7.6, 3]],
       layout: {
         "text-field": ["get", "name"],
-        "text-font": ["Noto Sans Regular"],
+        "text-font": ["Instrument Sans Regular"],
         "text-size": ["interpolate", ["linear"], ["zoom"], 5, 10.5, 9, 14],
         "text-offset": [0, 0.9],
         "text-anchor": "top",

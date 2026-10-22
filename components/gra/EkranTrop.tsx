@@ -120,26 +120,26 @@ const STYL = {
     },
     {
       id: "nazwy-ulic", type: "symbol", source: "omt", "source-layer": "transportation_name", minzoom: 14,
-      layout: { "symbol-placement": "line", "text-field": NAZWA, "text-font": ["Noto Sans Regular"], "text-size": 11.5 },
+      layout: { "symbol-placement": "line", "text-field": NAZWA, "text-font": ["Instrument Sans Regular"], "text-size": 11.5 },
       paint: { "text-color": "#f1eff4", "text-halo-color": "#0d0c0f", "text-halo-width": 1.6 },
     },
     {
       id: "wsie", type: "symbol", source: "omt", "source-layer": "place", minzoom: 10,
       filter: klasa(["village", "hamlet", "suburb", "neighbourhood", "quarter"]),
-      layout: { "text-field": NAZWA, "text-font": ["Noto Sans Regular"], "text-size": ["interpolate", ["linear"], ["zoom"], 10, 11, 14, 14] },
+      layout: { "text-field": NAZWA, "text-font": ["Instrument Sans Regular"], "text-size": ["interpolate", ["linear"], ["zoom"], 10, 11, 14, 14] },
       paint: { "text-color": "#e6e3ea", "text-halo-color": "#0d0c0f", "text-halo-width": 1.8 },
     },
     {
       id: "miasteczka", type: "symbol", source: "omt", "source-layer": "place", minzoom: 7,
       filter: klasa(["town"]),
-      layout: { "text-field": NAZWA, "text-font": ["Noto Sans Medium"], "text-size": ["interpolate", ["linear"], ["zoom"], 7, 11.5, 11, 15, 14, 18] },
+      layout: { "text-field": NAZWA, "text-font": ["Instrument Sans Medium"], "text-size": ["interpolate", ["linear"], ["zoom"], 7, 11.5, 11, 15, 14, 18] },
       paint: { "text-color": "#f6f4f8", "text-halo-color": "#0d0c0f", "text-halo-width": 2 },
     },
     {
       id: "miasta", type: "symbol", source: "omt", "source-layer": "place", minzoom: 4,
       filter: klasa(["city"]),
       layout: {
-        "text-field": NAZWA, "text-font": ["Noto Sans Medium"],
+        "text-field": NAZWA, "text-font": ["Instrument Sans Medium"],
         "text-size": ["interpolate", ["linear"], ["zoom"], 4, 12, 7, 15, 11, 21, 14, 24],
         "symbol-sort-key": ["get", "rank"],
       },
@@ -149,7 +149,7 @@ const STYL = {
       id: "kraje", type: "symbol", source: "omt", "source-layer": "place", maxzoom: 7,
       /* bez napisu „Polska" - gra i tak dzieje się w Polsce, a napis wypierał z mapy Warszawę */
       filter: ["all", klasa(["country"]), ["!=", ["get", "name"], "Polska"]],
-      layout: { "text-field": NAZWA, "text-font": ["Noto Sans Medium"], "text-size": 13, "text-transform": "uppercase", "text-letter-spacing": 0.25 },
+      layout: { "text-field": NAZWA, "text-font": ["Instrument Sans Medium"], "text-size": 13, "text-transform": "uppercase", "text-letter-spacing": 0.25 },
       paint: { "text-color": "#a9a4b3", "text-halo-color": "#0d0c0f", "text-halo-width": 1.5 },
     },
     /*
