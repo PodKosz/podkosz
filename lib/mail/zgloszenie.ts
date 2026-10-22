@@ -70,9 +70,9 @@ function kafelekBoiska(dane: DaneDecyzji) {
 /** Co dalej z boiskiem - trzy rzeczy, wszystkie na karcie, którą właśnie dostał. */
 const PO_PUBLIKACJI: [string, string][] = [
   [
-    "Podpal je",
-    "Płonąca piłka to nasze polubienie - jedno na boisko. Z podpaleń powstaje ranking boisk, " +
-      "więc to one decydują, jak wysoko stoi Twoje.",
+    "Daj mu Hype",
+    "Hype to nasze polubienie - jeden na boisko. Z Hype powstaje ranking boisk, " +
+      "więc to on decyduje, jak wysoko stoi Twoje.",
   ],
   [
     "Zapowiedz, że idziesz grać",

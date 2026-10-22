@@ -173,7 +173,7 @@ export function HubAdmin({ onGoTo }: { onGoTo: (widok: string) => void }) {
           <Liczba etykieta="Boiska" wartosc={dane.boiska} nota={`w ${dane.miast} miastach`} pudelko />
           <Liczba etykieta="Coconaut Choice" wartosc={dane.boiska_heat} nota="wyróżnione" pudelko />
           <Liczba etykieta="Zdjęcia" wartosc={dane.zdjecia} nota="w Storage" pudelko />
-          <Liczba etykieta="Podpalenia" wartosc={dane.podpalenia} nota="łącznie" pudelko />
+          <Liczba etykieta="Hype" wartosc={dane.podpalenia} nota="łącznie" pudelko />
           <Liczba
             etykieta="Bez zdjęć"
             wartosc={dane.boiska_bez_zdjec}

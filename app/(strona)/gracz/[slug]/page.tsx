@@ -51,11 +51,7 @@ export async function generateMetadata({
     "dodane boisko",
     "dodane boiska",
     "dodanych boisk",
-  ])}, ${statystyki.podpaleniaZebrane} ${plural(statystyki.podpaleniaZebrane, [
-    "zebrana płonąca piłka",
-    "zebrane płonące piłki",
-    "zebranych płonących piłek",
-  ])}. Zobacz odznaczenia i boiska.`;
+  ])}, zebrany Hype: ${statystyki.podpaleniaZebrane}. Zobacz odznaczenia i boiska.`;
 
   return {
     title,

@@ -47,7 +47,7 @@ export function UsunKonto() {
     <div className="rounded-[24px] border border-ember/30 bg-ember/[0.06] p-6">
       <h2 className="text-[17px] font-semibold tracking-tight text-ember">Usuń konto</h2>
       <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-muted">
-        Znikają: profil, nick, Twoje podpalenia, ulubione i zapisy „idę dziś zagrać”. Boiska,
+        Znikają: profil, nick, Twój Hype, ulubione i zapisy „idę dziś zagrać”. Boiska,
         które dodałeś, zostają na mapie - są już częścią wspólnej bazy - ale przestają być
         powiązane z Twoim kontem. Tego nie da się cofnąć.
       </p>

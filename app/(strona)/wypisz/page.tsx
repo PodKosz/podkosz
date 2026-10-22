@@ -67,7 +67,7 @@ export default async function WypiszPage({
           </h1>
           <p className="mt-4 text-[16px] leading-relaxed text-muted">
             To jedyne listy, które wysyłamy bez Twojej prośby - o wydarzeniach na boiskach,
-            które podpaliłeś albo na których zapisałeś się na grę, i w ich okolicy. Po wypisaniu
+            którym dałeś Hype albo na których zapisałeś się na grę, i w ich okolicy. Po wypisaniu
             nie przyjdzie żaden kolejny.
           </p>
           <form method="post" action={`/api/wypisz?t=${encodeURIComponent(t)}&z=strona`} className="mt-8">

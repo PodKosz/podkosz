@@ -7,7 +7,7 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 import { useBramka } from "./BramkaLogowania";
 import { FireBallIcon } from "./icons";
 
-/** Lajk = płonąca piłka. Bez podpiętej bazy działa lokalnie (tryb testowy). */
+/** Lajk = Hype (do 23.10.2026 „podpalenie”, ikona płonącej piłki została). Bez podpiętej bazy działa lokalnie (tryb testowy). */
 export function LikeButton({
   courtId,
   initial,
@@ -35,7 +35,7 @@ export function LikeButton({
       Jedno pytanie, jedno okno - patrz `BramkaLogowania`. Wcześniej stała tu podpowiedź
       pod przyciskiem, którą przy podpalaniu z mapy najczęściej się nie widziało.
     */
-    if (!(await wymagaj("podpalić boisko"))) return;
+    if (!(await wymagaj("dać Hype boisku"))) return;
 
     const next = !liked;
     setLiked(next);
@@ -78,6 +78,7 @@ export function LikeButton({
       <button
         onClick={toggle}
         aria-pressed={liked}
+        title={liked ? "Cofnij swój Hype" : "Daj Hype - poleć to boisko innym"}
         className={`group flex items-center gap-2 rounded-full border transition active:scale-95 ${
           big
             ? "px-4 py-2.5 text-[13px] sm:px-5 sm:py-3 sm:text-[15px]"
@@ -95,7 +96,7 @@ export function LikeButton({
         />
         {count}
         {big && (
-          <span className="ml-1 font-medium opacity-80">{liked ? "podpalone" : "podpal"}</span>
+          <span className="ml-1 font-medium opacity-80">Hype</span>
         )}
       </button>
 

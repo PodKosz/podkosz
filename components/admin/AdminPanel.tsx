@@ -552,7 +552,7 @@ function Header({
     ],
     users: [
       "Użytkownicy",
-      "Konta w serwisie. Blokada nie usuwa konta - osoba nadal przegląda mapę, ale baza odrzuca jej zgłoszenia, podpalenia, ulubione i zapisy na grę. Niżej lista słów zakazanych w nickach.",
+      "Konta w serwisie. Blokada nie usuwa konta - osoba nadal przegląda mapę, ale baza odrzuca jej zgłoszenia, Hype, ulubione i zapisy na grę. Niżej lista słów zakazanych w nickach.",
     ],
     zapisy: [
       "Zapisy na otwarcie",

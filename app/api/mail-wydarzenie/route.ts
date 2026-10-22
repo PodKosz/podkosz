@@ -100,7 +100,7 @@ export async function POST(request: Request) {
   if (odbiorcy.length === 0) {
     /* nie ma komu - i tak zaklepujemy, żeby przycisk przestał się prosić o kliknięcie */
     await supabase.rpc("wydarzenie_zaklep_wysylke", { p_id: id, p_ile: 0 });
-    return Response.json({ wyslane: 0, powod: "nikt jeszcze nie podpalił tego boiska ani okolicy" });
+    return Response.json({ wyslane: 0, powod: "nikt jeszcze nie dał Hype temu boisku ani okolicy" });
   }
 
   /* ---------------------------------------------------------------- poczta */

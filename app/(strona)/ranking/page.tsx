@@ -8,7 +8,7 @@ import { Wjazdy } from "@/components/Wjazdy";
 export const metadata: Metadata = {
   title: "Ranking boisk - PodKosz",
   description:
-    "Najgorętsze boiska do koszykówki w Polsce. Kolejność wyznaczają płonące piłki od społeczności - podpalaj te, na których dobrze się gra.",
+    "Najgorętsze boiska do koszykówki w Polsce. Kolejność wyznacza Hype od społeczności - dawaj go tym, na których dobrze się gra.",
 };
 
 /* Kolejność zmienia podpalanie, a to unieważnia znacznik boisk - pięć minut wystarczy. */
@@ -40,7 +40,7 @@ export default async function RankingPage() {
           data-wjazd="zar"
           className="mt-5 text-[clamp(15px,1.4vw,17px)] leading-relaxed text-muted"
         >
-          Kolejność wyznaczają płonące piłki od społeczności. Podpalaj boiska, na których
+          Kolejność wyznacza Hype od społeczności. Dawaj Hype boiskom, na których
           dobrze się gra - to jedyne, co przesuwa je w górę.
         </p>
         <Link

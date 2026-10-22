@@ -70,7 +70,7 @@ export function PowiadomieniaPrzelacznik({ userId }: { userId: string }) {
     <section className="szklo-pro mt-6 rounded-[28px] p-6 sm:p-7">
       <h2 className="text-[17px] font-semibold">Powiadomienia o wydarzeniach</h2>
       <p className="mt-2 max-w-[62ch] text-[14px] leading-relaxed text-muted">
-        Gdy na podpalonym przez Ciebie boisku (albo na boisku w okolicy) pojawi się turniej
+        Gdy na boisku, któremu dałeś Hype (albo na boisku w okolicy), pojawi się turniej
         czy trening otwarty, wyślemy Ci jedną wiadomość z terminem. Nic innego na maila od
         nas nie przychodzi.
       </p>

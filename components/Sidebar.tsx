@@ -26,14 +26,14 @@ import type { CelMapy } from "@/lib/miejsca";
   Opcje filtrów w kolejności ważności dla kogoś, kto szuka, gdzie zagrać:
     1. kto gra dziś - jedyny filtr, który zmienia się w ciągu dnia, i najmocniejszy powód,
        żeby wyjść z domu;
-    2. dostępność, oświetlenie, podpalenia - czy da się zagrać teraz albo wieczorem
+    2. dostępność, oświetlenie, Hype - czy da się zagrać teraz albo wieczorem
        i czy boisko jest lubiane;
     3. liczba koszy - czy zagramy na całe boisko;
     4. nawierzchnia i siatka - jakość, ważna, ale dopiero na końcu.
 
   Wypadły: typ boiska (krytych na razie nie ma), parkiet z nawierzchni (to nawierzchnia hal),
   województwo (miejsce wpisuje się w wyszukiwarkę) i suwak podpaleń (jest przełącznik
-  „Podpalone” - przy kilku podpaleniach na boisko suwak i tak miał dwie, trzy pozycje).
+  „Hype” - przy kilku polubieniach na boisko suwak i tak miał dwie, trzy pozycje).
   Filtry z adresu strony dalej działają; „Wyczyść” zdejmuje także te bez kontrolek.
 */
 const KTO_GRA: [KtoGra, string][] = [
@@ -512,10 +512,10 @@ function Filtry({
           onClick={() => patch({ minLikes: podpalone ? 0 : 1 })}
           aria-pressed={podpalone}
           className="przelacznik-filtra"
-          title="Boiska, które ktoś podpalił - polecił innym"
+          title="Boiska, którym ktoś dał Hype - polecił je innym"
         >
           <FlameIcon className="h-[18px] w-[18px]" aria-hidden />
-          <span>Podpalone</span>
+          <span>Hype</span>
           <span className="switch" data-on={podpalone} />
         </button>
       </div>

@@ -24,7 +24,7 @@ import { GoogleMark } from "./GoogleMark";
  * ------------------------------------------------------------------ jak używać
  *
  *   const { wymagaj } = useBramka();
- *   if (!(await wymagaj("podpalić boisko"))) return;
+ *   if (!(await wymagaj("dać Hype boisku"))) return;
  *
  * `wymagaj` jest asynchroniczne z rozmysłem: odpowiedź o sesji przychodzi z serwera
  * i w pierwszej sekundzie po wejściu na stronę jeszcze jej nie ma. Sprawdzanie stanu

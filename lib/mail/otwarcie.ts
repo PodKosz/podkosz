@@ -64,7 +64,7 @@ export function htmlOtwarcia() {
         letter-spacing:2px;text-transform:uppercase;color:${ZAR};padding-bottom:8px;">
         Dlaczego warto się zalogować</div>
       <div style="font-family:${CZCIONKA};font-size:14px;line-height:1.6;color:${PRZYGASZONY};">
-        Mapę obejrzysz bez konta. Konto daje resztę: dodawanie boisk, podpalenia, ulubione,
+        Mapę obejrzysz bez konta. Konto daje resztę: dodawanie boisk, Hype, ulubione,
         zapisy na grę, odznaczenia i miejsce w rankingu graczy. Po pierwszym zalogowaniu
         dostaniesz ode mnie krótki list z tym, co warto wiedzieć na start.
       </div>`
@@ -97,7 +97,7 @@ export function tekstOtwarcia() {
     "Zapisałeś się na otwarcie - i właśnie się otworzyło. PodKosz, czyli mapa boisk " +
       "do koszykówki w Polsce, jest od dziś dostępny dla wszystkich.",
     "",
-    "Mapę obejrzysz bez konta. Konto daje resztę: dodawanie boisk, podpalenia, ulubione, " +
+    "Mapę obejrzysz bez konta. Konto daje resztę: dodawanie boisk, Hype, ulubione, " +
       "zapisy na grę, odznaczenia i miejsce w rankingu graczy. Po pierwszym zalogowaniu " +
       "dostaniesz krótki list z tym, co warto wiedzieć na start.",
     "",

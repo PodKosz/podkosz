@@ -73,9 +73,9 @@ const NA_START: { tytul: string; tresc: string }[] = [
       "a o decyzji dostajesz maila.",
   },
   {
-    tytul: "Zamiast serduszka - płonąca piłka",
+    tytul: "Zamiast serduszka - Hype",
     tresc:
-      "„Podpalenie” to nasz polubienie: jedno na boisko, i właśnie z nich powstaje ranking " +
+      "„Hype” to nasze polubienie: jeden na boisko, i właśnie z niego powstaje ranking " +
       "boisk. Ulubione to osobna, prywatna lista miejsc, do których wracasz.",
   },
   {
@@ -87,8 +87,8 @@ const NA_START: { tytul: string; tresc: string }[] = [
   {
     tytul: "Dwa rankingi",
     tresc:
-      "Ranking boisk - po liczbie podpaleń. Ranking graczy - po liczbie dodanych boisk, " +
-      "a przy remisie wyżej stoi ten, kogo boiska częściej podpalano. W rankingu graczy " +
+      "Ranking boisk - po Hype. Ranking graczy - po liczbie dodanych boisk, " +
+      "a przy remisie wyżej stoi ten, czyje boiska zebrały więcej Hype. W rankingu graczy " +
       "liczą się tylko konta; zgłoszenia bez logowania nie tworzą gracza.",
   },
   {

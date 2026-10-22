@@ -127,11 +127,11 @@ export default async function AboutPage() {
           liczbę koszy, oświetlenie, ogrodzenie, godziny i zasady dostępu oraz dokładną pinezkę
           z GPS-u. Mapę przefiltrujesz po nawierzchni, typie boiska, województwie i dostępności,
           sprawdzisz prognozę na dziś dla boisk odkrytych, zobaczysz, kto wybiera się tam zagrać
-          i o której, podpalisz swoje ulubione miejsca i zapiszesz je na własną listę.
+          i o której, dasz Hype swoim ulubionym miejscom i zapiszesz je na własną listę.
         </p>
         <p data-wjazd="odslona">
           Są też dwa rankingi. W rankingu boisk kolejność ustala społeczność - im więcej
-          płonących piłek, tym wyżej stoi miejsce, na którym naprawdę dobrze się gra. W rankingu
+          Hype, tym wyżej stoi miejsce, na którym naprawdę dobrze się gra. W rankingu
           graczy liczy się to, ile boisk ktoś dodał i opublikował. Tu potrzebne jest konto:
           zgłoszenia bez logowania trafiają na mapę, ale nie mają właściciela, więc nie wchodzą
           do rankingu.

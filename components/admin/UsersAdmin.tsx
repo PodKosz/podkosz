@@ -119,7 +119,7 @@ export function UsersAdmin() {
                 <span className="block truncate text-[12px] text-muted">
                   {u.email} · konto od{" "}
                   {new Date(u.created_at).toLocaleDateString("pl-PL")} · boiska: {u.courts} ·
-                  podpalenia: {u.likes}
+                  Hype: {u.likes}
                 </span>
                 {u.banned_at && (
                   <span className="mt-1 block text-[12px] text-ember">
@@ -344,7 +344,7 @@ function Archiwum() {
                       {!k.przywrocone_at && ` · znika za ${dni} dni`}
                     </span>
                     <span className="mt-1 block text-[12px] text-faint">
-                      boiska: {boiska.length} · podpalenia:{" "}
+                      boiska: {boiska.length} · Hype:{" "}
                       {k.dane?.polubienia?.length ?? 0} · ulubione:{" "}
                       {k.dane?.ulubione?.length ?? 0} · deklaracje gry:{" "}
                       {k.dane?.checkinow ?? 0}
