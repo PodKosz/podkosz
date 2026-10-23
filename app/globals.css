@@ -6858,6 +6858,18 @@ body.ambient:has(main.kb)::before { display: none; }
   padding: calc(var(--k-kadr) - var(--k-nad)) var(--k-margines) 0;
 }
 @media (min-width: 1536px) { .kb-hero-tresc { max-width: 1320px; } }
+/*
+  Skróty administratora: prawy górny róg zdjęcia, pod paskiem nawigacji (na telefonie pasek
+  ma ok. 71 px, od `sm` ok. 105 px), wyrównane do prawej krawędzi treści.
+*/
+.kb-hero-admin {
+  position: absolute; z-index: 2; top: 80px; left: 0; right: 0; max-width: 1200px; margin-inline: auto;
+  display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding-inline: var(--k-margines);
+  pointer-events: none;
+}
+.kb-hero-admin > * { pointer-events: auto; }
+@media (min-width: 640px) { .kb-hero-admin { top: 112px; } }
+@media (min-width: 1536px) { .kb-hero-admin { max-width: 1320px; } }
 
 /* plakietki na kadrze - zawsze ciemne szkło z jasnym napisem, bo pod spodem jest zdjęcie */
 .kb-na-kadrze,

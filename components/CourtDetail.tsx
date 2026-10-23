@@ -118,6 +118,15 @@ export function CourtDetail({
             <span aria-hidden className="kb-hero-dol" />
           </div>
 
+          {/*
+            Skróty administratora w prawym górnym rogu zdjęcia, tuż pod paskiem nawigacji -
+            poza treścią karty, którą widzą wszyscy. Dla pozostałych nic się tu nie rysuje.
+          */}
+          <div className="kb-hero-admin">
+            <LinkEdycji slug={court.slug} />
+            <LinkWydarzenia slug={court.slug} />
+          </div>
+
           <div className="kb-hero-tresc">
             <div className="flex min-h-[30px] items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-1.5">
@@ -147,10 +156,8 @@ export function CourtDetail({
               </a>
             </div>
 
-            {/* skróty administratora i „losuj dalej" - dla pozostałych nic się tu nie rysuje */}
+            {/* „losuj dalej" po wejściu z losowania - poza nim nic się tu nie rysuje */}
             <div className="mt-3 flex flex-wrap gap-2 empty:hidden">
-              <LinkEdycji slug={court.slug} />
-              <LinkWydarzenia slug={court.slug} />
               <PasekLosowania slug={court.slug} />
             </div>
           </div>
