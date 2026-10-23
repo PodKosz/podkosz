@@ -6796,9 +6796,12 @@ svg.zar-woj {
 @media (min-width: 768px) {
   :root { --k-kadr: clamp(460px, 64vh, 660px); --k-nad: 220px; --k-margines: 32px; }
 }
-/* na komputerze nazwa i wszystko pod nią stoi o ok. 120 px niżej - bliżej dolnej krawędzi zdjęcia */
+/*
+  Na komputerze nazwa stoi niżej niż na tablecie - bliżej dolnej krawędzi zdjęcia - ale nie za
+  nisko: przy pierwszym wejściu na dole ekranu mają się jeszcze zmieścić strzałki talii zdjęć.
+*/
 @media (min-width: 1024px) {
-  :root { --k-nad: 130px; }
+  :root { --k-nad: 170px; }
 }
 [data-motyw="jasny"] {
   --k-karta: #ffffff;
@@ -7045,8 +7048,8 @@ body.ambient:has(main.kb)::before { display: none; }
 .kb-opinie-srednia p { font-size: 80px; line-height: 0.85; }
 /* przecinek Antona schodzi pod linię - gwiazdki muszą zacząć się niżej, żeby na nie nie wchodził */
 .kb-opinie-srednia div { display: flex; flex-direction: column; align-items: center; gap: 5px; margin-top: 22px; font-size: 13px; font-weight: 600; color: var(--color-muted); }
-/* na komputerze średnia stoi blisko góry talii obok - pod nią muszą się zmieścić trzy opinie i strzałki */
-@media (min-width: 1024px) { .kb-opinie-podsum { padding-top: 30px; padding-bottom: 18px; } .kb-opinie-srednia p { font-size: 96px; } .kb-opinie-srednia div { margin-top: 24px; } }
+/* na komputerze górna krawędź średniej leży trochę poniżej górnej krawędzi zdjęć obok, a pod nią mieszczą się trzy opinie i strzałki */
+@media (min-width: 1024px) { .kb-opinie-podsum { padding-top: 64px; padding-bottom: 4px; } .kb-opinie-lista { margin-top: 0; } .kb-opinie-srednia p { font-size: 88px; } .kb-opinie-srednia div { margin-top: 20px; } }
 /* linia z gradientem: najjaśniejsza na środku, gaśnie ku brzegom */
 .kb-opinie-linia, .kb-opinia + .kb-opinia::before, .kb-opinie-ocen::before {
   content: ""; display: block; height: 1px; background: linear-gradient(90deg, transparent, var(--k-wyp-2) 20%, var(--k-wyp-2) 80%, transparent);
@@ -7072,7 +7075,7 @@ body.ambient:has(main.kb)::before { display: none; }
 @media (min-width: 1024px) {
   .kb-opinia-dalsza { display: block; }
   .kb-opinie .kb-opinie-wiecej { display: none; }
-  .kb-opinia { padding-block: 14px; }
+  .kb-opinia { padding-block: 12px; }
   /*
     Obok talii zdjęć ramka opinii ma dokładnie wysokość lewej kolumny (talia + strzałki pod nią):
     sekcja się rozciąga, a treść leży w niej absolutnie, więc to zdjęcia ustalają wysokość rzędu,
