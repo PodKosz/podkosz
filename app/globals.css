@@ -6892,8 +6892,6 @@ body.ambient:has(main.kb)::before { display: none; }
 .kb-kolko { display: grid; place-items: center; width: 32px; height: 32px; flex: none; border-radius: 50%; background: var(--k-wyp); color: var(--color-muted); }
 .kb-bialy { height: 50px; border-radius: 999px; background: var(--k-aktywny); color: var(--k-aktywny-tekst); font-size: 15px; font-weight: 700; }
 .kb-bialy:disabled { opacity: 0.5; }
-.kb-chip { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px; border-radius: 999px; background: var(--k-wyp); font-size: 12.5px; color: var(--color-muted); }
-.kb-chip b { color: var(--color-ink); font-weight: 700; }
 .kb-chip-przycisk {
   display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px 0 10px;
   border-radius: 999px; background: var(--k-wyp); color: var(--color-muted); font-size: 12.5px; font-weight: 600;
@@ -6936,23 +6934,45 @@ body.ambient:has(main.kb)::before { display: none; }
   .kb-info .kb-info-tel { display: none; }
 }
 
-/* ---------- kto dziś gra: słupki tygodnia ---------- */
-.kb-slupek { position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 0; padding: 8px 0 9px; border-radius: 14px; color: var(--color-muted); transition: background-color 0.2s; }
-.kb-slupek[aria-checked="true"] { background: var(--k-aktywny); color: var(--k-aktywny-tekst); }
-.kb-slupek-liczba { font-size: 12px; font-weight: 600; }
-.kb-slupek-tor { display: flex; align-items: flex-end; width: 12px; height: 56px; border-radius: 6px; background: var(--k-wyp); overflow: hidden; }
-.kb-slupek[aria-checked="true"] .kb-slupek-tor { background: color-mix(in oklab, currentColor 14%, transparent); }
-.kb-slupek-tor i { display: block; width: 100%; border-radius: 6px; background: color-mix(in oklab, var(--color-ink) 45%, transparent); transition: height 0.45s cubic-bezier(0.3, 0.8, 0.2, 1); }
-.kb-slupek[aria-checked="true"] .kb-slupek-tor i { background: currentColor; }
-.kb-slupek-dzien { font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
-.kb-slupek-nr { margin-top: -3px; font-size: 16px; font-weight: 700; color: var(--color-ink); }
-.kb-slupek[aria-checked="true"] .kb-slupek-nr { color: inherit; }
-.kb-slupek-moj { position: absolute; top: 5px; right: 6px; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+/* ---------- kto dziś gra: pas kart dni (prototyp 08) ---------- */
+.kb-teraz { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--color-ink); }
+.kb-teraz::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #30d158; box-shadow: 0 0 0 3px rgb(48 209 88 / 0.18); animation: kb-puls 2s ease-in-out infinite; }
+@keyframes kb-puls { 50% { box-shadow: 0 0 0 6px rgb(48 209 88 / 0); } }
+.kb-dk-pas {
+  display: flex; gap: 10px; margin: 14px calc(-1 * var(--k-margines)) 0; padding: 4px var(--k-margines) 6px;
+  overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--k-margines); scrollbar-width: none;
+}
+.kb-dk-pas::-webkit-scrollbar { display: none; }
+@media (min-width: 1024px) { .kb-dk-pas { margin-inline: 0; padding-inline: 0; scroll-padding-inline: 0; } }
+.kb-dk {
+  display: flex; flex: 0 0 auto; flex-direction: column; width: 188px; padding: 16px; scroll-snap-align: start;
+  border-radius: 20px; background: var(--k-karta); box-shadow: inset 0 0 0 1px var(--k-linia); text-align: left;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+@media (hover: hover) { .kb-dk:hover { transform: translateY(-2px); } }
+.kb-dk[aria-checked="true"] { box-shadow: inset 0 0 0 2px var(--color-ink); }
+.kb-dk small { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-faint); }
+.kb-dk-tytul { margin-top: 2px; font-size: 16px; font-weight: 600; }
+.kb-dk-ile { display: flex; align-items: flex-end; gap: 8px; margin-top: 14px; }
+.kb-dk-ile b { font-size: 50px; font-weight: 400; line-height: 0.85; }
+.kb-dk-ile span { padding-bottom: 3px; font-size: 13px; color: var(--color-muted); }
+.kb-dk-slupki { display: grid; grid-template-columns: repeat(16, minmax(0, 1fr)); align-items: end; gap: 2px; height: 40px; margin-top: 16px; }
+.kb-dk-slupki i { display: block; min-height: 2px; border-radius: 2px; background: var(--k-wyp-2); transition: height 0.45s cubic-bezier(0.3, 0.8, 0.2, 1); }
+.kb-dk-slupki i[data-stan="jest"] { background: color-mix(in oklab, var(--color-ink) 80%, transparent); }
+.kb-dk-slupki i[data-stan="teraz"] { background: #30d158; }
+.kb-dk-os { display: flex; justify-content: space-between; margin-top: 5px; font-size: 10px; color: var(--color-faint); font-variant-numeric: tabular-nums; }
+.kb-dk-opis { margin-top: 12px; min-height: 34px; font-size: 12.5px; line-height: 1.35; color: var(--color-muted); }
+/* karta z kodem QR - biała w obu motywach, bo kod musi stać na bieli, żeby dał się zeskanować */
+.kb-dk-qr { align-items: center; justify-content: center; gap: 10px; background: #fff; color: #111; box-shadow: 0 0 0 1px var(--k-linia); text-align: center; }
+.kb-dk-qr:hover { transform: none; }
+.kb-dk-kod { width: 120px; height: 120px; }
+.kb-dk-kod svg { display: block; }
+.kb-dk-qr p { font-size: 14px; font-weight: 700; }
+.kb-dk-qr p span { display: block; margin-top: 3px; font-size: 12px; font-weight: 500; color: #555; }
 
 /* rozwijanie bez mierzenia wysokości: siatka z jednym rzędem 0fr → 1fr */
 .kb-rozwin { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.38s cubic-bezier(0.3, 0.8, 0.2, 1); }
 .kb-rozwin[data-otwarte="true"] { grid-template-rows: 1fr; }
-.kb-qr { width: 132px; height: 132px; padding: 9px; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px var(--k-linia); }
 
 /* ---------- zdjęcia: pas przewijany w bok ---------- */
 .kb-pas {
@@ -7084,6 +7104,6 @@ body:has(> .kb-dok) { padding-bottom: calc(80px + env(safe-area-inset-bottom)); 
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .kb-rozwin, .kb-dok-karta, .kb-serce .kb-serce-wypelnienie, .kb-slupek-tor i { transition: none; }
-  .kb-serce-anim.kb-serce-pelne, .kb-arkusz, .kb-arkusz-tlo, .kb-komunikat { animation: none; }
+  .kb-rozwin, .kb-dok-karta, .kb-serce .kb-serce-wypelnienie, .kb-dk-slupki i { transition: none; }
+  .kb-serce-anim.kb-serce-pelne, .kb-arkusz, .kb-arkusz-tlo, .kb-komunikat, .kb-teraz::before { animation: none; }
 }

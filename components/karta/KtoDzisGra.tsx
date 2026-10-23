@@ -1,25 +1,29 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { DNI_NAPRZOD, dodajDni, opisDnia, opisGodzin } from "@/lib/checkins";
+import { useRef, type ReactNode } from "react";
+import { DNI_NAPRZOD, dodajDni, opisDnia } from "@/lib/checkins";
+import { terazWPolsce } from "@/lib/godziny-otwarcia";
 import { plural } from "@/lib/site";
 import { useGra } from "./KartaKontekst";
-import { IkDol, IkKodQr } from "./ikony";
+import { IkStrzalka } from "./ikony";
+
+/** Godziny na słupkach karty - te same, w które da się zapisać. */
+const GODZINY = Array.from({ length: 16 }, (_, i) => 7 + i);
+const SKROT = ["Nd", "Pn", "Wt", "Śr", "Cz", "Pt", "Sob"];
+const g2 = (h: number) => `${String(h).padStart(2, "0")}:00`;
 
 /**
- * „Kto dziś gra" - tydzień deklaracji jako słupki (prototyp 01) i kod „zeskanuj i zagraj"
- * (prototyp 09) po dotknięciu.
+ * „Kto dziś gra" - pas kart, po jednej na każdy z siedmiu dni (prototyp 08 z `podkosz-karty/kto-gra`).
  *
- * Słupek to liczba osób, które się danego dnia wybierają; dotknięcie dnia pokazuje jego
- * godziny i przestawia ten sam dzień w dolnym przycisku „Idę zagrać" - jeden wybór dnia
- * na całą kartę, nie dwa niezależne.
+ * W boxie jest tylko informacja: ile osób danego dnia i o której. Zapis robi przyklejony
+ * „Idę zagrać" na dole ekranu - dotknięcie karty wybiera dzień także w nim.
  *
- * Kod QR prowadzi na tę kartę z `?zagraj=1`, czyli od razu do zapisu: ekipa przy boisku
- * pokazuje kod, kolega skanuje i ma przed sobą wybór godzin.
+ * Zaraz za „Dziś" stoi biała karta z kodem QR: ekipa przy boisku pokazuje kod, kolega skanuje
+ * i trafia na tę kartę z otwartym zapisem (`?zagraj=1`).
  */
 export function KtoDzisGra({ kodQr }: { kodQr: ReactNode }) {
-  const { dzien, wybierzDzien, panel, gotowe } = useGra();
-  const [kod, setKod] = useState(false);
+  const { dzien, wybierzDzien, panel, gotowe, godzinyDnia } = useGra();
+  const pas = useRef<HTMLDivElement>(null);
 
   /* baza bez tygodniowych deklaracji oddaje tylko dzień, o który pytano - resztę rysujemy na zero */
   const dni =
@@ -28,117 +32,114 @@ export function KtoDzisGra({ kodQr }: { kodQr: ReactNode }) {
       const d = dodajDni(panel.dzis, i);
       return { day: d, osoby: d === panel.dzien ? panel.osoby : 0 };
     });
-  const max = Math.max(1, ...dni.map((d) => d.osoby));
-  const razem = dni.reduce((s, d) => s + d.osoby, 0);
 
-  const opis = opisDnia(dzien, panel.dzis);
-  const osoby = panel.dzien === dzien ? panel.osoby : 0;
+  const wszystkieGodziny = dni.flatMap((d) => godzinyDnia(d.day).map((s) => s.people));
+  const max = Math.max(3, ...wszystkieGodziny);
+  const godzinaTeraz = Math.floor(terazWPolsce().minuta / 60);
+  const teraz = godzinyDnia(panel.dzis).find((s) => s.hour === godzinaTeraz)?.people ?? 0;
+
+  const przewin = (kierunek: 1 | -1) =>
+    pas.current?.scrollBy({ left: kierunek * pas.current.clientWidth * 0.8, behavior: "smooth" });
+
+  const karta = (d: { day: string; osoby: number }) => {
+    const o = opisDnia(d.day, panel.dzis);
+    const [nazwa, data] = o.pelna.split(" ");
+    const sloty = godzinyDnia(d.day);
+    const godziny = sloty.map((s) => s.hour);
+    const szczyt = sloty.reduce<{ hour: number; people: number } | null>((n, s) => (!n || s.people > n.people ? s : n), null);
+    const tydzien = SKROT[new Date(`${d.day}T12:00:00Z`).getUTCDay()];
+    const tytul = o.dzis ? "Dziś" : o.krotko === "Jutro" ? "Jutro" : nazwa.charAt(0).toUpperCase() + nazwa.slice(1);
+
+    return (
+      <button
+        key={d.day}
+        type="button"
+        role="radio"
+        aria-checked={d.day === dzien}
+        aria-label={`${o.pelna}: ${d.osoby} ${plural(d.osoby, ["osoba", "osoby", "osób"])}`}
+        onClick={() => wybierzDzien(d.day)}
+        className="kb-dk"
+      >
+        <small>
+          {tydzien} · {data}
+        </small>
+        <span className="kb-dk-tytul">{tytul}</span>
+        <span className="kb-dk-ile">
+          <b className="font-display tabular-nums">{gotowe ? d.osoby : "·"}</b>
+          <span>{plural(d.osoby, ["osoba", "osoby", "osób"])}</span>
+        </span>
+        <span className="kb-dk-slupki" aria-hidden>
+          {GODZINY.map((h) => {
+            const n = sloty.find((s) => s.hour === h)?.people ?? 0;
+            const terazTu = gotowe && o.dzis && h === godzinaTeraz;
+            return (
+              <i
+                key={h}
+                data-stan={terazTu ? "teraz" : n ? "jest" : undefined}
+                style={{ height: `${n ? Math.max(14, (n / max) * 100) : 6}%` }}
+              />
+            );
+          })}
+        </span>
+        <span className="kb-dk-os" aria-hidden>
+          <span>7</span>
+          <span>15</span>
+          <span>23</span>
+        </span>
+        <span className="kb-dk-opis">
+          {d.osoby && godziny.length ? (
+            <>
+              {g2(Math.min(...godziny))}-{g2(Math.max(...godziny) + 1)}
+              {szczyt && (
+                <>
+                  <br />
+                  najwięcej o {g2(szczyt.hour)}
+                </>
+              )}
+            </>
+          ) : d.osoby ? (
+            " "
+          ) : (
+            "Jeszcze nikt - bądź pierwszy."
+          )}
+        </span>
+      </button>
+    );
+  };
 
   return (
     <section className="kb-sekcja" aria-labelledby="kto-gra">
-      <div className="kb-karta overflow-hidden">
-        <div className="flex items-baseline justify-between gap-3 px-5 pt-5">
+      <div className="flex items-center justify-between gap-3 px-1">
+        <div>
           <h2 id="kto-gra" className="kb-tytul">
             Kto dziś gra
           </h2>
-          <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-faint">
-            {razem > 0 ? `${razem} ${plural(razem, ["zapis", "zapisy", "zapisów"])} w 7 dni` : "Najbliższe 7 dni"}
-          </span>
-        </div>
-
-        <div className="mt-4 grid grid-cols-7 gap-1 px-3" role="radiogroup" aria-label="Dzień gry">
-          {dni.map((d) => {
-            const o = opisDnia(d.day, panel.dzis);
-            const wybrany = d.day === dzien;
-            const moj = panel.mojeDni.some((m) => m.day === d.day) || (wybrany && panel.moje.length > 0);
-            return (
-              <button
-                key={d.day}
-                type="button"
-                role="radio"
-                aria-checked={wybrany}
-                aria-label={`${o.pelna}: ${d.osoby} ${plural(d.osoby, ["osoba", "osoby", "osób"])}`}
-                onClick={() => wybierzDzien(d.day)}
-                className="kb-slupek"
-              >
-                <span className="kb-slupek-liczba tabular-nums">{gotowe ? d.osoby : "·"}</span>
-                <span className="kb-slupek-tor">
-                  <i style={{ height: `${gotowe && d.osoby ? Math.max(14, (d.osoby / max) * 100) : 0}%` }} />
-                </span>
-                <span className="kb-slupek-dzien">{o.krotko}</span>
-                <span className="kb-slupek-nr tabular-nums">{o.numer}</span>
-                {moj && <span aria-hidden className="kb-slupek-moj" />}
-              </button>
-            );
-          })}
-        </div>
-
-        {/*
-          Stan wybranego dnia i kod QR - jedno pole, jedno dotknięcie. Bez osobnego przycisku
-          zapisu: zapis robi przyklejony „Idę zagrać" na dole ekranu, który zawsze jest pod ręką.
-        */}
-        <button
-          type="button"
-          onClick={() => setKod((k) => !k)}
-          aria-expanded={kod}
-          className="mt-3 block w-full border-t border-[var(--k-linia)] px-5 pb-4 pt-4 text-left"
-        >
-          {osoby > 0 ? (
-            <>
-              <span className="block text-[17px] font-semibold tracking-[-0.01em]">
-                {`${osoby} ${plural(osoby, ["osoba idzie", "osoby idą", "osób idzie"])} ${opis.kiedy}`}
-              </span>
-              {panel.slots.length > 0 && (
-                <span className="mt-2.5 flex flex-wrap gap-1.5">
-                  {panel.slots.map((s) => (
-                    <span key={s.hour} className="kb-chip tabular-nums">
-                      {s.hour}:00 <b>{s.people}</b>
-                    </span>
-                  ))}
-                </span>
-              )}
-            </>
-          ) : (
-            <>
-              <span className="block text-[17px] font-semibold tracking-[-0.01em]">
-                {opis.dzis
-                  ? "Dziś jeszcze nikt się nie zapisał"
-                  : `${opis.naKiedy.charAt(0).toUpperCase()}${opis.naKiedy.slice(1)} jeszcze nikt się nie zapisał`}
-              </span>
-              <span className="mt-1 block text-[13.5px] leading-snug text-muted">
-                Bądź pierwszy - inni zobaczą, że będzie gra.
-              </span>
-            </>
+          {teraz > 0 && (
+            <p className="kb-teraz mt-1">
+              Teraz {teraz} {plural(teraz, ["osoba", "osoby", "osób"])} na boisku
+            </p>
           )}
-          {panel.moje.length > 0 && panel.dzien === dzien && (
-            <span className="mt-2 block text-[13px] font-semibold text-ink">
-              Ty też: {opisGodzin(panel.moje)}
-            </span>
-          )}
-
-          <span className="mt-4 flex items-center gap-3 rounded-[14px] bg-[var(--k-wyp)] px-3.5 py-3">
-            <IkKodQr className="h-5 w-5 shrink-0 text-muted" />
-            <span className="min-w-0 flex-1">
-              <span className="block text-[14px] font-semibold">Zeskanuj i zagraj</span>
-              <span className="block text-[12.5px] text-muted">Kod QR dla ekipy</span>
-            </span>
-            <IkDol className={`h-4 w-4 shrink-0 text-muted transition-transform duration-300 ${kod ? "rotate-180" : ""}`} />
-          </span>
-        </button>
-
-        <div className="kb-rozwin" data-otwarte={kod}>
-          <div className="min-h-0 overflow-hidden">
-            <div className="flex items-center gap-4 px-5 pb-5">
-              <div className="kb-qr shrink-0">{kodQr}</div>
-              <div className="min-w-0">
-                <p className="text-[16px] font-semibold">Zeskanuj i zagraj</p>
-                <p className="mt-1 text-[13px] leading-snug text-muted">
-                  Pokaż kod ekipie - dopiszą się do gry jednym skanem.
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
+        <div className="kb-strzalki">
+          <button type="button" onClick={() => przewin(-1)} aria-label="Wcześniejsze dni" className="kb-kolko">
+            <IkStrzalka className="h-4 w-4 rotate-180" />
+          </button>
+          <button type="button" onClick={() => przewin(1)} aria-label="Dalsze dni" className="kb-kolko">
+            <IkStrzalka className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      <div ref={pas} className="kb-dk-pas" role="radiogroup" aria-label="Dzień gry">
+        {dni.slice(0, 1).map(karta)}
+        <div className="kb-dk kb-dk-qr">
+          <div className="kb-dk-kod">{kodQr}</div>
+          <p>
+            Zaproś ekipę
+            <span>Zeskanują i dopiszą się do gry jednym ruchem.</span>
+          </p>
+        </div>
+        {dni.slice(1).map(karta)}
       </div>
     </section>
   );

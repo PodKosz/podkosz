@@ -76,6 +76,11 @@ export function opisDnia(dzien: string, dzis: string) {
 export interface DzienTygodnia {
   day: string;
   osoby: number;
+  /**
+   * Ile osób o której godzinie. Baza oddaje to od `migration-tydzien-godziny.sql`; bez tej
+   * migracji pola nie ma i karta dociąga godziny dnia osobnym zapytaniem (`fetchPanel`).
+   */
+  godziny?: CheckinSlot[];
 }
 
 /** Dzień, na który sam się tu zapisałem, z godzinami. */
@@ -140,7 +145,13 @@ const zSurowego = (w: SurowyPanel, dzien: string): PanelDeklaracji => ({
   moje: w.moje ?? [],
   zajete: w.zajete ?? [],
   blokada: typeof w.blokada === "string" && w.blokada ? w.blokada : null,
-  tydzien: Array.isArray(w.tydzien) ? w.tydzien : null,
+  tydzien: Array.isArray(w.tydzien)
+    ? w.tydzien.map((t) => ({
+        day: t.day,
+        osoby: t.osoby ?? 0,
+        godziny: Array.isArray(t.godziny) ? t.godziny.map((g) => ({ hour: g.hour, people: g.people })) : undefined,
+      }))
+    : null,
   mojeDni: Array.isArray(w.moje_dni) ? w.moje_dni : [],
 });
 

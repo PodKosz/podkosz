@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { PanelDeklaracji, dzisiaj, fetchPanel } from "@/lib/checkins";
+import { CheckinSlot, PanelDeklaracji, dzisiaj, fetchPanel } from "@/lib/checkins";
 import { ListaOpinii, pobierzOpinie } from "@/lib/opinie";
 import { useSesja } from "@/lib/sesja";
 import { Lightbox, type LightboxItem } from "../Lightbox";
@@ -39,6 +39,8 @@ interface Gra {
   gotowe: boolean;
   zalogowany: boolean;
   odswiez: () => void;
+  /** ile osób o której godzinie danego dnia - dla kart dni w „Kto dziś gra" */
+  godzinyDnia: (day: string) => CheckinSlot[];
 }
 
 interface Opinie extends ListaOpinii {
@@ -82,6 +84,8 @@ export function KartaDostawca({
   const [panel, setPanel] = useState<PanelDeklaracji>(() => PUSTY_PANEL(dzisiaj()));
   const [gotowe, setGotowe] = useState(false);
   const [licznik, setLicznik] = useState(0);
+  /* godziny dni pobrane osobno (patrz niżej) - wypełnia je też każda odpowiedź panelu */
+  const [dociagniete, setDociagniete] = useState<Record<string, CheckinSlot[]>>({});
 
   useEffect(() => {
     let aktualne = true;
@@ -92,6 +96,7 @@ export function KartaDostawca({
         const wynik = p ?? PUSTY_PANEL(dzien);
         setPanel(wynik);
         setGotowe(true);
+        setDociagniete((d) => ({ ...d, [wynik.dzien]: wynik.slots }));
         /* baza ma inny „dziś" niż zegar telefonu (koło północy) - trzymamy się bazy */
         if (wynik.dzien !== dzien) setDzien(wynik.dzien);
       });
@@ -101,6 +106,38 @@ export function KartaDostawca({
   }, [courtId, dzien, zalogowany, licznik]);
 
   const odswiezGre = useCallback(() => setLicznik((n) => n + 1), []);
+
+  /*
+    Godziny pozostałych dni tygodnia. Baza po `migration-tydzien-godziny.sql` oddaje je
+    w `tydzien` razem z panelem; bez tej migracji dociągamy je tu osobno - tylko dla dni,
+    w które ktoś się wybiera, bo pusty dzień i tak nie ma czego pokazać.
+  */
+  useEffect(() => {
+    const brak = (panel.tydzien ?? [])
+      .filter((t) => t.osoby > 0 && !t.godziny && !(t.day in dociagniete))
+      .map((t) => t.day);
+    if (!brak.length) return;
+    let aktualne = true;
+    Promise.all(brak.map((d) => fetchPanel(courtId, d).catch(() => null))).then((wyniki) => {
+      if (!aktualne) return;
+      setDociagniete((stare) => {
+        const nowe = { ...stare };
+        wyniki.forEach((p, i) => {
+          nowe[brak[i]] = p?.slots ?? [];
+        });
+        return nowe;
+      });
+    });
+    return () => {
+      aktualne = false;
+    };
+  }, [courtId, panel, dociagniete]);
+
+  const godzinyDnia = useCallback(
+    (day: string): CheckinSlot[] =>
+      day === panel.dzien ? panel.slots : panel.tydzien?.find((t) => t.day === day)?.godziny ?? dociagniete[day] ?? [],
+    [panel, dociagniete]
+  );
 
   /* ---------- opinie ---------- */
   const [opinie, setOpinie] = useState<ListaOpinii>({ dostepne: false, lista: [] });
@@ -128,11 +165,11 @@ export function KartaDostawca({
 
   const wartosc = useMemo<Kontekst>(
     () => ({
-      gra: { dzien, wybierzDzien: setDzien, panel, gotowe, zalogowany, odswiez: odswiezGre },
+      gra: { dzien, wybierzDzien: setDzien, panel, gotowe, zalogowany, odswiez: odswiezGre, godzinyDnia },
       opinie: { ...opinie, gotowe: opinieGotowe, odswiez: odswiezOpinie },
       otworzZdjecie: setZdjecie,
     }),
-    [dzien, panel, gotowe, zalogowany, odswiezGre, opinie, opinieGotowe, odswiezOpinie]
+    [dzien, panel, gotowe, zalogowany, odswiezGre, godzinyDnia, opinie, opinieGotowe, odswiezOpinie]
   );
 
   return (
