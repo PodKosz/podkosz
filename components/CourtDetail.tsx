@@ -15,7 +15,7 @@ import { LinkEdycji, LinkWydarzenia, PasekLosowania } from "./reakcje";
 import { KartaDostawca } from "./karta/KartaKontekst";
 import { KodQr } from "./karta/KodQr";
 import { KtoDzisGra } from "./karta/KtoDzisGra";
-import { IdeZagrac, PanelGry } from "./karta/IdeZagrac";
+import { IdeZagrac } from "./karta/IdeZagrac";
 import { KomorkaOpinii, Opinie } from "./karta/Opinie";
 import { PasekZdjec } from "./karta/PasekZdjec";
 import { PogodaKarty } from "./karta/PogodaKarty";
@@ -50,12 +50,9 @@ const SIATKA_OPIS = {
  * Jeden układ na wszystkie ekrany, z prototypów karty (`podkosz-karty`): zdjęcie od krawędzi
  * do krawędzi z nazwą w gradiencie (05), pasek parametrów (01), kto dziś gra z kodem QR
  * (01 + 09), zdjęcia (01), opinie (10), co tu znajdziesz (05), pogoda (03), okolica (06),
- * stopka (01). Różnice między ekranami:
- *
- *  - pasek pod nazwą: na telefonie trzy pozycje (opinie, kosze, boisko = nawierzchnia
- *    i siatka), na komputerze siedem osobnych,
- *  - „Idę zagrać": na telefonie przycisk przyklejony na dole ekranu, od `lg` przyklejony
- *    panel w prawej kolumnie, zawsze rozwinięty.
+ * stopka (01). „Idę zagrać" wisi na każdym ekranie na środku dołu i rozwija wybór dnia
+ * i godzin. Różni się pasek pod nazwą: na telefonie trzy pozycje (opinie, kosze, boisko =
+ * nawierzchnia i siatka), na komputerze siedem osobnych.
  *
  * Wszystko, co zależy od patrzącego (polubienia, zapisy, opinie, stan otwarcia na teraz),
  * dociąga się w przeglądarce, więc sama strona dalej leci z pamięci podręcznej.
@@ -186,122 +183,113 @@ export function CourtDetail({
             ))}
           </div>
 
-          <div className="kb-uklad">
-            <div className="min-w-0">
-              {wydarzenie && (
-                <div className="kb-sekcja">
-                  <BoxWydarzenia wydarzenie={wydarzenie} />
-                </div>
-              )}
-
-              <KtoDzisGra kodQr={<KodQr tekst={`${SITE_URL}/boisko/${court.slug}?zagraj=1`} className="h-full w-full" />} />
-
-              {zdjecia.length > 0 && (
-                <PasekZdjec
-                  zdjecia={zdjecia}
-                  seed={court.seed}
-                  film={court.shortsUrl ? <ShortsPlayer url={court.shortsUrl} title={`${court.name}, ${court.city}`} /> : null}
-                />
-              )}
-
-              <Opinie
-                courtId={court.id}
-                przypieta={{
-                  nick: court.addedBy,
-                  profil: anonim ? null : `/gracz/${slugifyPlace(court.addedBy)}`,
-                  avatar: avatarAutora ? adresMiniatury(avatarAutora, 72, JAKOSC_ZDJECIA) : null,
-                  dodane: court.addedAt,
-                  tekst: (court.description ?? "").trim(),
-                }}
-              />
-
-              {/* ---------- co tu znajdziesz (prototyp 05) ---------- */}
-              <section className="kb-sekcja" aria-labelledby="cechy-tytul">
-                <h2 id="cechy-tytul" className="kb-tytul px-1">
-                  Co tu znajdziesz
-                </h2>
-                <ul className="kb-cechy mt-2">
-                  {cechy.map(({ ikona: Ikona, nazwa, opis, wartosc, brak }) => (
-                    <li key={nazwa} className="kb-cecha">
-                      <Ikona className="mt-0.5 h-[22px] w-[22px] shrink-0 text-muted" />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[15px] font-semibold">{nazwa}</p>
-                        {opis && <p className="mt-0.5 text-[13px] leading-snug text-muted">{opis}</p>}
-                      </div>
-                      <p className={`max-w-[42%] text-right text-[15px] ${brak ? "text-faint" : "font-semibold"}`}>{wartosc}</p>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-
-              {weather.length > 0 && <PogodaKarty hours={weather} nowHour={nowHour} />}
-
-              {/* ---------- najbliższe boiska (prototyp 06) ---------- */}
-              {nearby.length > 0 && (
-                <section className="kb-sekcja" aria-labelledby="okolica-tytul">
-                  <p className="kb-nadtytul px-1">Najbliższe boiska</p>
-                  <h2 id="okolica-tytul" className="mt-1 px-1 text-[32px] font-bold leading-[1.05] tracking-[-0.03em]">
-                    Grasz dalej?
-                  </h2>
-                  <ul className="kb-okolica-lista mt-3">
-                    {nearby.map(({ court: c, distanceM }) => {
-                      const [liczba, jednostka] = distanceM !== null ? formatDistance(distanceM).split(" ") : [];
-                      return (
-                        <li key={c.id}>
-                          <Link href={`/boisko/${c.slug}`} className="kb-okolica">
-                            <span className="relative h-[58px] w-[58px] shrink-0 overflow-hidden rounded-[12px] bg-[var(--k-karta)]">
-                              <CourtPhoto photo={c.photos[0]} seed={c.seed} sizes="58px" />
-                            </span>
-                            <span className="min-w-0 flex-1">
-                              <span className="line-clamp-2 block text-[15px] font-semibold leading-snug">{c.name}</span>
-                              <span className="block text-[13px] text-muted">{c.city}</span>
-                            </span>
-                            {liczba && (
-                              <span className="shrink-0 whitespace-nowrap">
-                                <span className="font-display text-[21px] tabular-nums">{liczba}</span>
-                                <span className="ml-0.5 text-[11px] font-semibold text-muted">{jednostka}</span>
-                              </span>
-                            )}
-                          </Link>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </section>
-              )}
-
-              {/* ---------- stopka karty (prototyp 01) ---------- */}
-              <section className="kb-sekcja">
-                <h2 className="px-1 text-[19px] font-semibold tracking-[-0.01em]">Coś się nie zgadza?</h2>
-                <p className="mt-1.5 max-w-[58ch] px-1 text-[14px] leading-relaxed text-muted">
-                  Boisko się zmieniło, zdjęcia są nieaktualne albo czegoś brakuje? Daj znać - poprawimy kartę.
-                </p>
-                <div className="mt-4 grid grid-cols-2 gap-2.5 md:flex md:flex-wrap">
-                  <ReportButton courtId={court.id} className="kb-przycisk w-full justify-center gap-2 md:w-auto md:px-5">
-                    <IkFlaga className="h-[17px] w-[17px]" /> Zgłoś zmianę
-                  </ReportButton>
-                  <PoprawZdjecia
-                    courtId={court.id}
-                    lat={court.lat}
-                    lng={court.lng}
-                    photos={court.photos}
-                    className="kb-przycisk w-full justify-center gap-2 md:w-auto md:px-5"
-                  >
-                    <IkAparat className="h-[17px] w-[17px]" /> Popraw zdjęcia
-                  </PoprawZdjecia>
-                </div>
-              </section>
+          {wydarzenie && (
+            <div className="kb-sekcja">
+              <BoxWydarzenia wydarzenie={wydarzenie} />
             </div>
+          )}
 
-            {/* komputer: „Idę zagrać" jako przyklejony panel w prawej kolumnie */}
-            <aside className="kb-bok">
-              <PanelGry courtId={court.id} />
-            </aside>
-          </div>
+          <KtoDzisGra kodQr={<KodQr tekst={`${SITE_URL}/boisko/${court.slug}?zagraj=1`} className="h-full w-full" />} />
+
+          {zdjecia.length > 0 && (
+            <PasekZdjec
+              zdjecia={zdjecia}
+              seed={court.seed}
+              film={court.shortsUrl ? <ShortsPlayer url={court.shortsUrl} title={`${court.name}, ${court.city}`} /> : null}
+            />
+          )}
+
+          <Opinie
+            courtId={court.id}
+            przypieta={{
+              nick: court.addedBy,
+              profil: anonim ? null : `/gracz/${slugifyPlace(court.addedBy)}`,
+              avatar: avatarAutora ? adresMiniatury(avatarAutora, 72, JAKOSC_ZDJECIA) : null,
+              dodane: court.addedAt,
+              tekst: (court.description ?? "").trim(),
+            }}
+          />
+
+          {/* ---------- co tu znajdziesz (prototyp 05) ---------- */}
+          <section className="kb-sekcja" aria-labelledby="cechy-tytul">
+            <h2 id="cechy-tytul" className="kb-tytul px-1">
+              Co tu znajdziesz
+            </h2>
+            <ul className="kb-cechy mt-2">
+              {cechy.map(({ ikona: Ikona, nazwa, opis, wartosc, brak }) => (
+                <li key={nazwa} className="kb-cecha">
+                  <Ikona className="mt-0.5 h-[22px] w-[22px] shrink-0 text-muted" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[15px] font-semibold">{nazwa}</p>
+                    {opis && <p className="mt-0.5 text-[13px] leading-snug text-muted">{opis}</p>}
+                  </div>
+                  <p className={`max-w-[42%] text-right text-[15px] ${brak ? "text-faint" : "font-semibold"}`}>{wartosc}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          {weather.length > 0 && <PogodaKarty hours={weather} nowHour={nowHour} />}
+
+          {/* ---------- najbliższe boiska (prototyp 06) ---------- */}
+          {nearby.length > 0 && (
+            <section className="kb-sekcja" aria-labelledby="okolica-tytul">
+              <p className="kb-nadtytul px-1">Najbliższe boiska</p>
+              <h2 id="okolica-tytul" className="mt-1 px-1 text-[32px] font-bold leading-[1.05] tracking-[-0.03em]">
+                Grasz dalej?
+              </h2>
+              <ul className="kb-okolica-lista mt-3">
+                {nearby.map(({ court: c, distanceM }) => {
+                  const [liczba, jednostka] = distanceM !== null ? formatDistance(distanceM).split(" ") : [];
+                  return (
+                    <li key={c.id}>
+                      <Link href={`/boisko/${c.slug}`} className="kb-okolica">
+                        <span className="relative h-[58px] w-[58px] shrink-0 overflow-hidden rounded-[12px] bg-[var(--k-karta)]">
+                          <CourtPhoto photo={c.photos[0]} seed={c.seed} sizes="58px" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="line-clamp-2 block text-[15px] font-semibold leading-snug">{c.name}</span>
+                          <span className="block text-[13px] text-muted">{c.city}</span>
+                        </span>
+                        {liczba && (
+                          <span className="shrink-0 whitespace-nowrap">
+                            <span className="font-display text-[21px] tabular-nums">{liczba}</span>
+                            <span className="ml-0.5 text-[11px] font-semibold text-muted">{jednostka}</span>
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+
+          {/* ---------- stopka karty (prototyp 01) ---------- */}
+          <section className="kb-sekcja">
+            <h2 className="px-1 text-[19px] font-semibold tracking-[-0.01em]">Coś się nie zgadza?</h2>
+            <p className="mt-1.5 max-w-[58ch] px-1 text-[14px] leading-relaxed text-muted">
+              Boisko się zmieniło, zdjęcia są nieaktualne albo czegoś brakuje? Daj znać - poprawimy kartę.
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-2.5 md:flex md:flex-wrap">
+              <ReportButton courtId={court.id} className="kb-przycisk w-full justify-center gap-2 md:w-auto md:px-5">
+                <IkFlaga className="h-[17px] w-[17px]" /> Zgłoś zmianę
+              </ReportButton>
+              <PoprawZdjecia
+                courtId={court.id}
+                lat={court.lat}
+                lng={court.lng}
+                photos={court.photos}
+                className="kb-przycisk w-full justify-center gap-2 md:w-auto md:px-5"
+              >
+                <IkAparat className="h-[17px] w-[17px]" /> Popraw zdjęcia
+              </PoprawZdjecia>
+            </div>
+          </section>
         </div>
       </main>
 
-      {/* telefon i tablet: „Idę zagrać" przyklejony na dole ekranu */}
+      {/* „Idę zagrać" przyklejony na środku dołu ekranu - na telefonie i na komputerze */}
       <IdeZagrac courtId={court.id} />
     </KartaDostawca>
   );

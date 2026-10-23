@@ -28,13 +28,10 @@ const godzinaTeraz = () => Math.floor(terazWPolsce().minuta / 60);
 /** najbliższa pełna godzina, mieszcząca się w siatce */
 const nastepna = (g: number) => Math.min(OSTATNIA, Math.max(PIERWSZA, g + 1));
 const zakres = (od: number, doG: number) => Array.from({ length: doG - od + 1 }, (_, i) => od + i);
-/** od tej szerokości zamiast przycisku na dole jest panel w prawej kolumnie */
-const SZEROKI = "(min-width: 1024px)";
 
 /**
- * Wybór dnia i godzin gry - wspólny dla przycisku na dole ekranu (telefon) i panelu
- * w prawej kolumnie (komputer). Każde z nich ma własny zakres godzin, ale dzień jest
- * jeden na całą kartę (`useGra`), więc wybór dnia w słupkach „Kto dziś gra" przestawia oba.
+ * Wybór dnia i godzin gry. Dzień jest jeden na całą kartę (`useGra`), więc wybór dnia
+ * w słupkach „Kto dziś gra" przestawia go także tutaj.
  *
  * Domyślnie dziś i najbliższa pełna godzina, bo tak najczęściej się umawia („wpadam za
  * godzinę"). Kto jest już zapisany na wybrany dzień, widzi swój zakres.
@@ -185,7 +182,7 @@ function useWyborGry(courtId: string, aktywny: boolean) {
 
 type Wybor = ReturnType<typeof useWyborGry>;
 
-/** Dni, godziny i komunikaty - wnętrze wyboru, takie samo na telefonie i na komputerze. */
+/** Dni, godziny i komunikaty - wnętrze rozwijanego wyboru. */
 function WyborGry({ w }: { w: Wybor }) {
   const dni =
     w.panel.tydzien ??
@@ -275,9 +272,9 @@ function podpisDnia(w: Wybor) {
 }
 
 /**
- * Telefon: „Idę zagrać" przyklejony na dole ekranu, na środku (prototyp 10). Dotknięcie
- * rozwija nad nim wybór, a zapis robi „Potwierdź" - ten sam przycisk, który rozwinął menu,
- * więc palec nie musi szukać nowego miejsca.
+ * „Idę zagrać" przyklejony na dole ekranu, na środku (prototyp 10) - na telefonie i na
+ * komputerze. Dotknięcie rozwija nad nim wybór, a zapis robi „Potwierdź" - ten sam przycisk,
+ * który rozwinął menu, więc palec (i kursor) nie musi szukać nowego miejsca.
  */
 export function IdeZagrac({ courtId }: { courtId: string }) {
   const [otwarte, setOtwarte] = useState(false);
@@ -285,10 +282,7 @@ export function IdeZagrac({ courtId }: { courtId: string }) {
   const poHydracji = usePoHydracji();
   const { setTeraz, setOd, setDoG, wybierzDzien } = w;
 
-  /*
-    Wejście z kodu QR (`?zagraj=1`) od razu rozwija wybór. Na komputerze przycisku nie ma -
-    tam przewijamy do panelu w prawej kolumnie. Parametr znika z adresu.
-  */
+  /* wejście z kodu QR (`?zagraj=1`) od razu rozwija wybór; parametr znika z adresu */
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
     if (sp.get("zagraj") !== "1") return;
@@ -296,10 +290,6 @@ export function IdeZagrac({ courtId }: { courtId: string }) {
     const q = sp.toString();
     window.history.replaceState(null, "", `${window.location.pathname}${q ? `?${q}` : ""}`);
     const t = window.setTimeout(() => {
-      if (window.matchMedia(SZEROKI).matches) {
-        document.getElementById("panel-gry")?.scrollIntoView({ behavior: "smooth", block: "center" });
-        return;
-      }
       const g = godzinaTeraz();
       setTeraz(g);
       if (g + 1 > OSTATNIA) {
@@ -422,80 +412,5 @@ export function IdeZagrac({ courtId }: { courtId: string }) {
       </div>
     </>,
     document.body
-  );
-}
-
-/**
- * Komputer: ten sam wybór jako przyklejony panel w prawej kolumnie karty - zawsze rozwinięty,
- * bo miejsca jest dość, a przycisk pływający nad treścią na szerokim ekranie zasłaniałby tekst.
- */
-export function PanelGry({ courtId }: { courtId: string }) {
-  const w = useWyborGry(courtId, true);
-  const { setTeraz, setOd, setDoG, wybierzDzien } = w;
-
-  /*
-    Zakres startowy po zamontowaniu - na serwerze nie wiadomo, która jest godzina u patrzącego.
-    Własną deklarację, jeśli jest, podstawi potem efekt w `useWyborGry`.
-  */
-  useEffect(() => {
-    const t = window.setTimeout(() => {
-      const g = godzinaTeraz();
-      setTeraz(g);
-      if (g + 1 > OSTATNIA) {
-        /* dzień jest wspólny dla całej karty - na telefonie (panel ukryty) nie przestawiamy go */
-        if (window.matchMedia(SZEROKI).matches) wybierzDzien(dodajDni(new Date().toISOString().slice(0, 10), 1));
-        setOd(18);
-        setDoG(18);
-      } else {
-        setOd(nastepna(g));
-        setDoG(nastepna(g));
-      }
-    }, 0);
-    return () => window.clearTimeout(t);
-  }, [setTeraz, setOd, setDoG, wybierzDzien]);
-
-  return (
-    <section id="panel-gry" className="kb-karta kb-panel-gry px-5 pb-5 pt-5" aria-labelledby="panel-gry-tytul">
-      <div className="mb-4 px-1">
-        <h2 id="panel-gry-tytul" className="kb-tytul">
-          {w.moje.length ? `Idziesz ${w.opis.kiedy}` : "Idę zagrać"}
-        </h2>
-        <p className="mt-0.5 text-[13px] text-muted">
-          {w.moje.length ? `${opisGodzin(w.moje)} · możesz zmienić godziny` : podpisDnia(w)}
-        </p>
-      </div>
-
-      <WyborGry w={w} />
-
-      <button
-        type="button"
-        onClick={() => void w.potwierdz()}
-        disabled={w.zablokowany}
-        className="kb-dok-cta mt-4"
-      >
-        <b>{w.busy ? "Zapisuję…" : w.moje.length ? "Zmień godziny" : "Potwierdź"}</b>
-        <small>
-          {w.opis.kiedy} {opisGodzin(zakres(w.od, w.doG))}
-        </small>
-      </button>
-
-      {w.moje.length > 0 && (
-        <button
-          type="button"
-          onClick={() => void w.odwolaj()}
-          disabled={w.busy}
-          className="mt-2 w-full rounded-full py-2.5 text-[13.5px] font-semibold text-muted transition hover:text-ink"
-        >
-          Odwołaj {w.opis.naKiedy} ({opisGodzin(w.moje)})
-        </button>
-      )}
-
-      <p role="status" className="mt-3 min-h-[18px] text-center text-[12.5px] font-semibold text-ink">
-        {w.komunikat ?? ""}
-      </p>
-      <p className="text-center text-[12px] text-faint">
-        {w.zalogowany ? "To nie rezerwacja - dajesz znać, że będziesz." : "Zapis wymaga konta - zalogujesz się jednym kliknięciem."}
-      </p>
-    </section>
   );
 }
