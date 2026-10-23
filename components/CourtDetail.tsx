@@ -265,14 +265,15 @@ export function CourtDetail({
             </section>
           )}
 
-          {/* ---------- stopka karty (prototyp 01) ---------- */}
-          <section className="kb-sekcja">
-            <h2 className="px-1 text-[19px] font-semibold tracking-[-0.01em]">Coś się nie zgadza?</h2>
-            <p className="mt-1.5 max-w-[58ch] px-1 text-[14px] leading-relaxed text-muted">
+          {/* ---------- stopka karty (prototyp 01) - na środku, symetrycznie ---------- */}
+          <section className="kb-sekcja text-center">
+            <h2 className="text-[19px] font-semibold tracking-[-0.01em]">Coś się nie zgadza?</h2>
+            <p className="mx-auto mt-1.5 max-w-[46ch] text-[14px] leading-relaxed text-muted [text-wrap:balance]">
               Boisko się zmieniło, zdjęcia są nieaktualne albo czegoś brakuje? Daj znać - poprawimy kartę.
             </p>
-            <div className="mt-4 grid grid-cols-2 gap-2.5 md:flex md:flex-wrap">
-              <ReportButton courtId={court.id} className="kb-przycisk w-full justify-center gap-2 md:w-auto md:px-5">
+            {/* dwa przyciski równej szerokości, więc oś środka wypada dokładnie między nimi */}
+            <div className="mx-auto mt-4 grid max-w-[400px] grid-cols-2 gap-2.5">
+              <ReportButton courtId={court.id} className="kb-przycisk w-full justify-center gap-2">
                 <IkFlaga className="h-[17px] w-[17px]" /> Zgłoś zmianę
               </ReportButton>
               <PoprawZdjecia
@@ -280,7 +281,7 @@ export function CourtDetail({
                 lat={court.lat}
                 lng={court.lng}
                 photos={court.photos}
-                className="kb-przycisk w-full justify-center gap-2 md:w-auto md:px-5"
+                className="kb-przycisk w-full justify-center gap-2"
               >
                 <IkAparat className="h-[17px] w-[17px]" /> Popraw zdjęcia
               </PoprawZdjecia>
