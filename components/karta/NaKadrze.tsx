@@ -3,11 +3,9 @@
 import { useCallback, useState } from "react";
 import Image from "next/image";
 import { Arkusz } from "./Arkusz";
-import { useGaleria } from "./KartaKontekst";
-import { IkZdjecia } from "./ikony";
 
 /**
- * Plakietki leżące na zdjęciu tytułowym karty boiska: „Coconaut Choice" i liczba zdjęć.
+ * Plakietka „Coconaut Choice" na zdjęciu tytułowym karty boiska.
  *
  * Notatka Basketa przy wyróżnieniu (dawniej osobna sekcja pod kafelkami) otwiera się
  * z plakietki - na kadrze zostaje znak wyróżnienia, a jego treść jest o jedno dotknięcie.
@@ -57,16 +55,5 @@ export function PlakietkaCoconaut({ notatka }: { notatka?: string }) {
         </Arkusz>
       )}
     </>
-  );
-}
-
-/** Liczba zdjęć na kadrze - otwiera podgląd od pierwszego. */
-export function PrzyciskZdjec({ ile }: { ile: number }) {
-  const otworz = useGaleria();
-  return (
-    <button type="button" onClick={() => otworz(0)} className="kb-na-kadrze" aria-label={`Zdjęcia boiska (${ile})`}>
-      <IkZdjecia className="h-4 w-4" />
-      <span className="tabular-nums">{ile}</span>
-    </button>
   );
 }

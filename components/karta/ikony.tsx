@@ -28,13 +28,6 @@ export const IkMapa = (p: P) => (
     <path d="M9 4.5v13M15 6.6v13" />
   </Ik>
 );
-export const IkZdjecia = (p: P) => (
-  <Ik {...p}>
-    <rect x="3" y="4.5" width="18" height="15" rx="3" />
-    <circle cx="9" cy="10" r="1.7" />
-    <path d="M21 15.5l-5-5-9.5 9" />
-  </Ik>
-);
 export const IkProwadz = (p: P) => (
   <Ik {...p}>
     <path d="M3.8 11.1 20 4l-7.1 16.2-2.2-7.1-6.9-2z" />

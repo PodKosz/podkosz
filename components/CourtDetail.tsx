@@ -21,7 +21,7 @@ import { PasekZdjec } from "./karta/PasekZdjec";
 import { PogodaKarty } from "./karta/PogodaKarty";
 import { Polub } from "./karta/Polub";
 import { StatusOtwarcia } from "./karta/StatusOtwarcia";
-import { PlakietkaCoconaut, PrzyciskZdjec } from "./karta/NaKadrze";
+import { PlakietkaCoconaut } from "./karta/NaKadrze";
 import {
   IkAparat,
   IkFlaga,
@@ -125,12 +125,9 @@ export function CourtDetail({
           </div>
 
           <div className="kb-hero-tresc">
-            <div className="flex min-h-[30px] items-center justify-between gap-2">
-              <div className="flex flex-wrap items-center gap-1.5">
-                {court.basketApproved && <PlakietkaCoconaut notatka={court.basketNote} />}
-                {court.funny && <span className="kb-na-kadrze">Śmieszne boisko</span>}
-              </div>
-              {zdjecia.length > 0 && <PrzyciskZdjec ile={zdjecia.length} />}
+            <div className="flex min-h-[30px] flex-wrap items-center gap-1.5">
+              {court.basketApproved && <PlakietkaCoconaut notatka={court.basketNote} />}
+              {court.funny && <span className="kb-na-kadrze">Śmieszne boisko</span>}
             </div>
 
             <h1 className="mt-3 max-w-[22ch] text-[30px] font-bold leading-[1.08] tracking-[-0.025em] [text-wrap:balance] md:text-[46px] lg:text-[58px] lg:leading-[1.02]">
