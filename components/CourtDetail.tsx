@@ -6,6 +6,7 @@ import { zdaniaWedlugCech } from "@/lib/opis-boiska";
 import type { NearbyCourt } from "@/lib/repo";
 import type { WeatherHour } from "@/lib/pogoda";
 import type { Wydarzenie } from "@/lib/wydarzenia";
+import type { AdresBoiska } from "@/lib/adres-boiska";
 import { CourtPhoto } from "./CourtPhoto";
 import { BoxWydarzenia } from "./BoxWydarzenia";
 import { ShortsPlayer } from "./ShortsPlayer";
@@ -22,13 +23,13 @@ import { PogodaKarty } from "./karta/PogodaKarty";
 import { Polub } from "./karta/Polub";
 import { KomorkaOtwarcia } from "./karta/StatusOtwarcia";
 import { PlakietkaCoconaut } from "./karta/NaKadrze";
+import { MiniMapa } from "./karta/MiniMapa";
 import {
   IkAparat,
   IkFlaga,
   IkKosz,
   IkNawierzchnia,
   IkPlot,
-  IkProwadz,
   IkSiatka,
   IkSwiatlo,
   IkZegar,
@@ -64,6 +65,7 @@ export function CourtDetail({
   nowHour = 12,
   wydarzenie = null,
   avatarAutora = null,
+  adres = null,
 }: {
   court: Court;
   nearby?: NearbyCourt[];
@@ -75,6 +77,8 @@ export function CourtDetail({
   wydarzenie?: Wydarzenie | null;
   /** zdjęcie profilowe osoby, która zgłosiła boisko - przy przypiętej opinii */
   avatarAutora?: string | null;
+  /** ulica z numerem pod mini mapką - z OpenStreetMap; bez niego stoi samo miasto */
+  adres?: AdresBoiska | null;
 }) {
   const zdjecia = court.photos;
   const siatka = court.siatka ?? "brak";
@@ -142,16 +146,6 @@ export function CourtDetail({
               <span>{court.city}</span>
             </p>
 
-            <div className="mt-4 flex items-center gap-2 md:mt-5">
-              <a
-                href={`https://www.google.com/maps/dir/?api=1&destination=${court.lat},${court.lng}`}
-                target="_blank"
-                rel="noreferrer"
-                className="kb-przycisk gap-2 px-4"
-              >
-                <IkProwadz className="h-[18px] w-[18px]" /> Prowadź
-              </a>
-            </div>
 
             {/* „losuj dalej" po wejściu z losowania - poza nim nic się tu nie rysuje */}
             <div className="mt-3 flex flex-wrap gap-2 empty:hidden">
@@ -267,6 +261,13 @@ export function CourtDetail({
               </ul>
             </section>
           )}
+
+          <MiniMapa
+            lat={court.lat}
+            lng={court.lng}
+            ulica={adres?.ulica ?? court.city}
+            miejscowosc={adres?.miejscowosc ?? court.voivodeship}
+          />
 
           {/* ---------- stopka karty (prototyp 01) - na środku, symetrycznie ---------- */}
           <section className="kb-sekcja text-center">

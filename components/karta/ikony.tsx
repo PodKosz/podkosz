@@ -94,12 +94,6 @@ export const IkGwiazda = (p: P) => (
     <path d="M12 3.6l2.6 5.3 5.8.9-4.2 4.1 1 5.8L12 17l-5.2 2.7 1-5.8-4.2-4.1 5.8-.9z" />
   </Ik>
 );
-export const IkPinezka = (p: P) => (
-  <Ik {...p}>
-    <path d="M9 3.5h6l-1 5.5 3.5 3.2v1.3h-11v-1.3L10 9z" />
-    <path d="M12 13.5V20.5" />
-  </Ik>
-);
 export const IkKciuk = (p: P) => (
   <Ik {...p}>
     <path d="M7.5 10.5V20h-3a1 1 0 0 1-1-1v-7.5a1 1 0 0 1 1-1zM7.5 10.5 11 3.6c1.4 0 2.5 1.1 2.5 2.5V9h5a2 2 0 0 1 2 2.3l-1.2 6.9a2 2 0 0 1-2 1.8H7.5" />

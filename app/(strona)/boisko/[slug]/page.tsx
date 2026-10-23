@@ -6,6 +6,7 @@ import { CourtDetail } from "@/components/CourtDetail";
 import { wydarzenieBoiska } from "@/lib/wydarzenia";
 import { CourtStructuredData } from "@/components/StructuredData";
 import { LocalCourtDetail } from "@/components/LocalCourtDetail";
+import { adresBoiska } from "@/lib/adres-boiska";
 
 /*
   Karta boiska nie zawiera już nic zależnego od użytkownika (podpalenia, ulubione i skrót
@@ -64,11 +65,12 @@ export default async function CourtPage({ params }: { params: Promise<{ slug: st
   if (!court) return <LocalCourtDetail slug={slug} />;
 
   // pogodę pytamy tylko dla boisk odkrytych - pod dachem nie ma znaczenia
-  const [nearby, weather, wydarzenie, avatar] = await Promise.all([
+  const [nearby, weather, wydarzenie, avatar, adres] = await Promise.all([
     listNearby(court),
     court.type === "kryty" ? Promise.resolve([]) : fetchWeather(court.lat, court.lng),
     wydarzenieBoiska(court.id),
     avatarAutora(court.addedBy),
+    adresBoiska(court.lat, court.lng),
   ]);
 
   // godzina w Polsce liczona na serwerze, żeby prognoza zaczynała się od właściwej
@@ -90,6 +92,7 @@ export default async function CourtPage({ params }: { params: Promise<{ slug: st
         nowHour={nowHour}
         wydarzenie={wydarzenie}
         avatarAutora={avatar}
+        adres={adres}
       />
     </>
   );

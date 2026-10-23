@@ -19,7 +19,7 @@ import { plural } from "@/lib/site";
 import { useBramka } from "../BramkaLogowania";
 import { Arkusz } from "./Arkusz";
 import { useOpinie } from "./KartaKontekst";
-import { IkGwiazda, IkKciuk, IkOlowek, IkPinezka, IkStrzalka } from "./ikony";
+import { IkGwiazda, IkKciuk, IkOlowek } from "./ikony";
 
 /** Ile opinii graczy widać od razu - reszta po „Pokaż wszystkie". */
 const NA_START = 2;
@@ -83,39 +83,16 @@ export function Opinie({ courtId, przypieta }: { courtId: string; przypieta: Prz
   );
 
   return (
-    <section id="opinie" className="kb-sekcja kb-opinie scroll-mt-24" aria-labelledby="opinie-tytul">
-      <div className="flex items-baseline justify-between gap-3 px-1">
-        <h2 id="opinie-tytul" className="kb-tytul">
-          Oceny i opinie
-        </h2>
-        {cudze.length > NA_START && (
-          <button type="button" onClick={() => setWszystkie((w) => !w)} className="kb-link">
-            {wszystkie ? "Mniej" : `Wszystkie ${cudze.length}`}
-            <IkStrzalka className={`h-3.5 w-3.5 transition-transform ${wszystkie ? "-rotate-90" : ""}`} />
-          </button>
-        )}
-      </div>
-
-      {/* średnia dużym pismem i rozkład ocen - bez ramki, z poświatą pod liczbą */}
+    <section id="opinie" className="kb-sekcja kb-opinie scroll-mt-24" aria-label="Oceny i opinie">
+      {/* sama średnia dużym pismem i liczba opinii - na środku nad opiniami, z poświatą pod liczbą */}
       {dostepne && (
         <div className="kb-opinie-podsum">
           <div className="kb-opinie-srednia">
             <p className="font-display tabular-nums">{s.srednia !== null ? ocenaTekstem(s.srednia) : "–"}</p>
             <div>
               {s.srednia !== null && <Gwiazdki ocena={Math.round(s.srednia)} />}
-              <span>{s.liczba ? `na 5 · ${s.liczba} ${plural(s.liczba, ["opinia", "opinie", "opinii"])}` : "brak ocen"}</span>
+              <span>{s.liczba ? `${s.liczba} ${plural(s.liczba, ["opinia", "opinie", "opinii"])} łącznie` : "brak ocen - bądź pierwszy"}</span>
             </div>
-          </div>
-          <div className="grid gap-[5px]" aria-hidden>
-            {[5, 4, 3, 2, 1].map((n) => (
-              <div key={n} className="grid grid-cols-[52px_minmax(0,1fr)_14px] items-center gap-2">
-                <Gwiazdki ocena={n} z={n} mala />
-                <span className="kb-pasek">
-                  <i style={{ width: s.liczba ? `${(s.rozklad[n] / s.liczba) * 100}%` : "0%" }} />
-                </span>
-                <span className="text-right text-[11px] tabular-nums text-faint">{s.rozklad[n]}</span>
-              </div>
-            ))}
           </div>
         </div>
       )}
@@ -204,9 +181,7 @@ function Przypieta({ o }: { o: PrzypietaOpinia }) {
           {o.profil ? <Link href={o.profil}>{nick}</Link> : nick}
           <p className="text-[12.5px] text-faint">dodał(a) boisko · {data(o.dodane)}</p>
         </div>
-        <span className="kb-przypiete">
-          <IkPinezka className="h-3 w-3" /> Przypięte
-        </span>
+        <span className="kb-przypiete">Autor</span>
       </div>
       {o.tekst ? (
         <p className="mt-3 text-[15px] leading-[1.55] text-ink/90">{o.tekst}</p>
