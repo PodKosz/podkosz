@@ -6780,8 +6780,9 @@ select option {
 @media (min-width: 768px) {
   :root { --k-kadr: clamp(460px, 64vh, 660px); --k-nad: 220px; --k-margines: 32px; }
 }
+/* na komputerze nazwa i wszystko pod nią stoi o ok. 120 px niżej - bliżej dolnej krawędzi zdjęcia */
 @media (min-width: 1024px) {
-  :root { --k-nad: 250px; }
+  :root { --k-nad: 130px; }
 }
 [data-motyw="jasny"] {
   --k-karta: #ffffff;
