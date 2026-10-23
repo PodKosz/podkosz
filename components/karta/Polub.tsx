@@ -15,7 +15,7 @@ import { useBramka } from "../BramkaLogowania";
  * Po polubieniu kontur serca wypełnia się piłką: pomarańcz wznosi się od dołu, a na nim
  * wychodzą szwy piłki do kosza - jak w logo.
  */
-export function Polub({ courtId, likes }: { courtId: string; likes: number }) {
+export function Polub({ courtId, likes, naKadrze = false }: { courtId: string; likes: number; naKadrze?: boolean }) {
   const sesja = useSesja();
   return (
     <Serce
@@ -24,11 +24,23 @@ export function Polub({ courtId, likes }: { courtId: string; likes: number }) {
       courtId={courtId}
       likes={likes}
       initiallyLiked={sesja?.likes.includes(courtId) ?? false}
+      naKadrze={naKadrze}
     />
   );
 }
 
-function Serce({ courtId, likes, initiallyLiked }: { courtId: string; likes: number; initiallyLiked: boolean }) {
+function Serce({
+  courtId,
+  likes,
+  initiallyLiked,
+  naKadrze,
+}: {
+  courtId: string;
+  likes: number;
+  initiallyLiked: boolean;
+  /** przycisk leży na zdjęciu - ciemne szkło z jasnym napisem w obu motywach */
+  naKadrze: boolean;
+}) {
   const { wymagaj } = useBramka();
   const [lubie, setLubie] = useState(initiallyLiked);
   /* licznik bez własnego głosu - dzięki temu cofnięcie i ponowne polubienie nie liczą podwójnie */
@@ -91,14 +103,14 @@ function Serce({ courtId, likes, initiallyLiked }: { courtId: string; likes: num
         onClick={toggle}
         aria-pressed={lubie}
         aria-label={lubie ? `Cofnij polubienie (${liczba})` : `Polub boisko (${liczba})`}
-        className="kb-przycisk group gap-2 pl-3.5 pr-4"
+        className={`kb-przycisk group gap-2 pl-3.5 pr-4 ${naKadrze ? "kb-przycisk-kadr" : ""}`}
       >
         <IkonaSerca pelne={lubie} animuj={kliknieto} />
         <span>{lubie ? "Lubisz to" : "Polub"}</span>
         <span className="tabular-nums text-muted">{liczba}</span>
       </button>
       {hint && (
-        <p className="glass absolute left-0 top-[calc(100%+8px)] z-20 w-64 rounded-2xl p-3 text-[12px] leading-snug text-muted">
+        <p className="glass absolute right-0 top-[calc(100%+8px)] z-20 w-64 rounded-2xl p-3 text-[12px] leading-snug text-muted">
           {hint}
         </p>
       )}

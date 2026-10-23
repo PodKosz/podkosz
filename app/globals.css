@@ -6852,17 +6852,28 @@ body.ambient:has(main.kb)::before { display: none; }
 }
 @media (min-width: 1536px) { .kb-hero-tresc { max-width: 1320px; } }
 /*
-  Skróty administratora: prawy górny róg zdjęcia, pod paskiem nawigacji (na telefonie pasek
-  ma ok. 71 px, od `sm` ok. 105 px), wyrównane do prawej krawędzi treści.
+  Skróty administratora: przyklejone w lewym dolnym rogu ekranu, poza treścią karty. Na telefonie
+  stoją nad przyciskiem „Idę zagrać" (ten zajmuje prawie całą szerokość dołu), od `md` obok niego.
 */
 .kb-hero-admin {
-  position: absolute; z-index: 2; top: 80px; left: 0; right: 0; max-width: 1200px; margin-inline: auto;
-  display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding-inline: var(--k-margines);
-  pointer-events: none;
+  position: fixed; z-index: 54; left: 16px; bottom: calc(86px + env(safe-area-inset-bottom));
+  display: flex; flex-wrap: wrap; gap: 8px; pointer-events: none;
 }
-.kb-hero-admin > * { pointer-events: auto; }
-@media (min-width: 640px) { .kb-hero-admin { top: 112px; } }
-@media (min-width: 1536px) { .kb-hero-admin { max-width: 1320px; } }
+.kb-hero-admin > * { pointer-events: auto; box-shadow: 0 10px 28px -10px rgb(0 0 0 / 0.7); }
+@media (min-width: 768px) { .kb-hero-admin { left: 24px; bottom: 30px; } }
+/* „Polub" w prawym górnym rogu zdjęcia, pod paskiem nawigacji (telefon ok. 71 px, od `sm` ok. 105 px), równo z prawą krawędzią treści */
+.kb-hero-polub {
+  position: absolute; z-index: 2; top: 80px; left: 0; right: 0; max-width: 1200px; margin-inline: auto;
+  display: flex; justify-content: flex-end; padding-inline: var(--k-margines); pointer-events: none;
+}
+.kb-hero-polub > * { pointer-events: auto; }
+@media (min-width: 640px) { .kb-hero-polub { top: 112px; } }
+@media (min-width: 1536px) { .kb-hero-polub { max-width: 1320px; } }
+.kb-przycisk.kb-przycisk-kadr {
+  border-color: rgb(255 255 255 / 0.16); background: rgb(12 12 15 / 0.55); color: #fff;
+  backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4);
+}
+.kb-przycisk-kadr .tabular-nums { color: rgb(255 255 255 / 0.7); }
 
 /* plakietki na kadrze - zawsze ciemne szkło z jasnym napisem, bo pod spodem jest zdjęcie */
 .kb-na-kadrze,

@@ -116,12 +116,17 @@ export function CourtDetail({
           </div>
 
           {/*
-            Skróty administratora w prawym górnym rogu zdjęcia, tuż pod paskiem nawigacji -
+            Skróty administratora - przyklejone w lewym dolnym rogu ekranu (`.kb-hero-admin`),
             poza treścią karty, którą widzą wszyscy. Dla pozostałych nic się tu nie rysuje.
           */}
           <div className="kb-hero-admin">
             <LinkEdycji slug={court.slug} />
             <LinkWydarzenia slug={court.slug} />
+          </div>
+
+          {/* „Polub" w prawym górnym rogu zdjęcia, tuż pod paskiem nawigacji */}
+          <div className="kb-hero-polub">
+            <Polub courtId={court.id} likes={court.likes} naKadrze />
           </div>
 
           <div className="kb-hero-tresc">
@@ -138,7 +143,6 @@ export function CourtDetail({
             </p>
 
             <div className="mt-4 flex items-center gap-2 md:mt-5">
-              <Polub courtId={court.id} likes={court.likes} />
               <a
                 href={`https://www.google.com/maps/dir/?api=1&destination=${court.lat},${court.lng}`}
                 target="_blank"
