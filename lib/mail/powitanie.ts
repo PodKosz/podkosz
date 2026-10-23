@@ -73,10 +73,10 @@ const NA_START: { tytul: string; tresc: string }[] = [
       "a o decyzji dostajesz maila.",
   },
   {
-    tytul: "Zamiast serduszka - Hype",
+    tytul: "Serduszko, czyli polubienie",
     tresc:
-      "„Hype” to nasze polubienie: jeden na boisko, i właśnie z niego powstaje ranking " +
-      "boisk. Ulubione to osobna, prywatna lista miejsc, do których wracasz.",
+      "Jedno serduszko na boisko - z polubień powstaje ranking boisk, a polubione " +
+      "miejsca lądują na Twojej liście ulubionych, żeby łatwo było do nich wrócić.",
   },
   {
     tytul: "„Idę dziś zagrać” zwołuje ludzi",
@@ -87,8 +87,8 @@ const NA_START: { tytul: string; tresc: string }[] = [
   {
     tytul: "Dwa rankingi",
     tresc:
-      "Ranking boisk - po Hype. Ranking graczy - po liczbie dodanych boisk, " +
-      "a przy remisie wyżej stoi ten, czyje boiska zebrały więcej Hype. W rankingu graczy " +
+      "Ranking boisk - po polubieniach. Ranking graczy - po liczbie dodanych boisk, " +
+      "a przy remisie wyżej stoi ten, czyje boiska zebrały więcej polubień. W rankingu graczy " +
       "liczą się tylko konta; zgłoszenia bez logowania nie tworzą gracza.",
   },
   {

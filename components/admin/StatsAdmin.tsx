@@ -95,7 +95,7 @@ export function StatsAdmin() {
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Tile value={data.courts} label="Boiska na mapie" accent />
         <Tile value={data.photos} label="Zdjęć w galeriach" />
-        <Tile value={data.likes} label="Hype łącznie" />
+        <Tile value={data.likes} label="Polubienia łącznie" />
         <Tile value={data.favorites} label="Dodań do ulubionych" />
 
         <Tile value={data.users} label="Kont użytkowników" />

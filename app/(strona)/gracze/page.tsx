@@ -8,7 +8,7 @@ import { Wjazdy } from "@/components/Wjazdy";
 export const metadata: Metadata = {
   title: "Ranking graczy - PodKosz",
   description:
-    "Kto zbudował mapę boisk do koszykówki w Polsce. Miejsce zależy od liczby dodanych boisk, a przy remisie decyduje zebrany Hype.",
+    "Kto zbudował mapę boisk do koszykówki w Polsce. Miejsce zależy od liczby dodanych boisk, a przy remisie decyduje liczba zebranych polubień.",
 };
 
 /* Ranking zmienia się razem z publikacją boisk - ten sam odstęp co przy rankingu boisk. */
@@ -34,7 +34,7 @@ export default async function GraczePage() {
           className="mt-5 text-[clamp(15px,1.4vw,17px)] leading-relaxed text-muted"
         >
           Liczą się tylko zalogowani. Miejsce zależy od liczby opublikowanych boisk, a przy
-          równej liczbie wyżej stoi ten, czyje boiska zebrały więcej Hype.
+          równej liczbie wyżej stoi ten, czyje boiska zebrały więcej polubień.
         </p>
         <Link
           data-wjazd="glebia-tekst"

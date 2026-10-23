@@ -44,12 +44,12 @@ export function RankingTabsV1({
       ? {
           tytul: "Ranking odkrywców",
           opis:
-            "W rankingu liczą się tylko zalogowani użytkownicy. Miejsce zależy od liczby boisk, które ktoś dodał - przy równej liczbie wyżej stoi ten, czyje boiska zebrały więcej Hype.",
+            "W rankingu liczą się tylko zalogowani użytkownicy. Miejsce zależy od liczby boisk, które ktoś dodał - przy równej liczbie wyżej stoi ten, czyje boiska zebrały więcej polubień.",
         }
       : {
           tytul: "Najgorętsze boiska w Polsce",
           opis:
-            "Kolejność wyznacza Hype od społeczności. Dawaj Hype boiskom, na których dobrze się gra.",
+            "Kolejność wyznaczają polubienia społeczności. Polub boiska, na których dobrze się gra.",
         };
 
   return (
@@ -154,7 +154,7 @@ function Karuzela({ courts }: { courts: Court[] }) {
       <div className="mb-5 flex items-end justify-between gap-4">
         <div>
           <h2 className="text-[13px] uppercase tracking-[0.18em] text-faint">Top {courts.length}</h2>
-          <p className="mt-1 text-[14px] text-muted">Boiska z największym Hype w bazie.</p>
+          <p className="mt-1 text-[14px] text-muted">Boiska z największą liczbą polubień w bazie.</p>
         </div>
 
         {/* licznik jak na okładce płyty - od razu widać, w którym miejscu stosu jesteśmy */}

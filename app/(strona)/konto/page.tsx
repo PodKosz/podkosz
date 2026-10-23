@@ -12,7 +12,7 @@ import { FireBallIcon, PinIcon } from "@/components/icons";
 
 export const metadata: Metadata = {
   title: "Moje konto - PodKosz",
-  description: "Twoje boiska, Hype, ulubione i historia gry.",
+  description: "Twoje boiska, polubienia, ulubione i historia gry.",
   robots: { index: false, follow: false },
 };
 
@@ -42,7 +42,7 @@ export default async function KontoPage() {
         </h1>
         <p className="szklo-pro mt-8 rounded-[28px] p-8 text-center text-[15px] text-muted">
           Zaloguj się przez Google (przycisk w prawym górnym rogu), żeby zobaczyć swoje boiska,
-          Hype, ulubione i historię gry.
+          polubienia, ulubione i historię gry.
         </p>
       </main>
     );
@@ -55,8 +55,8 @@ export default async function KontoPage() {
 
   const kafelki: [string, string | number][] = [
     ["Boiska w bazie", dane.dodane.length],
-    ["Zebrany Hype", dane.zebranePodpalenia],
-    ["Dany Hype", dane.podpalenia],
+    ["Zebrane polubienia", dane.zebranePodpalenia],
+    ["Twoje polubienia", dane.podpalenia],
     ["Ulubione", dane.ulubione.length],
     ["W kolejce", dane.wKolejce],
     ["Zapisy na grę", dane.historia.length],
@@ -117,7 +117,7 @@ export default async function KontoPage() {
       {user.isBanned && (
         <p className="mt-6 rounded-[24px] border border-ember/40 bg-ember/10 px-6 py-5 text-[14px] leading-relaxed text-ember">
           <span className="font-semibold">Konto jest zablokowane.</span> Możesz przeglądać serwis,
-          ale dodawanie boisk, Hype, ulubione i zapisy na grę są wyłączone. Jeśli to
+          ale dodawanie boisk, polubienia, ulubione i zapisy na grę są wyłączone. Jeśli to
           pomyłka, napisz do nas przez formularz opinii.
         </p>
       )}

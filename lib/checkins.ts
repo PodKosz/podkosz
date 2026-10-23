@@ -61,7 +61,7 @@ export function opisDnia(dzien: string, dzis: string) {
   };
 }
 
-/**
+/*
  * Deklaracje gry: „idę w sobotę od 18:00 do 21:00".
  *
  * Zakres trzymamy jako osobny wiersz na każdą godzinę. Wygląda to na rozrzutność, ale
@@ -71,32 +71,6 @@ export function opisDnia(dzien: string, dzis: string) {
  * Czytamy funkcjami zbiorczymi w bazie, więc na zewnątrz nie wychodzi lista osób -
  * tylko godziny i liczby. Własną deklarację widzi wyłącznie jej autor (RLS).
  */
-export async function fetchCheckins(courtId: string): Promise<CheckinSlot[]> {
-  const supabase = await supabaseBrowser();
-  if (!supabase) return [];
-
-  const { data, error } = await supabase.rpc("checkins_for_court", { in_court: courtId });
-  if (error || !data) return [];
-
-  return (data as { hour: number; people: number }[]).map((r) => ({
-    hour: r.hour,
-    people: r.people,
-  }));
-}
-
-/**
- * Ile różnych osób wybiera się dziś na to boisko.
- *
- * Osobne pytanie, bo sumy z `fetchCheckins` nie wolno dodać: ktoś zapisany na cztery
- * godziny siedzi w czterech wierszach i policzyłby się cztery razy.
- */
-export async function fetchOsoby(courtId: string): Promise<number> {
-  const supabase = await supabaseBrowser();
-  if (!supabase) return 0;
-
-  const { data } = await supabase.rpc("checkins_osoby", { in_court: courtId });
-  return typeof data === "number" ? data : 0;
-}
 
 /** Ile różnych osób idzie na boisko danego dnia - jeden dzień paska. */
 export interface DzienTygodnia {
@@ -117,7 +91,7 @@ export interface MojDzien {
  * osób, moje godziny i powód blokady. Cztery pełne żądania przez PostgREST na jedno
  * wejście na stronę, przy stronie, która sama leci z pamięci podręcznej.
  *
- * `null` znaczy „nie udało się" - wtedy komponent spada na cztery stare wywołania.
+ * `null` znaczy „nie udało się" - karta pokazuje wtedy pusty tydzień i działa dalej.
  */
 export interface PanelDeklaracji {
   /** dzień, którego dotyczą godziny, osoby i blokada */
@@ -170,24 +144,7 @@ const zSurowego = (w: SurowyPanel, dzien: string): PanelDeklaracji => ({
   mojeDni: Array.isArray(w.moje_dni) ? w.moje_dni : [],
 });
 
-/*
-  Zapytania w toku, po boisku i dniu. Na telefonie i na komputerze karta boiska ma inny układ,
-  a oba stoją w dokumencie (przełącza je CSS), więc panel deklaracji montuje się dwa razy
-  w tej samej chwili. Drugie wywołanie dostaje obietnicę pierwszego zamiast własnego żądania.
-  Po odpowiedzi wpis znika - kolejne pytanie (np. po zapisie) idzie już do bazy na nowo.
-*/
-const panelWToku = new Map<string, Promise<PanelDeklaracji | null>>();
-
-export function fetchPanel(courtId: string, dzien: string): Promise<PanelDeklaracji | null> {
-  const klucz = `${courtId}|${dzien}`;
-  const trwa = panelWToku.get(klucz);
-  if (trwa) return trwa;
-  const obietnica = pobierzPanel(courtId, dzien).finally(() => panelWToku.delete(klucz));
-  panelWToku.set(klucz, obietnica);
-  return obietnica;
-}
-
-async function pobierzPanel(courtId: string, dzien: string): Promise<PanelDeklaracji | null> {
+export async function fetchPanel(courtId: string, dzien: string): Promise<PanelDeklaracji | null> {
   const supabase = await supabaseBrowser();
   if (!supabase) return null;
 
@@ -201,35 +158,6 @@ async function pobierzPanel(courtId: string, dzien: string): Promise<PanelDeklar
   const stary = await supabase.rpc("checkin_panel", { in_court: courtId });
   if (stary.error || !stary.data || typeof stary.data !== "object") return null;
   return zSurowego({ ...(stary.data as SurowyPanel), tydzien: null, moje_dni: null }, dzisiaj());
-}
-
-/**
- * Godziny, na które zalogowany użytkownik zapisał się dziś na INNE boiska.
- *
- * Używane tylko przez zapasową ścieżkę panelu, tę z czterema osobnymi wywołaniami.
- * Zwykle ta sama lista przychodzi jednym zapytaniem, w `fetchPanel`.
- */
-export async function fetchZajete(courtId: string): Promise<number[]> {
-  const supabase = await supabaseBrowser();
-  if (!supabase) return [];
-
-  const { data, error } = await supabase.rpc("checkin_zajete", { in_court: courtId });
-  return !error && Array.isArray(data) ? (data as number[]) : [];
-}
-
-/** Godziny, na które zalogowany użytkownik zapisał się danego dnia na to boisko. */
-export async function fetchMyHours(courtId: string, dzien = dzisiaj()): Promise<number[]> {
-  const supabase = await supabaseBrowser();
-  if (!supabase) return [];
-
-  const { data } = await supabase
-    .from("checkins")
-    .select("hour")
-    .eq("court_id", courtId)
-    .eq("day", dzien)
-    .order("hour");
-
-  return ((data ?? []) as { hour: number }[]).map((r) => r.hour);
 }
 
 /**

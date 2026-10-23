@@ -145,9 +145,9 @@ const PROGOWE: DefinicjaProgowa[] = [
   },
   {
     id: "podpalacz",
-    nazwa: "Hypeman",
-    licznik: "boiska z Twoim Hype",
-    opis: "Boiska, którym dałeś Hype - jeden na boisko.",
+    nazwa: "Kibic",
+    licznik: "polubione boiska",
+    opis: "Boiska, które polubiłeś - jedno serduszko na boisko.",
     progi: [5, 25, 75, 200],
     wartosc: (s) => s.podpaleniaDane,
   },
@@ -178,8 +178,8 @@ const PROGOWE: DefinicjaProgowa[] = [
   {
     id: "gospodarz",
     nazwa: "Gospodarz",
-    licznik: "zebrany Hype",
-    opis: "Hype zebrany przez własne boiska.",
+    licznik: "zebrane polubienia",
+    opis: "Polubienia zebrane przez własne boiska.",
     progi: [10, 50, 200, 600],
     wartosc: (s) => s.podpaleniaZebrane,
   },

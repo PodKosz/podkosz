@@ -88,7 +88,7 @@ const LISTY: Record<string, Wpis> = {
   wydarzenie: {
     nazwa: "Zaproszenie na wydarzenie",
     opis:
-      "Idzie do osób, które dały Hype temu boisku, oraz do tych, które dały Hype boisku " +
+      "Idzie do osób, które polubiły to boisko, oraz do tych, które polubiły boisko " +
       "w okolicy - jeden list na wydarzenie.",
     temat: () => tematWydarzenia(PRZYKLAD_WYDARZENIA),
     html: () => htmlWydarzenia(PRZYKLAD_WYDARZENIA),
@@ -96,7 +96,7 @@ const LISTY: Record<string, Wpis> = {
   },
   "wydarzenie-okolica": {
     nazwa: "Zaproszenie na wydarzenie (okolica)",
-    opis: "Ta sama treść, ale z powodem „dałeś Hype boisku w okolicy”.",
+    opis: "Ta sama treść, ale z powodem „polubiłeś boisko w okolicy”.",
     temat: () => tematWydarzenia(PRZYKLAD_WYDARZENIA),
     html: () => htmlWydarzenia({ ...PRZYKLAD_WYDARZENIA, powod: "okolica", nick: undefined }),
     tekst: () => tekstWydarzenia({ ...PRZYKLAD_WYDARZENIA, powod: "okolica", nick: undefined }),

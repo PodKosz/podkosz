@@ -3,51 +3,15 @@
 import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useSesja } from "@/lib/sesja";
-import { CheckIn } from "./CheckIn";
-import { FavoriteButton } from "./FavoriteButton";
-import { LikeButton } from "./LikeButton";
 import { useLosowanie } from "./Losowanie";
 import { DiceIcon, PencilIcon } from "./icons";
 
 /**
- * Elementy karty boiska zależne od tego, kto patrzy.
- *
- * Karta boiska jest identyczna dla wszystkich (dzięki temu leci z cache), a te kawałki
- * dociągają stan użytkownika już w przeglądarce. Przyciski trzymają swój stan w `useState`
- * na podstawie wartości początkowej, więc po otrzymaniu sesji przemontowujemy je przez `key` -
- * inaczej zostałyby na wartości „niepodpalone".
+ * Elementy karty boiska zależne od tego, kto patrzy: skróty administratora i pasek
+ * „losuj dalej". Karta jest identyczna dla wszystkich (dzięki temu leci z cache), a te
+ * kawałki dociągają stan użytkownika już w przeglądarce. Polubienie, zapis na grę i opinie
+ * mieszkają od 23.10.2026 w `karta/`.
  */
-
-export function Podpalenie({ courtId, likes }: { courtId: string; likes: number }) {
-  const sesja = useSesja();
-
-  return (
-    <LikeButton
-      key={sesja ? `wiem-${sesja.likes.includes(courtId)}` : "czekam"}
-      courtId={courtId}
-      initial={likes}
-      initiallyLiked={sesja?.likes.includes(courtId) ?? false}
-    />
-  );
-}
-
-export function Ulubione({ courtId, compact = false }: { courtId: string; compact?: boolean }) {
-  const sesja = useSesja();
-
-  return (
-    <FavoriteButton
-      key={sesja ? `wiem-${sesja.favorites.includes(courtId)}` : "czekam"}
-      courtId={courtId}
-      initiallyFavorite={sesja?.favorites.includes(courtId) ?? false}
-      compact={compact}
-    />
-  );
-}
-
-export function ZagramDzis({ courtId }: { courtId: string }) {
-  const sesja = useSesja();
-  return <CheckIn courtId={courtId} signedIn={Boolean(sesja?.user)} />;
-}
 
 /** Skrót do edycji wpisu - tylko dla administratora. */
 export function LinkEdycji({ slug }: { slug: string }) {

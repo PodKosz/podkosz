@@ -29,7 +29,7 @@ export default function TermsPage() {
           <p>
             {SITE_NAME} ({SITE_URL}) to darmowa, tworzona przez społeczność mapa i baza boisk do
             koszykówki w Polsce. Korzystanie z serwisu jest bezpłatne i nie wymaga konta -
-            logowanie przez Google potrzebne jest tylko do dawania Hype boiskom i listy ulubionych.
+            logowanie przez Google potrzebne jest tylko do polubień boisk i listy ulubionych.
           </p>
         </Punkt>
 

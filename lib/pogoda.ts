@@ -118,15 +118,6 @@ export async function fetchWeather(lat: number, lng: number): Promise<WeatherHou
   }
 }
 
-/**
- * Wybiera godziny warte pokazania: najbliższą pełną oraz kolejne co dwie godziny
- * do 22:00. Wieczorem lista sama się skraca.
- */
-export function playableHours(all: WeatherHour[], nowHour: number): WeatherHour[] {
-  const start = Math.max(nowHour, 7);
-  return all.filter((h) => h.hour >= start && h.hour <= 22 && (h.hour - start) % 2 === 0).slice(0, 5);
-}
-
 /** Krótka ocena warunków do gry - to, co człowiek chce przeczytać jednym zdaniem. */
 export function weatherVerdict(hours: WeatherHour[]): string {
   if (!hours.length) return "";

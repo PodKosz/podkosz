@@ -5,9 +5,8 @@ import { IkNiebo } from "./ikony";
 const H = 72;
 
 /**
- * Godziny do wykresu: najbliższa pełna i kolejne co dwie, do 22:00, najwyżej sześć. Ta sama
- * zasada co w pasku pogody na komputerze (`playableHours`), tylko o jedną godzinę dłużej -
- * na wykresie szósty punkt mieści się bez ściskania.
+ * Godziny do wykresu: najbliższa pełna i kolejne co dwie, do 22:00, najwyżej sześć -
+ * wieczorem lista sama się skraca.
  */
 function godzinyWykresu(all: WeatherHour[], nowHour: number) {
   const start = Math.max(nowHour, 7);

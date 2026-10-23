@@ -6771,8 +6771,17 @@ select option {
   --k-aktywny: linear-gradient(180deg, #ffffff, #e9e9ee);
   --k-aktywny-tekst: #111113;
   --k-cien: 0 18px 44px -14px rgb(0 0 0 / 0.75);
-  /* wysokość zdjęcia tytułowego - od niej liczy się, gdzie na kadrze staje nazwa */
+  /* wysokość zdjęcia tytułowego i to, ile nad jego dolną krawędzią zaczyna się nazwa */
   --k-kadr: min(122vw, 560px);
+  --k-nad: 140px;
+  /* boczny margines treści - na telefonie 16 px, na komputerze więcej */
+  --k-margines: 16px;
+}
+@media (min-width: 768px) {
+  :root { --k-kadr: clamp(460px, 64vh, 660px); --k-nad: 220px; --k-margines: 32px; }
+}
+@media (min-width: 1024px) {
+  :root { --k-nad: 250px; }
 }
 [data-motyw="jasny"] {
   --k-karta: #ffffff;
@@ -6785,10 +6794,42 @@ select option {
   --k-cien: 0 16px 36px -16px rgb(0 0 0 / 0.3);
 }
 
-.kb { font-size: 15px; line-height: 1.45; }
+.kb { padding-bottom: 128px; font-size: 15px; line-height: 1.45; }
+/*
+  Bez pomarańczowej poświaty tła (`.ambient::before`) na karcie boiska: kadr tytułowy schodzi
+  w czyste tło strony, a poświata pod nim robiła widoczny szew na dolnej krawędzi zdjęcia -
+  i łamała zasadę, że pomarańcz jest tylko na kluczowych elementach.
+*/
+body.ambient:has(main.kb)::before { display: none; }
+/*
+  Zasłona pod paskiem nawigacji. Pasek jest przezroczysty i leży nad treścią, więc po
+  przewinięciu nagłówki sekcji przejeżdżały przez logo. Zasłona pojawia się dopiero po zjechaniu
+  ze zdjęcia (animacja sterowana przewijaniem) - na kadrze tytułowym ciemni go już `.kb-hero-gora`.
+  Przeglądarka bez takich animacji zostaje przy dawnym wyglądzie.
+*/
+.kb-zaslona-gory {
+  position: fixed; inset: 0 0 auto 0; z-index: 30; height: 104px; pointer-events: none; opacity: 0;
+  background: linear-gradient(180deg, var(--color-void) 0%, color-mix(in oklab, var(--color-void) 86%, transparent) 55%, transparent);
+}
+@media (min-width: 768px) { .kb-zaslona-gory { height: 118px; } }
+@supports (animation-timeline: scroll()) {
+  .kb-zaslona-gory { animation: kb-zaslona linear both; animation-timeline: scroll(root); animation-range: 120px 360px; }
+}
+@keyframes kb-zaslona { to { opacity: 1; } }
+/* treść pod zdjęciem: jedna szerokość dla paska, sekcji i prawej kolumny */
+.kb-tresc { max-width: 1200px; margin-inline: auto; padding-inline: var(--k-margines); }
+@media (min-width: 1536px) { .kb-tresc { max-width: 1320px; } }
+/* komputer: sekcje po lewej, przyklejony panel „Idę zagrać" po prawej */
+.kb-bok { display: none; }
+@media (min-width: 1024px) {
+  .kb { padding-bottom: 96px; }
+  .kb-uklad { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 56px; align-items: start; }
+  .kb-bok { display: block; position: sticky; top: 104px; margin-top: 36px; }
+}
 .kb-karta { background: var(--k-karta); border-radius: 22px; box-shadow: inset 0 0 0 1px var(--k-linia); }
 .kb-karta-moja { box-shadow: inset 0 0 0 1.5px var(--k-wyp-2); }
-.kb-sekcja { margin-top: 36px; padding-inline: 16px; }
+.kb-sekcja { margin-top: 36px; }
+@media (min-width: 1024px) { .kb-sekcja { margin-top: 52px; } }
 .kb-tytul { font-size: 21px; font-weight: 700; letter-spacing: -0.018em; line-height: 1.2; }
 .kb-nadtytul { font-size: 11.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-faint); }
 .kb-link { display: inline-flex; align-items: center; gap: 3px; font-size: 14.5px; font-weight: 500; color: var(--color-muted); }
@@ -6812,7 +6853,11 @@ select option {
     var(--color-void) 100%
   );
 }
-.kb-hero-tresc { position: relative; padding: calc(var(--k-kadr) - 140px) 16px 0; }
+.kb-hero-tresc {
+  position: relative; max-width: 1200px; margin-inline: auto;
+  padding: calc(var(--k-kadr) - var(--k-nad)) var(--k-margines) 0;
+}
+@media (min-width: 1536px) { .kb-hero-tresc { max-width: 1320px; } }
 
 /* plakietki na kadrze - zawsze ciemne szkło z jasnym napisem, bo pod spodem jest zdjęcie */
 .kb-na-kadrze,
@@ -6868,12 +6913,22 @@ select option {
 }
 
 /* ---------- pasek pod nazwą: opinie, kosze, boisko ---------- */
-.kb-info { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 22px; padding: 14px 8px; border-block: 1px solid var(--k-linia); }
+/* na telefonie linie paska idą od krawędzi do krawędzi ekranu */
+.kb-info { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 22px calc(-1 * var(--k-margines)) 0; padding: 14px 8px; border-block: 1px solid var(--k-linia); }
+@media (min-width: 768px) { .kb-info { margin-inline: 0; margin-top: 28px; } }
 .kb-info-komorka { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; padding-inline: 6px; text-align: center; }
 .kb-info-komorka + .kb-info-komorka::before { content: ""; position: absolute; left: 0; top: 6px; bottom: 6px; width: 1px; background: var(--k-linia); }
 .kb-info-komorka small { font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-faint); white-space: nowrap; }
 .kb-info-komorka b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; }
 .kb-info-komorka > span { display: flex; justify-content: center; min-height: 15px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--color-muted); }
+.kb-info-komorka b.kb-info-brak { color: var(--color-faint); }
+/* telefon: trzy pozycje (opinie, kosze, boisko); komputer: siedem osobnych */
+.kb-info .kb-info-pc { display: none; }
+@media (min-width: 1024px) {
+  .kb-info { grid-template-columns: repeat(7, minmax(0, 1fr)); padding-block: 18px; }
+  .kb-info .kb-info-pc { display: flex; }
+  .kb-info .kb-info-tel { display: none; }
+}
 
 /* ---------- kto dziś gra: słupki tygodnia ---------- */
 .kb-slupek { position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 0; padding: 8px 0 9px; border-radius: 14px; color: var(--color-muted); transition: background-color 0.2s; }
@@ -6902,6 +6957,16 @@ select option {
 .kb-pas-kadr { flex: 0 0 auto; width: min(46vw, 210px); margin: 0; scroll-snap-align: start; }
 /* film 9:16 ma tę samą wysokość co zdjęcia 3:4 obok */
 .kb-pas-kadr-film { width: calc(min(46vw, 210px) * 0.75); }
+.kb-strzalki { display: none; }
+@media (min-width: 1024px) {
+  /* w kolumnie pas nie wychodzi za krawędź - obok stoi panel „Idę zagrać" */
+  .kb-pas { margin-inline: 0; padding-inline: 0; scroll-padding-inline: 0; }
+  .kb-pas-kadr { width: 228px; }
+  .kb-pas-kadr-film { width: 171px; }
+  .kb-strzalki { display: flex; gap: 6px; }
+  .kb-strzalki .kb-kolko { width: 36px; height: 36px; transition: background-color 0.2s, color 0.2s; }
+  .kb-strzalki .kb-kolko:hover { background: var(--k-wyp-2); color: var(--color-ink); }
+}
 
 /* ---------- opinie ---------- */
 .kb-pasek { display: block; height: 4px; border-radius: 3px; background: var(--k-wyp-2); overflow: hidden; }
@@ -6925,14 +6990,23 @@ select option {
 /* ---------- co tu znajdziesz ---------- */
 .kb-cecha { display: flex; align-items: flex-start; gap: 14px; padding: 13px 4px; }
 .kb-cecha + .kb-cecha { border-top: 1px solid var(--k-linia); }
+@media (min-width: 768px) {
+  .kb-cechy { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 32px; }
+  .kb-cechy .kb-cecha:nth-child(2) { border-top: 0; }
+}
 
 /* ---------- pogoda ---------- */
 .kb-opad { position: absolute; left: 50%; bottom: 0; width: 16px; margin-left: -8px; border-radius: 5px 5px 2px 2px; background: var(--k-wyp-2); }
 .kb-kropka { position: absolute; left: 50%; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; background: var(--color-ink); box-shadow: 0 0 0 3px var(--k-karta); }
 
 /* ---------- najbliższe boiska ---------- */
-.kb-okolica { display: flex; align-items: center; gap: 14px; padding: 11px 4px; }
+.kb-okolica { display: flex; align-items: center; gap: 14px; padding: 11px 4px; border-radius: 14px; transition: background-color 0.2s; }
 li + li > .kb-okolica { border-top: 1px solid var(--k-linia); }
+@media (min-width: 768px) {
+  .kb-okolica-lista { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 24px; }
+  .kb-okolica-lista li:nth-child(2) > .kb-okolica { border-top: 0; }
+}
+@media (hover: hover) { .kb-okolica:hover { background: var(--k-wyp); } }
 
 /* ---------- arkusz od dołu (opinie, Coconaut Choice) ---------- */
 .kb-arkusz-warstwa { position: fixed; inset: 0; z-index: 70; }
@@ -6995,15 +7069,15 @@ li + li > .kb-okolica { border-top: 1px solid var(--k-linia); }
 }
 @keyframes kb-komunikat { from { opacity: 0; transform: translate(-50%, 10px); } }
 /* stopka serwisu nie chowa się pod przyciskiem „Idę zagrać” */
-@media (max-width: 767.98px) {
+@media (max-width: 1023.98px) {
   body:has(> .kb-dok) { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
 }
 /*
-  Od progu `md` jest karta komputerowa i przycisku nie ma. Sama klasa `md:hidden` tu nie
-  wystarcza: te reguły stoją poza warstwami Tailwinda, więc `display: flex` wyżej wygrywa
-  z każdą klasą narzędziową.
+  Od progu `lg` przycisku na dole nie ma - jego miejsce zajmuje panel w prawej kolumnie
+  (`.kb-bok`). Klasy narzędziowe Tailwinda (`lg:hidden`) tu nie wystarczą: te reguły stoją
+  poza warstwami Tailwinda, więc `display: flex` wyżej wygrywa z każdą z nich.
 */
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   .kb-dok, .kb-komunikat { display: none; }
 }
 

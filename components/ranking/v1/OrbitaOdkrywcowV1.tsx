@@ -396,7 +396,7 @@ function Gwiazda({
 
           <span
             className="flex items-baseline gap-1.5"
-            title="Hype zebrany przez dodane boiska"
+            title="Polubienia zebrane przez dodane boiska"
           >
             <FireBallIcon className="h-4 w-4 self-center" />
             <b className="text-[18px] font-bold leading-none tabular-nums text-glow sm:text-[20px]">

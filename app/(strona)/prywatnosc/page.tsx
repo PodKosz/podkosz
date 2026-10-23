@@ -39,7 +39,7 @@ export default function PrivacyPage() {
             items={[
               [
                 "Konto Google",
-                "przy logowaniu przez Google dostajemy adres e-mail, nazwę i adres zdjęcia profilowego. Konto służy do dawania Hype boiskom, ulubionych, deklaracji gry, zgłoszeń i odznaczeń. Nie mamy dostępu do Twojej skrzynki ani kontaktów. Podstawa: świadczenie usługi, o którą prosisz, zakładając konto (art. 6 ust. 1 lit. b RODO).",
+                "przy logowaniu przez Google dostajemy adres e-mail, nazwę i adres zdjęcia profilowego. Konto służy do polubień boisk, ulubionych, deklaracji gry, zgłoszeń i odznaczeń. Nie mamy dostępu do Twojej skrzynki ani kontaktów. Podstawa: świadczenie usługi, o którą prosisz, zakładając konto (art. 6 ust. 1 lit. b RODO).",
               ],
               [
                 "Profil publiczny",
@@ -59,7 +59,7 @@ export default function PrivacyPage() {
               ],
               [
                 "Wiadomości e-mail z serwisu",
-                "wysyłamy jednorazowe powitanie po założeniu konta, wiadomość o decyzji w sprawie zgłoszonego boiska i powiadomienia o wydarzeniach na boiskach, którym dałeś Hype albo na których deklarowałeś grę, lub w ich okolicy. Nie wysyłamy newslettera ani reklam. Podstawa powitania i wiadomości o zgłoszeniu: świadczenie usługi (lit. b). Podstawa powiadomień o wydarzeniach: nasz prawnie uzasadniony interes, jakim jest informowanie graczy o tym, co dzieje się na ich boiskach (lit. f) - każdy taki mail ma link do wypisania się jednym kliknięciem, a powiadomienia wyłączysz też w ustawieniach konta.",
+                "wysyłamy jednorazowe powitanie po założeniu konta, wiadomość o decyzji w sprawie zgłoszonego boiska i powiadomienia o wydarzeniach na boiskach, które polubiłeś albo na których deklarowałeś grę, lub w ich okolicy. Nie wysyłamy newslettera ani reklam. Podstawa powitania i wiadomości o zgłoszeniu: świadczenie usługi (lit. b). Podstawa powiadomień o wydarzeniach: nasz prawnie uzasadniony interes, jakim jest informowanie graczy o tym, co dzieje się na ich boiskach (lit. f) - każdy taki mail ma link do wypisania się jednym kliknięciem, a powiadomienia wyłączysz też w ustawieniach konta.",
               ],
               [
                 "Opinie i zgłoszenia błędów",
@@ -149,7 +149,7 @@ export default function PrivacyPage() {
             Danych Osobowych (ul. Stawki 2, 00-193 Warszawa, uodo.gov.pl).
           </p>
           <p className="mt-4">
-            Konto usuniesz sam w ustawieniach konta. Usunięcie konta kasuje Twój Hype,
+            Konto usuniesz sam w ustawieniach konta. Usunięcie konta kasuje Twoje polubienia,
             ulubione i deklaracje gry oraz nazwę autora przy dodanych boiskach. Same wpisy boisk
             zostają, bo są treścią serwisu i nie zawierają danych osobowych.
           </p>

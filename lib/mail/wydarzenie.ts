@@ -62,8 +62,8 @@ function adresBoiska(slug: string) {
 function dlaczego(powod: DaneWydarzenia["powod"], boisko: string) {
   return powod === "to-boisko"
     /* „to-boisko" to ogień na tym boisku ALBO deklaracja gry na nim - zdanie mówi oba */
-    ? `Dostajesz tę wiadomość, bo dałeś Hype boisku „${boisko}" na PodKoszu albo zapisałeś się tam na grę.`
-    : "Dostajesz tę wiadomość, bo dałeś Hype boisku w okolicy tego wydarzenia.";
+    ? `Dostajesz tę wiadomość, bo polubiłeś boisko „${boisko}" na PodKoszu albo zapisałeś się tam na grę.`
+    : "Dostajesz tę wiadomość, bo polubiłeś boisko w okolicy tego wydarzenia.";
 }
 
 export function tematWydarzenia(d: Pick<DaneWydarzenia, "nazwa" | "boisko">) {

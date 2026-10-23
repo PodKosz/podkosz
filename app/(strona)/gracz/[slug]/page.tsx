@@ -51,7 +51,7 @@ export async function generateMetadata({
     "dodane boisko",
     "dodane boiska",
     "dodanych boisk",
-  ])}, zebrany Hype: ${statystyki.podpaleniaZebrane}. Zobacz odznaczenia i boiska.`;
+  ])}, zebrane polubienia: ${statystyki.podpaleniaZebrane}. Zobacz odznaczenia i boiska.`;
 
   return {
     title,
