@@ -53,9 +53,10 @@ const WARSTWY_MOTYWU: [
   keyof typeof BARWY_MAPY,
 ][] = [
   ["bg", "background-color", "tlo"],
-  ["woj-fill", "fill-color", "flame"],
-  ["woj-active", "fill-color", "flame"],
-  ["woj-line", "line-color", "glow"],
+  /* Polska od 23.10.2026 w kolorze tekstu motywu (wariant 07 „Neon bieli”), nie w pomarańczu */
+  ["woj-fill", "fill-color", "atrament"],
+  ["woj-active", "fill-color", "atrament"],
+  ["woj-line", "line-color", "atrament"],
   ["miasta-kropka", "circle-color", "atrament"],
   ["miasta-nazwa", "text-color", "atrament"],
   ["miasta-nazwa", "text-halo-color", "tlo"],
@@ -455,8 +456,9 @@ const STYLE: StyleSpecification = {
       // ocieplenie i wyciszenie kafelków - bez dotykania warstw własnych
       paint: {
         "raster-opacity": ["interpolate", ["linear"], ["zoom"], 9, 0.92, 12, 1],
-        "raster-saturation": -0.35,
-        "raster-hue-rotate": -12,
+        /* podkład bez koloru i bez ocieplenia - Polska świeci bielą granic (wariant 07) */
+        "raster-saturation": -0.6,
+        "raster-hue-rotate": 0,
         ...WYOSTRZENIE_ULIC,
       },
     },
@@ -505,7 +507,8 @@ const STYLE: StyleSpecification = {
       id: "woj-fill",
       type: "fill",
       source: "woj",
-      paint: { "fill-color": BARWY_MAPY.flame, "fill-opacity": 0.06 },
+      /* bez wypełnienia - kraj rysują same świecące granice (wariant 07 „Neon bieli”) */
+      paint: { "fill-color": BARWY_MAPY.atrament, "fill-opacity": 0 },
     },
     {
       id: "woj-active",
@@ -518,17 +521,21 @@ const STYLE: StyleSpecification = {
         a jednocześnie na tyle widoczna, że podświetlenie działa nawet wtedy, gdy
         przeglądarka nie poradzi sobie z warstwą SVG.
       */
-      paint: { "fill-color": BARWY_MAPY.flame, "fill-opacity": 0.05 },
+      paint: { "fill-color": BARWY_MAPY.atrament, "fill-opacity": 0.06 },
     },
     {
       id: "woj-line",
       type: "line",
       source: "woj",
       paint: {
-        "line-color": BARWY_MAPY.glow,
-        /* cienka nitka (opcja 51 z podglądu, październik 2026) - wcześniej 0,8 px */
-        "line-width": 0.35,
-        "line-opacity": 0.35,
+        "line-color": BARWY_MAPY.atrament,
+        /*
+          Wariant 07 „Neon bieli” z podglądu (23.10.2026): pełna jasna linia z miękką poświatą
+          (`line-blur`). Wcześniej cienka pomarańczowa nitka 0,35 px.
+        */
+        "line-width": 1,
+        "line-opacity": 0.9,
+        "line-blur": 1.5,
       },
     },
     {
@@ -626,7 +633,7 @@ function pomalujWgMotywu(map: MlMap) {
 
   /* ocieplenie kafelków było dobrane pod ciemny podkład - na jasnym gasi mapę do szarości */
   if (map.getLayer("carto")) {
-    map.setPaintProperty("carto", "raster-saturation", jasny ? -0.12 : -0.35);
+    map.setPaintProperty("carto", "raster-saturation", jasny ? -0.12 : -0.6);
     /* jasny podkład ma ulice wyraźne sam z siebie - wyostrzenie zostaje tylko dla ciemnego */
     const farba: Wyostrzenie = jasny
       ? { "raster-contrast": 0.08, "raster-brightness-min": 0, "raster-brightness-max": 1 }
@@ -634,7 +641,7 @@ function pomalujWgMotywu(map: MlMap) {
     for (const wlasciwosc of Object.keys(farba) as (keyof Wyostrzenie)[]) {
       map.setPaintProperty("carto", wlasciwosc, farba[wlasciwosc]);
     }
-    map.setPaintProperty("carto", "raster-hue-rotate", jasny ? 0 : -12);
+    map.setPaintProperty("carto", "raster-hue-rotate", 0);
   }
 }
 
@@ -1156,9 +1163,8 @@ export function MapView({
 
     if (typeof window !== "undefined") {
       (window as unknown as { __mapDiag: MapDiag }).__mapDiag = diag;
-      // uchwyt do mapy przydatny przy diagnostyce w konsoli - w dev, a na produkcji tylko dla
-      // tymczasowego podglądu kolorów mapy (`?kolory-mapy`, PodgladKolorowMapy.tsx)
-      if (process.env.NODE_ENV !== "production" || new URLSearchParams(window.location.search).has("kolory-mapy"))
+      // uchwyt do mapy przydatny przy diagnostyce w konsoli - tylko w dev
+      if (process.env.NODE_ENV !== "production")
         (window as unknown as { __map: MlMap }).__map = map;
     }
 

@@ -3663,6 +3663,22 @@ select option {
   się względem początku układu współrzędnych, a nie środka elipsy - plama odjeżdżałaby
   w róg zamiast pęcznieć w miejscu.
 */
+/*
+  Wariant 07 „Neon bieli” (23.10.2026): żar po najechaniu na województwo świeci kolorem
+  tekstu motywu - bielą w ciemnym, atramentem w jasnym - zamiast pomarańczem.
+*/
+svg.zar-woj {
+  --rgb-flame: 255 255 255;
+  --rgb-ember: 255 255 255;
+  --rgb-glow: 255 255 255;
+}
+
+[data-motyw="jasny"] svg.zar-woj {
+  --rgb-flame: 26 21 18;
+  --rgb-ember: 26 21 18;
+  --rgb-glow: 26 21 18;
+}
+
 .zar-woj {
   position: absolute;
   inset: 0;
