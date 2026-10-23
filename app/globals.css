@@ -6934,41 +6934,43 @@ body.ambient:has(main.kb)::before { display: none; }
   .kb-info .kb-info-tel { display: none; }
 }
 
-/* ---------- kto dziś gra: pas kart dni (prototyp 08) ---------- */
+/* ---------- kto dziś gra: oś dnia (prototyp 01), bez ramki ---------- */
 .kb-teraz { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--color-ink); }
 .kb-teraz::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #30d158; box-shadow: 0 0 0 3px rgb(48 209 88 / 0.18); animation: kb-puls 2s ease-in-out infinite; }
 @keyframes kb-puls { 50% { box-shadow: 0 0 0 6px rgb(48 209 88 / 0); } }
-.kb-dk-pas {
-  display: flex; gap: 10px; margin: 14px calc(-1 * var(--k-margines)) 0; padding: 4px var(--k-margines) 6px;
-  overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--k-margines); scrollbar-width: none;
+@media (hover: hover) { .kb-kolko-hover { transition: background-color 0.2s, color 0.2s; } .kb-kolko-hover:hover { background: var(--k-wyp-2); color: var(--color-ink); } }
+.kb-os-dni { display: flex; gap: 6px; margin: 16px calc(-1 * var(--k-margines)) 0; padding: 0 var(--k-margines); overflow-x: auto; scrollbar-width: none; }
+.kb-os-dni::-webkit-scrollbar { display: none; }
+@media (min-width: 1024px) { .kb-os-dni { margin-inline: 0; padding-inline: 0; } }
+.kb-os-dzien {
+  display: inline-flex; flex: none; align-items: center; gap: 6px; height: 34px; padding: 0 13px; border-radius: 999px;
+  background: var(--k-wyp); font-size: 13px; font-weight: 600; color: var(--color-muted); transition: background-color 0.2s, color 0.2s;
 }
-.kb-dk-pas::-webkit-scrollbar { display: none; }
-@media (min-width: 1024px) { .kb-dk-pas { margin-inline: 0; padding-inline: 0; scroll-padding-inline: 0; } }
-.kb-dk {
-  display: flex; flex: 0 0 auto; flex-direction: column; width: 188px; padding: 16px; scroll-snap-align: start;
-  border-radius: 20px; background: var(--k-karta); box-shadow: inset 0 0 0 1px var(--k-linia); text-align: left;
-  transition: box-shadow 0.2s, transform 0.2s;
+.kb-os-dzien b { font-weight: 700; color: var(--color-ink); }
+.kb-os-dzien[aria-checked="true"] { background: var(--k-aktywny); color: var(--k-aktywny-tekst); }
+.kb-os-dzien[aria-checked="true"] b { color: inherit; }
+.kb-os-srodek { display: grid; gap: 18px; margin-top: 20px; padding-inline: 4px; }
+@media (min-width: 900px) { .kb-os-srodek { grid-template-columns: 240px minmax(0, 1fr); align-items: end; gap: 40px; } }
+/* wykres leży wprost na stronie - przy lewej i prawej krawędzi gaśnie, zamiast urywać się na ramce */
+.kb-os-wykres {
+  position: relative; height: 150px; touch-action: pan-y; cursor: crosshair;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
 }
-@media (hover: hover) { .kb-dk:hover { transform: translateY(-2px); } }
-.kb-dk[aria-checked="true"] { box-shadow: inset 0 0 0 2px var(--color-ink); }
-.kb-dk small { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-faint); }
-.kb-dk-tytul { margin-top: 2px; font-size: 16px; font-weight: 600; }
-.kb-dk-ile { display: flex; align-items: flex-end; gap: 8px; margin-top: 14px; }
-.kb-dk-ile b { font-size: 50px; font-weight: 400; line-height: 0.85; }
-.kb-dk-ile span { padding-bottom: 3px; font-size: 13px; color: var(--color-muted); }
-.kb-dk-slupki { display: grid; grid-template-columns: repeat(16, minmax(0, 1fr)); align-items: end; gap: 2px; height: 40px; margin-top: 16px; }
-.kb-dk-slupki i { display: block; min-height: 2px; border-radius: 2px; background: var(--k-wyp-2); transition: height 0.45s cubic-bezier(0.3, 0.8, 0.2, 1); }
-.kb-dk-slupki i[data-stan="jest"] { background: color-mix(in oklab, var(--color-ink) 80%, transparent); }
-.kb-dk-slupki i[data-stan="teraz"] { background: #30d158; }
-.kb-dk-os { display: flex; justify-content: space-between; margin-top: 5px; font-size: 10px; color: var(--color-faint); font-variant-numeric: tabular-nums; }
-.kb-dk-opis { margin-top: 12px; min-height: 34px; font-size: 12.5px; line-height: 1.35; color: var(--color-muted); }
-/* karta z kodem QR - biała w obu motywach, bo kod musi stać na bieli, żeby dał się zeskanować */
-.kb-dk-qr { align-items: center; justify-content: center; gap: 10px; background: #fff; color: #111; box-shadow: 0 0 0 1px var(--k-linia); text-align: center; }
-.kb-dk-qr:hover { transform: none; }
-.kb-dk-kod { width: 120px; height: 120px; }
-.kb-dk-kod svg { display: block; }
-.kb-dk-qr p { font-size: 14px; font-weight: 700; }
-.kb-dk-qr p span { display: block; margin-top: 3px; font-size: 12px; font-weight: 500; color: #555; }
+.kb-os-wykres svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.kb-os-siatka { stroke: var(--k-linia); stroke-opacity: 0.6; }
+.kb-os-dno { stroke: var(--k-wyp-2); }
+.kb-os-prowadnica { stroke: var(--color-muted); }
+.kb-os-os { display: flex; justify-content: space-between; margin-top: 6px; padding-inline: 4%; font-size: 11.5px; color: var(--color-faint); font-variant-numeric: tabular-nums; }
+.kb-os-szczyt { position: absolute; width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px; border-radius: 50%; background: var(--color-ink); box-shadow: 0 0 0 4px var(--color-void); pointer-events: none; }
+.kb-os-szczyt span { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+.kb-os-dymek {
+  position: absolute; transform: translate(-50%, -130%); padding: 6px 10px; border-radius: 10px; background: var(--k-aktywny); color: var(--k-aktywny-tekst);
+  font-size: 12.5px; font-weight: 700; white-space: nowrap; pointer-events: none;
+}
+.kb-os-dymek span { font-weight: 500; opacity: 0.7; }
+.kb-os-pusto { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; font-size: 14px; color: var(--color-muted); }
+.kb-os-kod { width: 132px; height: 132px; flex: none; padding: 9px; border-radius: 14px; background: #fff; }
 
 /* rozwijanie bez mierzenia wysokości: siatka z jednym rzędem 0fr → 1fr */
 .kb-rozwin { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.38s cubic-bezier(0.3, 0.8, 0.2, 1); }
@@ -7104,6 +7106,6 @@ body:has(> .kb-dok) { padding-bottom: calc(80px + env(safe-area-inset-bottom)); 
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .kb-rozwin, .kb-dok-karta, .kb-serce .kb-serce-wypelnienie, .kb-dk-slupki i { transition: none; }
+  .kb-rozwin, .kb-dok-karta, .kb-serce .kb-serce-wypelnienie { transition: none; }
   .kb-serce-anim.kb-serce-pelne, .kb-arkusz, .kb-arkusz-tlo, .kb-komunikat, .kb-teraz::before { animation: none; }
 }
