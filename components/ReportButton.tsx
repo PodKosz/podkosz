@@ -15,10 +15,16 @@ export function ReportButton({
   courtId,
   label = "Zgłoś błąd",
   prominent = false,
+  className,
+  children,
 }: {
   courtId: string;
   label?: string;
   prominent?: boolean;
+  /** własny wygląd przycisku (stopka karty boiska na telefonie) - zastępuje oba warianty */
+  className?: string;
+  /** treść przycisku zamiast samego podpisu, np. ikona z podpisem */
+  children?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<ReportReason>("godziny");
@@ -54,12 +60,13 @@ export function ReportButton({
       <button
         onClick={otworz}
         className={
-          prominent
+          className ??
+          (prominent
             ? "flame-gradient-dim rounded-2xl px-8 py-4 text-[15px] font-bold text-ink transition hover:brightness-110"
-            : "rounded-full px-3 py-3 text-[13px] text-faint transition hover:text-muted"
+            : "rounded-full px-3 py-3 text-[13px] text-faint transition hover:text-muted")
         }
       >
-        {label}
+        {children ?? label}
       </button>
 
       {open && (

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useSesja } from "@/lib/sesja";
 import { Brand } from "./Brand";
 import { AuthMenu } from "./AuthMenu";
+import { IkMapa } from "./karta/ikony";
 
 /*
   Rankingi są dwa i mieszkają pod osobnymi adresami: „Ranking" to boiska, „Gracze" to
@@ -47,6 +48,14 @@ export function TopNav() {
   */
   if (path.startsWith("/gra/")) return null;
 
+  /*
+    Karta boiska na telefonie ma pasek w jednym rzędzie: logo po lewej, po prawej „Mapa"
+    i konto. Pod nim od samej góry leży zdjęcie boiska (`karta/KartaMobilna`), więc
+    dwurzędowy pasek z pełnym menu zasłaniałby pół kadru. Od progu `md` karta wraca do
+    układu komputerowego i pasek też.
+  */
+  const karta = path.startsWith("/boisko/");
+
   return (
     /*
       `data-kadr` - od dolnej krawędzi paska mapa na telefonie liczy górny margines kadru.
@@ -59,7 +68,9 @@ export function TopNav() {
     */
     <div
       data-kadr="gora"
-      className="pointer-events-none fixed inset-x-0 top-0 z-40 flex flex-col items-start gap-2 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-5"
+      className={`pointer-events-none fixed inset-x-0 top-0 z-40 flex gap-2 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-5 ${
+        karta ? "flex-row items-center justify-between" : "flex-col items-start"
+      }`}
     >
       {/*
         Logo jest wszędzie, także na telefonie na mapie - inaczej nie ma jak wrócić. Wyjątek to
@@ -72,9 +83,26 @@ export function TopNav() {
         style={path === "/" ? { filter: "drop-shadow(0 6px 20px rgba(0,0,0,.85))" } : undefined}
       >
         <div className={path === "/" ? "lg:hidden" : undefined}>
-          <Brand />
+          {/* na karcie boiska logo ma cały rząd dla siebie, więc na telefonie jest większe */}
+          <Brand rozmiar={karta ? "text-[18.5px] sm:text-[24.6px]" : undefined} />
         </div>
       </div>
+
+      {karta && (
+        <div className="pointer-events-auto flex shrink-0 items-center gap-2 md:hidden">
+          <Link
+            href="/"
+            className="glass flex h-10 items-center gap-1.5 rounded-full pl-3 pr-4 text-[13px] font-semibold text-ink transition active:scale-[0.97]"
+          >
+            <IkMapa className="h-[17px] w-[17px]" /> Mapa
+          </Link>
+          {sesja === undefined ? (
+            <span className="h-10 w-10 rounded-full bg-white/6" aria-hidden />
+          ) : (
+            <AuthMenu user={sesja.user} />
+          )}
+        </div>
+      )}
 
       {/*
         Cztery nazwy plus przycisk i awatar ledwo mieszczą się na wąskim telefonie, dlatego
@@ -83,7 +111,11 @@ export function TopNav() {
         pasek wychodził poza prawą krawędź ekranu przy 375 pikselach. Na telefonie menu ma
         własny rząd, więc rozciąga się na całą szerokość i rozkłada pozycje równo.
       */}
-      <nav className="glass pointer-events-auto flex w-full shrink-0 items-center justify-between gap-0.5 rounded-full p-1 pl-1.5 sm:w-auto sm:justify-start lg:gap-1 lg:p-1.5 lg:pl-3">
+      <nav
+        className={`glass pointer-events-auto flex w-full shrink-0 items-center justify-between gap-0.5 rounded-full p-1 pl-1.5 sm:w-auto sm:justify-start lg:gap-1 lg:p-1.5 lg:pl-3 ${
+          karta ? "max-md:hidden" : ""
+        }`}
+      >
         {LINKS.map((l) => (
           <Link
             key={l.href}

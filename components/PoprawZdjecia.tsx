@@ -62,11 +62,16 @@ export function PoprawZdjecia({
   lat,
   lng,
   photos,
+  className,
+  children,
 }: {
   courtId: string;
   lat: number;
   lng: number;
   photos: CourtPhotoRef[];
+  /** własny wygląd przycisku (stopka karty boiska na telefonie) */
+  className?: string;
+  children?: React.ReactNode;
 }) {
   const [otwarte, setOtwarte] = useState(false);
   const [krok, setKrok] = useState<Krok>("kadr");
@@ -172,9 +177,9 @@ export function PoprawZdjecia({
     <>
       <button
         onClick={otworz}
-        className="glass rounded-2xl px-8 py-4 text-[15px] font-medium text-ink transition hover:brightness-110"
+        className={className ?? "glass rounded-2xl px-8 py-4 text-[15px] font-medium text-ink transition hover:brightness-110"}
       >
-        Popraw zdjęcia
+        {children ?? "Popraw zdjęcia"}
       </button>
 
       {otwarte && (

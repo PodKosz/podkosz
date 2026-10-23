@@ -474,12 +474,28 @@ function formyDostepu(access: Access, hours: string): FormyDostepu {
  * i zmieniają się tylko słowa.
  */
 export function zdaniaOBoisku(court: DaneOpisu): string[] {
+  return zlozZdania(court).map((z) => z.tekst);
+}
+
+/** Cecha boiska, o której mówi zdanie. */
+export type CechaOpisu = "kosze" | "nawierzchnia" | "swiatlo" | "plot" | "dostep";
+
+/**
+ * Te same zdania co `zdaniaOBoisku`, ale przypisane do cech - karta boiska na telefonie
+ * stawia je jako podpisy w liście „Co tu znajdziesz", każde przy swoim parametrze.
+ * Słowa są identyczne jak w akapicie na komputerze, więc treść strony się nie rozjeżdża.
+ */
+export function zdaniaWedlugCech(court: DaneOpisu): Partial<Record<CechaOpisu, string>> {
+  return Object.fromEntries(zlozZdania(court).map((z) => [z.klucz, z.tekst]));
+}
+
+function zlozZdania(court: DaneOpisu): { klucz: CechaOpisu; tekst: string }[] {
   /*
     Najpierw sloty - dopiero potem tekst. Wariant trzeba móc przesunąć o jeden, gdy dwa
     sąsiednie zdania wypadną z tym samym początkiem (patrz niżej), a do tego potrzebna
     jest cała lista wariantów w chwili składania, nie gotowy napis.
   */
-  const sloty: { ziarno: string; warianty: readonly (() => string)[] }[] = [];
+  const sloty: { klucz: CechaOpisu; ziarno: string; warianty: readonly (() => string)[] }[] = [];
 
   if (court.hoops > 0) {
     const formy: FormyKoszy = {
@@ -491,6 +507,7 @@ export function zdaniaOBoisku(court: DaneOpisu): string[] {
       duzo: court.hoops >= 4,
     };
     sloty.push({
+      klucz: "kosze",
       ziarno: `${court.id}|kosze|${court.hoops}`,
       warianty: ZDANIA_KOSZE.map((z) => () => z(formy)),
     });
@@ -505,12 +522,14 @@ export function zdaniaOBoisku(court: DaneOpisu): string[] {
   const nawierzchnia = NAWIERZCHNIE[court.surface as Surface];
   if (nawierzchnia) {
     sloty.push({
+      klucz: "nawierzchnia",
       ziarno: `${court.id}|nawierzchnia|${court.surface}`,
       warianty: ZDANIA_NAWIERZCHNIA.map((z) => () => z(nawierzchnia)),
     });
   }
 
   sloty.push({
+    klucz: "swiatlo",
     ziarno: `${court.id}|swiatlo|${court.lit}`,
     warianty: ZDANIA_OSWIETLENIE.map((z) => () => z(court.lit)),
   });
@@ -522,6 +541,7 @@ export function zdaniaOBoisku(court: DaneOpisu): string[] {
   */
   if ((court.type as CourtType) !== "kryty") {
     sloty.push({
+      klucz: "plot",
       ziarno: `${court.id}|plot|${court.fenced}`,
       warianty: ZDANIA_OGRODZENIE.map((z) => () => z(court.fenced)),
     });
@@ -529,6 +549,7 @@ export function zdaniaOBoisku(court: DaneOpisu): string[] {
 
   const dostep = formyDostepu(court.access, court.hours);
   sloty.push({
+    klucz: "dostep",
     ziarno: `${court.id}|dostep|${court.access}|${court.hours}`,
     warianty: ZDANIA_DOSTEP.map((z) => () => z(dostep)),
   });
@@ -540,15 +561,15 @@ export function zdaniaOBoisku(court: DaneOpisu): string[] {
     a to jest dokładnie to, czego trzydzieści wariantów miało uniknąć. Wystarczy przesunąć
     o jeden wariant dalej: jest z czego wybierać, a wynik zostaje policzalny z danych.
   */
-  const zdania: string[] = [];
+  const zdania: { klucz: CechaOpisu; tekst: string }[] = [];
   for (const slot of sloty) {
     const i = skrot(slot.ziarno) % slot.warianty.length;
     let tekst = slot.warianty[i]();
-    const poprzednie = zdania[zdania.length - 1];
+    const poprzednie = zdania[zdania.length - 1]?.tekst;
     if (poprzednie && pierwszeSlowo(poprzednie) === pierwszeSlowo(tekst)) {
       tekst = slot.warianty[(i + 1) % slot.warianty.length]();
     }
-    zdania.push(tekst);
+    zdania.push({ klucz: slot.klucz, tekst });
   }
 
   return zdania;

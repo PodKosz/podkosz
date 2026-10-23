@@ -13,15 +13,18 @@ import { Logotyp } from "./Logotyp";
  * 24,6 px, a znak 65 px - 120% pierwszej wersji, bo przy pasku wyszukiwania logo wyglądało
  * na za małe (wybór z podglądu 22.10.2026).
  *
+ * `rozmiar` - wysokość liter, gdy logo stoi gdzie indziej niż zwykle (pasek karty boiska na
+ * telefonie ma jeden rząd zamiast dwóch, więc logo może być tam większe).
+ *
  * Identyfikator z useId - dwa loga na stronie (nawigacja + panel) miały kiedyś ten sam `id`,
  * a `url(#…)` trafiał do tego ukrytego i ikona znikała.
  */
-export function Brand() {
+export function Brand({ rozmiar = "text-[16.7px] sm:text-[24.6px]" }: { rozmiar?: string }) {
   const id = useId().replace(/:/g, "");
 
   return (
     <Link href="/" aria-label="PodKosz - mapa boisk" className="flex w-fit transition hover:opacity-90">
-      <Logotyp uid={`brand-${id}`} className="text-[16.7px] sm:text-[24.6px]" />
+      <Logotyp uid={`brand-${id}`} className={rozmiar} />
     </Link>
   );
 }

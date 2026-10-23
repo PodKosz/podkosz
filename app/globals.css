@@ -6751,3 +6751,263 @@ select option {
   .trop-mapa, .trop-strzal, .trop-pasek { transition: none; }
   .trop-zdjecie, .trop-wejscie { animation: none; }
 }
+
+/* =====================================================================
+   KARTA BOISKA NA TELEFONIE (od 23.10.2026, `components/karta/`)
+
+   Poniżej progu `md` karta boiska ma własny układ: zdjęcie od krawędzi do krawędzi z nazwą
+   w gradiencie, pasek „opinie, kosze, boisko”, sekcje jedna pod drugą i przyklejony na dole
+   „Idę zagrać”. Barwy jak w panelu filtrów: grafit i biel, wybrane = białe z ciemnym napisem.
+   Pomarańcz mają tu tylko „Idę zagrać” i polubione serce.
+
+   Zmienne `--k-*` dla obu motywów; komponenty nie wiedzą, który jest włączony.
+   ===================================================================== */
+:root {
+  --k-karta: #141417;
+  --k-wyp: rgb(255 255 255 / 0.075);
+  --k-wyp-2: rgb(255 255 255 / 0.13);
+  --k-linia: rgb(255 255 255 / 0.09);
+  --k-arkusz: #17171b;
+  --k-aktywny: linear-gradient(180deg, #ffffff, #e9e9ee);
+  --k-aktywny-tekst: #111113;
+  --k-cien: 0 18px 44px -14px rgb(0 0 0 / 0.75);
+  /* wysokość zdjęcia tytułowego - od niej liczy się, gdzie na kadrze staje nazwa */
+  --k-kadr: min(122vw, 560px);
+}
+[data-motyw="jasny"] {
+  --k-karta: #ffffff;
+  --k-wyp: rgb(0 0 0 / 0.045);
+  --k-wyp-2: rgb(0 0 0 / 0.085);
+  --k-linia: rgb(0 0 0 / 0.08);
+  --k-arkusz: #ffffff;
+  --k-aktywny: #1c1c1e;
+  --k-aktywny-tekst: #ffffff;
+  --k-cien: 0 16px 36px -16px rgb(0 0 0 / 0.3);
+}
+
+.kb { font-size: 15px; line-height: 1.45; }
+.kb-karta { background: var(--k-karta); border-radius: 22px; box-shadow: inset 0 0 0 1px var(--k-linia); }
+.kb-karta-moja { box-shadow: inset 0 0 0 1.5px var(--k-wyp-2); }
+.kb-sekcja { margin-top: 36px; padding-inline: 16px; }
+.kb-tytul { font-size: 21px; font-weight: 700; letter-spacing: -0.018em; line-height: 1.2; }
+.kb-nadtytul { font-size: 11.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-faint); }
+.kb-link { display: inline-flex; align-items: center; gap: 3px; font-size: 14.5px; font-weight: 500; color: var(--color-muted); }
+
+/* ---------- zdjęcie tytułowe ---------- */
+.kb-hero { position: relative; }
+.kb-hero-kadr { position: absolute; inset: 0 0 auto 0; height: var(--k-kadr); overflow: hidden; background: var(--k-karta); }
+/* góra: pod logo, „Mapa” i kontem - napisy paska muszą być czytelne na każdym kadrze */
+.kb-hero-gora {
+  position: absolute; inset: 0 0 auto 0; height: 140px;
+  background: linear-gradient(180deg, color-mix(in oklab, var(--color-void) 74%, transparent), transparent);
+}
+/* dół: kadr schodzi w tło strony, a w tym przejściu stoi nazwa boiska */
+.kb-hero-dol {
+  position: absolute; inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 36%,
+    color-mix(in oklab, var(--color-void) 50%, transparent) 60%,
+    color-mix(in oklab, var(--color-void) 90%, transparent) 82%,
+    var(--color-void) 100%
+  );
+}
+.kb-hero-tresc { position: relative; padding: calc(var(--k-kadr) - 140px) 16px 0; }
+
+/* plakietki na kadrze - zawsze ciemne szkło z jasnym napisem, bo pod spodem jest zdjęcie */
+.kb-na-kadrze,
+.kb-coconaut {
+  display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 11px;
+  border-radius: 999px; border: 1px solid rgb(255 255 255 / 0.14);
+  background: rgb(12 12 15 / 0.55); color: #fff;
+  backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  font-size: 12.5px; font-weight: 600; white-space: nowrap;
+}
+.kb-coconaut { border-color: rgb(56 170 50 / 0.5); background: rgb(6 20 9 / 0.62); color: #d9f7cf; }
+.kb-coconaut-notatka {
+  padding: 18px; border-radius: 20px;
+  background: linear-gradient(180deg, rgb(56 170 50 / 0.1), rgb(56 170 50 / 0.02)), var(--k-karta);
+  box-shadow: inset 0 0 0 1px rgb(56 170 50 / 0.3);
+}
+
+/* ---------- przyciski ---------- */
+.kb-przycisk {
+  display: inline-flex; align-items: center; height: 44px; border-radius: 999px;
+  border: 1px solid var(--k-linia); background: var(--k-wyp); color: var(--color-ink);
+  font-size: 14.5px; font-weight: 600; white-space: nowrap;
+  transition: background-color 0.2s, transform 0.15s;
+}
+.kb-przycisk:active { transform: scale(0.97); }
+.kb-kolko { display: grid; place-items: center; width: 32px; height: 32px; flex: none; border-radius: 50%; background: var(--k-wyp); color: var(--color-muted); }
+.kb-bialy { height: 50px; border-radius: 999px; background: var(--k-aktywny); color: var(--k-aktywny-tekst); font-size: 15px; font-weight: 700; }
+.kb-bialy:disabled { opacity: 0.5; }
+.kb-chip { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px; border-radius: 999px; background: var(--k-wyp); font-size: 12.5px; color: var(--color-muted); }
+.kb-chip b { color: var(--color-ink); font-weight: 700; }
+.kb-chip-przycisk {
+  display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px 0 10px;
+  border-radius: 999px; background: var(--k-wyp); color: var(--color-muted); font-size: 12.5px; font-weight: 600;
+}
+.kb-chip-przycisk[aria-pressed="true"] { background: var(--k-aktywny); color: var(--k-aktywny-tekst); }
+
+/* ---------- serce „Polub”: kontur wypełnia się piłką ---------- */
+.kb-serce { overflow: visible; }
+.kb-serce .kb-serce-wypelnienie {
+  transform-box: fill-box; transform: translateY(100%);
+  transition: transform 0.55s cubic-bezier(0.3, 0.8, 0.2, 1);
+}
+.kb-serce .kb-serce-szwy { opacity: 0; transition: opacity 0.3s ease 0.2s; }
+.kb-serce .kb-serce-kontur { transition: stroke 0.3s; }
+.kb-serce-pelne .kb-serce-wypelnienie { transform: none; }
+.kb-serce-pelne .kb-serce-szwy { opacity: 0.8; }
+.kb-serce-pelne .kb-serce-kontur { stroke: var(--grad-3); }
+.kb-serce-anim.kb-serce-pelne { animation: kb-serce-pop 0.55s cubic-bezier(0.3, 1.6, 0.5, 1); transform-origin: 50% 60%; }
+@keyframes kb-serce-pop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+/* ---------- pasek pod nazwą: opinie, kosze, boisko ---------- */
+.kb-info { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 22px; padding: 14px 8px; border-block: 1px solid var(--k-linia); }
+.kb-info-komorka { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; padding-inline: 6px; text-align: center; }
+.kb-info-komorka + .kb-info-komorka::before { content: ""; position: absolute; left: 0; top: 6px; bottom: 6px; width: 1px; background: var(--k-linia); }
+.kb-info-komorka small { font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-faint); white-space: nowrap; }
+.kb-info-komorka b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; }
+.kb-info-komorka > span { display: flex; justify-content: center; min-height: 15px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--color-muted); }
+
+/* ---------- kto dziś gra: słupki tygodnia ---------- */
+.kb-slupek { position: relative; display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 0; padding: 8px 0 9px; border-radius: 14px; color: var(--color-muted); transition: background-color 0.2s; }
+.kb-slupek[aria-checked="true"] { background: var(--k-aktywny); color: var(--k-aktywny-tekst); }
+.kb-slupek-liczba { font-size: 12px; font-weight: 600; }
+.kb-slupek-tor { display: flex; align-items: flex-end; width: 12px; height: 56px; border-radius: 6px; background: var(--k-wyp); overflow: hidden; }
+.kb-slupek[aria-checked="true"] .kb-slupek-tor { background: color-mix(in oklab, currentColor 14%, transparent); }
+.kb-slupek-tor i { display: block; width: 100%; border-radius: 6px; background: color-mix(in oklab, var(--color-ink) 45%, transparent); transition: height 0.45s cubic-bezier(0.3, 0.8, 0.2, 1); }
+.kb-slupek[aria-checked="true"] .kb-slupek-tor i { background: currentColor; }
+.kb-slupek-dzien { font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
+.kb-slupek-nr { margin-top: -3px; font-size: 16px; font-weight: 700; color: var(--color-ink); }
+.kb-slupek[aria-checked="true"] .kb-slupek-nr { color: inherit; }
+.kb-slupek-moj { position: absolute; top: 5px; right: 6px; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+/* rozwijanie bez mierzenia wysokości: siatka z jednym rzędem 0fr → 1fr */
+.kb-rozwin { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.38s cubic-bezier(0.3, 0.8, 0.2, 1); }
+.kb-rozwin[data-otwarte="true"] { grid-template-rows: 1fr; }
+.kb-qr { width: 132px; height: 132px; padding: 9px; border-radius: 14px; background: #fff; box-shadow: 0 0 0 1px var(--k-linia); }
+
+/* ---------- zdjęcia: pas przewijany w bok ---------- */
+.kb-pas {
+  display: flex; gap: 10px; margin-inline: -16px; padding-inline: 16px; overflow-x: auto;
+  scroll-snap-type: x mandatory; scroll-padding-inline: 16px; scrollbar-width: none; overscroll-behavior-x: contain;
+}
+.kb-pas::-webkit-scrollbar { display: none; }
+.kb-pas-kadr { flex: 0 0 auto; width: min(46vw, 210px); margin: 0; scroll-snap-align: start; }
+/* film 9:16 ma tę samą wysokość co zdjęcia 3:4 obok */
+.kb-pas-kadr-film { width: calc(min(46vw, 210px) * 0.75); }
+
+/* ---------- opinie ---------- */
+.kb-pasek { display: block; height: 4px; border-radius: 3px; background: var(--k-wyp-2); overflow: hidden; }
+.kb-pasek i { display: block; height: 100%; border-radius: 3px; background: var(--color-ink); transition: width 0.5s; }
+.kb-gwiazda { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; color: var(--color-faint); transition: transform 0.15s, color 0.15s; }
+.kb-gwiazda:active { transform: scale(0.88); }
+.kb-gwiazda-duza { width: 54px; height: 54px; }
+.kb-gwiazda[data-pelna="true"] { color: var(--color-ink); }
+.kb-gwiazda[data-pelna="true"] svg { fill: currentColor; }
+.kb-przypiete { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 9px; flex: none; border-radius: 999px; background: var(--k-wyp); font-size: 11px; font-weight: 700; color: var(--color-muted); }
+.kb-tag { display: inline-flex; align-items: center; height: 24px; padding: 0 9px; border-radius: 8px; background: var(--k-wyp); font-size: 12px; color: var(--color-muted); }
+.kb-wybor { height: 34px; padding: 0 13px; border-radius: 999px; background: var(--k-wyp); font-size: 13.5px; color: var(--color-ink); }
+.kb-wybor[aria-pressed="true"] { background: var(--k-aktywny); color: var(--k-aktywny-tekst); }
+.kb-pole {
+  display: block; width: 100%; min-height: 104px; padding: 12px 14px 26px; resize: none; border: 0; border-radius: 14px;
+  background: var(--k-wyp); color: var(--color-ink); font: inherit; font-size: 15px; line-height: 1.5;
+}
+.kb-pole::placeholder { color: var(--color-faint); }
+.kb-pole:focus { outline: none; box-shadow: inset 0 0 0 1px var(--color-muted); }
+
+/* ---------- co tu znajdziesz ---------- */
+.kb-cecha { display: flex; align-items: flex-start; gap: 14px; padding: 13px 4px; }
+.kb-cecha + .kb-cecha { border-top: 1px solid var(--k-linia); }
+
+/* ---------- pogoda ---------- */
+.kb-opad { position: absolute; left: 50%; bottom: 0; width: 16px; margin-left: -8px; border-radius: 5px 5px 2px 2px; background: var(--k-wyp-2); }
+.kb-kropka { position: absolute; left: 50%; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; background: var(--color-ink); box-shadow: 0 0 0 3px var(--k-karta); }
+
+/* ---------- najbliższe boiska ---------- */
+.kb-okolica { display: flex; align-items: center; gap: 14px; padding: 11px 4px; }
+li + li > .kb-okolica { border-top: 1px solid var(--k-linia); }
+
+/* ---------- arkusz od dołu (opinie, Coconaut Choice) ---------- */
+.kb-arkusz-warstwa { position: fixed; inset: 0; z-index: 70; }
+.kb-arkusz-tlo { position: absolute; inset: 0; background: rgb(0 0 0 / 0.55); animation: kb-pojaw 0.25s; }
+.kb-arkusz {
+  position: absolute; left: 50%; bottom: 0; width: min(100%, 520px); max-height: calc(100% - 40px); overflow-y: auto;
+  transform: translateX(-50%); padding: 8px 20px calc(20px + env(safe-area-inset-bottom));
+  border-radius: 28px 28px 0 0; background: var(--k-arkusz); color: var(--color-ink);
+  box-shadow: 0 -30px 80px rgb(0 0 0 / 0.5), inset 0 1px 0 var(--k-linia);
+  animation: kb-wjazd 0.38s cubic-bezier(0.3, 0.8, 0.2, 1);
+}
+.kb-arkusz-uchwyt { display: block; width: 38px; height: 5px; margin: 0 auto 8px; border-radius: 3px; background: var(--k-wyp-2); }
+@keyframes kb-pojaw { from { opacity: 0; } }
+@keyframes kb-wjazd { from { transform: translate(-50%, 100%); } }
+
+/* ---------- „Idę zagrać”: przyklejony na dole, rozwija wybór nad sobą ---------- */
+.kb-dok {
+  position: fixed; inset: auto 0 0 0; z-index: 55; display: flex; justify-content: center;
+  padding: 0 16px calc(14px + env(safe-area-inset-bottom)); pointer-events: none;
+}
+.kb-dok-tlo { position: fixed; inset: 0; border: 0; background: rgb(0 0 0 / 0.5); opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+.kb-dok[data-otwarte="true"] .kb-dok-tlo { opacity: 1; pointer-events: auto; }
+.kb-dok-karta {
+  position: relative; width: min(100%, 340px); border-radius: 30px; pointer-events: auto; color: var(--color-ink);
+  transition: width 0.38s cubic-bezier(0.3, 0.8, 0.2, 1), background-color 0.3s, box-shadow 0.3s, padding 0.3s;
+}
+.kb-dok[data-otwarte="true"] .kb-dok-karta {
+  width: min(100%, 440px); padding: 0 8px 8px; background: var(--k-arkusz);
+  box-shadow: 0 -20px 70px rgb(0 0 0 / 0.45), inset 0 0 0 1px var(--k-linia);
+}
+.kb-dok-cta {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; width: 100%; height: 58px;
+  border-radius: 999px; background: linear-gradient(135deg, var(--grad-1) 0%, var(--grad-2) 45%, var(--grad-3) 100%); color: #170900;
+  box-shadow: 0 14px 34px -12px rgb(var(--rgb-ember) / 0.75), 0 10px 26px -10px rgb(0 0 0 / 0.6);
+  transition: transform 0.15s, filter 0.2s, background 0.3s;
+}
+.kb-dok-cta:active { transform: scale(0.985); }
+.kb-dok-cta:disabled { filter: saturate(0.35) brightness(0.9); }
+.kb-dok-cta b { font-size: 16px; font-weight: 700; }
+.kb-dok-cta small { max-width: 100%; padding: 0 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 600; opacity: 0.72; }
+.kb-dok-cta[data-jest="true"] { background: var(--k-aktywny); color: var(--k-aktywny-tekst); box-shadow: var(--k-cien); }
+.kb-dzien { position: relative; display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 0; padding: 7px 0 8px; border-radius: 13px; background: var(--k-wyp); color: var(--color-muted); }
+.kb-dzien > span:nth-child(2) { color: var(--color-ink); }
+.kb-dzien[aria-checked="true"] { background: var(--k-aktywny); color: var(--k-aktywny-tekst); }
+.kb-dzien[aria-checked="true"] > span:nth-child(2) { color: inherit; }
+.kb-dzien-ile {
+  position: absolute; top: -6px; right: -3px; display: grid; place-items: center; min-width: 17px; height: 17px; padding: 0 4px;
+  border-radius: 999px; background: var(--color-ink); color: var(--color-void); font-size: 10px; font-weight: 700;
+}
+.kb-godzina { height: 40px; border-radius: 12px; background: var(--k-wyp); color: var(--color-ink); font-size: 13.5px; font-weight: 600; transition: background-color 0.15s, color 0.15s; }
+.kb-godzina[data-stan="srodek"] { background: color-mix(in oklab, var(--color-ink) 20%, transparent); }
+.kb-godzina[data-stan="brzeg"] { background: var(--k-aktywny); color: var(--k-aktywny-tekst); }
+.kb-godzina[data-stan="zajeta"] { text-decoration: line-through; }
+.kb-godzina:disabled { opacity: 0.32; }
+.kb-komunikat {
+  position: fixed; left: 50%; bottom: calc(88px + env(safe-area-inset-bottom)); z-index: 56; max-width: calc(100% - 32px);
+  padding: 10px 16px; transform: translateX(-50%); border-radius: 999px; background: var(--k-arkusz); color: var(--color-ink);
+  box-shadow: inset 0 0 0 1px var(--k-linia), var(--k-cien); font-size: 13.5px; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; animation: kb-komunikat 0.35s cubic-bezier(0.3, 0.8, 0.2, 1);
+}
+@keyframes kb-komunikat { from { opacity: 0; transform: translate(-50%, 10px); } }
+/* stopka serwisu nie chowa się pod przyciskiem „Idę zagrać” */
+@media (max-width: 767.98px) {
+  body:has(> .kb-dok) { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+}
+/*
+  Od progu `md` jest karta komputerowa i przycisku nie ma. Sama klasa `md:hidden` tu nie
+  wystarcza: te reguły stoją poza warstwami Tailwinda, więc `display: flex` wyżej wygrywa
+  z każdą klasą narzędziową.
+*/
+@media (min-width: 768px) {
+  .kb-dok, .kb-komunikat { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kb-rozwin, .kb-dok-karta, .kb-serce .kb-serce-wypelnienie, .kb-slupek-tor i { transition: none; }
+  .kb-serce-anim.kb-serce-pelne, .kb-arkusz, .kb-arkusz-tlo, .kb-komunikat { animation: none; }
+}

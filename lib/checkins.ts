@@ -170,7 +170,24 @@ const zSurowego = (w: SurowyPanel, dzien: string): PanelDeklaracji => ({
   mojeDni: Array.isArray(w.moje_dni) ? w.moje_dni : [],
 });
 
-export async function fetchPanel(courtId: string, dzien: string): Promise<PanelDeklaracji | null> {
+/*
+  Zapytania w toku, po boisku i dniu. Na telefonie i na komputerze karta boiska ma inny układ,
+  a oba stoją w dokumencie (przełącza je CSS), więc panel deklaracji montuje się dwa razy
+  w tej samej chwili. Drugie wywołanie dostaje obietnicę pierwszego zamiast własnego żądania.
+  Po odpowiedzi wpis znika - kolejne pytanie (np. po zapisie) idzie już do bazy na nowo.
+*/
+const panelWToku = new Map<string, Promise<PanelDeklaracji | null>>();
+
+export function fetchPanel(courtId: string, dzien: string): Promise<PanelDeklaracji | null> {
+  const klucz = `${courtId}|${dzien}`;
+  const trwa = panelWToku.get(klucz);
+  if (trwa) return trwa;
+  const obietnica = pobierzPanel(courtId, dzien).finally(() => panelWToku.delete(klucz));
+  panelWToku.set(klucz, obietnica);
+  return obietnica;
+}
+
+async function pobierzPanel(courtId: string, dzien: string): Promise<PanelDeklaracji | null> {
   const supabase = await supabaseBrowser();
   if (!supabase) return null;
 
@@ -312,14 +329,17 @@ export async function odwolajDeklaracje(courtId: string, dzien: string): Promise
   await supabase.from("checkins").delete().eq("court_id", courtId).eq("day", dzien);
 }
 
-/** „18:00-21:00" albo „18:00" - do napisu o własnej deklaracji. */
+/**
+ * „18:00-21:00" - do napisu o własnej deklaracji. Także jedna godzina idzie zakresem
+ * („18:00-19:00"): samo „18:00" czytało się jak godzina spotkania, a nie czas gry.
+ */
 export function opisGodzin(hours: number[]): string {
   if (!hours.length) return "";
   const g = (h: number) => `${String(h).padStart(2, "0")}:00`;
   const od = hours[0];
   const doG = hours[hours.length - 1];
   /* +1, bo deklaracja „18-20" znaczy trzy godziny gry, czyli do 21:00 */
-  return od === doG ? g(od) : `${g(od)}-${g(doG + 1)}`;
+  return `${g(od)}-${g(doG + 1)}`;
 }
 
 /**

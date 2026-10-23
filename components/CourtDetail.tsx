@@ -23,6 +23,7 @@ import { ReportButton } from "./ReportButton";
 import { PoprawZdjecia } from "./PoprawZdjecia";
 import { wysokiPlakat, type Wydarzenie } from "@/lib/wydarzenia";
 import { BoxWydarzenia } from "./BoxWydarzenia";
+import { KartaMobilna } from "./karta/KartaMobilna";
 import {
   ArrowLeftIcon,
   FireBallIcon,
@@ -85,7 +86,21 @@ export function CourtDetail({
   ];
 
   return (
-    <main className="min-h-dvh pb-24">
+    <>
+    {/*
+      Od 23.10.2026 telefon ma własną kartę (`karta/KartaMobilna`), a ta niżej zostaje na
+      komputerze. Obie są w dokumencie - strona jest budowana z góry, więc serwer nie wie,
+      na jakim ekranie się otworzy - a przełącza je próg `md` w CSS.
+    */}
+    <KartaMobilna
+      court={court}
+      nearby={nearby}
+      weather={weather}
+      nowHour={nowHour}
+      wydarzenie={wydarzenie}
+      avatarAutora={avatarAutora}
+    />
+    <main className="hidden min-h-dvh pb-24 md:block">
       <section className="relative h-[62vh] max-h-[780px] min-h-[420px] w-full overflow-hidden">
         <div className="absolute inset-0">
           <CourtPhoto photo={court.photos[0]} seed={court.seed} priority sizes="100vw" />
@@ -500,6 +515,7 @@ export function CourtDetail({
         </div>
       </div>
     </main>
+    </>
   );
 }
 
