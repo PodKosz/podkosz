@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { topBoiska } from "@/lib/repo";
-import { RankingBoisk, RANKING_DO } from "@/components/ranking/RankingBoisk";
+import { RankingBoisk, RANKING_DO, RANKING_OD_OPINII } from "@/components/ranking/RankingBoisk";
 import { HoopOutline } from "@/components/HoopOutline";
 import { Wjazdy } from "@/components/Wjazdy";
 
 export const metadata: Metadata = {
   title: "Ranking boisk - PodKosz",
   description:
-    "Najgorętsze boiska do koszykówki w Polsce. Kolejność wyznaczają polubienia społeczności - polub te, na których dobrze się gra.",
+    "Najlepiej oceniane boiska do koszykówki w Polsce. Kolejność wyznaczają oceny graczy - średnia ważona liczbą opinii, od dziesięciu opinii w górę.",
 };
 
-/* Kolejność zmienia podpalanie, a to unieważnia znacznik boisk - pięć minut wystarczy. */
+/* Kolejność zmieniają nowe opinie - pięć minut opóźnienia rankingu nikomu nie szkodzi. */
 export const revalidate = 300;
 
 export default async function RankingPage() {
@@ -34,14 +34,15 @@ export default async function RankingPage() {
         <h1
           data-wjazd="zar"
           className="mt-3 text-[clamp(34px,5.5vw,62px)] font-semibold leading-[1.02] tracking-[-0.03em]">
-          Najgorętsze boiska w Polsce
+          Najlepiej oceniane boiska w Polsce
         </h1>
         <p
           data-wjazd="zar"
           className="mt-5 text-[clamp(15px,1.4vw,17px)] leading-relaxed text-muted"
         >
-          Kolejność wyznaczają polubienia społeczności. Polub boiska, na których
-          dobrze się gra - to jedyne, co przesuwa je w górę.
+          Kolejność wyznaczają oceny graczy - średnia ważona liczbą opinii, więc trzy
+          piątki nie przeskoczą 4,5 od tysiąca osób. Do rankingu wchodzi boisko
+          z co najmniej {RANKING_OD_OPINII} opiniami.
         </p>
         <Link
           data-wjazd="zar"

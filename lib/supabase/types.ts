@@ -25,6 +25,10 @@ export interface CourtRow {
   funny: boolean;
   shorts_url: string;
   likes_count: number;
+  /** liczniki opinii (migration-opinie.sql) i wynik w rankingu (migration-ranking-ocen.sql) */
+  opinie_liczba?: number;
+  opinie_srednia?: number | null;
+  ranking_wynik?: number | null;
   added_by: string | null;
   added_by_name: string;
   created_at: string;

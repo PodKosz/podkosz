@@ -111,7 +111,7 @@ export default async function GraczPage({ params }: { params: Promise<{ slug: st
   */
   const kafelki: [string, number][] = [
     ["Boiska w bazie", statystyki.boiska],
-    ["Zebrane podpalenia", statystyki.podpaleniaZebrane],
+    ["Zebrane polubienia", statystyki.podpaleniaZebrane],
     ["Miejscowości", statystyki.miasta],
     ["Godziny na boisku", statystyki.godziny],
   ];

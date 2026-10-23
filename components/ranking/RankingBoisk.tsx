@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { Court, TYPE_LABEL, surfaceLabel } from "@/lib/types";
 import { CourtPhoto } from "@/components/CourtPhoto";
+import { plural } from "@/lib/site";
+import { ocenaTekstem } from "@/lib/opinie";
 import {
   BasketApprovedBadge,
-  FireBallIcon,
   FunnyBadge,
   HoopIcon,
   PinIcon,
@@ -48,6 +49,28 @@ const LISTA_DO = 25;
  */
 export const RANKING_DO = LISTA_DO;
 
+/** Ile opinii musi mieć boisko, żeby wejść do rankingu - to samo progowe 10 liczy baza. */
+export const RANKING_OD_OPINII = 10;
+
+/** Gwiazdka z oceną i liczbą opinii - w miejscu dawnej liczby podpaleń. */
+function Ocena({ court, krotko = false }: { court: Court; krotko?: boolean }) {
+  const o = court.opinie;
+  if (!o?.liczba || o.srednia === null) return null;
+  return (
+    <span className="inline-flex items-center gap-1.5 tabular-nums">
+      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden>
+        <path d="M12 3.6l2.6 5.3 5.8.9-4.2 4.1 1 5.8L12 17l-5.2 2.7 1-5.8-4.2-4.1 5.8-.9z" />
+      </svg>
+      {ocenaTekstem(o.srednia)}
+      {!krotko && (
+        <span className="font-medium opacity-70">
+          · {o.liczba} {plural(o.liczba, ["opinia", "opinie", "opinii"])}
+        </span>
+      )}
+    </span>
+  );
+}
+
 export function RankingBoisk({ courts }: { courts: Court[] }) {
   const [pierwszy, ...reszta] = courts;
   const trojka = reszta.slice(0, 3);
@@ -57,7 +80,7 @@ export function RankingBoisk({ courts }: { courts: Court[] }) {
   if (!pierwszy) {
     return (
       <p className="szklo-pro rounded-[28px] p-10 text-center text-[15px] text-muted">
-        Baza jest jeszcze pusta - dodaj pierwsze boisko.
+        Ranking rusza, gdy boisko zbierze {RANKING_OD_OPINII} opinii. Oceń boiska, na których grasz.
       </p>
     );
   }
@@ -212,9 +235,11 @@ export function KartaBoiska({
         }`}
       >
         <span className="flex items-center gap-2.5">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-black/45 px-3 py-1.5 text-[13px] font-bold text-glow backdrop-blur">
-            <FireBallIcon className="h-4 w-4" /> {court.likes}
-          </span>
+          {court.opinie?.liczba ? (
+            <span className="inline-flex items-center rounded-full bg-black/45 px-3 py-1.5 text-[13px] font-bold text-kadr backdrop-blur">
+              <Ocena court={court} />
+            </span>
+          ) : null}
           <span className="flex items-center gap-1.5 text-[13px] text-kadr/70">
             <PinIcon className="h-3.5 w-3.5 text-flame" />
             {court.city}
@@ -249,7 +274,7 @@ export function KartaBoiska({
 }
 
 /**
- * Zwarty wiersz - dla miejsc, przy których liczy się już tylko nazwa i liczba podpaleń.
+ * Zwarty wiersz - dla miejsc, przy których liczy się już tylko nazwa i ocena.
  *
  * `min-w-0` na elemencie listy jest tu konieczne, nie kosmetyczne: element siatki ma
  * domyślnie `min-width: auto`, więc nie kurczy się poniżej szerokości własnej treści.
@@ -282,8 +307,13 @@ function WierszBoiska({ court, miejsce }: { court: Court; miejsce: number }) {
           </span>
         </span>
 
-        <span className="flex shrink-0 items-center gap-1.5 text-[15px] font-semibold text-glow">
-          <FireBallIcon className="h-4 w-4" /> {court.likes}
+        <span className="flex shrink-0 flex-col items-end text-[15px] font-semibold">
+          <Ocena court={court} krotko />
+          {court.opinie?.liczba ? (
+            <span className="text-[12px] font-normal tabular-nums text-faint">
+              {court.opinie.liczba} {plural(court.opinie.liczba, ["opinia", "opinie", "opinii"])}
+            </span>
+          ) : null}
         </span>
       </Link>
     </li>

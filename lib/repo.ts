@@ -48,6 +48,7 @@ export function rowToCourt(row: CourtRow): Court {
     access: row.access,
     hours: row.hours,
     likes: row.likes_count,
+    opinie: { liczba: row.opinie_liczba ?? 0, srednia: row.opinie_srednia ?? null },
     basketApproved: row.basket_approved,
     basketNote: row.basket_note ?? '',
     funny: row.funny ?? false,
@@ -171,9 +172,17 @@ export async function topBoiska(ile: number): Promise<Court[]> {
       const supabase = supabasePublic();
       if (!supabase) return [...COURTS].sort((a, b) => b.likes - a.likes).slice(0, ile);
 
+      /*
+        Ranking według ocen: średnia ważona liczbą opinii (`ranking_wynik`, patrz
+        migration-ranking-ocen.sql). Boiska z mniej niż dziesięcioma opiniami mają tam null
+        i do rankingu nie wchodzą. Przy remisie wygrywa więcej opinii, potem polubienia.
+      */
       const { data, error } = await supabase
         .from("courts")
         .select(COURT_SELECT)
+        .not("ranking_wynik", "is", null)
+        .order("ranking_wynik", { ascending: false })
+        .order("opinie_liczba", { ascending: false })
         .order("likes_count", { ascending: false })
         .limit(ile);
 
