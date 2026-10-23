@@ -7009,6 +7009,9 @@ body.ambient:has(main.kb)::before { display: none; }
 .kb-stos-film { width: min(46vw, 200px); margin: 8px 0 0; }
 
 /* ---------- zdjęcia + opinie: na komputerze jeden rząd ---------- */
+/* więcej powietrza nad tym rzędem - oś dnia nad nim kończy się podpisami godzin, bez żadnej krawędzi */
+.kb-zdjecia-opinie { margin-top: 20px; }
+@media (min-width: 1024px) { .kb-zdjecia-opinie { margin-top: 44px; } }
 @media (min-width: 1024px) {
   .kb-zdjecia-opinie { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 64px; align-items: start; }
   .kb-zdjecia-opinie > :only-child { grid-column: 1 / -1; }
