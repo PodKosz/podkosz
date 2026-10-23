@@ -7028,7 +7028,8 @@ body.ambient:has(main.kb)::before { display: none; }
 .kb-opinie-srednia p { font-size: 80px; line-height: 0.85; }
 /* przecinek Antona schodzi pod linię - gwiazdki muszą zacząć się niżej, żeby na nie nie wchodził */
 .kb-opinie-srednia div { display: flex; flex-direction: column; align-items: center; gap: 5px; margin-top: 22px; font-size: 13px; font-weight: 600; color: var(--color-muted); }
-@media (min-width: 1024px) { .kb-opinie-srednia p { font-size: 104px; } .kb-opinie-srednia div { margin-top: 26px; } }
+/* na komputerze średnia stoi niżej - mniej więcej na wysokości pierwszej trzeciej zdjęcia obok, a nie przy jego górnej krawędzi */
+@media (min-width: 1024px) { .kb-opinie-podsum { padding-top: 112px; padding-bottom: 36px; } .kb-opinie-srednia p { font-size: 104px; } .kb-opinie-srednia div { margin-top: 26px; } }
 /* linia z gradientem: najjaśniejsza na środku, gaśnie ku brzegom */
 .kb-opinie-linia, .kb-opinia + .kb-opinia::before, .kb-opinie-ocen::before {
   content: ""; display: block; height: 1px; background: linear-gradient(90deg, transparent, var(--k-wyp-2) 20%, var(--k-wyp-2) 80%, transparent);
@@ -7102,7 +7103,7 @@ body.ambient:has(main.kb)::before { display: none; }
   background: radial-gradient(closest-side, rgb(var(--rgb-flame) / 0.45), transparent); animation: kb-pinezka 2.4s ease-in-out infinite;
 }
 @keyframes kb-pinezka { 50% { transform: scale(1.35); opacity: 0.5; } }
-/* adres i „Prowadź" przy pinezce: na telefonie pod nią, na komputerze z prawej */
+/* adres pod pinezką, a pod adresem „Prowadź" - na każdym ekranie */
 .kb-mapka-adres {
   position: absolute; left: 50%; top: calc(50% + 28px); transform: translateX(-50%);
   display: flex; flex-direction: column; align-items: center; gap: 10px; width: max-content; max-width: calc(100% - 32px); text-align: center;
@@ -7110,9 +7111,7 @@ body.ambient:has(main.kb)::before { display: none; }
 .kb-mapka-adres p { display: flex; flex-direction: column; text-shadow: 0 1px 2px var(--color-void), 0 0 14px var(--color-void), 0 0 26px var(--color-void); }
 .kb-mapka-adres b { font-size: 15px; font-weight: 700; }
 .kb-mapka-adres span { font-size: 12.5px; color: var(--color-muted); }
-@media (min-width: 768px) {
-  .kb-mapka-adres { left: calc(50% + 32px); top: 50%; transform: translateY(-50%); flex-direction: row; align-items: center; gap: 16px; text-align: left; }
-}
+
 @media (prefers-reduced-motion: reduce) { .kb-mapka-pinezka::before { animation: none; } }
 
 /* ---------- najbliższe boiska ---------- */
