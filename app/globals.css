@@ -6976,25 +6976,25 @@ body.ambient:has(main.kb)::before { display: none; }
 .kb-rozwin { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.38s cubic-bezier(0.3, 0.8, 0.2, 1); }
 .kb-rozwin[data-otwarte="true"] { grid-template-rows: 1fr; }
 
-/* ---------- zdjęcia: pas przewijany w bok ---------- */
-.kb-pas {
-  display: flex; gap: 10px; margin-inline: -16px; padding-inline: 16px; overflow-x: auto;
-  scroll-snap-type: x mandatory; scroll-padding-inline: 16px; scrollbar-width: none; overscroll-behavior-x: contain;
+/* ---------- zdjęcia: talia (prototyp 04) - na komputerze na środku strony ---------- */
+.kb-stos-uklad { display: grid; justify-items: center; gap: 16px; margin-top: 16px; }
+.kb-stos { position: relative; width: min(78vw, 300px); aspect-ratio: 3 / 4; touch-action: pan-y; user-select: none; }
+@media (min-width: 768px) { .kb-stos { width: 340px; } }
+.kb-stos-karta {
+  position: absolute; inset: 0; overflow: hidden; border-radius: 22px; background: var(--k-karta); cursor: grab;
+  box-shadow: 0 20px 50px -20px rgb(0 0 0 / calc(0.9 * var(--moc-cienia))), inset 0 0 0 1px var(--k-linia);
+  transition: transform 0.45s cubic-bezier(0.3, 0.8, 0.2, 1), opacity 0.45s;
 }
-.kb-pas::-webkit-scrollbar { display: none; }
-.kb-pas-kadr { flex: 0 0 auto; width: min(46vw, 210px); margin: 0; scroll-snap-align: start; }
-/* film 9:16 ma tę samą wysokość co zdjęcia 3:4 obok */
-.kb-pas-kadr-film { width: calc(min(46vw, 210px) * 0.75); }
-.kb-strzalki { display: none; }
-@media (min-width: 1024px) {
-  /* na komputerze pas kończy się na krawędzi treści, jak sekcje nad nim i pod nim */
-  .kb-pas { margin-inline: 0; padding-inline: 0; scroll-padding-inline: 0; }
-  .kb-pas-kadr { width: 228px; }
-  .kb-pas-kadr-film { width: 171px; }
-  .kb-strzalki { display: flex; gap: 6px; }
-  .kb-strzalki .kb-kolko { width: 36px; height: 36px; transition: background-color 0.2s, color 0.2s; }
-  .kb-strzalki .kb-kolko:hover { background: var(--k-wyp-2); color: var(--color-ink); }
+.kb-stos-karta img { pointer-events: none; -webkit-user-drag: none; }
+.kb-stos-karta[data-poz="0"] { z-index: 3; }
+.kb-stos-karta[data-poz="1"] { z-index: 2; transform: translate(14px, 10px) rotate(4deg) scale(0.96); }
+.kb-stos-karta[data-poz="2"] { z-index: 1; transform: translate(-12px, 16px) rotate(-5deg) scale(0.92); opacity: 0.8; }
+.kb-stos-karta[data-poz="x"] { opacity: 0; transform: scale(0.9); pointer-events: none; }
+.kb-stos-podpis {
+  position: absolute; inset: auto 0 0 0; z-index: 1; padding: 26px 14px 12px; background: linear-gradient(to top, rgb(0 0 0 / 0.8), transparent);
+  font-size: 12.5px; font-weight: 600; color: var(--color-kadr);
 }
+.kb-stos-film { width: min(46vw, 200px); margin: 8px 0 0; }
 
 /* ---------- opinie ---------- */
 .kb-pasek { display: block; height: 4px; border-radius: 3px; background: var(--k-wyp-2); overflow: hidden; }
