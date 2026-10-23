@@ -142,9 +142,6 @@ export function CourtDetail({
             <h1 className="mt-3 max-w-[22ch] text-[30px] font-bold leading-[1.08] tracking-[-0.025em] [text-wrap:balance] md:text-[46px] lg:text-[58px] lg:leading-[1.02]">
               {court.name}
             </h1>
-            <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px] text-muted md:text-[16px]">
-              <span>{court.city}</span>
-            </p>
 
 
             {/* „losuj dalej" po wejściu z losowania - poza nim nic się tu nie rysuje */}

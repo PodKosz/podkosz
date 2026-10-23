@@ -6928,8 +6928,8 @@ body.ambient:has(main.kb)::before { display: none; }
 
 /* ---------- pasek pod nazwą: opinie, kosze, boisko ---------- */
 /* na telefonie linie paska idą od krawędzi do krawędzi ekranu */
-.kb-info { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 22px calc(-1 * var(--k-margines)) 0; padding: 14px 8px; border-block: 1px solid var(--k-linia); }
-@media (min-width: 768px) { .kb-info { margin-inline: 0; margin-top: 28px; } }
+.kb-info { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 14px calc(-1 * var(--k-margines)) 0; padding: 14px 8px; border-block: 1px solid var(--k-linia); }
+@media (min-width: 768px) { .kb-info { margin-inline: 0; margin-top: 16px; } }
 .kb-info-komorka { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; padding-inline: 6px; text-align: center; }
 .kb-info-komorka + .kb-info-komorka::before { content: ""; position: absolute; left: 0; top: 6px; bottom: 6px; width: 1px; background: var(--k-linia); }
 .kb-info-komorka small { font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-faint); white-space: nowrap; }
@@ -7022,9 +7022,10 @@ body.ambient:has(main.kb)::before { display: none; }
   background: radial-gradient(closest-side, color-mix(in oklab, var(--color-ink) 9%, transparent), transparent);
 }
 .kb-opinie-srednia { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; }
-.kb-opinie-srednia p { font-size: 96px; line-height: 0.85; }
-.kb-opinie-srednia div { display: flex; flex-direction: column; align-items: center; gap: 5px; margin-top: 10px; font-size: 13px; font-weight: 600; color: var(--color-muted); }
-@media (min-width: 1024px) { .kb-opinie-srednia p { font-size: 128px; } }
+.kb-opinie-srednia p { font-size: 80px; line-height: 0.85; }
+/* przecinek Antona schodzi pod linię - gwiazdki muszą zacząć się niżej, żeby na nie nie wchodził */
+.kb-opinie-srednia div { display: flex; flex-direction: column; align-items: center; gap: 5px; margin-top: 22px; font-size: 13px; font-weight: 600; color: var(--color-muted); }
+@media (min-width: 1024px) { .kb-opinie-srednia p { font-size: 104px; } .kb-opinie-srednia div { margin-top: 26px; } }
 /* linia z gradientem: najjaśniejsza na środku, gaśnie ku brzegom */
 .kb-opinie-linia, .kb-opinia + .kb-opinia::before, .kb-opinie-ocen::before {
   content: ""; display: block; height: 1px; background: linear-gradient(90deg, transparent, var(--k-wyp-2) 20%, var(--k-wyp-2) 80%, transparent);
@@ -7088,6 +7089,8 @@ body.ambient:has(main.kb)::before { display: none; }
   mask-composite: intersect;
 }
 @media (min-width: 768px) { .kb-mapka { height: 360px; margin-inline: 0; } }
+/* sama czerń, biel i szarości - kafelki podkładu mają lekko niebieski odcień */
+.kb-mapka-kafelki { filter: grayscale(1); }
 .kb-mapka-kafelki img { position: absolute; width: 256px; height: 256px; max-width: none; user-select: none; }
 .kb-mapka-pinezka { position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; transform: translate(-50%, -50%); filter: drop-shadow(0 6px 14px rgb(0 0 0 / 0.55)); }
 .kb-mapka-pinezka svg { display: block; width: 100%; height: 100%; }
