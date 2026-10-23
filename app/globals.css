@@ -6961,7 +6961,8 @@ body.ambient:has(main.kb)::before { display: none; }
 /* telefon: trzy pozycje (opinie, kosze, boisko); komputer: siedem osobnych */
 .kb-info .kb-info-pc { display: none; }
 @media (min-width: 1024px) {
-  .kb-info { grid-template-columns: repeat(7, minmax(0, 1fr)); padding-block: 18px; }
+  /* bez dolnej kreski - pod paskiem na komputerze jest dość powietrza, linia tylko cięła stronę */
+  .kb-info { grid-template-columns: repeat(7, minmax(0, 1fr)); padding-block: 18px; border-bottom: 0; }
   .kb-info .kb-info-pc { display: flex; }
   .kb-info .kb-info-tel { display: none; }
 }
@@ -7245,3 +7246,41 @@ body:has(> .kb-dok) { padding-bottom: calc(80px + env(safe-area-inset-bottom)); 
   .kb-rozwin, .kb-dok-karta, .kb-serce .kb-serce-wypelnienie { transition: none; }
   .kb-serce-anim.kb-serce-pelne, .kb-arkusz, .kb-arkusz-tlo, .kb-komunikat, .kb-teraz::before { animation: none; }
 }
+
+/* ==========================================================================
+   TRASY Z WYSZUKANEGO ADRESU (TrasyNaMapie.tsx) - wizytówki na końcach linii
+   ========================================================================== */
+/*
+  Wizytówka boiska ma 300 px i jest zrobiona pod jedną kartę naraz. Tu stoją trzy, więc
+  skalujemy ją od dolnej krawędzi: dół zostaje tam, gdzie postawił go znacznik (nad pinezką).
+*/
+.trasa-karta {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  transform: scale(var(--trasa-skala, 0.66)); transform-origin: 50% 100%;
+  animation: trasa-karta-wejscie 0.42s cubic-bezier(0.2, 0.9, 0.25, 1.15) both;
+}
+.trasa-karta-wizytowka { display: block; cursor: pointer; }
+/* karta pod punktem: rośnie od górnej krawędzi, czas dojścia zostaje najbliżej punktu */
+.trasa-karta-pod { transform-origin: 50% 0; }
+.trasa-osm.trasa-osm-kompakt { width: auto; align-items: center; padding: 14px 16px; text-align: center; }
+.trasa-osm-kompakt .trasa-osm-przyciski { margin-top: 2px; }
+@keyframes trasa-karta-wejscie {
+  from { opacity: 0; transform: translateY(14px) scale(calc(var(--trasa-skala, 0.66) * 0.86)); }
+  to { opacity: 1; transform: scale(var(--trasa-skala, 0.66)); }
+}
+/* czas dojścia nad wizytówką - w skali karty, więc pismo jest większe, niż wygląda */
+.trasa-czas {
+  display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 999px;
+  font-size: 19px; font-weight: 700; white-space: nowrap; color: var(--color-ink);
+  box-shadow: inset 0 0 0 1.5px rgb(var(--rgb-flame) / 0.55), 0 10px 26px -10px rgb(var(--rgb-ember) / 0.7);
+}
+/* zaproszenie nad szarym punktem z OSM */
+.trasa-osm { display: flex; flex-direction: column; gap: 8px; width: 300px; padding: 20px 20px 18px; border-radius: 24px; text-align: left; }
+.trasa-osm-nadtytul { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-faint); }
+.trasa-osm-tytul { font-size: 21px; font-weight: 700; line-height: 1.2; letter-spacing: -0.01em; color: var(--color-ink); }
+.trasa-osm-opis { font-size: 15px; line-height: 1.4; color: var(--color-muted); }
+.trasa-osm-przyciski { display: flex; gap: 8px; margin-top: 6px; }
+.trasa-osm-dodaj, .trasa-osm-wiecej { display: inline-flex; align-items: center; height: 44px; padding: 0 18px; border-radius: 999px; font-size: 16px; font-weight: 700; }
+.trasa-osm-dodaj { background: linear-gradient(135deg, var(--grad-1), var(--grad-2) 55%, var(--grad-3)); color: #1a0b02; }
+.trasa-osm-wiecej { background: var(--color-hairline, rgb(255 255 255 / 0.08)); color: var(--color-ink); }
+@media (prefers-reduced-motion: reduce) { .trasa-karta { animation: none; } }

@@ -10,6 +10,7 @@ import { CITIES_GEOJSON } from "@/lib/cities";
 import type { LeadPoint } from "@/lib/leads";
 import type { CelMapy } from "@/lib/miejsca";
 import { HoverCard } from "./HoverCard";
+import { TrasyNaMapie } from "./TrasyNaMapie";
 import { rozgrzejBoisko } from "@/lib/galeria";
 import { kafelkiPodkladu, podkladMapy } from "@/lib/podklad";
 import { ZarWojewodztwa, bboxWojewodztwa, stworzZarWojewodztwa } from "@/lib/zarWojewodztwa";
@@ -686,6 +687,8 @@ export function MapView({
     Record<string, { marker: Marker; el: HTMLDivElement; grupa: GrupaBoisk; podpis: string }>
   >({});
   const [ready, setReady] = useState(false);
+  /** mapa w stanie (nie tylko w ref) - dla trasy z wyszukanego adresu, która rysuje się w osobnym komponencie */
+  const [mapa, setMapa] = useState<MlMap | null>(null);
   const [diag, setDiag] = useState<MapDiag | null>(null);
   const [showDiag, setShowDiag] = useState(false);
   /** pinezka z wizytówką: boisko, punkt zaczepienia na ekranie i ilu ludzi idzie tam dziś */
@@ -995,6 +998,7 @@ export function MapView({
       // pinezki wieszamy już po sparsowaniu stylu - nie czekamy na `load`, które
       // w nieaktywnej karcie przeglądarki potrafi nie przyjść wcale
       setReady(true);
+      setMapa(map);
     });
     map.on("data", (e) => {
       if (e.dataType === "source" && e.tile) diag.tiles += 1;
@@ -2041,6 +2045,9 @@ export function MapView({
 
       {/* filtr zaginający tło pod wizytówką - musi być w drzewie, sam nic nie rysuje */}
       <FiltrSzkla />
+
+      {/* pomarańczowe trasy z wyszukanego adresu do trzech najbliższych boisk */}
+      <TrasyNaMapie map={mapa} cel={cel} courts={courts} wydarzenia={wydarzenia} checkiny={checkiny} dotyk={coarse} />
 
       {/*
         Rysujemy wizytówkę aktywną ALBO tę, która właśnie gaśnie - nigdy obie. Dzięki temu
