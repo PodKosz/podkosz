@@ -73,14 +73,17 @@ export default async function CourtPage({ params }: { params: Promise<{ slug: st
     adresBoiska(court.lat, court.lng),
   ]);
 
-  // godzina w Polsce liczona na serwerze, żeby prognoza zaczynała się od właściwej
-  const nowHour = Number(
-    new Intl.DateTimeFormat("pl-PL", {
-      hour: "2-digit",
-      hour12: false,
-      timeZone: "Europe/Warsaw",
-    }).format(new Date())
-  );
+  // data i godzina w Polsce liczone na serwerze, żeby prognoza zaczynała się od właściwej (sv-SE daje „2026-10-23 21”)
+  const teraz = new Intl.DateTimeFormat("sv-SE", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    hour12: false,
+    timeZone: "Europe/Warsaw",
+  })
+    .format(new Date())
+    .replace(" ", "T");
 
   return (
     <>
@@ -89,7 +92,7 @@ export default async function CourtPage({ params }: { params: Promise<{ slug: st
         court={court}
         nearby={nearby}
         weather={weather}
-        nowHour={nowHour}
+        teraz={teraz}
         wydarzenie={wydarzenie}
         avatarAutora={avatar}
         adres={adres}

@@ -5,12 +5,14 @@ import { IkNiebo } from "./ikony";
 const H = 72;
 
 /**
- * Godziny do wykresu: najbliższa pełna i kolejne co dwie, do 22:00, najwyżej sześć -
- * wieczorem lista sama się skraca.
+ * Godziny do wykresu: bieżąca i kolejne co dwie, zawsze sześć - także nocą i przez północ
+ * (prognoza obejmuje dziś i jutro). Wcześniej wykres kończył się na 22:00, więc wieczorem
+ * zostawała z niego jedna kropka. `teraz` to „2026-10-23T21” w czasie polskim.
  */
-function godzinyWykresu(all: WeatherHour[], nowHour: number) {
-  const start = Math.max(nowHour, 7);
-  return all.filter((h) => h.hour >= start && h.hour <= 22 && (h.hour - start) % 2 === 0).slice(0, 6);
+function godzinyWykresu(all: WeatherHour[], teraz: string) {
+  const start = all.findIndex((h) => h.czas.slice(0, 13) >= teraz);
+  if (start < 0) return [];
+  return all.slice(start).filter((_, i) => i % 2 === 0).slice(0, 6);
 }
 
 const mm = (n: number) => `${n.toFixed(1).replace(".", ",")} mm`;
@@ -20,8 +22,10 @@ const mm = (n: number) => `${n.toFixed(1).replace(".", ",")} mm`;
  * jadę" i wykres - linia temperatury z kropkami, pod nią słupki opadu, na dole godziny
  * z ikoną nieba. Rysowane na serwerze, prognoza jest wspólna dla wszystkich.
  */
-export function PogodaKarty({ hours, nowHour }: { hours: WeatherHour[]; nowHour: number }) {
-  const g = godzinyWykresu(hours, nowHour);
+export function PogodaKarty({ hours, teraz: kluczTeraz }: { hours: WeatherHour[]; teraz: string }) {
+  const g = godzinyWykresu(hours, kluczTeraz);
+  /* pierwsza godzina następnego dnia dostaje podpis „jutro” - inaczej 00:00 po 22:00 myli */
+  const pierwszaJutro = g.findIndex((x) => x.czas.slice(0, 10) !== g[0]?.czas.slice(0, 10));
   if (!g.length) return null;
 
   const teraz = g[0];
@@ -79,7 +83,7 @@ export function PogodaKarty({ hours, nowHour }: { hours: WeatherHour[]; nowHour:
             </svg>
             <div className="absolute inset-0 grid" style={kolumny}>
               {g.map((x) => (
-                <div key={x.hour} className="relative">
+                <div key={x.czas} className="relative">
                   <span
                     className="kb-opad"
                     style={{ height: x.rain >= 0.1 ? Math.max(4, Math.round((x.rain / oMax) * 26)) : 2 }}
@@ -97,13 +101,14 @@ export function PogodaKarty({ hours, nowHour }: { hours: WeatherHour[]; nowHour:
           </div>
 
           <div className="mt-2 grid border-t border-[var(--k-linia)] pt-2" style={kolumny}>
-            {g.map((x) => (
-              <div key={x.hour} className="flex flex-col items-center gap-[3px] text-center">
+            {g.map((x, i) => (
+              <div key={x.czas} className="flex flex-col items-center gap-[3px] text-center">
                 <IkNiebo scena={weatherScene(x.code)} dzien={x.day} className="h-4 w-4 text-muted" />
                 <span className="text-[12px] font-semibold tabular-nums">{String(x.hour).padStart(2, "0")}:00</span>
                 <span className="whitespace-nowrap text-[11px] tabular-nums text-faint">
                   {x.rain >= 0.1 ? mm(x.rain) : "sucho"}
                 </span>
+                {i === pierwszaJutro && <span className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">jutro</span>}
               </div>
             ))}
           </div>

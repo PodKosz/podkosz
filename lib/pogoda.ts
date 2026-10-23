@@ -6,6 +6,8 @@
  * ruch do nich jest minimalny.
  */
 export interface WeatherHour {
+  /** „2026-10-23T21:00” w czasie polskim - po nim prognoza przechodzi przez północ */
+  czas: string;
   hour: number;
   temp: number;
   /** opad w milimetrach w tej godzinie */
@@ -80,7 +82,7 @@ export async function fetchWeather(lat: number, lng: number): Promise<WeatherHou
     `${API}?latitude=${lat.toFixed(MIEJSC_PO_PRZECINKU)}` +
     `&longitude=${lng.toFixed(MIEJSC_PO_PRZECINKU)}` +
     "&hourly=temperature_2m,precipitation,wind_speed_10m,weather_code,is_day" +
-    "&timezone=Europe%2FWarsaw&forecast_days=1";
+    "&timezone=Europe%2FWarsaw&forecast_days=2";
 
   try {
     /*
@@ -105,6 +107,7 @@ export async function fetchWeather(lat: number, lng: number): Promise<WeatherHou
     if (!h?.time?.length) return [];
 
     return h.time.map((t, i) => ({
+      czas: t,
       hour: Number(t.slice(11, 13)),
       temp: Math.round(h.temperature_2m[i]),
       rain: h.precipitation[i] ?? 0,

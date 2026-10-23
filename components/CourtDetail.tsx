@@ -62,7 +62,7 @@ export function CourtDetail({
   court,
   nearby = [],
   weather = [],
-  nowHour = 12,
+  teraz = "",
   wydarzenie = null,
   avatarAutora = null,
   adres = null,
@@ -71,8 +71,8 @@ export function CourtDetail({
   nearby?: NearbyCourt[];
   /** prognoza godzinowa - pusta dla boisk krytych i gdy open-meteo nie odpowiada */
   weather?: WeatherHour[];
-  /** aktualna godzina w Polsce, policzona na serwerze */
-  nowHour?: number;
+  /** aktualna godzina w Polsce, policzona na serwerze - „2026-10-23T21” */
+  teraz?: string;
   /** wydarzenie na tym boisku - stoi nad wszystkim innym */
   wydarzenie?: Wydarzenie | null;
   /** zdjęcie profilowe osoby, która zgłosiła boisko - przy przypiętej opinii */
@@ -223,7 +223,7 @@ export function CourtDetail({
             </ul>
           </section>
 
-          {weather.length > 0 && <PogodaKarty hours={weather} nowHour={nowHour} />}
+          {weather.length > 0 && <PogodaKarty hours={weather} teraz={teraz} />}
 
           {/* ---------- najbliższe boiska (prototyp 06) ---------- */}
           {nearby.length > 0 && (
