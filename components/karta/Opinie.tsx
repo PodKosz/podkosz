@@ -392,19 +392,3 @@ function ArkuszOpinii({
     </Arkusz>
   );
 }
-
-/**
- * Komórka „Opinie" w pasku pod nazwą boiska (prototyp 01): średnia i gwiazdki, a dotknięcie
- * przewija do sekcji opinii. Bez opinii stoi kreska - zero gwiazdek czytałoby się jak ocena.
- */
-export function KomorkaOpinii() {
-  const { lista, gotowe } = useOpinie();
-  const s = statystyki(lista);
-  return (
-    <a href="#opinie" className="kb-info-komorka">
-      <small>{s.liczba ? `${s.liczba} ${plural(s.liczba, ["opinia", "opinie", "opinii"])}` : "Opinie"}</small>
-      <b className="tabular-nums">{s.srednia !== null ? ocenaTekstem(s.srednia) : "–"}</b>
-      <span>{s.srednia !== null ? <Gwiazdki ocena={Math.round(s.srednia)} /> : gotowe ? "brak ocen" : " "}</span>
-    </a>
-  );
-}

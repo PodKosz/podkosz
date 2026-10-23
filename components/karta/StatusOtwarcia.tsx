@@ -2,13 +2,13 @@
 
 import { useSyncExternalStore } from "react";
 import type { Access } from "@/lib/types";
-import { otwarcieTeraz } from "@/lib/godziny-otwarcia";
+import { otwarcieTeraz, type StanOtwarcia } from "@/lib/godziny-otwarcia";
 
 /*
   Zegar co minutę. Karta boiska jest budowana z góry i leży w pamięci podręcznej, więc stan
   „otwarte" policzony na serwerze byłby stanem z chwili budowania - a strona żyje pół godziny.
-  Liczymy więc w przeglądarce: serwer i pierwszy render klienta nie pokazują nic (ta sama
-  migawka, zgodna hydracja), a zaraz potem pojawia się stan na teraz i odświeża co minutę.
+  Liczymy więc w przeglądarce: serwer i pierwszy render klienta pokazują to samo (kreskę -
+  zgodna hydracja), a zaraz potem pojawia się stan na teraz i odświeża co minutę.
 */
 let minuta = 0;
 function subskrybuj(odswiez: () => void) {
@@ -21,34 +21,40 @@ function subskrybuj(odswiez: () => void) {
 const migawka = () => minuta || (minuta = Math.floor(Date.now() / 60_000));
 const migawkaSerwera = () => 0;
 
-const KROPKA = {
+/* trzy kolory: zielony otwarte, żółty wkrótce zamknięcie, czerwony zamknięte */
+const KROPKA: Record<StanOtwarcia, string> = {
   otwarte: "#30d158",
-  wkrotce: "#ffb340",
+  wkrotce: "#ffd60a",
   zamkniete: "#ff453a",
   ograniczony: "var(--color-faint)",
-} as const;
+};
 
-/** „Otwarte · do 22:00", „Wkrótce zamknięte · do 22:00", „Zamknięte · otwarcie 6:00". */
-export function StatusOtwarcia({ hours, access }: { hours: string; access: Access }) {
+/* krótka wartość do komórki paska - pełne „Wkrótce zamknięte" nie mieści się w jednej trzeciej telefonu */
+const KROTKO: Record<StanOtwarcia, string> = {
+  otwarte: "Otwarte",
+  wkrotce: "Wkrótce",
+  zamkniete: "Zamknięte",
+  ograniczony: "Ograniczony",
+};
+
+/**
+ * Komórka „Teraz" w pasku pod nazwą boiska: czy boisko jest otwarte o tej godzinie, z kolorową
+ * kropką, a pod spodem do której albo od której („do 22:00", „otwarcie 6:00", „całą dobę").
+ * Boisko bez godzin, z których da się coś wyczytać, dostaje kreskę.
+ */
+export function KomorkaOtwarcia({ hours, access }: { hours: string; access: Access }) {
   const teraz = useSyncExternalStore(subskrybuj, migawka, migawkaSerwera);
-  if (!teraz) return null;
+  const stan = teraz ? otwarcieTeraz(hours, access, new Date(teraz * 60_000)) : null;
+  const dopisek = stan?.stan === "wkrotce" ? `zamknięcie ${stan.dopisek?.replace(/^do /, "o ") ?? ""}` : stan?.dopisek;
 
-  const stan = otwarcieTeraz(hours, access, new Date(teraz * 60_000));
-  if (!stan) return null;
-
-  /* kropka oddzielająca od miasta jest tutaj, a nie w karcie - bez stanu nie ma czego oddzielać */
   return (
-    <>
-      <span aria-hidden className="text-faint">
-        ·
-      </span>
-      <span className="inline-flex min-w-0 items-center gap-1.5">
-        <span aria-hidden className="h-[7px] w-[7px] shrink-0 rounded-full" style={{ background: KROPKA[stan.stan] }} />
-        <span className="truncate">
-          <span className="font-semibold text-ink">{stan.etykieta}</span>
-          {stan.dopisek && <span> · {stan.dopisek}</span>}
-        </span>
-      </span>
-    </>
+    <div className="kb-info-komorka" aria-live="polite">
+      <small>Teraz</small>
+      <b className="kb-info-status">
+        {stan && <i aria-hidden style={{ background: KROPKA[stan.stan] }} />}
+        {stan ? KROTKO[stan.stan] : "–"}
+      </b>
+      <span>{stan ? dopisek || " " : teraz ? "brak godzin" : " "}</span>
+    </div>
   );
 }

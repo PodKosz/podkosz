@@ -6925,6 +6925,8 @@ body.ambient:has(main.kb)::before { display: none; }
 .kb-info-komorka b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; }
 .kb-info-komorka > span { display: flex; justify-content: center; min-height: 15px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--color-muted); }
 .kb-info-komorka b.kb-info-brak { color: var(--color-faint); }
+.kb-info-komorka b.kb-info-status { display: inline-flex; align-items: center; gap: 7px; }
+.kb-info-status i { width: 9px; height: 9px; flex: none; border-radius: 50%; }
 /* telefon: trzy pozycje (opinie, kosze, boisko); komputer: siedem osobnych */
 .kb-info .kb-info-pc { display: none; }
 @media (min-width: 1024px) {

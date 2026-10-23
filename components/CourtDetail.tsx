@@ -16,11 +16,11 @@ import { KartaDostawca } from "./karta/KartaKontekst";
 import { KodQr } from "./karta/KodQr";
 import { KtoDzisGra } from "./karta/KtoDzisGra";
 import { IdeZagrac } from "./karta/IdeZagrac";
-import { KomorkaOpinii, Opinie } from "./karta/Opinie";
+import { Opinie } from "./karta/Opinie";
 import { PasekZdjec } from "./karta/PasekZdjec";
 import { PogodaKarty } from "./karta/PogodaKarty";
 import { Polub } from "./karta/Polub";
-import { StatusOtwarcia } from "./karta/StatusOtwarcia";
+import { KomorkaOtwarcia } from "./karta/StatusOtwarcia";
 import { PlakietkaCoconaut } from "./karta/NaKadrze";
 import {
   IkAparat,
@@ -135,7 +135,6 @@ export function CourtDetail({
             </h1>
             <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[14px] text-muted md:text-[16px]">
               <span>{court.city}</span>
-              <StatusOtwarcia hours={court.hours} access={court.access} />
             </p>
 
             <div className="mt-4 flex items-center gap-2 md:mt-5">
@@ -160,7 +159,7 @@ export function CourtDetail({
         <div className="kb-tresc">
           {/* ---------- pasek parametrów (prototyp 01) ---------- */}
           <div className="kb-info">
-            <KomorkaOpinii />
+            <KomorkaOtwarcia hours={court.hours} access={court.access} />
             <div className="kb-info-komorka">
               <small>Kosze</small>
               <b className="tabular-nums">{court.hoops}</b>
