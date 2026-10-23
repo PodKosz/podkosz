@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Court, TYPE_LABEL, surfaceLabel } from "@/lib/types";
 import { CourtPhoto } from "@/components/CourtPhoto";
 import { plural } from "@/lib/site";
-import { ocenaTekstem } from "@/lib/opinie";
 import {
   BasketApprovedBadge,
   FunnyBadge,
@@ -51,6 +50,9 @@ export const RANKING_DO = LISTA_DO;
 
 /** Ile opinii musi mieć boisko, żeby wejść do rankingu - to samo progowe 10 liczy baza. */
 export const RANKING_OD_OPINII = 10;
+
+/* „4,6” - lokalnie, bo `lib/opinie.ts` jest modułem klienta, a ranking renderuje się na serwerze */
+const ocenaTekstem = (n: number) => n.toFixed(1).replace(".", ",");
 
 /** Gwiazdka z oceną i liczbą opinii - w miejscu dawnej liczby podpaleń. */
 function Ocena({ court, krotko = false }: { court: Court; krotko?: boolean }) {
