@@ -63,8 +63,27 @@ export function Opinie({ courtId, przypieta }: { courtId: string; przypieta: Prz
 
   const zamknij = useCallback(() => setArkusz(null), []);
 
+  const zaprosDoOceny = dostepne && gotowe && !moja;
+
+  /* gwiazdki „Oceń boisko" - na telefonie nad opiniami, na komputerze pod nimi */
+  const ocena = (gdzie: "tel" | "pc") => (
+    <div className={`kb-opinie-ocen kb-opinie-ocen-${gdzie}`}>
+      <span>
+        <b>Oceń boisko</b>
+        <span>Jedno dotknięcie wystarczy - reszta jest opcjonalna.</span>
+      </span>
+      <span className="flex" role="group" aria-label="Twoja ocena">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button key={n} type="button" onClick={() => void ocen(n)} aria-label={`${n} na 5 - ${SLOWO_OCENY[n]}`} className="kb-gwiazda">
+            <IkGwiazda className="h-[26px] w-[26px]" />
+          </button>
+        ))}
+      </span>
+    </div>
+  );
+
   return (
-    <section id="opinie" className="kb-sekcja scroll-mt-24" aria-labelledby="opinie-tytul">
+    <section id="opinie" className="kb-sekcja kb-opinie scroll-mt-24" aria-labelledby="opinie-tytul">
       <div className="flex items-baseline justify-between gap-3 px-1">
         <h2 id="opinie-tytul" className="kb-tytul">
           Oceny i opinie
@@ -77,59 +96,34 @@ export function Opinie({ courtId, przypieta }: { courtId: string; przypieta: Prz
         )}
       </div>
 
-      {/* na komputerze podsumowanie i „Oceń boisko" stoją obok siebie */}
+      {/* średnia dużym pismem i rozkład ocen - bez ramki, z poświatą pod liczbą */}
       {dostepne && (
-        <div className={`mt-3 grid gap-2.5 ${gotowe && !moja ? "md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]" : ""}`}>
-          <div className="kb-karta grid grid-cols-[auto_minmax(0,1fr)] items-center gap-5 px-5 py-4">
-            <div className="text-center">
-              <p className="font-display text-[54px] leading-[0.95] tabular-nums">
-                {s.srednia !== null ? ocenaTekstem(s.srednia) : "–"}
-              </p>
-              <p className="mt-1.5 text-[12.5px] font-semibold text-muted">
-                {s.liczba ? `na 5 · ${s.liczba} ${plural(s.liczba, ["opinia", "opinie", "opinii"])}` : "brak ocen"}
-              </p>
-            </div>
-            <div className="grid gap-[5px]" aria-hidden>
-              {[5, 4, 3, 2, 1].map((n) => (
-                <div key={n} className="grid grid-cols-[52px_minmax(0,1fr)_14px] items-center gap-2">
-                  <Gwiazdki ocena={n} z={n} mala />
-                  <span className="kb-pasek">
-                    <i style={{ width: s.liczba ? `${(s.rozklad[n] / s.liczba) * 100}%` : "0%" }} />
-                  </span>
-                  <span className="text-right text-[11px] tabular-nums text-faint">{s.rozklad[n]}</span>
-                </div>
-              ))}
+        <div className="kb-opinie-podsum">
+          <div className="kb-opinie-srednia">
+            <p className="font-display tabular-nums">{s.srednia !== null ? ocenaTekstem(s.srednia) : "–"}</p>
+            <div>
+              {s.srednia !== null && <Gwiazdki ocena={Math.round(s.srednia)} />}
+              <span>{s.liczba ? `na 5 · ${s.liczba} ${plural(s.liczba, ["opinia", "opinie", "opinii"])}` : "brak ocen"}</span>
             </div>
           </div>
-
-          {gotowe && !moja && (
-            <div className="kb-karta flex items-center justify-between gap-2 py-1.5 pl-5 pr-1.5 md:flex-col md:items-start md:justify-center md:gap-1 md:py-4">
-              <span className="text-[15px] text-muted">
-                Oceń boisko
-                <span className="hidden text-[13px] text-faint md:block">Jedno dotknięcie wystarczy - reszta jest opcjonalna.</span>
-              </span>
-              <span className="flex md:-ml-2" role="group" aria-label="Twoja ocena">
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => void ocen(n)}
-                    aria-label={`${n} na 5 - ${SLOWO_OCENY[n]}`}
-                    className="kb-gwiazda"
-                  >
-                    <IkGwiazda className="h-[26px] w-[26px]" />
-                  </button>
-                ))}
-              </span>
-            </div>
-          )}
+          <div className="grid gap-[5px]" aria-hidden>
+            {[5, 4, 3, 2, 1].map((n) => (
+              <div key={n} className="grid grid-cols-[52px_minmax(0,1fr)_14px] items-center gap-2">
+                <Gwiazdki ocena={n} z={n} mala />
+                <span className="kb-pasek">
+                  <i style={{ width: s.liczba ? `${(s.rozklad[n] / s.liczba) * 100}%` : "0%" }} />
+                </span>
+                <span className="text-right text-[11px] tabular-nums text-faint">{s.rozklad[n]}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      <div className="mt-3 grid gap-2.5 md:grid-cols-2 md:items-start">
-        <div className="md:col-span-2">
-          <Przypieta o={przypieta} />
-        </div>
+      {zaprosDoOceny && ocena("tel")}
+
+      <div className="kb-opinie-lista">
+        <Przypieta o={przypieta} />
 
         {moja && (
           <KartaOpinii
@@ -146,13 +140,15 @@ export function Opinie({ courtId, przypieta }: { courtId: string; przypieta: Prz
         {widoczne.map((o) => (
           <KartaOpinii key={o.id} o={o} akcja={<Pomocne o={o} onZmiana={odswiez} />} />
         ))}
-
-        {!wszystkie && cudze.length > NA_START && (
-          <button type="button" onClick={() => setWszystkie(true)} className="kb-karta py-3.5 text-[14px] font-semibold md:col-span-2">
-            Pokaż wszystkie opinie ({cudze.length})
-          </button>
-        )}
       </div>
+
+      {!wszystkie && cudze.length > NA_START && (
+        <button type="button" onClick={() => setWszystkie(true)} className="kb-opinie-wiecej">
+          Pokaż wszystkie opinie ({cudze.length})
+        </button>
+      )}
+
+      {zaprosDoOceny && ocena("pc")}
 
       {arkusz && (
         <ArkuszOpinii
@@ -201,7 +197,7 @@ function Avatar({ nick, avatar }: { nick: string; avatar: string | null }) {
 function Przypieta({ o }: { o: PrzypietaOpinia }) {
   const nick = <b className="text-[15px] font-semibold">@{o.nick}</b>;
   return (
-    <article className="kb-karta px-5 py-4">
+    <article className="kb-opinia kb-opinia-przypieta">
       <div className="flex items-center gap-3">
         <Avatar nick={o.nick} avatar={o.avatar} />
         <div className="min-w-0 flex-1">
@@ -223,7 +219,7 @@ function Przypieta({ o }: { o: PrzypietaOpinia }) {
 
 function KartaOpinii({ o, naglowek, akcja }: { o: Opinia; naglowek?: string; akcja: React.ReactNode }) {
   return (
-    <article className={`kb-karta px-5 py-4 ${o.moja ? "kb-karta-moja" : ""}`}>
+    <article className="kb-opinia">
       {naglowek && <p className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.12em] text-muted">{naglowek}</p>}
       <div className="flex items-center gap-3">
         <Avatar nick={o.nick} avatar={o.avatar} />

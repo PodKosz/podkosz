@@ -188,24 +188,27 @@ export function CourtDetail({
 
           <KtoDzisGra kodQr={<KodQr tekst={`${SITE_URL}/boisko/${court.slug}?zagraj=1`} className="h-full w-full" />} />
 
-          {zdjecia.length > 0 && (
-            <PasekZdjec
-              zdjecia={zdjecia}
-              seed={court.seed}
-              film={court.shortsUrl ? <ShortsPlayer url={court.shortsUrl} title={`${court.name}, ${court.city}`} /> : null}
-            />
-          )}
+          {/* na komputerze zdjęcia i opinie w jednym rzędzie: talia po lewej, średnia i opinie po prawej */}
+          <div className="kb-zdjecia-opinie">
+            {zdjecia.length > 0 && (
+              <PasekZdjec
+                zdjecia={zdjecia}
+                seed={court.seed}
+                film={court.shortsUrl ? <ShortsPlayer url={court.shortsUrl} title={`${court.name}, ${court.city}`} /> : null}
+              />
+            )}
 
-          <Opinie
-            courtId={court.id}
-            przypieta={{
-              nick: court.addedBy,
-              profil: anonim ? null : `/gracz/${slugifyPlace(court.addedBy)}`,
-              avatar: avatarAutora ? adresMiniatury(avatarAutora, 72, JAKOSC_ZDJECIA) : null,
-              dodane: court.addedAt,
-              tekst: (court.description ?? "").trim(),
-            }}
-          />
+            <Opinie
+              courtId={court.id}
+              przypieta={{
+                nick: court.addedBy,
+                profil: anonim ? null : `/gracz/${slugifyPlace(court.addedBy)}`,
+                avatar: avatarAutora ? adresMiniatury(avatarAutora, 72, JAKOSC_ZDJECIA) : null,
+                dodane: court.addedAt,
+                tekst: (court.description ?? "").trim(),
+              }}
+            />
+          </div>
 
           {/* ---------- co tu znajdziesz (prototyp 05) ---------- */}
           <section className="kb-sekcja" aria-labelledby="cechy-tytul">
