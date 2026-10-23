@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   MAKS_TAGOW,
@@ -19,9 +19,9 @@ import { plural } from "@/lib/site";
 import { useBramka } from "../BramkaLogowania";
 import { Arkusz } from "./Arkusz";
 import { useOpinie } from "./KartaKontekst";
-import { IkGwiazda, IkKciuk, IkOlowek } from "./ikony";
+import { IkGwiazda, IkKciuk, IkOlowek, IkStrzalka } from "./ikony";
 
-/** Ile opinii graczy widać od razu - reszta po „Pokaż wszystkie". */
+/** Ile opinii graczy widać od razu na telefonie - reszta po „Pokaż wszystkie". Na komputerze lista się przewija. */
 const NA_START = 2;
 
 export interface PrzypietaOpinia {
@@ -53,8 +53,8 @@ export function Opinie({ courtId, przypieta }: { courtId: string; przypieta: Prz
 
   const moja = lista.find((o) => o.moja) ?? null;
   const cudze = lista.filter((o) => !o.moja);
-  const widoczne = wszystkie ? cudze : cudze.slice(0, NA_START);
   const s = statystyki(lista);
+  const listaRef = useRef<HTMLDivElement>(null);
 
   const ocen = async (ocena: number) => {
     if (!(await wymagaj("ocenić boisko"))) return;
@@ -84,48 +84,54 @@ export function Opinie({ courtId, przypieta }: { courtId: string; przypieta: Prz
 
   return (
     <section id="opinie" className="kb-sekcja kb-opinie scroll-mt-24" aria-label="Oceny i opinie">
-      {/* sama średnia dużym pismem i liczba opinii - na środku nad opiniami, z poświatą pod liczbą */}
-      {dostepne && (
-        <div className="kb-opinie-podsum">
-          <div className="kb-opinie-srednia">
-            <p className="font-display tabular-nums">{s.srednia !== null ? ocenaTekstem(s.srednia) : "–"}</p>
-            <div>
-              {s.srednia !== null && <Gwiazdki ocena={Math.round(s.srednia)} />}
-              <span>{s.liczba ? `${s.liczba} ${plural(s.liczba, ["opinia", "opinie", "opinii"])} łącznie` : "brak ocen - bądź pierwszy"}</span>
+      {/* na komputerze ramka ma wysokość talii zdjęć obok - lista opinii przewija się w jej środku */}
+      <div className="kb-opinie-ramka">
+        {/* sama średnia dużym pismem i liczba opinii - na środku nad opiniami, z poświatą pod liczbą */}
+        {dostepne && (
+          <div className="kb-opinie-podsum">
+            <div className="kb-opinie-srednia">
+              <p className="font-display tabular-nums">{s.srednia !== null ? ocenaTekstem(s.srednia) : "–"}</p>
+              <div>
+                {s.srednia !== null && <Gwiazdki ocena={Math.round(s.srednia)} />}
+                <span>{s.liczba ? `${s.liczba} ${plural(s.liczba, ["opinia", "opinie", "opinii"])} łącznie` : "brak ocen - bądź pierwszy"}</span>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {zaprosDoOceny && ocena("tel")}
-
-      <div className="kb-opinie-lista">
-        <Przypieta o={przypieta} />
-
-        {moja && (
-          <KartaOpinii
-            o={moja}
-            naglowek="Twoja opinia"
-            akcja={
-              <button type="button" onClick={() => setArkusz({ ocena: moja.ocena, edycja: moja })} className="kb-chip-przycisk">
-                <IkOlowek className="h-3.5 w-3.5" /> Edytuj
-              </button>
-            }
-          />
         )}
 
-        {widoczne.map((o) => (
-          <KartaOpinii key={o.id} o={o} akcja={<Pomocne o={o} onZmiana={odswiez} />} />
-        ))}
+        {zaprosDoOceny && ocena("tel")}
+
+        <div ref={listaRef} className="kb-opinie-lista">
+          <Przypieta o={przypieta} />
+
+          {moja && (
+            <KartaOpinii
+              o={moja}
+              naglowek="Twoja opinia"
+              akcja={
+                <button type="button" onClick={() => setArkusz({ ocena: moja.ocena, edycja: moja })} className="kb-chip-przycisk">
+                  <IkOlowek className="h-3.5 w-3.5" /> Edytuj
+                </button>
+              }
+            />
+          )}
+
+          {/* na telefonie dalsze opinie czekają na „Pokaż wszystkie", na komputerze są w przewijanej liście */}
+          {cudze.map((o, i) => (
+            <KartaOpinii key={o.id} o={o} dalsza={!wszystkie && i >= NA_START} akcja={<Pomocne o={o} onZmiana={odswiez} />} />
+          ))}
+        </div>
+
+        {!wszystkie && cudze.length > NA_START && (
+          <button type="button" onClick={() => setWszystkie(true)} className="kb-opinie-wiecej">
+            Pokaż wszystkie opinie ({cudze.length})
+          </button>
+        )}
+
+        <PrzewijanieOpinii lista={listaRef} ile={1 + (moja ? 1 : 0) + cudze.length} />
+
+        {zaprosDoOceny && ocena("pc")}
       </div>
-
-      {!wszystkie && cudze.length > NA_START && (
-        <button type="button" onClick={() => setWszystkie(true)} className="kb-opinie-wiecej">
-          Pokaż wszystkie opinie ({cudze.length})
-        </button>
-      )}
-
-      {zaprosDoOceny && ocena("pc")}
 
       {arkusz && (
         <ArkuszOpinii
@@ -192,9 +198,62 @@ function Przypieta({ o }: { o: PrzypietaOpinia }) {
   );
 }
 
-function KartaOpinii({ o, naglowek, akcja }: { o: Opinia; naglowek?: string; akcja: React.ReactNode }) {
+/**
+ * Przewijanie listy opinii na komputerze - strzałki i „1-3 z 9" jak pod talią zdjęć obok.
+ * Strzałka przesuwa o tyle opinii, ile mieści ramka; przyciąganie (`scroll-snap`) ustawia
+ * pierwszą widoczną równo z górą. Gdy wszystko się mieści, pasek znika.
+ */
+function PrzewijanieOpinii({ lista, ile }: { lista: React.RefObject<HTMLDivElement | null>; ile: number }) {
+  const [zakres, setZakres] = useState<{ od: number; do: number; przewija: boolean; koniec: boolean } | null>(null);
+
+  useEffect(() => {
+    const el = lista.current;
+    if (!el) return;
+    const policz = () => {
+      const widoczne = [...el.children].filter((k) => (k as HTMLElement).offsetParent !== null) as HTMLElement[];
+      const gora = el.scrollTop;
+      const dol = gora + el.clientHeight;
+      const w = widoczne.map((k, i) => ({ i, top: k.offsetTop - el.offsetTop, bottom: k.offsetTop - el.offsetTop + k.offsetHeight }));
+      const pierwsza = w.find((k) => k.bottom > gora + 4)?.i ?? 0;
+      const ostatnia = [...w].reverse().find((k) => k.top < dol - 4)?.i ?? pierwsza;
+      setZakres({ od: pierwsza + 1, do: ostatnia + 1, przewija: el.scrollHeight > el.clientHeight + 2, koniec: dol >= el.scrollHeight - 2 });
+    };
+    policz();
+    el.addEventListener("scroll", policz, { passive: true });
+    const obs = new ResizeObserver(policz);
+    obs.observe(el);
+    [...el.children].forEach((k) => obs.observe(k));
+    return () => {
+      el.removeEventListener("scroll", policz);
+      obs.disconnect();
+    };
+  }, [lista, ile]);
+
+  const przesun = (kierunek: 1 | -1) => {
+    const el = lista.current;
+    if (!el) return;
+    el.scrollBy({ top: kierunek * el.clientHeight * 0.85, behavior: "smooth" });
+  };
+
+  if (!zakres?.przewija) return null;
   return (
-    <article className="kb-opinia">
+    <div className="kb-opinie-nav" data-koniec={zakres.koniec}>
+      <button type="button" onClick={() => przesun(-1)} disabled={zakres.od <= 1} aria-label="Poprzednie opinie" className="kb-kolko kb-kolko-hover">
+        <IkStrzalka className="h-4 w-4 -rotate-90" />
+      </button>
+      <span className="tabular-nums" aria-live="polite">
+        {zakres.od === zakres.do ? zakres.od : `${zakres.od}–${zakres.do}`} z {ile}
+      </span>
+      <button type="button" onClick={() => przesun(1)} disabled={zakres.koniec} aria-label="Następne opinie" className="kb-kolko kb-kolko-hover">
+        <IkStrzalka className="h-4 w-4 rotate-90" />
+      </button>
+    </div>
+  );
+}
+
+function KartaOpinii({ o, naglowek, akcja, dalsza = false }: { o: Opinia; naglowek?: string; akcja: React.ReactNode; dalsza?: boolean }) {
+  return (
+    <article className={`kb-opinia ${dalsza ? "kb-opinia-dalsza" : ""}`}>
       {naglowek && <p className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.12em] text-muted">{naglowek}</p>}
       <div className="flex items-center gap-3">
         <Avatar nick={o.nick} avatar={o.avatar} />

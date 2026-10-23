@@ -7045,8 +7045,8 @@ body.ambient:has(main.kb)::before { display: none; }
 .kb-opinie-srednia p { font-size: 80px; line-height: 0.85; }
 /* przecinek Antona schodzi pod linię - gwiazdki muszą zacząć się niżej, żeby na nie nie wchodził */
 .kb-opinie-srednia div { display: flex; flex-direction: column; align-items: center; gap: 5px; margin-top: 22px; font-size: 13px; font-weight: 600; color: var(--color-muted); }
-/* na komputerze średnia stoi niżej - mniej więcej na wysokości pierwszej trzeciej zdjęcia obok, a nie przy jego górnej krawędzi */
-@media (min-width: 1024px) { .kb-opinie-podsum { padding-top: 112px; padding-bottom: 36px; } .kb-opinie-srednia p { font-size: 104px; } .kb-opinie-srednia div { margin-top: 26px; } }
+/* na komputerze średnia stoi blisko góry talii obok - pod nią muszą się zmieścić trzy opinie i strzałki */
+@media (min-width: 1024px) { .kb-opinie-podsum { padding-top: 30px; padding-bottom: 18px; } .kb-opinie-srednia p { font-size: 96px; } .kb-opinie-srednia div { margin-top: 24px; } }
 /* linia z gradientem: najjaśniejsza na środku, gaśnie ku brzegom */
 .kb-opinie-linia, .kb-opinia + .kb-opinia::before, .kb-opinie-ocen::before {
   content: ""; display: block; height: 1px; background: linear-gradient(90deg, transparent, var(--k-wyp-2) 20%, var(--k-wyp-2) 80%, transparent);
@@ -7065,6 +7065,35 @@ body.ambient:has(main.kb)::before { display: none; }
 @media (min-width: 1024px) {
   .kb-opinie .kb-opinie-ocen-pc { display: flex; }
   .kb-opinie .kb-opinie-ocen-tel { display: none; }
+}
+/* dalsze opinie: na telefonie po „Pokaż wszystkie", na komputerze w przewijanej liście */
+.kb-opinia-dalsza { display: none; }
+.kb-opinie-nav { display: none; }
+@media (min-width: 1024px) {
+  .kb-opinia-dalsza { display: block; }
+  .kb-opinie .kb-opinie-wiecej { display: none; }
+  .kb-opinia { padding-block: 14px; }
+  /*
+    Obok talii zdjęć ramka opinii ma dokładnie wysokość lewej kolumny (talia + strzałki pod nią):
+    sekcja się rozciąga, a treść leży w niej absolutnie, więc to zdjęcia ustalają wysokość rzędu,
+    a nie lista opinii. Średnia na górze, lista przewija się w środku, strzałki na dole - na tej
+    samej linii co strzałki zdjęć.
+  */
+  .kb-zdjecia-opinie > .kb-opinie:not(:only-child) { position: relative; align-self: stretch; }
+  .kb-zdjecia-opinie > .kb-opinie:not(:only-child) .kb-opinie-ramka { position: absolute; inset: 0; display: flex; flex-direction: column; }
+  .kb-zdjecia-opinie > .kb-opinie:not(:only-child) .kb-opinie-lista {
+    flex: 1 1 auto; min-height: 0; align-content: start; overflow-y: auto; scrollbar-width: none; scroll-snap-type: y proximity;
+  }
+  .kb-opinie-lista::-webkit-scrollbar { display: none; }
+  .kb-opinie-lista > * { scroll-snap-align: start; }
+  /* dół listy gaśnie, dopóki jest pod nim coś jeszcze */
+  .kb-opinie-ramka:has(.kb-opinie-nav[data-koniec="false"]) .kb-opinie-lista {
+    -webkit-mask-image: linear-gradient(#000 calc(100% - 56px), transparent);
+    mask-image: linear-gradient(#000 calc(100% - 56px), transparent);
+  }
+  .kb-opinie-nav { display: flex; flex: none; align-items: center; justify-content: center; gap: 16px; padding-top: 14px; font-size: 13px; color: var(--color-muted); }
+  .kb-opinie-nav .kb-kolko:disabled { opacity: 0.35; pointer-events: none; }
+  .kb-opinie-ocen-pc { flex: none; }
 }
 .kb-opinie-wiecej { display: block; width: 100%; margin-top: 6px; padding: 12px; border-radius: 14px; font-size: 14px; font-weight: 600; color: var(--color-muted); transition: background-color 0.2s, color 0.2s; }
 @media (hover: hover) { .kb-opinie-wiecej:hover { background: var(--k-wyp); color: var(--color-ink); } }
