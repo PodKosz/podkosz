@@ -53,6 +53,7 @@ const MapView = dynamic(() => wczytajMape().then((m) => m.MapView), {
 import { Sidebar } from "./Sidebar";
 import type { CelMapy } from "@/lib/miejsca";
 import { CourtOutline } from "./CourtOutline";
+import { PodgladKolorowMapy } from "./PodgladKolorowMapy";
 
 export function Explorer({ courts }: { courts: MapCourt[] }) {
   /* uprawnienia dociągamy w przeglądarce - inaczej cała mapa musiałaby powstawać na żądanie */
@@ -290,6 +291,8 @@ export function Explorer({ courts }: { courts: MapCourt[] }) {
 
   return (
     <main className="relative h-dvh w-full overflow-hidden">
+      {/* TYMCZASOWE: podgląd kolorów mapy dla administratora pod `/?kolory-mapy` */}
+      <PodgladKolorowMapy />
       <MapView
         courts={results}
         activeId={activeId}

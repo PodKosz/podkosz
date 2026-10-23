@@ -1156,8 +1156,9 @@ export function MapView({
 
     if (typeof window !== "undefined") {
       (window as unknown as { __mapDiag: MapDiag }).__mapDiag = diag;
-      // uchwyt do mapy przydatny przy diagnostyce w konsoli - tylko w dev
-      if (process.env.NODE_ENV !== "production")
+      // uchwyt do mapy przydatny przy diagnostyce w konsoli - w dev, a na produkcji tylko dla
+      // tymczasowego podglądu kolorów mapy (`?kolory-mapy`, PodgladKolorowMapy.tsx)
+      if (process.env.NODE_ENV !== "production" || new URLSearchParams(window.location.search).has("kolory-mapy"))
         (window as unknown as { __map: MlMap }).__map = map;
     }
 
