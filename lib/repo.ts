@@ -49,6 +49,7 @@ export function rowToCourt(row: CourtRow): Court {
     hours: row.hours,
     likes: row.likes_count,
     opinie: { liczba: row.opinie_liczba ?? 0, srednia: row.opinie_srednia ?? null },
+    rankingWynik: row.ranking_wynik ?? null,
     basketApproved: row.basket_approved,
     basketNote: row.basket_note ?? '',
     funny: row.funny ?? false,

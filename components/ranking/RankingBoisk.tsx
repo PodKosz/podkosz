@@ -9,44 +9,21 @@ import {
   PinIcon,
   SurfaceIcon,
 } from "@/components/icons";
+import { TabelaRankingu } from "./TabelaRankingu";
 
 /**
- * Ranking boisk.
+ * Ranking boisk (23.10.2026, propozycje 01 „Podium” + 02 „Tabela” z F:\CLAUDE\podkosz-karty\ranking).
  *
- * Wszystkie karty są kadrem z treścią NA nim, a nie kadrem z panelem pod spodem. To jedna
- * decyzja, która przesądza o reszcie: karta staje się plakatem, wysokość dobiera zdjęcie,
- * a nie długość opisu, i znika problem pustych pól przy krótkich nazwach. Ten sam język
- * obowiązuje na wszystkich trzech poziomach, więc strona czyta się jak jedna rzecz.
+ * Trzy najlepsze stoją na podium - pierwsze na środku i najwyżej, drugie z lewej, trzecie
+ * z prawej, jak na zawodach. Pod podium tabela całej stawki z filtrem województw (osobny
+ * komponent kliencki, bo filtr zmienia listę bez przeładowania). Język nowej karty boiska:
+ * bez ramek, linie z gradientem między wierszami, numery miejsc Antonem.
  *
- * Poziomy różnią się wyłącznie skalą i gęstością - i to ona niesie kolejność:
- *
- *   1. Zwycięzca - jeden kadr na całą szerokość, panoramiczny. Nie da się go pomylić z niczym.
- *   2. Miejsca 2-4 - trzy kadry w rzędzie, wciąż duże.
- *   3. Miejsca 5-10 - sześć kadrów, czyli dokładnie dwa pełne rzędy po trzy.
- *   4. Miejsca 11-25 - włosowe wiersze w dwóch kolumnach; przy tej gęstości zdjęcie jest
- *      już tylko znacznikiem, a nie treścią.
- *
- * Podział 1 + 3 + 6 jest tu wyborem arytmetycznym, nie estetycznym: przy trzech kolumnach
- * każdy rząd wychodzi pełny. Poprzedni układ 1 + 2 + 7 zostawiał w ostatnim rzędzie
- * pojedynczą kartę i pustkę obok niej - a nic nie psuje siatki tak, jak niedomknięty rząd.
- *
- * Całość jest zwykłym HTML-em bez stanu. Pojawianie się przy przewijaniu, reakcje na
- * kursor i potwierdzenie kliknięcia robi CSS (patrz `data-wjazd`, `.karta-rankingu`), więc
- * strona renderuje się na serwerze, wyszukiwarka widzi pełną listę, a przeglądarka nie
- * dostaje ani jednego nasłuchu przewijania.
+ * Kolejność to `ranking_wynik` z bazy - średnia ocen ważona liczbą opinii, od 10 opinii.
  */
 
-const SIATKA_DO = 10;
-const LISTA_DO = 25;
-
-/**
- * Ile boisk ta strona w ogóle pokazuje - i tyle strona pobiera z bazy.
- *
- * Wcześniej ranking dostawał wszystkie boiska w Polsce razem ze zdjęciami, sortował je
- * i wyrzucał wszystko poza tą dwudziestką piątką. Stała jest tu, a nie w zapytaniu, żeby
- * zmiana układu nie mogła rozjechać się z tym, co przyjeżdża z bazy.
- */
-export const RANKING_DO = LISTA_DO;
+/** Ile boisk pobieramy - wszystkie z rankingu, bo filtr województw musi mieć z czego wybierać. */
+export const RANKING_DO = 500;
 
 /** Ile opinii musi mieć boisko, żeby wejść do rankingu - to samo progowe 10 liczy baza. */
 export const RANKING_OD_OPINII = 10;
@@ -74,76 +51,64 @@ function Ocena({ court, krotko = false }: { court: Court; krotko?: boolean }) {
 }
 
 export function RankingBoisk({ courts }: { courts: Court[] }) {
-  const [pierwszy, ...reszta] = courts;
-  const trojka = reszta.slice(0, 3);
-  const siatka = courts.slice(4, SIATKA_DO);
-  const lista = courts.slice(SIATKA_DO, LISTA_DO);
-
-  if (!pierwszy) {
+  if (!courts.length) {
     return (
-      <p className="szklo-pro rounded-[28px] p-10 text-center text-[15px] text-muted">
+      <p className="rk-pusto">
         Ranking rusza, gdy boisko zbierze {RANKING_OD_OPINII} opinii. Oceń boiska, na których grasz.
       </p>
     );
   }
 
   return (
-    <div className="space-y-24">
-      <section data-wjazd="zar">
-        <KartaBoiska court={pierwszy} miejsce={1} wariant="zwyciezca" />
-      </section>
-
-      {trojka.length > 0 && (
-        <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
-          {trojka.map((c, i) => (
-            <div key={c.id} data-wjazd="zar">
-              <KartaBoiska court={c} miejsce={i + 2} wariant="trojka" />
-            </div>
-          ))}
-        </section>
-      )}
-
-      {siatka.length > 0 && (
-        <section>
-          <Naglowek tytul="Goniący" opis={`Miejsca 5-${4 + siatka.length}`} />
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3 xl:gap-6">
-            {siatka.map((c, i) => (
-              <div key={c.id} data-wjazd="zar">
-                <KartaBoiska court={c} miejsce={i + 5} />
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {lista.length > 0 && (
-        <section>
-          <Naglowek
-            tytul="W stawce"
-            opis={`Miejsca ${SIATKA_DO + 1}-${SIATKA_DO + lista.length}`}
-          />
-          {/*
-            Dwie kolumny od dużego ekranu. Jedna kolumna wierszy przez pół monitora to
-            wąska wstęga z pustką po bokach - dokładnie to, co sprawiało, że poprzednia
-            wersja wyglądała na zawieszoną w próżni.
-          */}
-          <ol className="mt-6 grid xl:grid-cols-2 xl:gap-x-12">
-            {lista.map((c, i) => (
-              <WierszBoiska key={c.id} court={c} miejsce={SIATKA_DO + 1 + i} />
-            ))}
-          </ol>
-        </section>
-      )}
-    </div>
+    <>
+      <Podium courts={courts.slice(0, 3)} />
+      <TabelaRankingu boiska={courts} />
+    </>
   );
 }
 
-function Naglowek({ tytul, opis }: { tytul: string; opis: string }) {
+/**
+ * Podium. W kodzie kolejność 1-2-3 (tak czyta czytnik ekranu), na ekranie 2-1-3 - przestawia
+ * ją `order` w arkuszu. Wysokości kadrów maleją z miejscem, więc pierwsze naprawdę stoi wyżej.
+ */
+function Podium({ courts }: { courts: Court[] }) {
   return (
-    <div data-wjazd="kreska" className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-hairline pb-4">
-      <h2 className="text-[clamp(20px,2.2vw,28px)] font-semibold tracking-[-0.02em]">{tytul}</h2>
-      <p className="text-[12px] uppercase tracking-[0.2em] text-faint">{opis}</p>
-    </div>
+    <ol className="rk-podium" aria-label="Podium">
+      {courts.map((c, i) => (
+        <li key={c.id} className="rk-podium-miejsce">
+          <Link href={`/boisko/${c.slug}`} className="rk-podium-link">
+            <span className="rk-podium-kadr">
+              <CourtPhoto
+                photo={c.photos[0]}
+                seed={c.seed}
+                sizes="(min-width: 1024px) 420px, 36vw"
+                priority
+              />
+              <span className="rk-podium-nr font-display" aria-label={`Miejsce ${i + 1}`}>
+                {i + 1}
+              </span>
+              {c.opinie?.srednia != null && (
+                <span className="rk-podium-ocena">
+                  <Gwiazdka /> {ocenaTekstem(c.opinie.srednia)}
+                </span>
+              )}
+            </span>
+            <b>{c.name}</b>
+            <small>
+              {c.city} · {c.opinie?.liczba ?? 0} {plural(c.opinie?.liczba ?? 0, ["opinia", "opinie", "opinii"])}
+            </small>
+          </Link>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function Gwiazdka() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-[1em] w-[1em]" fill="currentColor" aria-hidden>
+      <path d="M12 3.6l2.6 5.3 5.8.9-4.2 4.1 1 5.8L12 17l-5.2 2.7 1-5.8-4.2-4.1 5.8-.9z" />
+    </svg>
   );
 }
 
@@ -272,52 +237,5 @@ export function KartaBoiska({
         </span>
       </span>
     </Link>
-  );
-}
-
-/**
- * Zwarty wiersz - dla miejsc, przy których liczy się już tylko nazwa i ocena.
- *
- * `min-w-0` na elemencie listy jest tu konieczne, nie kosmetyczne: element siatki ma
- * domyślnie `min-width: auto`, więc nie kurczy się poniżej szerokości własnej treści.
- * Długa nazwa boiska rozpychała wtedy wiersz na osiemset pikseli i cała strona dostawała
- * poziomy pasek przewijania na telefonie - mimo `truncate` w środku.
- */
-function WierszBoiska({ court, miejsce }: { court: Court; miejsce: number }) {
-  return (
-    <li data-wjazd="zar-wiersz" className="min-w-0">
-      <Link
-        href={`/boisko/${court.slug}`}
-        className="wiersz-rankingu group flex items-center gap-4 py-3 pr-2"
-      >
-        <span className="w-10 shrink-0 text-center text-[14px] font-semibold tabular-nums text-faint transition-colors group-hover:text-flame">
-          {String(miejsce).padStart(2, "0")}
-        </span>
-
-        <span className="relative h-14 w-20 shrink-0 overflow-hidden rounded-[14px]">
-          <CourtPhoto photo={court.photos[0]} seed={court.seed} sizes="96px" />
-        </span>
-
-        <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-2">
-            <span className="truncate text-[15px] font-medium">{court.name}</span>
-            {court.basketApproved && <BasketApprovedBadge />}
-            {court.funny && <FunnyBadge />}
-          </span>
-          <span className="block truncate text-[13px] text-faint">
-            {court.city} · {TYPE_LABEL[court.type]}
-          </span>
-        </span>
-
-        <span className="flex shrink-0 flex-col items-end text-[15px] font-semibold">
-          <Ocena court={court} krotko />
-          {court.opinie?.liczba ? (
-            <span className="text-[12px] font-normal tabular-nums text-faint">
-              {court.opinie.liczba} {plural(court.opinie.liczba, ["opinia", "opinie", "opinii"])}
-            </span>
-          ) : null}
-        </span>
-      </Link>
-    </li>
   );
 }

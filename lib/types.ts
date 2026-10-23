@@ -68,6 +68,8 @@ export interface Court {
   likes: number;
   /** liczba opinii i ich średnia (1-5); `srednia` null, gdy nikt jeszcze nie ocenił */
   opinie?: { liczba: number; srednia: number | null };
+  /** wynik w rankingu (średnia ważona liczbą opinii); null poniżej 10 opinii */
+  rankingWynik?: number | null;
   /** wyróżnienie od administratora */
   basketApproved: boolean;
   /** limonkowa plakietka „Śmieszne boisko” */

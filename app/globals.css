@@ -7284,3 +7284,85 @@ body:has(> .kb-dok) { padding-bottom: calc(80px + env(safe-area-inset-bottom)); 
 .trasa-osm-dodaj { background: linear-gradient(135deg, var(--grad-1), var(--grad-2) 55%, var(--grad-3)); color: #1a0b02; }
 .trasa-osm-wiecej { background: var(--color-hairline, rgb(255 255 255 / 0.08)); color: var(--color-ink); }
 @media (prefers-reduced-motion: reduce) { .trasa-karta { animation: none; } }
+
+/* ==========================================================================
+   RANKING BOISK (ranking/page.tsx, RankingBoisk, TabelaRankingu)
+   Propozycje 01 „Podium” + 02 „Tabela” - język nowej karty boiska.
+   ========================================================================== */
+/* bez pomarańczowych plam światła w tle - ranking ma czyste tło jak karta boiska */
+body.ambient:has(main.rk-strona)::before { display: none; }
+.rk-strona { max-width: 1200px; margin-inline: auto; padding: 0 var(--k-margines) calc(110px + env(safe-area-inset-bottom)); }
+@media (min-width: 1536px) { .rk-strona { max-width: 1320px; } }
+.rk-glowa { padding-top: 112px; }
+@media (min-width: 768px) { .rk-glowa { padding-top: 132px; } }
+.rk-nad { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-faint); }
+.rk-glowa h1 { margin-top: 8px; font-size: 34px; font-weight: 700; line-height: 1.04; letter-spacing: -0.03em; text-wrap: balance; }
+@media (min-width: 1024px) { .rk-glowa h1 { font-size: 58px; } }
+.rk-zasada { max-width: 60ch; margin-top: 12px; font-size: 14.5px; line-height: 1.5; color: var(--color-muted); }
+.rk-gracze { display: inline-flex; gap: 6px; margin-top: 14px; font-size: 13px; font-weight: 600; color: var(--color-muted); transition: color 0.2s; }
+@media (hover: hover) { .rk-gracze:hover { color: var(--color-ink); } }
+.rk-pusto { padding: 48px 0; text-align: center; font-size: 15px; color: var(--color-muted); }
+
+/* ---------- podium: pierwsze na środku i najwyżej ---------- */
+.rk-podium { display: grid; grid-template-columns: 1fr 1.18fr 1fr; align-items: end; gap: 10px; margin-top: 36px; }
+@media (min-width: 1024px) { .rk-podium { gap: 24px; margin-top: 56px; } }
+.rk-podium-miejsce { min-width: 0; }
+.rk-podium-miejsce:nth-child(1) { order: 2; }
+.rk-podium-miejsce:nth-child(2) { order: 1; }
+.rk-podium-miejsce:nth-child(3) { order: 3; }
+.rk-podium-link { display: flex; flex-direction: column; gap: 10px; }
+.rk-podium-kadr {
+  position: relative; display: block; overflow: hidden; border-radius: 20px; background: var(--k-karta);
+  box-shadow: 0 24px 50px -24px rgb(0 0 0 / 0.9), inset 0 0 0 1px var(--k-linia);
+}
+@media (min-width: 1024px) { .rk-podium-kadr { border-radius: 26px; } }
+.rk-podium-miejsce:nth-child(1) .rk-podium-kadr { aspect-ratio: 3 / 4.4; box-shadow: 0 30px 60px -24px rgb(var(--rgb-flame) / 0.45), inset 0 0 0 1px rgb(var(--rgb-glow) / 0.35); }
+.rk-podium-miejsce:nth-child(2) .rk-podium-kadr { aspect-ratio: 3 / 3.7; }
+.rk-podium-miejsce:nth-child(3) .rk-podium-kadr { aspect-ratio: 3 / 3.3; }
+.rk-podium-kadr::after { content: ""; position: absolute; inset: 40% 0 0 0; background: linear-gradient(transparent, rgb(0 0 0 / 0.85)); pointer-events: none; }
+.rk-podium-kadr img { transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
+@media (hover: hover) { .rk-podium-link:hover .rk-podium-kadr img { transform: scale(1.04); } }
+.rk-podium-nr { position: absolute; left: 12px; bottom: 6px; z-index: 1; font-size: 54px; line-height: 1; color: #fff; }
+.rk-podium-miejsce:nth-child(1) .rk-podium-nr { font-size: 76px; }
+@media (min-width: 1024px) { .rk-podium-nr { left: 20px; bottom: 10px; font-size: 96px; } .rk-podium-miejsce:nth-child(1) .rk-podium-nr { font-size: 140px; } }
+.rk-podium-ocena { position: absolute; right: 10px; bottom: 12px; z-index: 1; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+@media (min-width: 1024px) { .rk-podium-ocena { right: 18px; bottom: 20px; font-size: 18px; } }
+.rk-podium-link b { display: -webkit-box; overflow: hidden; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 13.5px; line-height: 1.25; }
+@media (min-width: 1024px) { .rk-podium-link b { font-size: 19px; } }
+.rk-podium-link small { font-size: 12px; color: var(--color-muted); }
+
+/* ---------- tabela pod podium ---------- */
+.rk-tabela { margin-top: 48px; }
+@media (min-width: 1024px) { .rk-tabela { margin-top: 72px; } }
+.rk-chipy { display: flex; gap: 6px; margin-inline: calc(-1 * var(--k-margines)); padding-inline: var(--k-margines); overflow-x: auto; scrollbar-width: none; }
+.rk-chipy::-webkit-scrollbar { display: none; }
+.rk-chip { flex: none; height: 34px; padding: 0 14px; border-radius: 999px; background: var(--k-wyp); font-size: 13.5px; font-weight: 600; color: var(--color-muted); white-space: nowrap; }
+.rk-chip[aria-pressed="true"] { background: var(--k-aktywny); color: var(--k-aktywny-tekst); }
+.rk-chip b { margin-left: 5px; color: var(--color-ink); }
+.rk-chip[aria-pressed="true"] b { color: inherit; }
+.rk-tab { margin-top: 18px; }
+.rk-tab-glowa, .rk-w { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding-inline: 2px; }
+@media (min-width: 900px) { .rk-tab-glowa, .rk-w { grid-template-columns: 44px minmax(0, 1fr) 150px 80px 200px; gap: 18px; } }
+.rk-tab-glowa { height: 34px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-faint); }
+.rk-tab-glowa > span:first-child { text-align: center; }
+.rk-w { position: relative; min-height: 66px; }
+.rk-w::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 1px; background: linear-gradient(90deg, transparent, var(--k-wyp-2) 10%, var(--k-wyp-2) 90%, transparent); }
+@media (hover: hover) { .rk-w:hover { background: linear-gradient(90deg, transparent, var(--k-wyp) 20%, var(--k-wyp) 80%, transparent); } }
+.rk-w-nr { font-size: 24px; text-align: center; }
+.rk-w-boisko { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.rk-w-foto { position: relative; width: 44px; height: 44px; flex: none; overflow: hidden; border-radius: 12px; background: var(--k-karta); }
+.rk-w-boisko b { display: block; overflow: hidden; font-size: 15px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.rk-w-boisko small { display: block; font-size: 12.5px; color: var(--color-faint); }
+.rk-w-ocena { display: flex; flex-direction: column; gap: 2px; }
+.rk-w-ocena b { font-size: 17px; font-variant-numeric: tabular-nums; }
+.rk-gwiazdki { display: inline-flex; gap: 1px; color: var(--color-ink); }
+.rk-w-opinie { font-size: 14px; color: var(--color-muted); font-variant-numeric: tabular-nums; }
+.rk-w-wynik { display: flex; align-items: center; gap: 10px; }
+.rk-w-wynik b { width: 46px; font-size: 22px; font-weight: 400; }
+.rk-pas { flex: 1; height: 4px; overflow: hidden; border-radius: 3px; background: var(--k-wyp-2); }
+.rk-pas i { display: block; height: 100%; border-radius: 3px; background: var(--color-ink); }
+.rk-w-tel { text-align: right; }
+.rk-w-tel b { display: inline-flex; align-items: center; gap: 4px; font-size: 16px; font-variant-numeric: tabular-nums; }
+.rk-w-tel span { display: block; font-size: 11.5px; color: var(--color-faint); }
+.rk-pc { display: none; }
+@media (min-width: 900px) { .rk-pc { display: flex; } .rk-tab-glowa .rk-pc { display: block; } .rk-w-tel { display: none; } }
