@@ -70,7 +70,7 @@ export function CourtDetail({
 }: {
   court: Court;
   nearby?: NearbyCourt[];
-  /** prognoza godzinowa - pusta dla boisk krytych i gdy open-meteo nie odpowiada */
+  /** prognoza godzinowa - pusta dla boisk krytych i gdy MET Norway nie odpowiada */
   weather?: WeatherHour[];
   /** aktualna godzina w Polsce, policzona na serwerze - „2026-10-23T21” */
   teraz?: string;

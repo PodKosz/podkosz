@@ -82,8 +82,9 @@ export function PogodaKarty({ hours, teraz: kluczTeraz }: { hours: WeatherHour[]
               />
             </svg>
             <div className="absolute inset-0 grid" style={kolumny}>
-              {g.map((x) => (
-                <div key={x.czas} className="relative">
+              {/* klucz z indeksem: w noc zmiany czasu godzina 2:00 występuje dwa razy */}
+              {g.map((x, i) => (
+                <div key={`${x.czas}-${i}`} className="relative">
                   <span
                     className="kb-opad"
                     style={{ height: x.rain >= 0.1 ? Math.max(4, Math.round((x.rain / oMax) * 26)) : 2 }}
@@ -102,7 +103,7 @@ export function PogodaKarty({ hours, teraz: kluczTeraz }: { hours: WeatherHour[]
 
           <div className="mt-2 grid border-t border-[var(--k-linia)] pt-2" style={kolumny}>
             {g.map((x, i) => (
-              <div key={x.czas} className="flex flex-col items-center gap-[3px] text-center">
+              <div key={`${x.czas}-${i}`} className="flex flex-col items-center gap-[3px] text-center">
                 <IkNiebo scena={weatherScene(x.code)} dzien={x.day} className="h-4 w-4 text-muted" />
                 <span className="text-[12px] font-semibold tabular-nums">{String(x.hour).padStart(2, "0")}:00</span>
                 <span className="whitespace-nowrap text-[11px] tabular-nums text-faint">
@@ -113,6 +114,14 @@ export function PogodaKarty({ hours, teraz: kluczTeraz }: { hours: WeatherHour[]
             ))}
           </div>
         </div>
+        {/* podpis źródła - warunek licencji MET Norway (CC BY 4.0) */}
+        <p className="mt-3 text-right text-[10.5px] text-faint">
+          Prognoza:{" "}
+          <a href="https://www.met.no/en" target="_blank" rel="noreferrer" className="underline-offset-2 hover:underline">
+            MET Norway
+          </a>{" "}
+          (yr.no)
+        </p>
       </div>
     </section>
   );

@@ -1,9 +1,8 @@
 /**
- * Pogoda na dziś dla boiska - open-meteo.
+ * Pogoda na dziś i jutro dla boiska - MET Norway (yr.no).
  *
  * Dla boiska odkrytego to najważniejsza informacja praktyczna: „jadę czy nie jadę".
- * Open-meteo nie wymaga klucza ani opłat, a odpowiedź trzymamy pół godziny, więc
- * ruch do nich jest minimalny.
+ * Bez klucza i bez opłat (także komercyjnie), odpowiedź trzymamy godzinę na punkt.
  */
 export interface WeatherHour {
   /** „2026-10-23T21:00” w czasie polskim - po nim prognoza przechodzi przez północ */
@@ -14,9 +13,9 @@ export interface WeatherHour {
   rain: number;
   /** prędkość wiatru w km/h */
   wind: number;
-  /** kod pogody WMO z open-meteo - z niego wybieramy grafikę */
+  /** kod pogody WMO (z symbolu MET Norway) - z niego wybieramy grafikę */
   code: number;
-  /** czy o tej godzinie jest dzień (open-meteo: is_day) */
+  /** czy o tej godzinie jest dzień (symbol MET bez końcówki _night) */
   day: boolean;
 }
 
@@ -56,7 +55,17 @@ export const SCENE_LABEL: Record<WeatherScene, string> = {
   storm: "burza",
 };
 
-const API = "https://api.open-meteo.com/v1/forecast";
+/*
+  Źródło: MET Norway (Norweski Instytut Meteorologiczny), API Locationforecast - to samo, co
+  w aplikacji yr.no. Od 24.10.2026 zamiast Open-Meteo: darmowe API Open-Meteo jest tylko do
+  użytku niekomercyjnego, a serwis z partnerem jest komercyjny. MET Norway udostępnia dane
+  bezpłatnie także komercyjnie (licencja CC BY 4.0) pod trzema warunkami:
+    - podpis źródła przy prognozie (stoi pod wykresem w `PogodaKarty`),
+    - nagłówek User-Agent z nazwą serwisu i kontaktem - bez niego odpowiadają 403,
+    - pamięć podręczna zamiast pytania przy każdym wejściu (mamy: godzina na punkt).
+*/
+const API = "https://api.met.no/weatherapi/locationforecast/2.0/compact";
+const IDENTYFIKACJA = "podkosz.pl kontakt@podkosz.pl";
 
 /**
  * Do ilu miejsc po przecinku zaokrąglamy punkt, o który pytamy.
@@ -64,25 +73,42 @@ const API = "https://api.open-meteo.com/v1/forecast";
  * ------------------------------------------------------------------ dlaczego to ważne
  *
  * Adres zapytania jest kluczem pamięci podręcznej. Przy trzech miejscach po przecinku
- * (110 m) KAŻDE boisko ma własny wpis, czyli własne 48 zapytań na dobę. Darmowy limit
- * open-meteo to 10 tysięcy zapytań dziennie: przy 28 boiskach jest 1,3 tysiąca, przy 300
- * już 14 tysięcy - czyli za limitem. A awaria byłaby cicha, bo `if (!res.ok) return []`
- * sprawia, że sekcja pogody po prostu znika i nikt nie wie dlaczego.
- *
- * Jedno miejsce po przecinku to około 11 km. Wszystkie boiska w mieście dzielą wtedy
- * jedno zapytanie i z czternastu tysięcy robi się kilkaset - a różnica w prognozie
- * między dwoma boiskami w tym samym mieście nie istnieje: temperatura i opady liczą się
- * z siatki modelu o oczku kilku kilometrów, więc dla obu punktów wychodzą z tej samej
- * komórki niezależnie od tego, o co spytamy.
+ * (110 m) KAŻDE boisko miałoby własny wpis i własne zapytania co godzinę. Jedno miejsce po
+ * przecinku to około 11 km: wszystkie boiska w mieście dzielą jedno zapytanie, a różnicy
+ * w prognozie między nimi i tak nie ma - model liczy na siatce o oczku kilku kilometrów.
+ * MET Norway wprost prosi o zaokrąglanie (najwyżej 4 miejsca) właśnie po to, żeby pamięć
+ * podręczna działała.
  */
 const MIEJSC_PO_PRZECINKU = 1;
 
+/**
+ * Symbol pogody MET Norway („partlycloudy_day”, „lightrainshowers_night”…) na kod WMO,
+ * z którego `weatherScene` wybiera grafikę. Grupujemy tak samo grubo jak sceny.
+ */
+function kodZSymbolu(symbol: string): number {
+  const s = symbol.replace(/_(day|night|polartwilight)$/, "");
+  if (s.includes("thunder")) return 95;
+  if (s.includes("snow") || s.includes("sleet")) return 71;
+  if (s.includes("rain")) return 61;
+  if (s === "fog") return 45;
+  if (s === "cloudy") return 3;
+  if (s === "partlycloudy") return 2;
+  if (s === "fair") return 1;
+  return 0;
+}
+
+/* „2026-10-24T18” w czasie polskim - MET podaje czas w UTC */
+const godzinaPl = new Intl.DateTimeFormat("sv-SE", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  hour12: false,
+  timeZone: "Europe/Warsaw",
+});
+
 export async function fetchWeather(lat: number, lng: number): Promise<WeatherHour[]> {
-  const url =
-    `${API}?latitude=${lat.toFixed(MIEJSC_PO_PRZECINKU)}` +
-    `&longitude=${lng.toFixed(MIEJSC_PO_PRZECINKU)}` +
-    "&hourly=temperature_2m,precipitation,wind_speed_10m,weather_code,is_day" +
-    "&timezone=Europe%2FWarsaw&forecast_days=2";
+  const url = `${API}?lat=${lat.toFixed(MIEJSC_PO_PRZECINKU)}&lon=${lng.toFixed(MIEJSC_PO_PRZECINKU)}`;
 
   try {
     /*
@@ -90,31 +116,40 @@ export async function fetchWeather(lat: number, lng: number): Promise<WeatherHou
       informacji - a strona boiska i tak przebudowuje się co pół godziny, czyli co drugie
       przebudowanie bierze prognozę z pamięci.
     */
-    const res = await fetch(url, { next: { revalidate: 3600 } });
+    const res = await fetch(url, { next: { revalidate: 3600 }, headers: { "User-Agent": IDENTYFIKACJA } });
     if (!res.ok) return [];
 
     const data = (await res.json()) as {
-      hourly?: {
-        time: string[];
-        temperature_2m: number[];
-        precipitation: number[];
-        wind_speed_10m: number[];
-        weather_code: number[];
-        is_day: number[];
+      properties?: {
+        timeseries?: {
+          time: string;
+          data: {
+            instant: { details: { air_temperature?: number; wind_speed?: number } };
+            next_1_hours?: { summary?: { symbol_code?: string }; details?: { precipitation_amount?: number } };
+          };
+        }[];
       };
     };
-    const h = data.hourly;
-    if (!h?.time?.length) return [];
+    const serie = data.properties?.timeseries ?? [];
 
-    return h.time.map((t, i) => ({
-      czas: t,
-      hour: Number(t.slice(11, 13)),
-      temp: Math.round(h.temperature_2m[i]),
-      rain: h.precipitation[i] ?? 0,
-      wind: Math.round(h.wind_speed_10m[i] ?? 0),
-      code: h.weather_code?.[i] ?? 0,
-      day: (h.is_day?.[i] ?? 1) === 1,
-    }));
+    /* godzinowe wpisy są tylko na najbliższe ~2,5 doby; dalej co 6 godzin - tych nie bierzemy */
+    return serie
+      .filter((t) => t.data.next_1_hours)
+      .map((t) => {
+        const czas = `${godzinaPl.format(new Date(t.time)).replace(" ", "T")}:00`;
+        const symbol = t.data.next_1_hours?.summary?.symbol_code ?? "cloudy";
+        const d = t.data.instant.details;
+        return {
+          czas,
+          hour: Number(czas.slice(11, 13)),
+          temp: Math.round(d.air_temperature ?? 0),
+          rain: t.data.next_1_hours?.details?.precipitation_amount ?? 0,
+          /* MET podaje wiatr w m/s, kafelek pokazuje km/h */
+          wind: Math.round((d.wind_speed ?? 0) * 3.6),
+          code: kodZSymbolu(symbol),
+          day: !symbol.endsWith("_night"),
+        };
+      });
   } catch {
     // pogoda jest dodatkiem - jej brak nie może psuć karty boiska
     return [];
