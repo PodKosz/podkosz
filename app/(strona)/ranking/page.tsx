@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { topBoiska } from "@/lib/repo";
+import { sredniaOpiniiSerwisu, topBoiska } from "@/lib/repo";
 import { RankingBoisk, RANKING_DO, RANKING_OD_OPINII } from "@/components/ranking/RankingBoisk";
+import { JakDzialaRanking } from "@/components/ranking/JakDzialaRanking";
 
 export const metadata: Metadata = {
   title: "Ranking boisk - PodKosz",
@@ -18,23 +19,22 @@ export const revalidate = 300;
  * „Idę zagrać” na karcie. Ranking rośnie wyłącznie z opinii, więc to jedyne wezwanie na stronie.
  */
 export default async function RankingPage() {
-  const boiska = await topBoiska(RANKING_DO);
+  const [boiska, srednia] = await Promise.all([topBoiska(RANKING_DO), sredniaOpiniiSerwisu()]);
 
   return (
     <main className="rk-strona">
       <header className="rk-glowa">
         <p className="rk-nad">Ranking</p>
         <h1>Najlepiej oceniane boiska w Polsce</h1>
-        <p className="rk-zasada">
-          Średnia ocen ważona liczbą opinii - trzy piątki nie przeskoczą 4,5 od tysiąca osób. Do rankingu
-          wchodzi boisko z co najmniej {RANKING_OD_OPINII} opiniami.
-        </p>
         <Link href="/gracze" className="rk-gracze">
           Zobacz ranking graczy <span aria-hidden>→</span>
         </Link>
       </header>
 
       <RankingBoisk courts={boiska} />
+
+      {/* zasady na samym dole - kto chce wiedzieć, skąd taka kolejność, znajdzie tu wszystko */}
+      <JakDzialaRanking sredniaSerwisu={srednia ?? 3.9} prog={RANKING_OD_OPINII} />
 
       {/*
         Ocenić można tylko konkretne boisko, a w rankingu są te już ocenione - przycisk prowadzi

@@ -7316,7 +7316,7 @@ body.ambient:has(main.rk-strona)::before { display: none; }
   box-shadow: 0 24px 50px -24px rgb(0 0 0 / 0.9), inset 0 0 0 1px var(--k-linia);
 }
 @media (min-width: 1024px) { .rk-podium-kadr { border-radius: 26px; } }
-.rk-podium-miejsce:nth-child(1) .rk-podium-kadr { aspect-ratio: 3 / 4.4; box-shadow: 0 30px 60px -24px rgb(var(--rgb-flame) / 0.45), inset 0 0 0 1px rgb(var(--rgb-glow) / 0.35); }
+.rk-podium-miejsce:nth-child(1) .rk-podium-kadr { aspect-ratio: 3 / 4.4; }
 .rk-podium-miejsce:nth-child(2) .rk-podium-kadr { aspect-ratio: 3 / 3.7; }
 .rk-podium-miejsce:nth-child(3) .rk-podium-kadr { aspect-ratio: 3 / 3.3; }
 .rk-podium-kadr::after { content: ""; position: absolute; inset: 40% 0 0 0; background: linear-gradient(transparent, rgb(0 0 0 / 0.85)); pointer-events: none; }
@@ -7325,11 +7325,13 @@ body.ambient:has(main.rk-strona)::before { display: none; }
 .rk-podium-nr { position: absolute; left: 12px; bottom: 6px; z-index: 1; font-size: 54px; line-height: 1; color: #fff; }
 .rk-podium-miejsce:nth-child(1) .rk-podium-nr { font-size: 76px; }
 @media (min-width: 1024px) { .rk-podium-nr { left: 20px; bottom: 10px; font-size: 96px; } .rk-podium-miejsce:nth-child(1) .rk-podium-nr { font-size: 140px; } }
-.rk-podium-ocena { position: absolute; right: 10px; bottom: 12px; z-index: 1; display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
-@media (min-width: 1024px) { .rk-podium-ocena { right: 18px; bottom: 20px; font-size: 18px; } }
-.rk-podium-link b { display: -webkit-box; overflow: hidden; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 13.5px; line-height: 1.25; }
-@media (min-width: 1024px) { .rk-podium-link b { font-size: 19px; } }
-.rk-podium-link small { font-size: 12px; color: var(--color-muted); }
+.rk-podium-ocena { position: absolute; right: 10px; bottom: 10px; z-index: 1; display: flex; flex-direction: column; align-items: flex-end; gap: 1px; color: #fff; font-variant-numeric: tabular-nums; }
+.rk-podium-ocena b { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; }
+.rk-podium-ocena small { font-size: 10.5px; font-weight: 600; color: rgb(255 255 255 / 0.72); }
+@media (min-width: 1024px) { .rk-podium-ocena { right: 18px; bottom: 18px; } .rk-podium-ocena b { font-size: 18px; } .rk-podium-ocena small { font-size: 12.5px; } }
+.rk-podium-link > b { display: -webkit-box; overflow: hidden; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 13.5px; line-height: 1.25; }
+@media (min-width: 1024px) { .rk-podium-link > b { font-size: 19px; } }
+.rk-podium-link > small { font-size: 12px; color: var(--color-muted); }
 
 /* ---------- tabela pod podium ---------- */
 .rk-tabela { margin-top: 48px; }
@@ -7366,3 +7368,47 @@ body.ambient:has(main.rk-strona)::before { display: none; }
 .rk-w-tel span { display: block; font-size: 11.5px; color: var(--color-faint); }
 .rk-pc { display: none; }
 @media (min-width: 900px) { .rk-pc { display: flex; } .rk-tab-glowa .rk-pc { display: block; } .rk-w-tel { display: none; } }
+
+/* ---------- „Jak działa ranking” na dole strony ---------- */
+.rk-jak { position: relative; margin-top: 72px; padding-top: 48px; }
+@media (min-width: 1024px) { .rk-jak { margin-top: 110px; padding-top: 64px; } }
+.rk-jak::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 1px; background: linear-gradient(90deg, transparent, var(--k-wyp-2) 18%, var(--k-wyp-2) 82%, transparent); }
+.rk-jak h2 { margin-top: 8px; font-size: 28px; font-weight: 700; letter-spacing: -0.025em; }
+@media (min-width: 1024px) { .rk-jak h2 { font-size: 40px; } }
+.rk-jak-wstep { max-width: 62ch; margin-top: 12px; font-size: 15px; line-height: 1.6; color: var(--color-muted); }
+.rk-jak-kroki { display: grid; gap: 28px; margin-top: 36px; }
+@media (min-width: 900px) { .rk-jak-kroki { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; } }
+.rk-jak-kroki li > span { display: block; font-size: 56px; line-height: 0.9; color: var(--color-faint); }
+.rk-jak-kroki li > b { display: block; margin-top: 12px; font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
+.rk-jak-kroki li > p { margin-top: 6px; font-size: 14.5px; line-height: 1.55; color: var(--color-muted); }
+
+.rk-jak-przyklad { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; margin-top: 48px; text-align: center; }
+.rk-jak-przyklad > div { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 22px 8px; }
+.rk-jak-przyklad > div::before {
+  content: ""; position: absolute; left: 50%; top: 55%; width: 240px; height: 170px; transform: translate(-50%, -50%); pointer-events: none;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--color-ink) 8%, transparent), transparent);
+}
+.rk-jak-przyklad small { position: relative; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-faint); }
+.rk-jak-przyklad p { position: relative; font-size: 14px; color: var(--color-muted); }
+.rk-jak-przyklad p span { color: var(--color-faint); }
+.rk-jak-przyklad b { position: relative; margin-top: 8px; font-size: 64px; font-weight: 400; line-height: 0.9; color: var(--color-faint); }
+@media (min-width: 1024px) { .rk-jak-przyklad b { font-size: 92px; } }
+.rk-jak-przyklad .rk-jak-wygrywa b { color: var(--color-ink); }
+/* przecinek Antona schodzi pod linię - podpis pod liczbą musi zacząć się niżej */
+.rk-jak-przyklad b + small { margin-top: 16px; }
+.rk-jak-przyklad .rk-jak-wygrywa small:last-child { color: var(--color-ink); }
+.rk-jak-vs { font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-faint); }
+
+.rk-jak-sym { display: grid; gap: 18px; max-width: 560px; margin: 48px auto 0; }
+.rk-jak-sym-tytul { font-size: 18px; font-weight: 700; text-align: center; }
+.rk-jak-sym label { display: grid; gap: 10px; }
+.rk-jak-sym label > span { display: flex; justify-content: space-between; font-size: 14px; color: var(--color-muted); }
+.rk-jak-sym label b { color: var(--color-ink); font-variant-numeric: tabular-nums; }
+.rk-jak-sym input { width: 100%; accent-color: var(--color-ink); }
+.rk-jak-sym-wynik { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 4px; }
+.rk-jak-sym-wynik span { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-faint); }
+.rk-jak-sym-wynik b { font-size: 72px; font-weight: 400; line-height: 0.9; }
+
+.rk-jak-wzor { max-width: 62ch; margin: 56px auto 0; text-align: center; }
+.rk-jak-wzor p:first-child { padding: 16px 0; border-block: 1px solid var(--k-linia); font-size: 22px; letter-spacing: 0.02em; }
+.rk-jak-wzor p:last-child { margin-top: 14px; font-size: 13px; line-height: 1.6; color: var(--color-faint); }

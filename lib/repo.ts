@@ -196,6 +196,33 @@ export async function topBoiska(ile: number): Promise<Court[]> {
   return cached();
 }
 
+/**
+ * Średnia wszystkich widocznych opinii w serwisie - „C” ze wzoru rankingu. Strona rankingu
+ * pokazuje ją w wyjaśnieniu i liczy nią suwak „sprawdź sam”. Ważona liczbą opinii boisk,
+ * więc wychodzi dokładnie to, co liczy baza w `ranking_przelicz()`.
+ */
+export const sredniaOpiniiSerwisu = unstable_cache(
+  async (): Promise<number | null> => {
+    const supabase = supabasePublic();
+    if (!supabase) return null;
+    const { data, error } = await supabase
+      .from("courts")
+      .select("opinie_liczba, opinie_srednia")
+      .gt("opinie_liczba", 0);
+    if (error || !data?.length) return null;
+    let suma = 0;
+    let ile = 0;
+    for (const r of data as { opinie_liczba: number; opinie_srednia: number | null }[]) {
+      if (r.opinie_srednia === null) continue;
+      suma += r.opinie_liczba * r.opinie_srednia;
+      ile += r.opinie_liczba;
+    }
+    return ile ? suma / ile : null;
+  },
+  ["opinie-srednia-serwisu"],
+  { tags: [COURTS_TAG], revalidate: COURTS_TTL }
+);
+
 /** Ile identyfikatorów mieści się w jednym zapytaniu - dalej adres robi się za długi. */
 const PACZKA_ID = 100;
 

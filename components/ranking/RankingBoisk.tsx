@@ -87,16 +87,20 @@ function Podium({ courts }: { courts: Court[] }) {
               <span className="rk-podium-nr font-display" aria-label={`Miejsce ${i + 1}`}>
                 {i + 1}
               </span>
+              {/* średnia, a pod nią liczba opinii - jedno i drugie stoi na kadrze */}
               {c.opinie?.srednia != null && (
                 <span className="rk-podium-ocena">
-                  <Gwiazdka /> {ocenaTekstem(c.opinie.srednia)}
+                  <b>
+                    <Gwiazdka /> {ocenaTekstem(c.opinie.srednia)}
+                  </b>
+                  <small>
+                    {c.opinie.liczba} {plural(c.opinie.liczba, ["opinia", "opinie", "opinii"])}
+                  </small>
                 </span>
               )}
             </span>
             <b>{c.name}</b>
-            <small>
-              {c.city} · {c.opinie?.liczba ?? 0} {plural(c.opinie?.liczba ?? 0, ["opinia", "opinie", "opinii"])}
-            </small>
+            <small>{c.city}</small>
           </Link>
         </li>
       ))}
