@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   DNI_NAPRZOD,
@@ -18,6 +18,8 @@ import { useBramka } from "../BramkaLogowania";
 import { useGra } from "./KartaKontekst";
 import { usePoHydracji } from "./Arkusz";
 import { IkZamknij } from "./ikony";
+import { useSesja } from "@/lib/sesja";
+import { PanelNaBoisku, podpisNaBoisku, useMeldunek } from "./NaBoisku";
 
 /** Godziny do wyboru - od rana do zamknięcia parków. */
 const GODZINY = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
@@ -275,12 +277,26 @@ function podpisDnia(w: Wybor) {
  * „Idę zagrać" przyklejony na dole ekranu, na środku (prototyp 10) - na telefonie i na
  * komputerze. Dotknięcie rozwija nad nim wybór, a zapis robi „Potwierdź" - ten sam przycisk,
  * który rozwinął menu, więc palec (i kursor) nie musi szukać nowego miejsca.
+ *
+ * Na boisku ten sam przycisk zmienia się w „Jesteś na boisku" (meldunek GPS-em, patrz
+ * `NaBoisku.tsx`) i rozwija rysunek boiska z innymi zameldowanymi - props i 1 na 1
+ * (prototyp 08 z F:\CLAUDE\podkosz-karty\rywalizacja). W domu planujesz, na miejscu
+ * grasz - jedno miejsce na ekranie na obie rzeczy.
  */
-export function IdeZagrac({ courtId }: { courtId: string }) {
+export function IdeZagrac({ courtId, lat, lng }: { courtId: string; lat: number; lng: number }) {
   const [otwarte, setOtwarte] = useState(false);
-  const w = useWyborGry(courtId, otwarte);
+  /* co rozwija przycisk: wybór dnia i godzin albo boisko z ludźmi na nim */
+  const [tryb, setTryb] = useState<"gra" | "boisko">("gra");
+  const w = useWyborGry(courtId, otwarte && tryb === "gra");
   const poHydracji = usePoHydracji();
+  const sesja = useSesja();
+  const pin = useMemo(() => ({ lat, lng }), [lat, lng]);
+  const m = useMeldunek(courtId, pin, w.zalogowany);
   const { setTeraz, setOd, setDoG, wybierzDzien } = w;
+
+  /* zapisany na dziś na godzinę blisko teraz, a jeszcze niezameldowany - podpowiadamy meldunek */
+  const godzina = godzinaTeraz();
+  const pora = !m.jestem && w.dzien === w.panel.dzis && w.moje.some((h) => h >= godzina - 1 && h <= godzina + 1);
 
   /* wejście z kodu QR (`?zagraj=1`) od razu rozwija wybór; parametr znika z adresu */
   useEffect(() => {
@@ -324,9 +340,9 @@ export function IdeZagrac({ courtId }: { courtId: string }) {
 
   return createPortal(
     <>
-      {w.komunikat && (
+      {(w.komunikat || m.blad) && (
         <p role="status" className="kb-komunikat">
-          {w.komunikat}
+          {m.blad ?? w.komunikat}
         </p>
       )}
 
@@ -340,10 +356,34 @@ export function IdeZagrac({ courtId }: { courtId: string }) {
           className="kb-dok-tlo"
         />
 
-        <div className="kb-dok-karta" role={otwarte ? "dialog" : undefined} aria-label={otwarte ? "Idę zagrać" : undefined}>
-          <div className="kb-rozwin" data-otwarte={otwarte}>
+        <div
+          className="kb-dok-karta"
+          role={otwarte ? "dialog" : undefined}
+          aria-label={otwarte ? (tryb === "boisko" ? "Na boisku" : "Idę zagrać") : undefined}
+        >
+          {/* na boisku: rysunek boiska z ludźmi (prototyp 08) */}
+          <div className="kb-rozwin" data-otwarte={otwarte && tryb === "boisko"}>
             <div className="min-h-0 overflow-hidden">
-              <div className="px-4 pb-3 pt-4" inert={!otwarte}>
+              <div className="px-4 pb-3 pt-4" inert={!(otwarte && tryb === "boisko")}>
+                <div className="mb-2 flex items-start justify-between gap-3 px-1">
+                  <div>
+                    <p className="text-[17px] font-semibold tracking-[-0.01em]">Na boisku teraz</p>
+                    <p className="kb-zywo mt-0.5">
+                      {m.stan?.pokaz ? `Ty i ${m.stan.gracze.length} ${m.stan.gracze.length === 1 ? "osoba" : m.stan.gracze.length < 5 && m.stan.gracze.length > 1 ? "osoby" : "osób"}` : "jesteś zameldowany"}
+                    </p>
+                  </div>
+                  <button type="button" onClick={() => setOtwarte(false)} aria-label="Zamknij" className="kb-kolko">
+                    <IkZamknij className="h-4 w-4" />
+                  </button>
+                </div>
+                <PanelNaBoisku m={m} nick={sesja?.user?.name ?? "Ty"} />
+              </div>
+            </div>
+          </div>
+
+          <div className="kb-rozwin" data-otwarte={otwarte && tryb === "gra"}>
+            <div className="min-h-0 overflow-hidden">
+              <div className="px-4 pb-3 pt-4" inert={!(otwarte && tryb === "gra")}>
                 <div className="mb-4 flex items-start justify-between gap-3 px-1">
                   <div>
                     <p className="text-[17px] font-semibold tracking-[-0.01em]">Kiedy grasz?</p>
@@ -353,6 +393,17 @@ export function IdeZagrac({ courtId }: { courtId: string }) {
                     <IkZamknij className="h-4 w-4" />
                   </button>
                 </div>
+
+                {/* już na miejscu? meldunek GPS-em zamiast wybierania godzin */}
+                {w.dzien === w.panel.dzis && !m.jestem && (
+                  <button type="button" className="kb-meldunek-wiersz" onClick={() => m.sprobuj(true)} disabled={m.szukam}>
+                    <span>
+                      <b>Jesteś już na boisku?</b>
+                      <small>Zamelduj się - zobaczysz, kto jeszcze gra</small>
+                    </span>
+                    <span className="kb-meldunek-akcja">{m.szukam ? "Sprawdzam…" : "Jestem tu"}</span>
+                  </button>
+                )}
 
                 <WyborGry w={w} />
 
@@ -373,18 +424,48 @@ export function IdeZagrac({ courtId }: { courtId: string }) {
           <button
             type="button"
             onClick={() => {
+              if (otwarte && tryb === "boisko") {
+                setOtwarte(false);
+                return;
+              }
+              if (!otwarte && m.jestem) {
+                setTryb("boisko");
+                setOtwarte(true);
+                void m.odswiez();
+                return;
+              }
+              if (!otwarte && pora) {
+                m.sprobuj(true);
+                return;
+              }
               if (!otwarte) {
+                setTryb("gra");
                 w.ustawStart();
                 setOtwarte(true);
                 return;
               }
               void w.potwierdz().then((ok) => ok && setOtwarte(false));
             }}
-            disabled={otwarte && w.zablokowany}
+            disabled={otwarte && tryb === "gra" && w.zablokowany}
             className="kb-dok-cta"
-            data-jest={!otwarte && w.moje.length > 0}
+            data-jest={(!otwarte && (w.moje.length > 0 || m.jestem)) || (otwarte && tryb === "boisko")}
           >
-            {otwarte ? (
+            {otwarte && tryb === "boisko" ? (
+              <>
+                <b>Gotowe</b>
+                <small>zostajesz zameldowany do wyjścia</small>
+              </>
+            ) : !otwarte && m.jestem ? (
+              <>
+                <b>Jesteś na boisku</b>
+                <small>{podpisNaBoisku(m.stan)}</small>
+              </>
+            ) : !otwarte && pora ? (
+              <>
+                <b>{m.szukam ? "Sprawdzam lokalizację…" : "Jesteś już na boisku?"}</b>
+                <small>dotknij, żeby się zameldować</small>
+              </>
+            ) : otwarte ? (
               <>
                 <b>{w.busy ? "Zapisuję…" : w.moje.length ? "Zmień godziny" : "Potwierdź"}</b>
                 <small>
@@ -403,7 +484,7 @@ export function IdeZagrac({ courtId }: { courtId: string }) {
               </>
             )}
           </button>
-          {!w.zalogowany && otwarte && (
+          {!w.zalogowany && otwarte && tryb === "gra" && (
             <p className="pb-1 pt-2 text-center text-[11.5px] text-faint">
               Zapis wymaga konta - zalogujesz się jednym dotknięciem.
             </p>

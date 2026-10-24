@@ -17,6 +17,7 @@ import { KartaDostawca } from "./karta/KartaKontekst";
 import { KodQr } from "./karta/KodQr";
 import { KtoDzisGra } from "./karta/KtoDzisGra";
 import { IdeZagrac } from "./karta/IdeZagrac";
+import { KrolBoiska } from "./karta/KrolBoiska";
 import { Opinie } from "./karta/Opinie";
 import { PasekZdjec } from "./karta/PasekZdjec";
 import { PogodaKarty } from "./karta/PogodaKarty";
@@ -137,6 +138,8 @@ export function CourtDetail({
             <div className="flex min-h-[30px] flex-wrap items-center gap-1.5">
               {court.basketApproved && <PlakietkaCoconaut notatka={court.basketNote} />}
               {court.funny && <span className="kb-na-kadrze">Śmieszne boisko</span>}
+              {/* Król Boiska - kto najczęściej tu gra (meldunki GPS i propsy z 30 dni) */}
+              <KrolBoiska courtId={court.id} />
             </div>
 
             <h1 className="mt-3 max-w-[22ch] text-[30px] font-bold leading-[1.08] tracking-[-0.025em] [text-wrap:balance] md:text-[46px] lg:text-[58px] lg:leading-[1.02]">
@@ -292,7 +295,7 @@ export function CourtDetail({
       </main>
 
       {/* „Idę zagrać" przyklejony na środku dołu ekranu - na telefonie i na komputerze */}
-      <IdeZagrac courtId={court.id} />
+      <IdeZagrac courtId={court.id} lat={court.lat} lng={court.lng} />
     </KartaDostawca>
   );
 }
